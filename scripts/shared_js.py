@@ -105,9 +105,8 @@ function handleDemobarNav(event, targetRole, targetHref) {{
     window.parent.loadEmbeddedRole(targetRole || targetHref);
     return;
   }}
-  if (targetHref) {{
+  if (targetHref && (!event || !event.defaultPrevented)) {{
     window.location.href = targetHref;
-    if (event && event.preventDefault) event.preventDefault();
   }}
 }}
 

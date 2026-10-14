@@ -669,6 +669,12 @@ body {{
           </span>
           <span>Photo Wall</span>
         </button>
+        <button type="button" class="guest-nav-item" id="web-nav-pages" onclick="switchWebTab('pages')">
+          <span class="guest-nav-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          </span>
+          <span>Our Story &amp; Details</span>
+        </button>
         <button type="button" class="guest-nav-item" id="web-nav-gifts" onclick="switchWebTab('gifts')">
           <span class="guest-nav-icon">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
@@ -770,6 +776,14 @@ body {{
                 <div>
                   <strong style="display:block;font-size:15px;color:var(--ink);">Gift &amp; Go</strong>
                   <span style="font-size:12.5px;color:var(--muted);">Send a digital gift</span>
+                </div>
+              </button>
+
+              <button type="button" class="web-hub-tile" onclick="switchWebTab('pages')">
+                <div class="web-hub-icon">📖</div>
+                <div>
+                  <strong style="display:block;font-size:15px;color:var(--ink);">Our Story &amp; Menu</strong>
+                  <span style="font-size:12.5px;color:var(--muted);">Story, dining menu &amp; updates</span>
                 </div>
               </button>
             </div>
@@ -902,15 +916,32 @@ body {{
       <section id="pane-feed" class="tab-pane" aria-labelledby="tab-feed">
         <div class="grid-2col">
           <div>
-            <!-- Post a Love Note -->
+            <!-- Post a Love Note / Thank-You / Anniversary Wish -->
             <div class="web-card">
               <div class="web-card-header">
-                <h3 class="web-card-title">Post a Love Note</h3>
-                <span class="tt-pill warm">Shared with Couple</span>
+                <div>
+                  <h3 class="web-card-title" id="web-note-composer-title">Post a Love Note</h3>
+                  <div style="font-size:12px;color:var(--muted);margin-top:2px;">Shared directly with Sophie &amp; James</div>
+                </div>
               </div>
+
+              <!-- Occasion Category Selector Pills -->
+              <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+                <button type="button" class="btn btn-xs btn-gold web-note-cat-btn" id="wncat-general" onclick="selectWebNoteCategory('general')">💌 Love Note</button>
+                <button type="button" class="btn btn-xs btn-outline web-note-cat-btn" id="wncat-thankyou" onclick="selectWebNoteCategory('thankyou')">🥂 Wedding Thank-You</button>
+                <button type="button" class="btn btn-xs btn-outline web-note-cat-btn" id="wncat-anniversary" onclick="selectWebNoteCategory('anniversary')">💍 1st Anniversary</button>
+                <button type="button" class="btn btn-xs btn-outline web-note-cat-btn" id="wncat-honeymoon" onclick="selectWebNoteCategory('honeymoon')">✈️ Honeymoon Love</button>
+              </div>
+
+              <!-- Quick Prompt Suggestion Chips -->
+              <div id="web-note-quick-chips" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+                <button type="button" class="btn btn-xs btn-outline" style="font-size:11px;padding:3px 8px;background:#faf6f0;border-color:#e4d7c7;" onclick="insertWebNotePreset('So excited to celebrate your special day with you both! 💕')">✨ So excited to celebrate!</button>
+                <button type="button" class="btn btn-xs btn-outline" style="font-size:11px;padding:3px 8px;background:#faf6f0;border-color:#e4d7c7;" onclick="insertWebNotePreset('Wishing you both a lifetime of love and happiness! 🥂')">🥂 Lifetime of happiness</button>
+              </div>
+
               <form onsubmit="handleWebPostNoteSubmit(event)" style="display:flex;flex-direction:column;gap:10px;">
                 <textarea id="web-new-note-text" class="text-input" rows="3" placeholder="Write a note of congratulations for Sophie &amp; James..."></textarea>
-                <button type="submit" class="btn btn-gold" style="align-self:flex-end;">Post Love Note</button>
+                <button type="submit" id="web-post-note-submit-btn" class="btn btn-gold" style="align-self:flex-end;">Post Love Note</button>
               </form>
             </div>
 
@@ -921,22 +952,33 @@ body {{
           </div>
 
           <div>
-            <!-- Milestones & Stats Card -->
+            <!-- Milestones & Stats Card with Celebration Phase Switcher -->
             <div class="web-card">
               <div class="web-card-header">
-                <h3 class="web-card-title">Wedding Milestone</h3>
-                <span class="tt-pill green" id="web-confirmed-pill">96 Confirmed</span>
+                <div>
+                  <h3 class="web-card-title">Celebration Phase &amp; Milestones</h3>
+                  <div style="font-size:12px;color:var(--muted);margin-top:2px;">Live countdown &amp; post-wedding milestones</div>
+                </div>
+                <div style="background:rgba(21,17,14,0.06);border:1px solid #ebdccb;border-radius:20px;padding:3px;display:flex;gap:4px;">
+                  <button type="button" class="btn btn-xs btn-gold" id="btn-web-phase-countdown" onclick="setWebCelebrationPhase('countdown')" style="font-size:11px;padding:3px 10px;border-radius:14px;">⏳ Pre-Wedding</button>
+                  <button type="button" class="btn btn-xs btn-outline" id="btn-web-phase-postwed" onclick="setWebCelebrationPhase('post_wedding')" style="font-size:11px;padding:3px 10px;border-radius:14px;border-color:transparent;">💍 Married &amp; Honeymoon</button>
+                </div>
               </div>
-              <div style="background:#15110e;color:#fff;padding:18px;border-radius:8px;border-left:4px solid var(--gold);margin-bottom:18px;">
-                <div style="font-size:16px;font-weight:700;color:#fce4ca;display:flex;align-items:center;gap:8px;">
+
+              <div id="web-milestone-box" style="background:#15110e;color:#fff;padding:20px;border-radius:8px;border-left:4px solid var(--gold);margin-bottom:18px;">
+                <div style="font-size:16px;font-weight:700;color:#fce4ca;display:flex;align-items:center;gap:8px;" id="web-milestone-headline">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#bd9661" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                   <span>50 guests confirmed</span>
                 </div>
-                <div style="font-size:12.5px;color:#cfbfaf;margin-top:4px;">You've hit the halfway mark on RSVPs!</div>
+                <div style="font-size:13px;color:#cfbfaf;margin-top:4px;" id="web-milestone-sub">You've hit the halfway mark on RSVPs!</div>
               </div>
-              <p style="font-size:13px;color:#786858;">
-                The celebration feed brings all RSVPs, photo uploads, gift notes, and guest congratulations into one shared live stream.
-              </p>
+
+              <div style="background:#faf8f5;border:1px solid var(--line);border-radius:8px;padding:16px;">
+                <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:4px;">Guest Post-Wedding Guide</div>
+                <p style="font-size:12.5px;color:#786858;margin:0;line-height:1.5;">
+                  After the wedding celebration completes, guests can send 1st anniversary toasts, thank-you tributes, and react with emojis &amp; comments on Sophie &amp; James's live Honeymoon photo album.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -1045,6 +1087,33 @@ body {{
           <button type="button" class="btn btn-primary btn-block" style="padding:14px;font-size:15px;font-weight:700;" onclick="openWebCheckoutModal()">
             Send <span id="web-gift-btn-amt">$100 AUD</span> Gift via Card / Apple Pay
           </button>
+        </div>
+      </section>
+
+      <!-- PANE 8: REUSABLE CONTENT PAGES (Feature 1) -->
+      <section id="pane-pages" class="tab-pane" aria-labelledby="tab-pages">
+        <div class="web-card" style="max-width:880px;margin:0 auto 24px;">
+          <div style="text-align:center;margin-bottom:20px;">
+            <div class="web-hero-eyebrow">WEDDING STORIES &amp; DETAILS</div>
+            <h2 style="font-family:var(--font-heading);font-size:28px;margin-bottom:6px;">Our Story &amp; Details</h2>
+            <p style="font-size:13.5px;color:var(--muted);margin:0;">
+              Explore the story of our journey, dedicated memoriam, dining menu, wedding party team, and honeymoon plans.
+            </p>
+          </div>
+
+          <!-- Page Selection Pills -->
+          <div style="display:flex;gap:8px;margin-bottom:24px;overflow-x:auto;padding-bottom:6px;justify-content:center;" id="web-pages-nav-strip">
+            <button type="button" class="btn btn-sm btn-gold web-pnav-btn" id="wpnav-ourStory" onclick="selectGuestWebPage('ourStory')">📖 Our Story</button>
+            <button type="button" class="btn btn-sm btn-outline web-pnav-btn" id="wpnav-inMemoriam" onclick="selectGuestWebPage('inMemoriam')">🕊️ In Memoriam</button>
+            <button type="button" class="btn btn-sm btn-outline web-pnav-btn" id="wpnav-diningMenu" onclick="selectGuestWebPage('diningMenu')">🍽️ Dining &amp; Menu</button>
+            <button type="button" class="btn btn-sm btn-outline web-pnav-btn" id="wpnav-meetTheTeam" onclick="selectGuestWebPage('meetTheTeam')">👥 Meet the Team</button>
+            <button type="button" class="btn btn-sm btn-outline web-pnav-btn" id="wpnav-honeymoonUpdates" onclick="selectGuestWebPage('honeymoonUpdates')">✈️ Honeymoon Updates</button>
+          </div>
+
+          <!-- Active Page Reader Container -->
+          <div id="web-page-reader-container" style="background:#faf8f5;border:1px solid var(--line);border-radius:10px;padding:32px 36px;box-shadow:var(--shadow-sm);">
+            <!-- Rendered by JS -->
+          </div>
         </div>
       </section>
 
@@ -1251,6 +1320,148 @@ function initWebGuest() {{
   renderWebSchedule();
   renderWebTablemates();
   renderWebPhotoWall();
+  renderGuestWebPages();
+}}
+
+let currentGuestWebPageKey = 'ourStory';
+
+function renderGuestWebPages() {{
+  const state = loadState();
+  const pages = state.reusablePages || {{}};
+  const page = pages[currentGuestWebPageKey] || {{
+    title: 'Our Story',
+    subtitle: 'From a chance encounter in Bowral to forever in the Southern Highlands',
+    status: 'Published',
+    content: 'Sophie and James first met on a crisp autumn afternoon in Bowral. What began as a conversation over flat whites at a local bakery quickly turned into long weekend drives through the rolling hills of the Southern Highlands.',
+    photoCaption: 'A crisp autumn afternoon in Bowral where our journey began',
+    photoTheme: '💍'
+  }};
+
+  ['ourStory', 'inMemoriam', 'diningMenu', 'meetTheTeam', 'honeymoonUpdates'].forEach(k => {{
+    const btn = document.getElementById('wpnav-' + k);
+    if (btn) {{
+      btn.className = (k === currentGuestWebPageKey) ? 'btn btn-sm btn-gold web-pnav-btn' : 'btn btn-sm btn-outline web-pnav-btn';
+    }}
+  }});
+
+  const container = document.getElementById('web-page-reader-container');
+  if (!container) return;
+
+  if (page.status !== 'Published') {{
+    container.innerHTML = `
+      <div style="text-align:center;padding:40px 20px;">
+        <div style="font-size:36px;margin-bottom:12px;">⏳</div>
+        <h3 style="font-family:var(--font-heading);font-size:20px;color:var(--ink);margin-bottom:6px;">${{escapeHtml(page.title)}}</h3>
+        <p style="font-size:13.5px;color:var(--muted);max-width:440px;margin:0 auto;">
+          This story section is currently being drafted by Sophie &amp; James and will be published closer to wedding day.
+        </p>
+      </div>
+    `;
+    return;
+  }}
+
+  if (currentGuestWebPageKey === 'honeymoonUpdates' && page.photos && page.photos.length > 0) {{
+    const photosHtml = page.photos.map(photo => {{
+      const reactions = photo.reactions || {{ love: 0, toast: 0, stunning: 0, voyage: 0 }};
+      const comments = photo.comments || [];
+      return `
+        <div class="web-card" style="margin-bottom:24px;padding:24px;border:1px solid #e8ded0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <span style="font-size:12px;font-weight:700;color:var(--gold-hover);letter-spacing:1px;text-transform:uppercase;">📍 ${{escapeHtml(photo.location)}}</span>
+            <span style="font-size:22px;">${{photo.icon || '✈️'}}</span>
+          </div>
+          <h3 style="font-family:var(--font-heading);font-size:22px;color:var(--ink);margin:0 0 10px;">${{escapeHtml(photo.title)}}</h3>
+
+          <!-- Photo Canvas Mockup -->
+          <div style="background:linear-gradient(135deg, #2b221a 0%, #15110e 100%);color:#fff;border-radius:10px;padding:36px 24px;text-align:center;margin-bottom:16px;">
+            <div style="font-size:48px;margin-bottom:10px;">${{photo.icon || '✈️'}}</div>
+            <div style="font-size:15px;color:#dfc194;font-style:italic;max-width:580px;margin:0 auto;line-height:1.6;">"${{escapeHtml(photo.caption)}}"</div>
+          </div>
+
+          <!-- Interactive Live Reactions Bar -->
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
+            <button type="button" class="btn btn-outline btn-sm hm-react-btn" onclick="reactToWebHoneymoonPhoto('${{photo.id}}', 'love')">
+              ❤️ Love <span id="react-count-web-${{photo.id}}-love">${{reactions.love || 0}}</span>
+            </button>
+            <button type="button" class="btn btn-outline btn-sm hm-react-btn" onclick="reactToWebHoneymoonPhoto('${{photo.id}}', 'toast')">
+              🥂 Toast <span id="react-count-web-${{photo.id}}-toast">${{reactions.toast || 0}}</span>
+            </button>
+            <button type="button" class="btn btn-outline btn-sm hm-react-btn" onclick="reactToWebHoneymoonPhoto('${{photo.id}}', 'stunning')">
+              😍 Stunning <span id="react-count-web-${{photo.id}}-stunning">${{reactions.stunning || 0}}</span>
+            </button>
+            <button type="button" class="btn btn-outline btn-sm hm-react-btn" onclick="reactToWebHoneymoonPhoto('${{photo.id}}', 'voyage')">
+              ✈️ Bon Voyage <span id="react-count-web-${{photo.id}}-voyage">${{reactions.voyage || 0}}</span>
+            </button>
+          </div>
+
+          <!-- Guest Comments Thread -->
+          <div style="background:#faf8f5;border-radius:8px;padding:16px 20px;border:1px solid #ebdccb;">
+            <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:10px;">
+              💬 Guest Comments (${{comments.length}})
+            </div>
+            <div id="web-hm-comments-list-${{photo.id}}" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+              ${{comments.map(c => `
+                <div style="font-size:13px;line-height:1.45;background:#fff;padding:8px 12px;border-radius:6px;border:1px solid #eedecf;">
+                  <strong style="color:var(--ink);">${{escapeHtml(c.author)}}:</strong>
+                  <span style="color:#4a3c30;">${{escapeHtml(c.text)}}</span>
+                  <span style="font-size:11px;color:var(--muted);margin-left:8px;">${{escapeHtml(c.time || 'Recently')}}</span>
+                </div>
+              `).join('')}}
+            </div>
+            <div style="display:flex;gap:10px;">
+              <input type="text" id="input-web-hm-${{photo.id}}" class="text-input" style="padding:8px 12px;font-size:13px;" placeholder="Leave a sweet comment for Sophie &amp; James...">
+              <button type="button" class="btn btn-gold btn-sm" onclick="postWebHoneymoonComment('${{photo.id}}')">Post Comment</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }}).join('');
+
+    container.innerHTML = `
+      <div style="text-align:center;margin-bottom:24px;border-bottom:1px solid #ebdccb;padding-bottom:20px;">
+        <div style="font-size:36px;margin-bottom:8px;">✈️</div>
+        <h2 style="font-family:var(--font-heading);font-size:30px;color:var(--ink);margin:0 0 8px;">${{escapeHtml(page.title)}}</h2>
+        <div style="font-size:14.5px;color:var(--gold-hover);font-style:italic;">${{escapeHtml(page.subtitle)}}</div>
+        <p style="font-size:14px;color:var(--muted);max-width:680px;margin:10px auto 0;line-height:1.6;">
+          ${{escapeHtml(page.content || '').replace(/\\n/g, '<br>')}}
+        </p>
+      </div>
+
+      <div style="max-width:820px;margin:0 auto;">
+        <div style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold-hover);margin-bottom:12px;">
+          📷 Live Honeymoon Photo Stream &amp; Guest Reactions
+        </div>
+        ${{photosHtml}}
+      </div>
+    `;
+    return;
+  }}
+
+  const paragraphs = (page.content || '').split('\\n\\n').filter(Boolean).map(p => `<p style="font-size:14.5px;line-height:1.75;color:#453628;margin-bottom:16px;">${{escapeHtml(p).replace(/\\n/g, '<br>')}}</p>`).join('');
+
+  container.innerHTML = `
+    <div style="text-align:center;margin-bottom:24px;border-bottom:1px solid #ebdccb;padding-bottom:20px;">
+      <div style="font-size:36px;margin-bottom:8px;">${{page.photoTheme || '✨'}}</div>
+      <h2 style="font-family:var(--font-heading);font-size:30px;color:var(--ink);margin:0 0 8px;">${{escapeHtml(page.title)}}</h2>
+      ${{page.subtitle ? `<div style="font-size:14.5px;color:var(--gold-hover);font-style:italic;">${{escapeHtml(page.subtitle)}}</div>` : ''}}
+    </div>
+
+    <!-- Featured Photo Display -->
+    <div style="background:linear-gradient(135deg, #f5efe6 0%, #ece2d3 100%);border:1px solid #d9c8b4;border-radius:10px;padding:32px 24px;text-align:center;margin-bottom:28px;">
+      <div style="font-size:36px;margin-bottom:8px;">📷</div>
+      <div style="font-size:14px;color:#4f3d2e;font-weight:600;">${{escapeHtml(page.photoCaption || 'Featured Photograph')}}</div>
+      <div style="font-size:11.5px;color:#8f7d6d;margin-top:4px;">Captured in the Southern Highlands · Fernwood Estate</div>
+    </div>
+
+    <div style="max-width:720px;margin:0 auto;text-align:left;">
+      ${{paragraphs}}
+    </div>
+  `;
+}}
+
+function selectGuestWebPage(key) {{
+  currentGuestWebPageKey = key;
+  renderGuestWebPages();
 }}
 
 function switchWebTab(tabKey) {{
@@ -1443,7 +1654,10 @@ function renderWebFeed() {{
         <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:8px;">
           <div class="feed-glyph">${{glyph}}</div>
           <div style="flex:1;">
-            <div style="font-size:14px;font-weight:700;color:var(--ink);">${{escapeHtml(item.title)}}</div>
+            <div style="font-size:14px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <span>${{escapeHtml(item.title)}}</span>
+              ${{item.badge ? `<span class="tt-pill gold" style="font-size:10px;padding:2px 6px;">${{escapeHtml(item.badge)}}</span>` : ''}}
+            </div>
             <div style="font-size:12px;color:var(--muted);">${{escapeHtml(item.subtitle || '')}}</div>
           </div>
           <span style="font-size:11.5px;color:#a49484;">${{escapeHtml(item.time)}}</span>
@@ -1498,6 +1712,167 @@ function renderWebFeed() {{
   }}
 }}
 
+let currentWebNoteCategory = 'general';
+let currentWebCelebrationPhase = 'countdown';
+
+function selectWebNoteCategory(cat) {{
+  currentWebNoteCategory = cat;
+  document.querySelectorAll('.web-note-cat-btn').forEach(b => {{
+    b.className = b.id === 'wncat-' + cat ? 'btn btn-xs btn-gold web-note-cat-btn' : 'btn btn-xs btn-outline web-note-cat-btn';
+  }});
+
+  const textarea = document.getElementById('web-new-note-text');
+  const pill = document.getElementById('web-note-category-pill');
+  const title = document.getElementById('web-note-composer-title');
+  const btn = document.getElementById('web-post-note-submit-btn');
+  const chips = document.getElementById('web-note-quick-chips');
+
+  if (cat === 'thankyou') {{
+    if (pill) pill.textContent = '🥂 Wedding Thank-You';
+    if (title) title.textContent = 'Thank Couple for Wedding';
+    if (btn) btn.textContent = 'Post Thank-You';
+    if (textarea) textarea.placeholder = 'Thank Sophie & James for an unforgettable wedding...';
+    if (chips) {{
+      chips.innerHTML = `
+        <button type="button" class="btn btn-xs btn-outline" style="font-size:11px;padding:3px 8px;background:#faf6f0;border-color:#e4d7c7;" onclick="insertWebNotePreset('Thank you Sophie &amp; James for the most magnificent wedding day! Truly unforgettable. 🥂')">🥂 Most magnificent wedding day</button>
+        <button type="button" class="btn btn-xs btn-outline" style="font-size:11px;padding:3px 8px;background:#faf6f0;border-color:#e4d7c7;" onclick="insertWebNotePreset('Honoured to celebrate your love! Everything was flawless from ceremony to dancing. ✨')">✨ Everything was flawless</button>
+      `;
+    }}
+  }} else if (cat === 'anniversary') {{
+    if (pill) pill.textContent = '💍 1st Anniversary';
+    if (title) title.textContent = 'Send 1st Anniversary Toast';
+    if (btn) btn.textContent = 'Send Anniversary Toast';
+    if (textarea) textarea.placeholder = 'Wish Sophie & James a Happy 1st Wedding Anniversary...';
+    if (chips) {{
+      chips.innerHTML = `
+        <button type="button" class="btn btn-xs btn-outline" style="font-size:11px;padding:3px 8px;background:#faf6f0;border-color:#e4d7c7;" onclick="insertWebNotePreset('Happy 1st Anniversary Sophie &amp; James! Wishing you both endless love, laughter, and joy! 💍')">💍 Happy 1st Anniversary!</button>
+        <button type="button" class="btn btn-xs btn-outline" style="font-size:11px;padding:3px 8px;background:#faf6f0;border-color:#e4d7c7;" onclick="insertWebNotePreset('One year down, a lifetime of love to go! Celebrating you both today! 🥂')">🥂 One year down, lifetime to go</button>
+      `;
+    }}
+  }} else if (cat === 'honeymoon') {{
+    if (pill) pill.textContent = '✈️ Honeymoon Love';
+    if (title) title.textContent = 'Send Honeymoon Wish';
+    if (btn) btn.textContent = 'Send Honeymoon Wish';
+    if (textarea) textarea.placeholder = 'Send Sophie & James love for their honeymoon adventure...';
+    if (chips) {{
+      chips.innerHTML = `
+        <button type="button" class="btn btn-xs btn-outline" style="font-size:11px;padding:3px 8px;background:#faf6f0;border-color:#e4d7c7;" onclick="insertWebNotePreset('Have the time of your lives in Italy &amp; Switzerland! Soak in every sunset! ✈️')">✈️ Have the time of your lives!</button>
+        <button type="button" class="btn btn-xs btn-outline" style="font-size:11px;padding:3px 8px;background:#faf6f0;border-color:#e4d7c7;" onclick="insertWebNotePreset('Enjoy every Vespa ride and glass of Tuscan wine! Sending so much love! 🍷')">🍷 Enjoy every Vespa ride &amp; wine</button>
+      `;
+    }}
+  }} else {{
+    if (pill) pill.textContent = '💌 Love Note';
+    if (title) title.textContent = 'Post a Love Note';
+    if (btn) btn.textContent = 'Post Love Note';
+    if (textarea) textarea.placeholder = 'Write a note of congratulations for Sophie &amp; James...';
+    if (chips) {{
+      chips.innerHTML = `
+        <button type="button" class="btn btn-xs btn-outline" style="font-size:11px;padding:3px 8px;background:#faf6f0;border-color:#e4d7c7;" onclick="insertWebNotePreset('So excited to celebrate your special day with you both! 💕')">✨ So excited to celebrate!</button>
+        <button type="button" class="btn btn-xs btn-outline" style="font-size:11px;padding:3px 8px;background:#faf6f0;border-color:#e4d7c7;" onclick="insertWebNotePreset('Wishing you both a lifetime of love and happiness! 🥂')">🥂 Lifetime of happiness</button>
+      `;
+    }}
+  }}
+}}
+
+function insertWebNotePreset(text) {{
+  const textarea = document.getElementById('web-new-note-text');
+  if (textarea) {{
+    textarea.value = text;
+    textarea.focus();
+  }}
+}}
+
+function setWebCelebrationPhase(phase) {{
+  currentWebCelebrationPhase = phase;
+  const btnCount = document.getElementById('btn-web-phase-countdown');
+  const btnPost = document.getElementById('btn-web-phase-postwed');
+  if (btnCount) {{
+    btnCount.className = phase === 'countdown' ? 'btn btn-xs btn-gold' : 'btn btn-xs btn-outline';
+    if (phase !== 'countdown') {{ btnCount.style.borderColor = 'transparent'; }}
+  }}
+  if (btnPost) {{
+    btnPost.className = phase === 'post_wedding' ? 'btn btn-xs btn-gold' : 'btn btn-xs btn-outline';
+    if (phase !== 'post_wedding') {{ btnPost.style.borderColor = 'transparent'; }}
+  }}
+
+  const box = document.getElementById('web-milestone-box');
+  if (phase === 'post_wedding') {{
+    if (box) {{
+      box.style.background = '#201813';
+      box.style.border = '1px solid #73593b';
+      box.innerHTML = `
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold);">💍 1ST ANNIVERSARY &amp; HONEYMOON MEMORIES</div>
+        <div style="font-size:18px;font-weight:700;color:#fff;margin:6px 0 3px;">Sophie &amp; James are Celebrating 1 Year!</div>
+        <div style="font-size:13px;color:#dfc194;margin-bottom:12px;">Married 14 November 2026 · Exploring Italy &amp; Swiss Alps</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-xs btn-gold" onclick="selectWebNoteCategory('anniversary'); document.getElementById('web-new-note-text').scrollIntoView({{behavior:'smooth'}});">🥂 Send 1st Anniversary Toast</button>
+          <button type="button" class="btn btn-xs btn-outline" style="color:#dfc194;border-color:#73593b;" onclick="openWebGuestHoneymoonGallery()">✈️ Honeymoon Photos &amp; React</button>
+        </div>
+      `;
+    }}
+    selectWebNoteCategory('anniversary');
+  }} else {{
+    if (box) {{
+      box.style.background = '#15110e';
+      box.style.border = '';
+      box.innerHTML = `
+        <div style="font-size:16px;font-weight:700;color:#fce4ca;display:flex;align-items:center;gap:8px;" id="web-milestone-headline">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#bd9661" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          <span>50 guests confirmed</span>
+        </div>
+        <div style="font-size:13px;color:#cfbfaf;margin-top:4px;" id="web-milestone-sub">You've hit the halfway mark on RSVPs!</div>
+      `;
+    }}
+    selectWebNoteCategory('general');
+  }}
+}}
+
+function openWebGuestHoneymoonGallery() {{
+  switchWebTab('pages');
+  selectGuestWebPage('honeymoonUpdates');
+}}
+
+function reactToWebHoneymoonPhoto(photoId, reactType) {{
+  const state = loadState();
+  const page = state.reusablePages && state.reusablePages.honeymoonUpdates;
+  if (!page || !page.photos) return;
+  const photo = page.photos.find(p => p.id === photoId);
+  if (!photo) return;
+  if (!photo.reactions) photo.reactions = {{ love: 0, toast: 0, stunning: 0, voyage: 0 }};
+  photo.reactions[reactType] = (photo.reactions[reactType] || 0) + 1;
+  saveState(state);
+  
+  const span = document.getElementById(`react-count-web-${{photoId}}-${{reactType}}`);
+  if (span) span.textContent = photo.reactions[reactType];
+  
+  const icons = {{ love: '❤️ Love', toast: '🥂 Toast', stunning: '😍 Stunning', voyage: '✈️ Bon Voyage' }};
+  showToast(`Reaction sent! Sophie & James will see your ${{icons[reactType] || 'reaction'}}!`, 'success');
+}}
+
+function postWebHoneymoonComment(photoId) {{
+  const input = document.getElementById(`input-web-hm-${{photoId}}`);
+  if (!input || !input.value.trim()) return;
+  const text = input.value.trim();
+  input.value = '';
+
+  const state = loadState();
+  const page = state.reusablePages && state.reusablePages.honeymoonUpdates;
+  if (!page || !page.photos) return;
+  const photo = page.photos.find(p => p.id === photoId);
+  if (!photo) return;
+  if (!photo.comments) photo.comments = [];
+  
+  const author = activeGuest ? activeGuest.name : 'Priya Sharma';
+  photo.comments.push({{
+    author: author,
+    text: text,
+    time: 'Just now'
+  }});
+  saveState(state);
+  showToast('Comment posted on honeymoon update!', 'success');
+  renderGuestWebPages();
+}}
+
 function handleWebPostNoteSubmit(e) {{
   e.preventDefault();
   const input = document.getElementById('web-new-note-text');
@@ -1507,12 +1882,20 @@ function handleWebPostNoteSubmit(e) {{
   
   const state = loadState();
   const authorName = activeGuest ? activeGuest.name : 'A Wedding Guest';
+
+  let badgeText = '💌 Love Note';
+  let noteDesc = 'note';
+  if (currentWebNoteCategory === 'thankyou') {{ badgeText = '🥂 Wedding Thank-You'; noteDesc = 'wedding thank-you'; }}
+  if (currentWebNoteCategory === 'anniversary') {{ badgeText = '💍 1st Anniversary Toast'; noteDesc = '1st anniversary toast'; }}
+  if (currentWebNoteCategory === 'honeymoon') {{ badgeText = '✈️ Honeymoon Love'; noteDesc = 'honeymoon wish'; }}
   
   state.feed.unshift({{
     id: 'f_note_' + Date.now(),
     type: 'note',
     author: authorName,
-    title: `${{authorName}} left a note`,
+    title: `${{authorName}} left a ${{noteDesc}}`,
+    category: currentWebNoteCategory,
+    badge: badgeText,
     quote: text,
     time: 'Just now',
     likes: 1,
@@ -1520,10 +1903,22 @@ function handleWebPostNoteSubmit(e) {{
     pinned: false,
     hidden: false
   }});
+
+  // If anniversary toast, also record into firstAnniversary.guestWishes for the couple's anniversary vault
+  if (currentWebNoteCategory === 'anniversary') {{
+    if (!state.firstAnniversary) state.firstAnniversary = {{}};
+    if (!state.firstAnniversary.guestWishes) state.firstAnniversary.guestWishes = [];
+    state.firstAnniversary.guestWishes.unshift({{
+      id: 'gw_' + Date.now(),
+      author: authorName,
+      text: text,
+      time: 'Just now'
+    }});
+  }}
   
-  logAudit('Love Note Added', authorName, `Posted: "${{text.substring(0, 30)}}..."`, 'Feed');
+  logAudit('Love Note Added', authorName, `Posted [${{badgeText}}]: "${{text.substring(0, 30)}}..."`, 'Feed');
   saveState(state);
-  showToast('Your Love Note has been shared on the feed!', 'success');
+  showToast(`Your ${{badgeText}} has been shared on the feed!`, 'success');
   renderWebFeed();
 }}
 

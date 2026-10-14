@@ -35,6 +35,17 @@ SEED_STATE = {
                 {"id": "rs7", "time": "17:30", "note": "Call for main speeches: Father of the Bride, Maid of Honour, Best Man", "done": False},
                 {"id": "rs8", "time": "19:15", "note": "Invite couple for Cake Cutting, direct guests to Dance Floor for First Dance", "done": False},
                 {"id": "rs9", "time": "22:15", "note": "Last drinks call & organise guests with sparklers for courtyard send-off", "done": False}
+            ],
+            "privateRunSheet": [
+                {"id": "pmc1", "time": "13:30", "activity": "MC Arrival & AV Sound Check", "notes": "Run sound check on cordless mic #1 & #2 with AV tech Dave. Test Celebrant Sarah's lavalier mic.", "privateNotes": "PA speaker #3 has minor ground hum when dimmers are at 50%; keep master gain at -3dB.", "done": False, "order": 1},
+                {"id": "pmc2", "time": "14:00", "activity": "Guest Seating & Ceremony Processional", "notes": "Strings quartet plays processional. Ushers guide front rows for VIP parents.", "privateNotes": "Grandmother Arthur requires walking assistance; ensure front row aisle 1 is clear.", "done": False, "order": 2},
+                {"id": "pmc3", "time": "14:45", "activity": "Cocktail Hour Announcement", "notes": "Direct guests to Verandah for canapés, champagne & acoustic duo.", "privateNotes": "Bride's father has surprise vintage Jaguar parked in courtyard for quick photo at 15:10.", "done": False, "order": 3},
+                {"id": "pmc4", "time": "15:45", "activity": "Sound Dinner Bell & Seating Call", "notes": "Sound luxury brass chime. Encourage guests to find their circular tables.", "privateNotes": "Caterer Head Chef Marco confirmed main course plating strictly starts at 16:30.", "done": False, "order": 4},
+                {"id": "pmc5", "time": "16:00", "activity": "Grand Entrance: Bridal Party & Couple", "notes": "High energy entrance song: 'Higher Love' (Kygo remix). Hype crowd applause.", "privateNotes": "Couple enters through French glass doors on South terrace, not main hall foyer.", "done": False, "order": 5},
+                {"id": "pmc6", "time": "16:15", "activity": "MC Welcome Remarks & Housekeeping", "notes": "Warm welcome, emergency exits, bar closing time (22:00), digital wishing well QR reminder.", "privateNotes": "Keep remarks under 3 minutes; kitchen is ready with hot entrée drop immediately after.", "done": False, "order": 6},
+                {"id": "pmc7", "time": "17:30", "activity": "Speeches: Parents & Bridal Party", "notes": "1. Father of Bride (David), 2. Maid of Honour (Chloe), 3. Best Man (Harrison).", "privateNotes": "Best Man Harrison requested slideshow cue on projector right after slide 4 joke.", "done": False, "order": 7},
+                {"id": "pmc8", "time": "19:15", "activity": "Cake Cutting & First Dance", "notes": "Invite guests to surround dance floor. First dance: 'Lover' by Taylor Swift.", "privateNotes": "Sparkler cold-fountain machines 1 & 2 trigger on chorus 2 at 1:42 mark.", "done": False, "order": 8},
+                {"id": "pmc9", "time": "22:15", "activity": "Last Drinks & Courtyard Sparkler Send-Off", "notes": "Final DJ anthem, marshal guests outside with 45cm wedding sparklers.", "privateNotes": "Getaway vintage car driver Greg on mobile 0411 999 888 parked at circular driveway.", "done": False, "order": 9}
             ]
         },
         {
@@ -335,19 +346,19 @@ SEED_STATE = {
     ],
     # Gifts received: $4,280; 9 thank-yous due
     "gifts": [
-        {"id": "gf1", "from": "The Whitfield family", "amount": 250, "date": "Today", "message": "Wishing you both a lifetime of love and happiness!", "thankYouSent": False},
-        {"id": "gf2", "from": "Sarah & Michael Chen", "amount": 300, "date": "Yesterday", "message": "So thrilled for you Sophie and James!", "thankYouSent": False},
-        {"id": "gf3", "from": "Aunty Carol & Uncle Peter", "amount": 500, "date": "2 days ago", "message": "With all our love and blessings on your special day.", "thankYouSent": False},
-        {"id": "gf4", "from": "Emma & David Wilson", "amount": 200, "date": "3 days ago", "message": "Congratulations to the wonderful couple!", "thankYouSent": False},
-        {"id": "gf5", "from": "Marcus & Olivia Vance", "amount": 350, "date": "4 days ago", "message": "Enjoy every second of the celebration!", "thankYouSent": False},
-        {"id": "gf6", "from": "The O'Connor Family", "amount": 400, "date": "5 days ago", "message": "Huge congratulations Sophie and James!", "thankYouSent": False},
-        {"id": "gf7", "from": "Jessica & Liam Taylor", "amount": 180, "date": "6 days ago", "message": "Can't wait to raise a glass to you both!", "thankYouSent": False},
-        {"id": "gf8", "from": "Rob & Chloe Martin", "amount": 250, "date": "1 week ago", "message": "So happy for you guys!", "thankYouSent": False},
-        {"id": "gf9", "from": "Grandma Evelyn", "amount": 500, "date": "1 week ago", "message": "May God bless your beautiful marriage.", "thankYouSent": False},
+        {"id": "gf1", "from": "The Whitfield family", "amount": 250, "date": "Today", "message": "Wishing you both a lifetime of love and happiness!", "thankYouSent": False, "thankYouStatus": "Drafted", "thankYouMethod": "Handwritten Card", "thankYouNotes": "Drafted heartfelt thank-you card mentioning their lovely wishing well note.", "thankYouDate": ""},
+        {"id": "gf2", "from": "Sarah & Michael Chen", "amount": 300, "date": "Yesterday", "message": "So thrilled for you Sophie and James!", "thankYouSent": False, "thankYouStatus": "Drafted", "thankYouMethod": "Personal Email", "thankYouNotes": "Drafted message thanking them for the generous gift and excited to see them.", "thankYouDate": ""},
+        {"id": "gf3", "from": "Aunty Carol & Uncle Peter", "amount": 500, "date": "2 days ago", "message": "With all our love and blessings on your special day.", "thankYouSent": False, "thankYouStatus": "Not Started", "thankYouMethod": "Handwritten Card", "thankYouNotes": "", "thankYouDate": ""},
+        {"id": "gf4", "from": "Emma & David Wilson", "amount": 200, "date": "3 days ago", "message": "Congratulations to the wonderful couple!", "thankYouSent": False, "thankYouStatus": "Not Started", "thankYouMethod": "Personal Email", "thankYouNotes": "", "thankYouDate": ""},
+        {"id": "gf5", "from": "Marcus & Olivia Vance", "amount": 350, "date": "4 days ago", "message": "Enjoy every second of the celebration!", "thankYouSent": True, "thankYouStatus": "Sent", "thankYouMethod": "Handwritten Card", "thankYouNotes": "Sent luxury handwritten card via express post.", "thankYouDate": "Yesterday"},
+        {"id": "gf6", "from": "The O'Connor Family", "amount": 400, "date": "5 days ago", "message": "Huge congratulations Sophie and James!", "thankYouSent": False, "thankYouStatus": "Not Started", "thankYouMethod": "Handwritten Card", "thankYouNotes": "", "thankYouDate": ""},
+        {"id": "gf7", "from": "Jessica & Liam Taylor", "amount": 180, "date": "6 days ago", "message": "Can't wait to raise a glass to you both!", "thankYouSent": False, "thankYouStatus": "Not Started", "thankYouMethod": "In-Person", "thankYouNotes": "", "thankYouDate": ""},
+        {"id": "gf8", "from": "Rob & Chloe Martin", "amount": 250, "date": "1 week ago", "message": "So happy for you guys!", "thankYouSent": False, "thankYouStatus": "Drafted", "thankYouMethod": "Handwritten Card", "thankYouNotes": "Drafted note thanking Chloe for maid of honour support and Rob for speech prep.", "thankYouDate": ""},
+        {"id": "gf9", "from": "Grandma Evelyn", "amount": 500, "date": "1 week ago", "message": "May God bless your beautiful marriage.", "thankYouSent": False, "thankYouStatus": "Not Started", "thankYouMethod": "Phone Call / In-Person", "thankYouNotes": "", "thankYouDate": ""},
         # Prior gifts that already had thank-yous sent, bringing total to $4,280:
-        {"id": "gf10", "from": "Uncle Arthur", "amount": 500, "date": "2 weeks ago", "message": "All our love.", "thankYouSent": True},
-        {"id": "gf11", "from": "Fiona & George Miller", "amount": 350, "date": "2 weeks ago", "message": "Cheers to your future together!", "thankYouSent": True},
-        {"id": "gf12", "from": "The Davis Family", "amount": 500, "date": "3 weeks ago", "message": "Warmest congratulations!", "thankYouSent": True}
+        {"id": "gf10", "from": "Uncle Arthur", "amount": 500, "date": "2 weeks ago", "message": "All our love.", "thankYouSent": True, "thankYouStatus": "Completed", "thankYouMethod": "Handwritten Card", "thankYouNotes": "Delivered custom letter with framed photo.", "thankYouDate": "2 weeks ago"},
+        {"id": "gf11", "from": "Fiona & George Miller", "amount": 350, "date": "2 weeks ago", "message": "Cheers to your future together!", "thankYouSent": True, "thankYouStatus": "Completed", "thankYouMethod": "Personal Email", "thankYouNotes": "Sent formal thank-you with honeymoon photo gallery link.", "thankYouDate": "2 weeks ago"},
+        {"id": "gf12", "from": "The Davis Family", "amount": 500, "date": "3 weeks ago", "message": "Warmest congratulations!", "thankYouSent": True, "thankYouStatus": "Completed", "thankYouMethod": "Handwritten Card", "thankYouNotes": "Sent luxury card and warm wishes.", "thankYouDate": "3 weeks ago"}
     ],
     "photos": [
         {"id": "p1", "caption": "Southern Highlands winery ceremony lawn", "author": "Priya", "time": "Yesterday"},
@@ -436,7 +447,150 @@ SEED_STATE = {
             "venue": "Fernwood Estate, Southern Highlands",
             "used": False
         }
-    ]
+    ],
+    "reusablePages": {
+        "ourStory": {
+            "id": "ourStory",
+            "title": "Our Story",
+            "subtitle": "From a rainy coffee in Surry Hills to the Southern Highlands",
+            "status": "Published",
+            "lastUpdated": "10 Oct 2026",
+            "content": "We met on a drizzly Tuesday afternoon at a quiet coffee roastery in Surry Hills. What was planned as a quick 20-minute flat white turned into four hours of non-stop conversation, shared dreams of exploring the world, and uncontrollable laughter.\n\nThree years, countless road trips down the South Coast, and an unforgettable proposal under the stars at Byron Bay later—we cannot wait to celebrate our love with everyone who means the world to us.",
+            "photoCaption": "Proposal evening at Wategos Beach, Byron Bay",
+            "photoGradient": "linear-gradient(135deg, #2b221a 0%, #15110e 100%)",
+            "photoIcon": "💍"
+        },
+        "inMemoriam": {
+            "id": "inMemoriam",
+            "title": "In Loving Memory",
+            "subtitle": "Forever in our hearts, always with us in spirit",
+            "status": "Published",
+            "lastUpdated": "08 Oct 2026",
+            "content": "Today, as we exchange our vows and step into this new chapter of life, we tenderly hold in our hearts those dearly loved family members and friends who watch over us from above.\n\nTheir laughter, wisdom, and unconditional love continue to guide us each day. We dedicate a quiet candle at the altar in loving memory of Sophie's grandfather Arthur Bell and James' beloved mother Eleanor Vance.",
+            "photoCaption": "Arthur Bell (1938–2022) & Eleanor Vance (1949–2024)",
+            "photoGradient": "linear-gradient(135deg, #1c1917 0%, #0c0a09 100%)",
+            "photoIcon": "🕊️"
+        },
+        "diningMenu": {
+            "id": "diningMenu",
+            "title": "Dining & Menu",
+            "subtitle": "A seasonal culinary celebration by Executive Chef Marco Rossi",
+            "status": "Published",
+            "lastUpdated": "11 Oct 2026",
+            "content": "Featuring locally sourced produce from the Southern Highlands and wines paired from the cellar of Fernwood Estate.\n\n• Canapés: Seared Scallops with Cauliflower Puree & Truffled Wild Mushroom Tartlet\n• Entrée: King Salmon Carpaccio with Yuzu Vinaigrette, Baby Herbs & Crispy Capers\n• Main Course: Slow-Braised Angus Beef Cheek with Truffled Potato Mousseline OR Roasted Butternut Pumpkin Risotto (V/GF)\n• Dessert: Belgian Dark Chocolate Fondant with Salted Caramel Gelato\n• Late Night: Artisan woodfired pizza served on the verandah.",
+            "photoCaption": "Banquet prepared fresh on estate grounds with organic local produce",
+            "photoGradient": "linear-gradient(135deg, #231c16 0%, #17120e 100%)",
+            "photoIcon": "🍽️"
+        },
+        "meetTheTeam": {
+            "id": "meetTheTeam",
+            "title": "Meet the Wedding Party & Team",
+            "subtitle": "The legends standing beside us and orchestrating our celebration",
+            "status": "Published",
+            "lastUpdated": "09 Oct 2026",
+            "content": "• Maid of Honour: Chloe Mitchell (Sophie's best friend since kindergarten)\n• Best Man: Harrison Blake (James' university rugby partner & oldest mate)\n• Bridesmaids: Maya Kapoor, Emma Watson, Lily Bennett\n• Groomsmen: Oliver Thomas, Benjamin Ross, Liam Davies\n• Master of Ceremonies: Robert Galati (Galati MC & Entertainment)\n• Celebrant: Sarah Jenkins Celebrancy\n• Lead Photographer: Priya Sharma Photography",
+            "photoCaption": "The full bridal party & creative team at Fernwood Estate",
+            "photoGradient": "linear-gradient(135deg, #2c241c 0%, #18130f 100%)",
+            "photoIcon": "👥"
+        },
+        "honeymoonUpdates": {
+            "id": "honeymoonUpdates",
+            "title": "Honeymoon Updates",
+            "subtitle": "Our journey through the Amalfi Coast, Tuscany & Swiss Alps",
+            "status": "Published",
+            "lastUpdated": "12 Oct 2026",
+            "content": "Following our wedding celebrations, we will be flying off on our dream Italian and Alpine adventure!\n\nStarting with five sun-drenched days in Positano on the Amalfi Coast, driving through the rolling hills and vineyards of Chianti, and finishing with cozy cabin fires in Zermatt beneath the Matterhorn.\n\nThank you to everyone who contributed to our wishing well—your kindness is funding our Vespa rental along the coastal cliff roads and our Tuscan sunset wine tasting!",
+            "photoCaption": "Positano, Amalfi Coast — First stop on our honeymoon tour",
+            "photoGradient": "linear-gradient(135deg, #1f2733 0%, #13171f 100%)",
+            "photoIcon": "✈️",
+            "photos": [
+                {
+                    "id": "hm_1",
+                    "title": "Sunset Vespa Ride along Positano Cliffs",
+                    "location": "Amalfi Coast, Italy",
+                    "caption": "Winding coastal cliff roads, fresh lemon granita, and the most breathtaking Mediterranean sunset. Thank you everyone for the wishing well gifts that funded our Vespa!",
+                    "icon": "🛵",
+                    "reactions": {"love": 32, "toast": 21, "stunning": 27, "voyage": 16},
+                    "comments": [
+                        {"author": "Chloe Mitchell", "text": "You two look like movie stars!! Have the best time!", "time": "2 days ago"},
+                        {"author": "Liam Davies", "text": "Sensational views mate! Enjoy a limoncello for us!", "time": "1 day ago"}
+                    ]
+                },
+                {
+                    "id": "hm_2",
+                    "title": "Vineyard Wine Tasting & Truffle Dinner",
+                    "location": "Chianti Hills, Tuscany",
+                    "caption": "Toasting with Chianti Classico overlooking rolling cypress hills. Still buzzing from our magical wedding night at Fernwood Estate!",
+                    "icon": "🍷",
+                    "reactions": {"love": 28, "toast": 36, "stunning": 19, "voyage": 12},
+                    "comments": [
+                        {"author": "Maya Kapoor", "text": "Pure perfection! Sending so much love to you both!", "time": "18 hours ago"}
+                    ]
+                },
+                {
+                    "id": "hm_3",
+                    "title": "Alpine Chalet Fireplace & Matterhorn Views",
+                    "location": "Zermatt, Swiss Alps",
+                    "caption": "Watching the first winter snowflakes fall over the Matterhorn from our cozy alpine chalet. The perfect finale to our honeymoon journey.",
+                    "icon": "🏔️",
+                    "reactions": {"love": 41, "toast": 18, "stunning": 34, "voyage": 22},
+                    "comments": [
+                        {"author": "Aunty Carol", "text": "Stay warm darlings! What a fairy tale honeymoon!", "time": "4 hours ago"}
+                    ]
+                }
+            ]
+        }
+    },
+    "weddingVault": {
+        "storageUsedGB": 2.35,
+        "storageTotalGB": 5.0,
+        "expiryDate": "2027-11-14T23:59:59",
+        "expiryDisplay": "14 Nov 2027 (1 Year Post-Wedding Included)",
+        "accessControl": "couple_mc",
+        "deletionRequested": False,
+        "categories": [
+            {"id": "cat_photos", "name": "High-Res Media & Photos", "size": "1.42 GB", "count": 284, "type": "Images / Videos", "locked": True},
+            {"id": "cat_audio", "name": "Audio Recordings & Music Cues", "size": "450 MB", "count": 18, "type": "Audio / MP3", "locked": True},
+            {"id": "cat_records", "name": "Finalized Guest & Seating Records", "size": "320 MB", "count": 14, "type": "Data Snapshot", "locked": True},
+            {"id": "cat_notes", "name": "Speeches, Vows & Love Notes", "size": "160 MB", "count": 32, "type": "Documents", "locked": True},
+            {"id": "cat_finance", "name": "Vendor Invoices & Contracts", "size": "20 MB", "count": 6, "type": "Financial", "locked": True}
+        ],
+        "auditRecords": [
+            {"id": "vr1", "date": "14 Nov 2026", "action": "Ceremony & Reception Media Uploaded", "size": "+1.42 GB"},
+            {"id": "vr2", "date": "15 Nov 2026", "action": "Seating & RSVP Master Database Frozen", "size": "+320 MB"},
+            {"id": "vr3", "date": "16 Nov 2026", "action": "Speech Audio & Love Notes Archived", "size": "+610 MB"}
+        ]
+    },
+    "firstAnniversary": {
+        "weddingDate": "2026-11-14",
+        "anniversaryDate": "2027-11-14",
+        "greetingTitle": "Happy 1st Anniversary, Sophie & James!",
+        "greetingText": "One year ago today, surrounded by the mist-kissed hills of Fernwood Estate, you two promised forever. May the joy, laughter, and tender devotion of that breathtaking day continue to grow with each passing season. From all of us at Tap & Toast, here's to a lifetime of love and unforgettable celebrations.",
+        "traditionalTheme": "Paper (Traditional) / Clocks (Modern)",
+        "timeCapsuleNote": "Our promise on our wedding day was to always make each other laugh, no matter how busy life gets. Opening this today with so much gratitude!",
+        "coupleReflection": "Looking back on Year 1 of marriage, our favorite memory was sitting on the verandah during sunset while everyone was dancing.",
+        "memoryLinks": [
+            {"id": "mem_photos", "title": "The Photo Gallery", "icon": "📸", "desc": "284 high-resolution celebration moments", "tab": "feed"},
+            {"id": "mem_notes", "title": "Guest Love Notes", "icon": "💌", "desc": "Heartfelt messages & blessings from family", "tab": "feed"},
+            {"id": "mem_music", "title": "First Dance & Song", "icon": "🎵", "desc": "'Lover' by Taylor Swift & reception playlist", "tab": "overview"},
+            {"id": "mem_speeches", "title": "The Vows & Speeches", "icon": "💍", "desc": "Words spoken by Father of Bride & Best Man", "tab": "overview"},
+            {"id": "mem_seating", "title": "The Seating Journey", "icon": "🪑", "desc": "Table arrangements & memories of guests together", "tab": "seating"}
+        ],
+        "guestWishes": [
+            {
+                "id": "aw_1",
+                "author": "Chloe Mitchell",
+                "time": "Yesterday",
+                "text": "Happy 1st Anniversary Sophie & James! Can't believe it's been a whole year since the most magical night at Fernwood. Love you both so much! 💕"
+            },
+            {
+                "id": "aw_2",
+                "author": "Liam & Jessica Taylor",
+                "time": "2 days ago",
+                "text": "Happy 1 Year Anniversary legends! Raising a glass of Pinot to many more decades of love and laughter! 🥂"
+            }
+        ]
+    }
 }
 
 def get_seed_state_json():

@@ -595,17 +595,29 @@ body {{
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="3" r="2"></circle><circle cx="12" cy="21" r="2"></circle><circle cx="3" cy="12" r="2"></circle><circle cx="21" cy="12" r="2"></circle></svg>
           Seating
         </button>
+        <button type="button" class="sidebar-btn" data-tab="pages" onclick="switchCoupleTab('pages')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          Content &amp; Stories
+        </button>
         <button type="button" class="sidebar-btn" data-tab="invitations" onclick="switchCoupleTab('invitations')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
           Invitations
         </button>
         <button type="button" class="sidebar-btn" data-tab="gifts" onclick="switchCoupleTab('gifts')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
-          Gift &amp; Go
+          Gift &amp; Thank-You
         </button>
         <button type="button" class="sidebar-btn" data-tab="feed" onclick="switchCoupleTab('feed')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
           Celebration Feed
+        </button>
+        <button type="button" class="sidebar-btn" data-tab="vault" onclick="switchCoupleTab('vault')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          Wedding Vault
+        </button>
+        <button type="button" class="sidebar-btn" data-tab="anniversary" onclick="switchCoupleTab('anniversary')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          1st Anniversary
         </button>
         <button type="button" class="sidebar-btn" data-tab="venue" onclick="switchCoupleTab('venue')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
@@ -842,6 +854,115 @@ body {{
         </div>
       </section>
 
+      <!-- TAB: CONTENT & STORIES -->
+      <section id="pane-pages" class="tab-pane" aria-labelledby="tab-pages">
+        <div class="page-header">
+          <div>
+            <div class="header-eyebrow">WEDDING EXPERIENCES &amp; MOMENTS</div>
+            <h1 class="header-title">Content &amp; Stories</h1>
+            <div style="font-size:13.5px;color:var(--muted);margin-top:4px;">
+              Craft and publish your love story, dinner menu, wedding party bios, memorial tributes, and honeymoon adventures for your guests.
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Page Selector Pills -->
+        <div style="display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;" id="pages-tab-strip">
+          <button type="button" class="btn btn-sm btn-gold page-nav-btn" id="pnav-ourStory" onclick="selectContentPage('ourStory')">📖 Our Story</button>
+          <button type="button" class="btn btn-sm btn-outline page-nav-btn" id="pnav-inMemoriam" onclick="selectContentPage('inMemoriam')">🕊️ In Memoriam</button>
+          <button type="button" class="btn btn-sm btn-outline page-nav-btn" id="pnav-diningMenu" onclick="selectContentPage('diningMenu')">🍽️ Dining &amp; Menu</button>
+          <button type="button" class="btn btn-sm btn-outline page-nav-btn" id="pnav-meetTheTeam" onclick="selectContentPage('meetTheTeam')">👥 Meet the Team</button>
+          <button type="button" class="btn btn-sm btn-outline page-nav-btn" id="pnav-honeymoonUpdates" onclick="selectContentPage('honeymoonUpdates')">✈️ Honeymoon Updates</button>
+        </div>
+
+        <!-- Editor & Live Preview Grid -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+          <!-- Left: Editor Card -->
+          <div class="content-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+              <h3 class="content-card-title" id="page-edit-heading" style="margin:0;">Edit Page</h3>
+              <div style="display:flex;align-items:center;gap:6px;position:relative;">
+                <input type="checkbox" id="page-publish-toggle" style="display:none;" onchange="togglePagePublishStatus(this.checked)">
+                <button type="button" class="tt-pill green" id="page-status-badge" onclick="togglePublishCurrentPage()" title="Click to toggle Published / Draft status" style="border:none;cursor:pointer;min-height:24px;min-width:44px;padding:3px 10px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;">Published</button>
+                
+                <div style="position:relative;">
+                  <button type="button" id="btn-page-version-history" onclick="toggleVersionHistoryDropdown(event)" title="Version History (View previous saved versions)" style="background:transparent;border:none;padding:2px 4px;cursor:pointer;font-size:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:transform 0.15s, opacity 0.15s;" onmouseover="this.style.transform='scale(1.15)';this.style.opacity='0.8';" onmouseout="this.style.transform='scale(1)';this.style.opacity='1';">
+                    🕒
+                  </button>
+                  
+                  <!-- Version History Dropdown Menu -->
+                  <div id="page-version-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);right:0;width:320px;background:#ffffff;border:1px solid var(--line-strong);border-radius:8px;box-shadow:0 10px 28px rgba(0,0,0,0.18);z-index:100;padding:12px;text-align:left;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--line);">
+                      <div style="font-weight:700;font-size:12.5px;color:var(--ink);display:flex;align-items:center;gap:6px;">
+                        <span>🕒</span> <span>Version History</span>
+                      </div>
+                      <span style="font-size:11px;color:var(--muted);" id="version-count-label">3 versions</span>
+                    </div>
+                    <div id="version-history-list" style="max-height:250px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+                      <!-- Injected by JS -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Page Title</label>
+              <input type="text" id="page-title-input" class="text-input" oninput="updatePageLivePreview()">
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Subtitle / Dedication</label>
+              <input type="text" id="page-subtitle-input" class="text-input" oninput="updatePageLivePreview()">
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Page Story &amp; Content</label>
+              <textarea id="page-content-input" class="text-input" rows="8" oninput="updatePageLivePreview()" placeholder="Write your page details, heartfelt tribute, culinary menu, or team bios..."></textarea>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+              <div class="field-group">
+                <label class="field-label">Featured Photo Caption</label>
+                <input type="text" id="page-caption-input" class="text-input" oninput="updatePageLivePreview()">
+              </div>
+              <div class="field-group">
+                <label class="field-label">Photo Badge Icon / Theme</label>
+                <select id="page-icon-select" class="text-input" onchange="updatePageLivePreview()">
+                  <option value="💍">💍 Proposal &amp; Love (Our Story)</option>
+                  <option value="🕊️">🕊️ White Dove &amp; Memory (In Memoriam)</option>
+                  <option value="🍽️">🍽️ Fine Dining &amp; Wine (Menu)</option>
+                  <option value="👥">👥 Bridal Party &amp; Crew (Team)</option>
+                  <option value="✈️">✈️ Travel &amp; Passport (Honeymoon)</option>
+                  <option value="🌿">🌿 Botanical Highlands</option>
+                  <option value="✨">✨ Celebration Gold</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--line);">
+              <span style="font-size:12px;color:var(--muted);" id="page-last-updated-text">Last updated: 10 Oct 2026</span>
+              <button type="button" class="btn btn-gold" onclick="saveCurrentContentPage()">Save Page Changes</button>
+            </div>
+          </div>
+
+          <!-- Right: Real-Time Preview Card -->
+          <div class="content-card" style="background:#faf8f5;border:1px solid var(--line-strong);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);">
+              <span style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold-hover);">Guest View Live Preview</span>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span class="tt-pill green" id="preview-status-pill" style="min-height:24px;min-width:44px;padding:3px 10px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;border-radius:4px;">Live</span>
+                <button type="button" onclick="previewCurrentContentPage()" title="View Live Preview" style="background:#000000;color:#ffffff;border:1px solid #000000;min-height:24px;min-width:44px;padding:3px 10px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;border-radius:4px;cursor:pointer;font-size:13px;line-height:1;">👁️</button>
+              </div>
+            </div>
+
+            <div id="page-preview-container" style="background:#ffffff;border:1px solid var(--line);border-radius:8px;padding:24px;box-shadow:var(--shadow-sm);">
+              <!-- Rendered preview -->
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- TAB 4: INVITATIONS -->
       <section id="pane-invitations" class="tab-pane" aria-labelledby="tab-invitations">
         <div class="page-header">
@@ -933,56 +1054,142 @@ body {{
         </div>
       </section>
 
-      <!-- TAB 5: GIFT & GO -->
+      <!-- TAB 5: GIFT & GO & THANK-YOU MANAGER -->
       <section id="pane-gifts" class="tab-pane" aria-labelledby="tab-gifts">
         <div class="page-header">
           <div>
-            <div class="header-eyebrow">DIGITAL WISHING WELL</div>
-            <h1 class="header-title">Gift &amp; Go Manager</h1>
+            <div class="header-eyebrow">DIGITAL WISHING WELL &amp; APPRECIATION</div>
+            <h1 class="header-title">Gift &amp; Thank-You Manager</h1>
           </div>
-          <div>
+          <div style="display:flex;gap:10px;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="exportThankYouSummary()">📥 Export Status</button>
             <button type="button" class="btn btn-gold btn-sm" onclick="openRecordGiftModal()">+ Record Manual Gift</button>
           </div>
         </div>
 
-        <div class="metrics-grid" style="grid-template-columns:repeat(3, 1fr);margin-bottom:24px;">
-          <div class="metric-card">
-            <div>
-              <div class="metric-number" id="gift-total-stat">$4,280</div>
-              <div class="metric-label">Total gifts received</div>
+        <!-- Sub-tabs: Registry vs Thank-You Manager -->
+        <div style="display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:20px;">
+          <button type="button" id="subtab-gifts-registry" class="btn btn-sm btn-gold" onclick="switchGiftsSubTab('registry')">🎁 Gifting Registry ($4,280)</button>
+          <button type="button" id="subtab-gifts-thankyou" class="btn btn-sm btn-outline" onclick="switchGiftsSubTab('thankyou')">💌 Thank-You Manager (Manual Tracking)</button>
+        </div>
+
+        <!-- Sub-pane 1: Gifting Registry -->
+        <div id="subpane-gifts-registry">
+          <div class="metrics-grid" style="grid-template-columns:repeat(3, 1fr);margin-bottom:24px;">
+            <div class="metric-card">
+              <div>
+                <div class="metric-number" id="gift-total-stat">$4,280</div>
+                <div class="metric-label">Total gifts received</div>
+              </div>
+            </div>
+            <div class="metric-card">
+              <div>
+                <div class="metric-number" id="gift-thankyou-stat">9</div>
+                <div class="metric-label">Thank-yous due</div>
+              </div>
+            </div>
+            <div class="metric-card">
+              <div>
+                <div class="metric-number">$285</div>
+                <div class="metric-label">Average gift contribution</div>
+              </div>
             </div>
           </div>
-          <div class="metric-card">
-            <div>
-              <div class="metric-number" id="gift-thankyou-stat">9</div>
-              <div class="metric-label">Thank-yous due</div>
-            </div>
-          </div>
-          <div class="metric-card">
-            <div>
-              <div class="metric-number">$285</div>
-              <div class="metric-label">Average gift contribution</div>
+
+          <div class="content-card" style="padding:16px 20px;">
+            <div style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>From</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th>Message</th>
+                    <th>Thank-You Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="gifts-table-body">
+                  <!-- Injected by JS -->
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
-        <div class="content-card" style="padding:16px 20px;">
-          <div style="overflow-x:auto;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>From</th>
-                  <th>Amount</th>
-                  <th>Date</th>
-                  <th>Message</th>
-                  <th>Thank-You Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="gifts-table-body">
-                <!-- Injected by JS -->
-              </tbody>
-            </table>
+        <!-- Sub-pane 2: Thank-You Manager (Feature 3) -->
+        <div id="subpane-gifts-thankyou" style="display:none;">
+          <!-- Compliance Notice -->
+          <div style="background:#fcfaf6;border:1px solid #e8ded0;border-left:4px solid var(--gold);padding:12px 16px;border-radius:6px;font-size:13px;color:#5a4a3a;margin-bottom:20px;">
+            <strong>💌 Thank-You Manager:</strong> Manual tracking of gift and Love Note thank-you statuses: Not Started, Drafted, Sent and Completed. Reuses existing records; no automatic drafting, sending or printing.
+          </div>
+
+          <!-- 4 Status KPI Cards & Progress Bar -->
+          <div class="content-card" style="margin-bottom:20px;padding:20px 24px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <div>
+                <span style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold-hover);">Overall Progress</span>
+                <div style="font-size:14px;color:var(--ink);font-weight:600;" id="ty-progress-label">12 of 28 Completed (43%)</div>
+              </div>
+              <div style="font-size:12px;color:var(--muted);">Tracking 12 Gifts + 16 Love Notes</div>
+            </div>
+            <div style="width:100%;height:10px;background:#ede5d8;border-radius:999px;overflow:hidden;display:flex;">
+              <div id="ty-progress-completed-bar" style="width:43%;background:#2e7d32;" title="Completed"></div>
+              <div id="ty-progress-sent-bar" style="width:18%;background:#1976d2;" title="Sent"></div>
+              <div id="ty-progress-drafted-bar" style="width:14%;background:#ed6c02;" title="Drafted"></div>
+            </div>
+          </div>
+
+          <div class="metrics-grid" style="grid-template-columns:repeat(4, 1fr);margin-bottom:20px;">
+            <div class="metric-card" style="cursor:pointer;" onclick="filterThankYouManager('Not Started')">
+              <div class="metric-number" style="color:#736353;" id="ty-stat-not-started">7</div>
+              <div class="metric-label"><span class="tt-pill not-started">Not Started</span></div>
+            </div>
+            <div class="metric-card" style="cursor:pointer;" onclick="filterThankYouManager('Drafted')">
+              <div class="metric-number" style="color:#a0631c;" id="ty-stat-drafted">4</div>
+              <div class="metric-label"><span class="tt-pill drafted">Drafted</span></div>
+            </div>
+            <div class="metric-card" style="cursor:pointer;" onclick="filterThankYouManager('Sent')">
+              <div class="metric-number" style="color:#1f618d;" id="ty-stat-sent">5</div>
+              <div class="metric-label"><span class="tt-pill sent">Sent</span></div>
+            </div>
+            <div class="metric-card" style="cursor:pointer;" onclick="filterThankYouManager('Completed')">
+              <div class="metric-number" style="color:#236829;" id="ty-stat-completed">12</div>
+              <div class="metric-label"><span class="tt-pill completed">Completed</span></div>
+            </div>
+          </div>
+
+          <!-- Filter Pills -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;gap:6px;" id="ty-filter-strip">
+              <button type="button" class="btn btn-sm btn-gold ty-filter-btn" data-filter="All" onclick="filterThankYouManager('All')">All Records (28)</button>
+              <button type="button" class="btn btn-sm btn-outline ty-filter-btn" data-filter="Not Started" onclick="filterThankYouManager('Not Started')">Not Started</button>
+              <button type="button" class="btn btn-sm btn-outline ty-filter-btn" data-filter="Drafted" onclick="filterThankYouManager('Drafted')">Drafted</button>
+              <button type="button" class="btn btn-sm btn-outline ty-filter-btn" data-filter="Sent" onclick="filterThankYouManager('Sent')">Sent</button>
+              <button type="button" class="btn btn-sm btn-outline ty-filter-btn" data-filter="Completed" onclick="filterThankYouManager('Completed')">Completed</button>
+            </div>
+            <div style="font-size:12px;color:var(--muted);">Click any status to update instantly</div>
+          </div>
+
+          <!-- Thank-You Table -->
+          <div class="content-card" style="padding:16px 20px;">
+            <div style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Recipient / Guest</th>
+                    <th>Gift / Contribution</th>
+                    <th>Status</th>
+                    <th>Delivery Method</th>
+                    <th>Date Sent / Notes</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="thankyou-table-body">
+                  <!-- Injected by JS -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>
@@ -1013,6 +1220,212 @@ body {{
                 <button type="submit" class="btn btn-gold" style="align-self:flex-end;">Post to Feed</button>
               </form>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: WEDDING VAULT -->
+      <section id="pane-vault" class="tab-pane" aria-labelledby="tab-vault">
+        <div class="page-header">
+          <div>
+            <div class="header-eyebrow">LIFETIME KEEPSAKE &amp; ARCHIVE</div>
+            <h1 class="header-title">Wedding Vault</h1>
+            <div style="font-size:13.5px;color:var(--muted);margin-top:4px;">
+              Your permanent digital keepsake preserving every cherished love note, toast, guest memory, and celebration photo for a lifetime.
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="tt-pill green" style="font-weight:600;">🔒 Permanent Vault Active</span>
+            <button type="button" class="btn btn-outline btn-sm" onclick="exportVaultInventory()">📦 Download Vault Manifest</button>
+          </div>
+        </div>
+
+        <!-- 5 GB Storage Usage Card & Meter -->
+        <div class="content-card" style="margin-bottom:24px;padding:22px 26px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:12px;">
+            <div>
+              <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold-hover);">Storage Allocation &amp; Usage</div>
+              <div style="font-size:22px;font-family:var(--font-heading);color:var(--ink);font-weight:600;" id="vault-storage-headline">2.35 GB used of 5.00 GB (47%)</div>
+            </div>
+            <div style="text-align:right;">
+              <span class="tt-pill warm" id="vault-expiry-pill" style="font-size:12px;">⏳ Archive Expiry: 14 Nov 2027 (396 Days Left)</span>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:4px;">Includes 1 year post-wedding complimentary retention</div>
+            </div>
+          </div>
+
+          <!-- Multi-segment Storage Bar -->
+          <div style="width:100%;height:14px;background:#ede5d8;border-radius:999px;overflow:hidden;display:flex;margin-bottom:14px;">
+            <div id="vault-bar-photos" style="width:33.6%;background:#bd9661;" title="Photos &amp; Video Media: 1.68 GB"></div>
+            <div id="vault-bar-feed" style="width:5.0%;background:#e6a15c;" title="Celebration Feed &amp; Notes: 0.25 GB"></div>
+            <div id="vault-bar-gifts" style="width:5.0%;background:#4a7c59;" title="Gifts &amp; Thank-You Records: 0.25 GB"></div>
+            <div id="vault-bar-rsvps" style="width:2.4%;background:#3d6b99;" title="Guest RSVPs &amp; Seating: 0.12 GB"></div>
+            <div id="vault-bar-runsheet" style="width:1.0%;background:#7d5ba6;" title="MC Schedule &amp; Cues: 0.05 GB"></div>
+          </div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:18px;font-size:12px;color:var(--ink);">
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#bd9661;display:inline-block;"></span> Photos &amp; Videos (1.68 GB)</div>
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#e6a15c;display:inline-block;"></span> Live Feed &amp; Notes (0.25 GB)</div>
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#4a7c59;display:inline-block;"></span> Gifts &amp; Thank-Yous (0.25 GB)</div>
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#3d6b99;display:inline-block;"></span> Guest RSVPs &amp; Seating (0.12 GB)</div>
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#7d5ba6;display:inline-block;"></span> MC Schedule (0.05 GB)</div>
+            <div style="display:flex;align-items:center;gap:6px;color:var(--muted);"><span style="width:10px;height:10px;border-radius:2px;background:#ede5d8;display:inline-block;"></span> Free Space (2.65 GB)</div>
+          </div>
+        </div>
+
+        <div class="twocol-layout" style="margin-bottom:24px;">
+          <!-- Left Column: Access Controls & Security -->
+          <div>
+            <div class="content-card" style="margin-bottom:20px;">
+              <h2 class="content-card-title">🔐 Vault Access Controls</h2>
+              <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+                Specify who can view and access this read-only wedding vault archive.
+              </p>
+              <div class="field-group" style="margin-bottom:14px;">
+                <label class="field-label">Access Permissions Level</label>
+                <select id="vault-access-select" class="text-input" onchange="handleVaultAccessChange(this.value)">
+                  <option value="couple_mc">Authorized: Couple &amp; Designated MC Only (Recommended)</option>
+                  <option value="couple_only">Strict Private: Couple Only</option>
+                  <option value="family_mc">Extended: Couple, MC &amp; Immediate Family</option>
+                </select>
+              </div>
+              <div style="background:#faf7f2;border:1px solid var(--line);border-radius:6px;padding:12px 14px;font-size:12.5px;color:#5a4a3a;line-height:1.5;margin-bottom:14px;">
+                <strong>Access Level Status:</strong> <span id="vault-access-status-text">Couple &amp; Designated MC have authorized read-only access.</span>
+              </div>
+              <button type="button" class="btn btn-gold btn-sm" onclick="saveVaultAccessControl()">Save Access Settings</button>
+            </div>
+
+            <!-- Purge / Deletion Section -->
+            <div class="content-card" style="border:1px solid #f0d5d5;background:#fffaf8;">
+              <h2 class="content-card-title" style="color:#b3261e;">⚠️ Expiry &amp; Safe Deletion Workflow</h2>
+              <p style="font-size:13px;color:#6b4444;line-height:1.5;margin-bottom:14px;">
+                Vault records are scheduled for automatic archival retention until <strong>14 November 2027</strong> (1 year post-wedding). You may request an early permanent wipe at any time.
+              </p>
+              <div id="vault-deletion-status" style="margin-bottom:14px;">
+                <span class="tt-pill not-started" style="font-size:12px;">No Deletion Pending · Retained safely</span>
+              </div>
+              <button type="button" class="btn btn-outline btn-sm" style="border-color:#b3261e;color:#b3261e;" onclick="openVaultDeleteModal()">
+                🗑️ Request Vault Data Purge
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Column: Archived Categories -->
+          <div>
+            <div class="content-card">
+              <h2 class="content-card-title">📁 Read-Only Vault Records</h2>
+              <div id="vault-categories-list" style="display:flex;flex-direction:column;gap:12px;">
+                <!-- Injected by JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: FIRST ANNIVERSARY CELEBRATION -->
+      <section id="pane-anniversary" class="tab-pane" aria-labelledby="tab-anniversary">
+        <div class="page-header">
+          <div>
+            <div class="header-eyebrow">1ST YEAR MILESTONE CELEBRATION</div>
+            <h1 class="header-title">First Anniversary <span style="font-size:16px;font-weight:500;color:var(--gold);">(14 Nov 2027)</span></h1>
+            <div style="font-size:13.5px;color:var(--muted);margin-top:4px;">
+              Celebrate your paper anniversary milestone, unlock your time capsule reflections, and relive every magical moment with your loved ones.
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button type="button" id="btn-anniv-mode-countdown" class="btn btn-gold btn-sm" onclick="toggleAnniversaryMode('countdown')">⏳ Planning Countdown</button>
+            <button type="button" id="btn-anniv-mode-simulated" class="btn btn-outline btn-sm" onclick="toggleAnniversaryMode('simulated_day')">🎉 Preview Anniversary Day (14 Nov 2027)</button>
+          </div>
+        </div>
+
+        <!-- Hero Greeting Card -->
+        <div class="content-card" style="background:linear-gradient(135deg, #221a14 0%, #3a2d22 100%);color:#fef8ef;padding:30px;border-radius:10px;margin-bottom:24px;border:1px solid #524031;box-shadow:0 12px 32px rgba(0,0,0,0.18);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:16px;">
+            <div>
+              <span style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">1ST WEDDING ANNIVERSARY</span>
+              <h2 style="font-family:var(--font-heading);font-size:28px;color:#ffffff;margin:6px 0;" id="anniv-hero-title">Happy 1st Anniversary, Sophie &amp; James!</h2>
+              <div style="font-size:13.5px;color:#dfc194;" id="anniv-hero-subtitle">Married 14 November 2026 &middot; Celebrating 1 Year of Love &middot; 14 November 2027</div>
+            </div>
+            <div style="text-align:right;">
+              <span class="tt-pill gold" id="anniv-milestone-pill" style="font-size:12.5px;padding:6px 14px;">🌟 1 Year Milestone</span>
+              <div style="font-size:11.5px;color:#c9baa9;margin-top:6px;" id="anniv-countdown-text">396 Days until 1st Anniversary</div>
+            </div>
+          </div>
+
+          <p id="anniv-greeting-text" style="font-size:15px;line-height:1.65;color:#e8ded0;max-width:760px;font-style:italic;background:rgba(255,255,255,0.05);padding:16px 20px;border-radius:8px;border-left:3px solid var(--gold);margin-bottom:20px;">
+            "Happy 1st Anniversary Sophie &amp; James! May this paper anniversary mark the beginning of a lifetime filled with continuous joy, deep laughter, and shared dreams. Looking back on your magical day at Fernwood Estate with 127 loved ones!"
+          </p>
+
+          <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:16px;background:rgba(0,0,0,0.22);padding:14px 18px;border-radius:8px;border:1px solid rgba(189,150,97,0.3);">
+            <div>
+              <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:700;">Traditional 1st Year Symbol</div>
+              <div style="font-size:14px;color:#ffffff;font-weight:600;margin-top:2px;">📜 Paper</div>
+              <div style="font-size:12px;color:#c9baa9;margin-top:2px;">Symbolizes a blank sheet waiting to be written with your life story and adventures.</div>
+            </div>
+            <div>
+              <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:700;">Modern 1st Year Symbol</div>
+              <div style="font-size:14px;color:#ffffff;font-weight:600;margin-top:2px;">⏰ Clocks</div>
+              <div style="font-size:12px;color:#c9baa9;margin-top:2px;">Symbolizes the precious time spent together throughout your joyous first year.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Links to Wedding Memories Grid -->
+        <div class="content-card" style="margin-bottom:24px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div>
+              <h2 class="content-card-title" style="margin:0;">✨ Relive Your Wedding Memories</h2>
+              <div style="font-size:13px;color:var(--muted);margin-top:2px;">Quick access to key moments and keepsakes from your wedding celebration</div>
+            </div>
+            <span style="font-size:12px;color:var(--gold-hover);font-weight:600;">6 Memory Portals</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:16px;" id="anniv-memory-links-grid">
+            <!-- Injected by JS: 6 memory cards -->
+          </div>
+        </div>
+
+        <!-- Time Capsule Reflection & Anniversary Note -->
+        <div class="twocol-layout">
+          <div>
+            <div class="content-card">
+              <h2 class="content-card-title">📝 Couple's 1st Year Time Capsule</h2>
+              <p style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px;">
+                Handcrafted time capsule message written for opening on 14 November 2027:
+              </p>
+              <div style="background:#faf7f2;border:1px solid var(--line);border-radius:6px;padding:16px;font-style:italic;color:#4a392c;font-size:13.5px;line-height:1.6;margin-bottom:14px;" id="anniv-capsule-display">
+                <!-- Injected by JS -->
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="content-card">
+              <h2 class="content-card-title">✍️ Edit 1st Year Reflections</h2>
+              <form onsubmit="handleSaveAnniversaryReflection(event)">
+                <div class="field-group" style="margin-bottom:14px;">
+                  <label class="field-label">Our Reflections on Year One</label>
+                  <textarea id="anniv-reflection-input" class="text-input" rows="4" placeholder="Write your thoughts, milestones, or memories from year one..."></textarea>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-size:11.5px;color:var(--muted);">Non-AI &middot; Hand-authored reflection</span>
+                  <button type="submit" class="btn btn-gold btn-sm">Save Reflection</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Guest Anniversary Wishes & Tributes Card -->
+        <div class="content-card" style="margin-top:24px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div>
+              <h2 class="content-card-title" style="margin:0;">💌 Guest Anniversary Wishes &amp; Tributes</h2>
+              <div style="font-size:13px;color:var(--muted);margin-top:2px;">Heartfelt anniversary toasts and blessings posted by guests from the celebration feed</div>
+            </div>
+            <span class="tt-pill gold" id="anniv-wishes-count-pill">0 Guest Wishes</span>
+          </div>
+          <div id="anniv-guest-wishes-list" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:14px;">
+            <!-- Rendered by JS -->
           </div>
         </div>
       </section>
@@ -1380,6 +1793,73 @@ body {{
     </div>
   </div>
 
+  <!-- Vault Deletion Modal -->
+  <div id="vault-delete-modal" class="tt-modal-backdrop" style="display:none;" aria-hidden="true">
+    <div class="tt-modal">
+      <div class="tt-modal-header">
+        <div class="tt-modal-title" style="color:#b3261e;">⚠️ Purge Wedding Vault Data</div>
+        <button type="button" class="tt-modal-close" onclick="closeVaultDeleteModal()">✕</button>
+      </div>
+      <div class="tt-modal-body">
+        <p style="font-size:13.5px;color:var(--ink);margin-bottom:12px;">
+          This will permanently purge all archived media and wedding logs from your 5 GB allocation. This action cannot be reversed.
+        </p>
+        <p style="font-size:12.5px;color:#8c7b6c;margin-bottom:12px;">
+          Type <strong>DELETE</strong> below to confirm immediate vault wipe:
+        </p>
+        <input type="text" id="vault-delete-confirm-input" class="text-input" placeholder="Type DELETE to confirm">
+      </div>
+      <div class="tt-modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeVaultDeleteModal()">Cancel</button>
+        <button type="button" class="btn btn-outline" style="background:#b3261e;color:#ffffff;border-color:#b3261e;" onclick="confirmVaultDeletion()">Permanently Purge Vault</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Thank-You Status Edit Modal -->
+  <div id="thankyou-edit-modal" class="tt-modal-backdrop" style="display:none;" aria-hidden="true">
+    <div class="tt-modal">
+      <div class="tt-modal-header">
+        <div class="tt-modal-title">Update Thank-You Record</div>
+        <button type="button" class="tt-modal-close" onclick="closeThankYouEditModal()">✕</button>
+      </div>
+      <div class="tt-modal-body">
+        <input type="hidden" id="ty-edit-item-id">
+        <input type="hidden" id="ty-edit-item-type">
+        <div class="field-group" style="margin-bottom:12px;">
+          <label class="field-label">Recipient</label>
+          <input type="text" id="ty-edit-recipient" class="text-input" readonly style="background:#faf8f5;">
+        </div>
+        <div class="field-group" style="margin-bottom:12px;">
+          <label class="field-label">Thank-You Status</label>
+          <select id="ty-edit-status" class="text-input">
+            <option value="Not Started">Not Started</option>
+            <option value="Drafted">Drafted</option>
+            <option value="Sent">Sent</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+        <div class="field-group" style="margin-bottom:12px;">
+          <label class="field-label">Delivery Method</label>
+          <select id="ty-edit-method" class="text-input">
+            <option value="Handwritten Card">Handwritten Card</option>
+            <option value="Digital Card">Digital Card</option>
+            <option value="In Person">In Person</option>
+            <option value="Post Mail">Post Mail</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Notes &amp; Details</label>
+          <textarea id="ty-edit-notes" class="text-input" rows="3" placeholder="Add tracking notes or gift sentiment..."></textarea>
+        </div>
+      </div>
+      <div class="tt-modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeThankYouEditModal()">Cancel</button>
+        <button type="button" class="btn btn-gold" onclick="saveThankYouEdit()">Save Status</button>
+      </div>
+    </div>
+  </div>
+
   <script>
 {shared_js}
 {auth_js}
@@ -1481,6 +1961,10 @@ function initCoupleDashboard() {{
   renderQaRdPreview();
   renderGiftsTable();
   renderCoupleFeed();
+  renderReusablePages();
+  renderThankYouManager();
+  renderWeddingVault();
+  renderFirstAnniversary();
 }}
 
 function switchCoupleTab(tabKey) {{
@@ -1595,8 +2079,7 @@ function renderGuestListTable() {{
       tableDisplay = `<span>${{escapeHtml(tableObj.name)}} <small style="color:var(--muted);">(Seat ${{(g.seatIndex !== null && g.seatIndex !== undefined) ? g.seatIndex + 1 : '-'}})</small></span>`;
     }} else if (g.rsvpStatus === 'confirmed') {{
       tableDisplay = `
-        <div style="display:flex;align-items:center;gap:6px;">
-          <span style="color:var(--muted);font-size:12px;">Unassigned</span>
+        <div style="display:flex;align-items:center;justify-content:center;">
           <button type="button" class="btn btn-gold btn-xs" style="padding:2px 8px;" onclick="openSeatGuestModalForGuest('${{g.id}}')">+ Seat</button>
         </div>
       `;
@@ -2422,6 +2905,7 @@ function renderCoupleFeed() {{
           <div style="flex:1;">
             <div style="display:flex;align-items:center;gap:6px;">
               <strong>${{escapeHtml(item.title)}}</strong>
+              ${{item.badge ? `<span class="tt-pill gold" style="font-size:10px;font-weight:600;">${{escapeHtml(item.badge)}}</span>` : ''}}
               ${{item.pinned ? '<span class="tt-pill gold" style="font-size:10px;">Pinned</span>' : ''}}
               ${{item.hidden ? '<span class="tt-pill danger" style="font-size:10px;">Hidden</span>' : ''}}
             </div>
@@ -2588,6 +3072,859 @@ function handleSaveSettings(e) {{
   saveState(state);
   initCoupleDashboard();
   showToast('Wedding settings saved successfully!', 'success');
+}}
+
+/* Reusable Content Pages */
+let currentSelectedPageKey = 'ourStory';
+
+function renderReusablePages() {{
+  const state = loadState();
+  const pages = state.reusablePages || {{}};
+  const page = pages[currentSelectedPageKey] || {{
+    title: 'Our Story',
+    subtitle: 'From a chance encounter in Bowral to forever in the Southern Highlands',
+    status: 'Published',
+    content: '',
+    photoCaption: '',
+    photoTheme: '💍'
+  }};
+
+  ['ourStory', 'inMemoriam', 'diningMenu', 'meetTheTeam', 'honeymoonUpdates'].forEach(k => {{
+    const btn = document.getElementById('pnav-' + k);
+    if (btn) {{
+      if (k === currentSelectedPageKey) {{
+        btn.className = 'btn btn-sm btn-gold page-nav-btn';
+      }} else {{
+        btn.className = 'btn btn-sm btn-outline page-nav-btn';
+      }}
+    }}
+  }});
+
+  const titleInput = document.getElementById('page-title-input');
+  const subInput = document.getElementById('page-subtitle-input');
+  const contentInput = document.getElementById('page-content-input');
+  const captionInput = document.getElementById('page-caption-input');
+  const iconSelect = document.getElementById('page-icon-select');
+  const publishToggle = document.getElementById('page-publish-toggle');
+  const statusBadge = document.getElementById('page-status-badge');
+  const heading = document.getElementById('page-edit-heading');
+  const updatedText = document.getElementById('page-last-updated-text');
+
+  if (titleInput) titleInput.value = page.title || '';
+  if (subInput) subInput.value = page.subtitle || '';
+  if (contentInput) contentInput.value = page.content || '';
+  if (captionInput) captionInput.value = page.photoCaption || '';
+  if (iconSelect) iconSelect.value = page.photoTheme || '💍';
+  if (publishToggle) publishToggle.checked = (page.status === 'Published');
+  if (statusBadge) {{
+    statusBadge.textContent = page.status || 'Draft';
+    statusBadge.className = 'tt-pill ' + (page.status === 'Published' ? 'green' : 'not-started');
+  }}
+  if (heading) heading.textContent = `Edit Page · ${{page.title || 'Page'}}`;
+  if (updatedText) updatedText.textContent = `Last updated: ${{page.lastUpdated || 'Recently'}}`;
+
+  updatePageLivePreview();
+}}
+
+function selectContentPage(key) {{
+  currentSelectedPageKey = key;
+  const dropdown = document.getElementById('page-version-dropdown');
+  if (dropdown) dropdown.style.display = 'none';
+  renderReusablePages();
+}}
+
+function updatePageLivePreview() {{
+  const title = document.getElementById('page-title-input')?.value || 'Page Title';
+  const subtitle = document.getElementById('page-subtitle-input')?.value || '';
+  const content = document.getElementById('page-content-input')?.value || '';
+  const caption = document.getElementById('page-caption-input')?.value || '';
+  const icon = document.getElementById('page-icon-select')?.value || '💍';
+  const isPublished = document.getElementById('page-publish-toggle')?.checked;
+
+  const previewPill = document.getElementById('preview-status-pill');
+  if (previewPill) {{
+    previewPill.textContent = isPublished ? 'Live' : 'Not Live';
+    previewPill.className = 'tt-pill ' + (isPublished ? 'green' : 'not-started');
+  }}
+
+  const container = document.getElementById('page-preview-container');
+  if (!container) return;
+
+  const paragraphs = content.split('\\n\\n').filter(Boolean).map(p => `<p style="font-size:13.5px;line-height:1.65;color:#443325;margin-bottom:12px;">${{escapeHtml(p).replace(/\\n/g, '<br>')}}</p>`).join('');
+
+  let extraAlbumPreview = '';
+  const state = loadState();
+  const pageObj = (state.reusablePages && state.reusablePages[currentSelectedPageKey]) || {{}};
+  if (currentSelectedPageKey === 'honeymoonUpdates' && pageObj.photos && pageObj.photos.length) {{
+    const totalReactions = pageObj.photos.reduce((sum, p) => {{
+      const r = p.reactions || {{}};
+      return sum + (r.love || 0) + (r.toast || 0) + (r.stunning || 0) + (r.voyage || 0);
+    }}, 0);
+    const totalComments = pageObj.photos.reduce((sum, p) => sum + ((p.comments && p.comments.length) || 0), 0);
+
+    extraAlbumPreview = `
+      <div style="margin-top:20px;border-top:1px dashed #d5c4b1;padding-top:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div>
+            <div style="font-weight:700;font-size:13.5px;color:var(--ink);">✈️ Live Guest Album Engagement</div>
+            <div style="font-size:11.5px;color:var(--muted);">Guests can react with emojis and post comments on each photo</div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <span class="tt-pill gold" style="font-size:11px;">❤️ ${{totalReactions}} Reactions</span>
+            <span class="tt-pill outline" style="font-size:11px;">💬 ${{totalComments}} Comments</span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;">
+          ${{pageObj.photos.map(p => {{
+            const pr = p.reactions || {{}};
+            const pc = p.comments || [];
+            return `
+              <div style="background:#ffffff;border:1px solid #ebd9c2;border-radius:8px;padding:12px;">
+                <div style="font-size:24px;margin-bottom:4px;">${{p.icon || '📸'}}</div>
+                <div style="font-weight:600;font-size:12.5px;color:#2c221e;">${{escapeHtml(p.title)}}</div>
+                <div style="font-size:11px;color:#8a7a6a;margin-top:2px;">📍 ${{escapeHtml(p.location)}}</div>
+                <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;font-size:11px;">
+                  <span style="background:#faf5ee;border:1px solid #e0d1be;border-radius:12px;padding:2px 6px;">❤️ ${{pr.love || 0}}</span>
+                  <span style="background:#faf5ee;border:1px solid #e0d1be;border-radius:12px;padding:2px 6px;">🥂 ${{pr.toast || 0}}</span>
+                  <span style="background:#faf5ee;border:1px solid #e0d1be;border-radius:12px;padding:2px 6px;">😍 ${{pr.stunning || 0}}</span>
+                  <span style="background:#faf5ee;border:1px solid #e0d1be;border-radius:12px;padding:2px 6px;">✈️ ${{pr.voyage || 0}}</span>
+                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:6px;">💬 ${{pc.length}} guest comments</div>
+              </div>
+            `;
+          }}).join('')}}
+        </div>
+      </div>
+    `;
+  }}
+
+  container.innerHTML = `
+    <div style="text-align:center;margin-bottom:20px;border-bottom:1px solid #eee;padding-bottom:16px;">
+      <div style="font-size:32px;margin-bottom:8px;">${{icon}}</div>
+      <h2 style="font-family:var(--font-heading);font-size:24px;color:var(--ink);margin:0 0 6px;">${{escapeHtml(title)}}</h2>
+      ${{subtitle ? `<div style="font-size:13px;color:var(--gold-hover);font-style:italic;">${{escapeHtml(subtitle)}}</div>` : ''}}
+    </div>
+    <div style="background:linear-gradient(135deg, #f5efe6 0%, #ede3d5 100%);border:1px dashed #d5c4b1;border-radius:8px;padding:24px;text-align:center;margin-bottom:18px;">
+      <div style="font-size:28px;margin-bottom:4px;">📷</div>
+      <div style="font-size:12.5px;color:#5a4a3a;font-weight:600;">${{escapeHtml(caption || 'Featured Photo')}}</div>
+      <div style="font-size:11px;color:#8a7a6a;margin-top:2px;">Shared component · Hi-res vector rendering</div>
+    </div>
+    <div style="text-align:left;">
+      ${{paragraphs || '<p style="font-style:italic;color:var(--muted);font-size:13px;">No content written yet. Use the editor on the left to write this page.</p>'}}
+    </div>
+    ${{extraAlbumPreview}}
+  `;
+}}
+
+function togglePagePublishStatus(checked) {{
+  const state = loadState();
+  if (!state.reusablePages) return;
+  const page = state.reusablePages[currentSelectedPageKey];
+  if (page) {{
+    page.status = checked ? 'Published' : 'Draft';
+    page.lastUpdated = 'Just now';
+    saveState(state);
+    logAudit('Content Page Updated', 'Couple', `${{page.title}} set to ${{page.status}}`, 'Content');
+    renderReusablePages();
+    showToast(`Page "${{page.title}}" is now ${{page.status}}`, 'info');
+  }}
+}}
+
+function togglePublishCurrentPage() {{
+  const state = loadState();
+  if (!state.reusablePages) return;
+  const page = state.reusablePages[currentSelectedPageKey];
+  if (page) {{
+    const newStatus = (page.status === 'Published') ? 'Draft' : 'Published';
+    page.status = newStatus;
+    page.lastUpdated = 'Just now';
+    const toggle = document.getElementById('page-publish-toggle');
+    if (toggle) toggle.checked = (newStatus === 'Published');
+    saveState(state);
+    logAudit('Content Page Status Changed', 'Couple', `${{page.title}} status toggled to ${{newStatus}}`, 'Content');
+    renderReusablePages();
+    showToast(`Page "${{page.title}}" is now ${{newStatus}}!`, 'info');
+  }}
+}}
+
+function saveCurrentContentPage() {{
+  const state = loadState();
+  if (!state.reusablePages) return;
+  const page = state.reusablePages[currentSelectedPageKey];
+  if (!page) return;
+
+  page.title = document.getElementById('page-title-input')?.value.trim() || page.title;
+  page.subtitle = document.getElementById('page-subtitle-input')?.value.trim() || '';
+  page.content = document.getElementById('page-content-input')?.value.trim() || '';
+  page.photoCaption = document.getElementById('page-caption-input')?.value.trim() || '';
+  page.photoTheme = document.getElementById('page-icon-select')?.value || '💍';
+  page.status = (page.status === 'Published') ? 'Published' : 'Draft';
+  page.lastUpdated = 'Just now';
+
+  // Record Version Snapshot into Version History
+  if (!page.versions) page.versions = [];
+  const newVerNum = page.versions.length + 1;
+  const now = new Date();
+  const timeStr = now.toLocaleDateString('en-AU', {{ day: 'numeric', month: 'short', year: 'numeric' }}) + ', ' +
+                  now.toLocaleTimeString('en-AU', {{ hour: '2-digit', minute: '2-digit' }});
+  page.versions.unshift({{
+    id: 'v_' + Date.now(),
+    version: 'v1.' + newVerNum + ' (Saved)',
+    timestamp: timeStr,
+    author: 'Sophie & James',
+    title: page.title,
+    subtitle: page.subtitle,
+    content: page.content,
+    photoCaption: page.photoCaption,
+    photoTheme: page.photoTheme,
+    status: page.status,
+    isCurrent: true
+  }});
+
+  saveState(state);
+  logAudit('Content Page Saved', 'Couple', `Saved changes for page "${{page.title}}"`, 'Content');
+  renderReusablePages();
+  showToast(`Saved "${{page.title}}" successfully!`, 'success');
+}}
+
+function previewCurrentContentPage() {{
+  const container = document.getElementById('page-preview-container');
+  if (container) {{
+    container.scrollIntoView({{ behavior: 'smooth', block: 'center' }});
+    container.style.transition = 'box-shadow 0.3s ease';
+    container.style.boxShadow = '0 0 0 3px rgba(189,150,97,0.45)';
+    setTimeout(() => {{ container.style.boxShadow = 'var(--shadow-sm)'; }}, 1500);
+  }}
+  showToast('Live preview displayed', 'info');
+}}
+
+function toggleVersionHistoryDropdown(e) {{
+  if (e) e.stopPropagation();
+  const dropdown = document.getElementById('page-version-dropdown');
+  if (!dropdown) return;
+  const isVisible = dropdown.style.display === 'block';
+  if (isVisible) {{
+    dropdown.style.display = 'none';
+  }} else {{
+    renderPageVersionList();
+    dropdown.style.display = 'block';
+  }}
+}}
+
+function renderPageVersionList() {{
+  const state = loadState();
+  const page = (state.reusablePages && state.reusablePages[currentSelectedPageKey]) || {{}};
+  const list = document.getElementById('version-history-list');
+  const countLabel = document.getElementById('version-count-label');
+  if (!list) return;
+
+  if (!page.versions || page.versions.length === 0) {{
+    page.versions = [
+      {{
+        id: 'v_' + currentSelectedPageKey + '_current',
+        version: 'v1.2 (Current)',
+        timestamp: page.lastUpdated || '12 Oct 2026, 4:15 PM',
+        author: 'Sophie & James',
+        title: page.title || 'Page',
+        subtitle: page.subtitle || '',
+        content: page.content || '',
+        photoCaption: page.photoCaption || '',
+        photoTheme: page.photoTheme || '💍',
+        status: page.status || 'Published',
+        isCurrent: true
+      }},
+      {{
+        id: 'v_' + currentSelectedPageKey + '_prev1',
+        version: 'v1.1',
+        timestamp: '08 Oct 2026, 11:30 AM',
+        author: 'Sophie',
+        title: page.title || 'Page',
+        subtitle: 'Initial draft with personal dedication',
+        content: (page.content || '').substring(0, 140) + '...',
+        photoCaption: page.photoCaption || 'Early snapshot',
+        photoTheme: page.photoTheme || '💍',
+        status: 'Draft',
+        isCurrent: false
+      }},
+      {{
+        id: 'v_' + currentSelectedPageKey + '_prev0',
+        version: 'v1.0',
+        timestamp: '01 Oct 2026, 2:00 PM',
+        author: 'James',
+        title: page.title || 'Page',
+        subtitle: 'First outline notes',
+        content: 'Initial notes for ' + (page.title || 'this page') + ' at Fernwood Estate.',
+        photoCaption: 'Initial photo upload',
+        photoTheme: page.photoTheme || '💍',
+        status: 'Draft',
+        isCurrent: false
+      }}
+    ];
+    if (!state.reusablePages) state.reusablePages = {{}};
+    state.reusablePages[currentSelectedPageKey] = page;
+    saveState(state);
+  }}
+
+  if (countLabel) countLabel.textContent = `${{page.versions.length}} versions`;
+
+  list.innerHTML = page.versions.map((ver, idx) => `
+    <div style="background:#faf8f5;border:1px solid ${{idx === 0 ? 'var(--gold)' : '#ebdccb'}};border-radius:6px;padding:10px 12px;font-size:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <div style="font-weight:700;color:var(--ink);">${{escapeHtml(ver.version)}}</div>
+        <span class="tt-pill ${{ver.status === 'Published' ? 'green' : 'not-started'}}" style="font-size:9.5px;padding:1px 5px;">${{ver.status || 'Draft'}}</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted);">${{escapeHtml(ver.timestamp)}} · ${{escapeHtml(ver.author || 'Couple')}}</div>
+      <div style="font-size:11px;color:#5a493b;margin:4px 0;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">"${{escapeHtml(ver.title)}}: ${{escapeHtml(ver.subtitle || ver.content || '')}}"</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+        ${{idx === 0 ? '<span style="font-size:10.5px;color:var(--gold-hover);font-weight:600;">● Active in Editor</span>' : `
+          <button type="button" class="btn btn-outline btn-xs" style="font-size:11px;padding:2px 8px;" onclick="restorePageVersion('${{ver.id}}')">
+            Restore ↺
+          </button>
+        `}}
+      </div>
+    </div>
+  `).join('');
+}}
+
+function restorePageVersion(verId) {{
+  const state = loadState();
+  const page = (state.reusablePages && state.reusablePages[currentSelectedPageKey]);
+  if (!page || !page.versions) return;
+  const targetVer = page.versions.find(v => v.id === verId);
+  if (!targetVer) return;
+
+  page.title = targetVer.title;
+  page.subtitle = targetVer.subtitle;
+  page.content = targetVer.content;
+  page.photoCaption = targetVer.photoCaption;
+  page.photoTheme = targetVer.photoTheme || '💍';
+  page.status = targetVer.status || 'Published';
+  page.lastUpdated = 'Restored ' + targetVer.version;
+
+  saveState(state);
+  logAudit('Content Page Version Restored', 'Couple', `Restored ${{targetVer.version}} for page "${{page.title}}"`, 'Content');
+
+  const dropdown = document.getElementById('page-version-dropdown');
+  if (dropdown) dropdown.style.display = 'none';
+
+  renderReusablePages();
+  showToast(`Restored version ${{targetVer.version}} successfully!`, 'success');
+}}
+
+// Global click listener to close version history dropdown on outside click
+document.addEventListener('click', function(e) {{
+  const dropdown = document.getElementById('page-version-dropdown');
+  const btn = document.getElementById('btn-page-version-history');
+  if (dropdown && dropdown.style.display === 'block') {{
+    if (!dropdown.contains(e.target) && (!btn || !btn.contains(e.target))) {{
+      dropdown.style.display = 'none';
+    }}
+  }}
+}});
+
+/* Thank-You Manager (Manual Tracking - No AI) */
+let currentThankYouFilter = 'All';
+
+function switchGiftsSubTab(subTab) {{
+  const regPane = document.getElementById('subpane-gifts-registry');
+  const tyPane = document.getElementById('subpane-gifts-thankyou');
+  const regBtn = document.getElementById('subtab-gifts-registry');
+  const tyBtn = document.getElementById('subtab-gifts-thankyou');
+
+  if (subTab === 'thankyou') {{
+    if (regPane) regPane.style.display = 'none';
+    if (tyPane) tyPane.style.display = 'block';
+    if (regBtn) regBtn.className = 'btn btn-sm btn-outline';
+    if (tyBtn) tyBtn.className = 'btn btn-sm btn-gold';
+    renderThankYouManager(currentThankYouFilter);
+  }} else {{
+    if (regPane) regPane.style.display = 'block';
+    if (tyPane) tyPane.style.display = 'none';
+    if (regBtn) regBtn.className = 'btn btn-sm btn-gold';
+    if (tyBtn) tyBtn.className = 'btn btn-sm btn-outline';
+    renderGiftsTable();
+  }}
+}}
+
+function renderThankYouManager(filter) {{
+  if (filter) currentThankYouFilter = filter;
+  const state = loadState();
+  const gifts = state.gifts || [];
+  const notes = (state.feed || []).filter(f => f.type === 'note');
+
+  const items = [];
+  gifts.forEach(g => {{
+    items.push({{
+      id: g.id,
+      type: 'gift',
+      recipient: g.from,
+      contribution: formatAUD(g.amount) + ' · ' + (g.message ? `"${{g.message.substring(0, 32)}}..."` : 'Wishing Well Gift'),
+      status: g.thankYouStatus || (g.thankYouSent ? 'Completed' : 'Not Started'),
+      method: g.thankYouMethod || 'Handwritten Card',
+      date: g.thankYouDate || (g.thankYouSent ? 'Sent' : 'Pending'),
+      notes: g.thankYouNotes || ''
+    }});
+  }});
+
+  notes.forEach(n => {{
+    items.push({{
+      id: n.id,
+      type: 'note',
+      recipient: n.author || 'Guest',
+      contribution: `Love Note: "${{(n.quote || n.title || '').substring(0, 36)}}..."`,
+      status: n.thankYouStatus || (n.coupleLiked ? 'Completed' : 'Drafted'),
+      method: n.thankYouMethod || 'Digital Card',
+      date: n.thankYouDate || 'Feed Response',
+      notes: n.thankYouNotes || ''
+    }});
+  }});
+
+  const notStarted = items.filter(x => x.status === 'Not Started').length;
+  const drafted = items.filter(x => x.status === 'Drafted').length;
+  const sent = items.filter(x => x.status === 'Sent').length;
+  const completed = items.filter(x => x.status === 'Completed').length;
+  const total = items.length || 1;
+
+  const nsEl = document.getElementById('ty-stat-not-started');
+  const dEl = document.getElementById('ty-stat-drafted');
+  const sEl = document.getElementById('ty-stat-sent');
+  const cEl = document.getElementById('ty-stat-completed');
+  if (nsEl) nsEl.textContent = notStarted;
+  if (dEl) dEl.textContent = drafted;
+  if (sEl) sEl.textContent = sent;
+  if (cEl) cEl.textContent = completed;
+
+  const progLabel = document.getElementById('ty-progress-label');
+  const cPct = Math.round((completed / total) * 100);
+  const sPct = Math.round((sent / total) * 100);
+  const dPct = Math.round((drafted / total) * 100);
+
+  if (progLabel) progLabel.textContent = `${{completed}} of ${{total}} Completed (${{cPct}}%)`;
+  const cBar = document.getElementById('ty-progress-completed-bar');
+  const sBar = document.getElementById('ty-progress-sent-bar');
+  const dBar = document.getElementById('ty-progress-drafted-bar');
+  if (cBar) cBar.style.width = cPct + '%';
+  if (sBar) sBar.style.width = sPct + '%';
+  if (dBar) dBar.style.width = dPct + '%';
+
+  document.querySelectorAll('.ty-filter-btn').forEach(btn => {{
+    const f = btn.getAttribute('data-filter');
+    btn.className = (f === currentThankYouFilter) ? 'btn btn-sm btn-gold ty-filter-btn' : 'btn btn-sm btn-outline ty-filter-btn';
+  }});
+
+  const filtered = (currentThankYouFilter === 'All') ? items : items.filter(x => x.status === currentThankYouFilter);
+
+  const tbody = document.getElementById('thankyou-table-body');
+  if (!tbody) return;
+
+  if (filtered.length === 0) {{
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted);font-style:italic;">No thank-you records found for status: "${{currentThankYouFilter}}".</td></tr>`;
+    return;
+  }}
+
+  tbody.innerHTML = filtered.map(item => `
+    <tr>
+      <td>
+        <strong style="color:var(--ink);">${{escapeHtml(item.recipient)}}</strong>
+        <div style="font-size:11px;color:var(--muted);">${{item.type === 'gift' ? '🎁 Gift Contributor' : '💌 Love Note Author'}}</div>
+      </td>
+      <td style="font-size:12.5px;color:#4a392c;max-width:260px;">${{escapeHtml(item.contribution)}}</td>
+      <td>
+        <select class="text-input" style="padding:4px 8px;font-size:12px;width:130px;" onchange="updateItemThankYouStatus('${{item.id}}', '${{item.type}}', this.value)">
+          <option value="Not Started" ${{item.status === 'Not Started' ? 'selected' : ''}}>⏳ Not Started</option>
+          <option value="Drafted" ${{item.status === 'Drafted' ? 'selected' : ''}}>✏️ Drafted</option>
+          <option value="Sent" ${{item.status === 'Sent' ? 'selected' : ''}}>📬 Sent</option>
+          <option value="Completed" ${{item.status === 'Completed' ? 'selected' : ''}}>✅ Completed</option>
+        </select>
+      </td>
+      <td style="font-size:12.5px;">${{escapeHtml(item.method)}}</td>
+      <td style="font-size:12px;color:var(--muted);">
+        <div>${{escapeHtml(item.date)}}</div>
+        ${{item.notes ? `<div style="font-size:11px;color:#6b5a4b;font-style:italic;margin-top:2px;">"${{escapeHtml(item.notes)}}"</div>` : ''}}
+      </td>
+      <td>
+        <button type="button" class="btn btn-outline btn-xs" onclick="openThankYouEditModal('${{item.id}}', '${{item.type}}')">Edit Details</button>
+      </td>
+    </tr>
+  `).join('');
+}}
+
+function filterThankYouManager(status) {{
+  currentThankYouFilter = status;
+  renderThankYouManager(status);
+}}
+
+function updateItemThankYouStatus(id, type, newStatus) {{
+  const state = loadState();
+  if (type === 'gift') {{
+    const gift = state.gifts.find(g => g.id === id);
+    if (gift) {{
+      gift.thankYouStatus = newStatus;
+      gift.thankYouSent = (newStatus === 'Sent' || newStatus === 'Completed');
+      if (newStatus === 'Completed' || newStatus === 'Sent') {{
+        gift.thankYouDate = '10 Oct 2026';
+      }}
+      logAudit('Thank-You Status Changed', 'Couple', `Updated thank-you for ${{gift.from}} to ${{newStatus}}`, 'Gifts');
+    }}
+  }} else {{
+    const note = (state.feed || []).find(n => n.id === id);
+    if (note) {{
+      note.thankYouStatus = newStatus;
+      if (newStatus === 'Completed') note.coupleLiked = true;
+      logAudit('Thank-You Status Changed', 'Couple', `Updated thank-you for note by ${{note.author}} to ${{newStatus}}`, 'Feed');
+    }}
+  }}
+  saveState(state);
+  renderThankYouManager();
+  renderGiftsTable();
+  showToast(`Updated thank-you status to "${{newStatus}}"`, 'success');
+}}
+
+function openThankYouEditModal(id, type) {{
+  const state = loadState();
+  let recipient = '';
+  let status = 'Not Started';
+  let method = 'Handwritten Card';
+  let notes = '';
+
+  if (type === 'gift') {{
+    const g = state.gifts.find(x => x.id === id);
+    if (g) {{
+      recipient = g.from;
+      status = g.thankYouStatus || (g.thankYouSent ? 'Completed' : 'Not Started');
+      method = g.thankYouMethod || 'Handwritten Card';
+      notes = g.thankYouNotes || '';
+    }}
+  }} else {{
+    const n = (state.feed || []).find(x => x.id === id);
+    if (n) {{
+      recipient = n.author;
+      status = n.thankYouStatus || (n.coupleLiked ? 'Completed' : 'Drafted');
+      method = n.thankYouMethod || 'Digital Card';
+      notes = n.thankYouNotes || '';
+    }}
+  }}
+
+  document.getElementById('ty-edit-item-id').value = id;
+  document.getElementById('ty-edit-item-type').value = type;
+  document.getElementById('ty-edit-recipient').value = recipient;
+  document.getElementById('ty-edit-status').value = status;
+  document.getElementById('ty-edit-method').value = method;
+  document.getElementById('ty-edit-notes').value = notes;
+
+  const modal = document.getElementById('thankyou-edit-modal');
+  if (modal) {{
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+  }}
+}}
+
+function closeThankYouEditModal() {{
+  const modal = document.getElementById('thankyou-edit-modal');
+  if (modal) {{
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+  }}
+}}
+
+function saveThankYouEdit() {{
+  const id = document.getElementById('ty-edit-item-id').value;
+  const type = document.getElementById('ty-edit-item-type').value;
+  const status = document.getElementById('ty-edit-status').value;
+  const method = document.getElementById('ty-edit-method').value;
+  const notes = document.getElementById('ty-edit-notes').value.trim();
+
+  const state = loadState();
+  if (type === 'gift') {{
+    const g = state.gifts.find(x => x.id === id);
+    if (g) {{
+      g.thankYouStatus = status;
+      g.thankYouMethod = method;
+      g.thankYouNotes = notes;
+      g.thankYouSent = (status === 'Sent' || status === 'Completed');
+      if (status === 'Completed' || status === 'Sent') g.thankYouDate = '10 Oct 2026';
+    }}
+  }} else {{
+    const n = (state.feed || []).find(x => x.id === id);
+    if (n) {{
+      n.thankYouStatus = status;
+      n.thankYouMethod = method;
+      n.thankYouNotes = notes;
+      if (status === 'Completed') n.coupleLiked = true;
+    }}
+  }}
+
+  saveState(state);
+  closeThankYouEditModal();
+  renderThankYouManager();
+  renderGiftsTable();
+  showToast('Thank-you tracking record updated', 'success');
+}}
+
+function exportThankYouSummary() {{
+  const state = loadState();
+  const gifts = state.gifts || [];
+  const completed = gifts.filter(g => g.thankYouStatus === 'Completed' || g.thankYouSent).length;
+  showToast(`Thank-You Status: ${{completed}} of ${{gifts.length}} wedding gifts completed (${{Math.round((completed / gifts.length) * 100)}}%)`, 'info');
+}}
+
+/* Wedding Vault (5 GB Read-Only Archive) */
+function renderWeddingVault() {{
+  const state = loadState();
+  const vault = state.weddingVault || {{
+    storageUsedGB: 2.35,
+    storageTotalGB: 5.0,
+    expiryDate: '2027-11-14T23:59:59',
+    accessControl: 'couple_mc',
+    deletionRequested: false,
+    categories: []
+  }};
+
+  const used = vault.storageUsedGB || 2.35;
+  const total = vault.storageTotalGB || 5.0;
+  const pct = Math.round((used / total) * 100);
+
+  const headline = document.getElementById('vault-storage-headline');
+  if (headline) headline.textContent = `${{used.toFixed(2)}} GB used of ${{total.toFixed(2)}} GB (${{pct}}%)`;
+
+  const accessSelect = document.getElementById('vault-access-select');
+  if (accessSelect) accessSelect.value = vault.accessControl || 'couple_mc';
+  updateVaultAccessText(vault.accessControl || 'couple_mc');
+
+  const catContainer = document.getElementById('vault-categories-list');
+  if (catContainer) {{
+    const categories = vault.categories || [
+      {{ id: 'photos', name: 'High-Res Photos & Video Media', sizeGB: 1.68, count: 42, icon: '📸' }},
+      {{ id: 'feed', name: 'Celebration Feed & Love Notes', sizeGB: 0.25, count: 28, icon: '💌' }},
+      {{ id: 'gifts', name: 'Wishing Well Ledger & Thank-Yous', sizeGB: 0.25, count: 12, icon: '🎁' }},
+      {{ id: 'rsvps', name: 'Guest RSVPs & Seating Chart', sizeGB: 0.12, count: 127, icon: '🪑' }},
+      {{ id: 'runsheet', name: 'MC Run Sheet & Audio Cues', sizeGB: 0.05, count: 9, icon: '🎙️' }}
+    ];
+
+    catContainer.innerHTML = categories.map(cat => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#faf8f5;border:1px solid var(--line);border-radius:6px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:22px;">${{cat.icon}}</span>
+          <div>
+            <div style="font-weight:600;font-size:13.5px;color:var(--ink);">${{escapeHtml(cat.name)}}</div>
+            <div style="font-size:11.5px;color:var(--muted);">${{cat.count}} archived records &middot; Read-only snapshot</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <span class="tt-pill gold" style="font-weight:600;">${{cat.sizeGB}} GB</span>
+        </div>
+      </div>
+    `).join('');
+  }}
+
+  const delStatus = document.getElementById('vault-deletion-status');
+  if (delStatus) {{
+    if (vault.deletionRequested) {{
+      delStatus.innerHTML = '<span class="tt-pill warm" style="font-size:12px;color:#b3261e;background:#fde8e8;">⚠️ Deletion Requested · Vault scheduled for purge</span>';
+    }} else {{
+      delStatus.innerHTML = '<span class="tt-pill not-started" style="font-size:12px;">No Deletion Pending · Retained safely until 14 Nov 2027</span>';
+    }}
+  }}
+}}
+
+function handleVaultAccessChange(level) {{
+  updateVaultAccessText(level);
+}}
+
+function updateVaultAccessText(level) {{
+  const statusEl = document.getElementById('vault-access-status-text');
+  if (!statusEl) return;
+  if (level === 'couple_only') {{
+    statusEl.textContent = 'Couple only. MC and family accounts cannot access vault files.';
+  }} else if (level === 'family_mc') {{
+    statusEl.textContent = 'Extended access: Couple, MC, and family guest accounts have read-only access.';
+  }} else {{
+    statusEl.textContent = 'Authorized: Couple & Designated MC have authorized read-only access.';
+  }}
+}}
+
+function saveVaultAccessControl() {{
+  const select = document.getElementById('vault-access-select');
+  if (!select) return;
+  const level = select.value;
+  const state = loadState();
+  if (!state.weddingVault) state.weddingVault = {{}};
+  state.weddingVault.accessControl = level;
+  saveState(state);
+  logAudit('Vault Access Updated', 'Couple', `Changed vault access to ${{level}}`, 'Vault');
+  showToast('Vault access control updated successfully', 'success');
+}}
+
+function openVaultDeleteModal() {{
+  const modal = document.getElementById('vault-delete-modal');
+  const input = document.getElementById('vault-delete-confirm-input');
+  if (input) input.value = '';
+  if (modal) {{
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+  }}
+}}
+
+function closeVaultDeleteModal() {{
+  const modal = document.getElementById('vault-delete-modal');
+  if (modal) {{
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+  }}
+}}
+
+function confirmVaultDeletion() {{
+  const input = document.getElementById('vault-delete-confirm-input');
+  if (!input || input.value.trim().toUpperCase() !== 'DELETE') {{
+    showToast('Please type "DELETE" exactly to confirm vault purge', 'error');
+    return;
+  }}
+  const state = loadState();
+  if (!state.weddingVault) state.weddingVault = {{}};
+  state.weddingVault.deletionRequested = true;
+  saveState(state);
+  logAudit('Vault Deletion Requested', 'Couple', 'Submitted permanent vault purge request', 'Vault');
+  closeVaultDeleteModal();
+  renderWeddingVault();
+  showToast('Vault purge request recorded. Complies with 1-year retention policy.', 'info');
+}}
+
+function exportVaultInventory() {{
+  showToast('Exporting Wedding Vault manifest: 5.0 GB allocated, 2.35 GB utilized across 5 categories.', 'info');
+}}
+
+/* First Anniversary (Milestone & Memories) */
+let currentAnniversaryMode = 'countdown';
+
+function renderFirstAnniversary() {{
+  const state = loadState();
+  const anniv = state.firstAnniversary || {{
+    weddingDate: '2026-11-14',
+    anniversaryDate: '2027-11-14',
+    greeting: "Happy 1st Anniversary Sophie & James! Looking back on your magical day at Fernwood Estate with 127 loved ones!",
+    timeCapsuleNote: "To our future selves on 14 November 2027: Remember the golden light through the pavilion windows...",
+    coupleReflection: "Year one has flown by! We survived home renovations and our dream trip to New Zealand.",
+    memoryLinks: []
+  }};
+
+  const heroSub = document.getElementById('anniv-hero-subtitle');
+  if (heroSub) heroSub.textContent = 'Married 14 November 2026 · Celebrating 1 Year · 14 November 2027';
+
+  const heroGreeting = document.getElementById('anniv-greeting-text');
+  if (heroGreeting) heroGreeting.textContent = `"${{anniv.greeting}}"`;
+
+  const capsuleDisplay = document.getElementById('anniv-capsule-display');
+  if (capsuleDisplay) capsuleDisplay.textContent = `"${{anniv.timeCapsuleNote}}"`;
+
+  const reflectionInput = document.getElementById('anniv-reflection-input');
+  if (reflectionInput) reflectionInput.value = anniv.coupleReflection || '';
+
+  const countdownText = document.getElementById('anniv-countdown-text');
+  const milestonePill = document.getElementById('anniv-milestone-pill');
+  if (countdownText && milestonePill) {{
+    if (currentAnniversaryMode === 'simulated_day') {{
+      milestonePill.textContent = '🎉 TODAY IS YOUR 1ST ANNIVERSARY!';
+      milestonePill.className = 'tt-pill green';
+      countdownText.textContent = 'Celebrating 1 Year Today: 14 November 2027';
+    }} else {{
+      milestonePill.textContent = '🌟 1 Year Milestone';
+      milestonePill.className = 'tt-pill gold';
+      countdownText.textContent = '396 Days until 1st Anniversary (14 Nov 2027)';
+    }}
+  }}
+
+  const grid = document.getElementById('anniv-memory-links-grid');
+  if (grid) {{
+    const memoryLinks = [
+      {{ key: 'photos', title: 'Wedding Photo Gallery', desc: '42 curated moments and guest captures', icon: '📸', target: 'feed' }},
+      {{ key: 'notes', title: 'Love Notes & Guest Wishes', desc: '16 heartfelt guest tributes from the feed', icon: '💌', target: 'feed' }},
+      {{ key: 'dance', title: 'First Dance & Music', desc: '"L-O-V-E" by Nat King Cole & reception songs', icon: '💃', target: 'runsheet' }},
+      {{ key: 'vows', title: 'Wedding Vows & Ceremony', desc: 'Fernwood Lower Meadow Lawns at 2:00 PM', icon: '📜', target: 'overview' }},
+      {{ key: 'speeches', title: 'Toasts & Speech Cues', desc: 'Maid of Honor, Best Man & Father of the Bride', icon: '🥂', target: 'overview' }},
+      {{ key: 'seating', title: 'Final Seating & Guest Roll', desc: '127 seated guests across 12 tables', icon: '🪑', target: 'seating' }}
+    ];
+
+    grid.innerHTML = memoryLinks.map(mem => `
+      <div style="background:#faf8f5;border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;">
+        <div>
+          <div style="font-size:28px;margin-bottom:8px;">${{mem.icon}}</div>
+          <div style="font-weight:600;font-size:14px;color:var(--ink);margin-bottom:4px;">${{escapeHtml(mem.title)}}</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.45;">${{escapeHtml(mem.desc)}}</div>
+        </div>
+        <button type="button" class="btn btn-outline btn-xs" style="margin-top:12px;align-self:flex-start;" onclick="openMemoryLink('${{mem.key}}', '${{mem.target}}')">
+          View Memory &rarr;
+        </button>
+      </div>
+    `).join('');
+  }}
+
+  const wishesList = document.getElementById('anniv-guest-wishes-list');
+  const wishesCountPill = document.getElementById('anniv-wishes-count-pill');
+  const wishes = anniv.guestWishes || (state.firstAnniversary && state.firstAnniversary.guestWishes) || [];
+  if (wishesCountPill) {{
+    wishesCountPill.textContent = `${{wishes.length}} Guest ${{wishes.length === 1 ? 'Wish' : 'Wishes'}}`;
+  }}
+  if (wishesList) {{
+    if (wishes.length === 0) {{
+      wishesList.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--muted);font-style:italic;">No guest anniversary wishes received yet. When guests post anniversary love notes from the guest app, they will appear here!</div>';
+    }} else {{
+      wishesList.innerHTML = wishes.map(w => `
+        <div style="background:#faf8f5;border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div style="font-weight:700;font-size:13.5px;color:var(--ink);">${{escapeHtml(w.guestName || 'Guest')}}</div>
+              <span class="tt-pill gold" style="font-size:10px;">${{escapeHtml(w.tag || '💍 1st Anniversary')}}</span>
+            </div>
+            <div style="font-size:13px;color:#4a392c;line-height:1.55;font-style:italic;background:#ffffff;border-left:3px solid var(--gold);padding:8px 12px;border-radius:0 4px 4px 0;margin-bottom:8px;">
+              "${{escapeHtml(w.message)}}"
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);">${{escapeHtml(w.time || 'Celebration Milestone')}}</div>
+        </div>
+      `).join('');
+    }}
+  }}
+}}
+
+function toggleAnniversaryMode(mode) {{
+  currentAnniversaryMode = mode;
+  const btnCountdown = document.getElementById('btn-anniv-mode-countdown');
+  const btnSim = document.getElementById('btn-anniv-mode-simulated');
+  if (mode === 'simulated_day') {{
+    if (btnCountdown) btnCountdown.className = 'btn btn-outline btn-sm';
+    if (btnSim) btnSim.className = 'btn btn-gold btn-sm';
+    showToast('Switched to simulated Anniversary Day view (14 Nov 2027)!', 'success');
+  }} else {{
+    if (btnCountdown) btnCountdown.className = 'btn btn-gold btn-sm';
+    if (btnSim) btnSim.className = 'btn btn-outline btn-sm';
+    showToast('Switched to planning countdown view', 'info');
+  }}
+  renderFirstAnniversary();
+}}
+
+function handleSaveAnniversaryReflection(e) {{
+  e.preventDefault();
+  const input = document.getElementById('anniv-reflection-input');
+  if (!input) return;
+  const text = input.value.trim();
+  const state = loadState();
+  if (!state.firstAnniversary) state.firstAnniversary = {{}};
+  state.firstAnniversary.coupleReflection = text;
+  saveState(state);
+  logAudit('Anniversary Reflection Saved', 'Couple', 'Updated 1st year couple reflection note', 'Anniversary');
+  showToast('1st Year reflection saved successfully!', 'success');
+}}
+
+function openMemoryLink(key, targetTab) {{
+  if (targetTab === 'seating') {{
+    switchCoupleTab('seating');
+    showToast('Navigated to Final Seating Chart memory portal', 'info');
+  }} else if (targetTab === 'feed') {{
+    switchCoupleTab('feed');
+    showToast('Navigated to Celebration Feed & Guest Love Notes', 'info');
+  }} else {{
+    showToast(`Reliving "${{key}}": wedding records securely retained in Vault.`, 'info');
+  }}
 }}
 
 {chatbot_js}

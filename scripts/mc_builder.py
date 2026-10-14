@@ -312,23 +312,38 @@ body {{
 }}
 
 /* Run Sheet Styles */
-.runsheet-item {{
-  display: grid;
-  grid-template-columns: 36px 90px 1fr 80px;
-  gap: 12px;
-  align-items: center;
-  padding: 10px 12px;
-  border-bottom: 1px solid #f2ece3;
+.runsheet-card {{
   background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  transition: all 0.15s ease;
 }}
-
-.runsheet-item.done {{
-  background: #faf7f2;
+.runsheet-card:hover {{
+  border-color: #d8c8b4;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
 }}
-
-.runsheet-item.done input[type="text"] {{
-  text-decoration: line-through;
-  color: #9c8c7c;
+.runsheet-card.done {{
+  background: #fbf9f6;
+  border-color: #e5ded4;
+  opacity: 0.85;
+}}
+.runsheet-header-row {{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}}
+.private-cue-box {{
+  background: #fdfaf3;
+  border: 1px solid #e8dbbe;
+  border-left: 3px solid var(--gold);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: #5a452a;
 }}
 
 /* Calendar Grid */
@@ -565,6 +580,7 @@ body {{
                 <th>Guests</th>
                 <th>RSVP Progress</th>
                 <th>Status</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody id="mc-weddings-tbody">
@@ -593,21 +609,40 @@ body {{
 
         <!-- Sub Tabs inside detail view -->
         <div class="no-print" style="display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:20px;">
-          <button type="button" id="subtab-runsheet" class="btn btn-sm btn-gold" onclick="switchDetailSubTab('runsheet')">MC Run Sheet</button>
+          <button type="button" id="subtab-runsheet" class="btn btn-sm btn-gold" onclick="switchDetailSubTab('runsheet')">🔒 Private Run Sheet</button>
           <button type="button" id="subtab-seating" class="btn btn-sm btn-outline" onclick="switchDetailSubTab('seating')">Seating Floor Plan</button>
           <button type="button" id="subtab-guests" class="btn btn-sm btn-outline" onclick="switchDetailSubTab('guests')">Guest &amp; Catering Summary</button>
           <button type="button" id="subtab-venue" class="btn btn-sm btn-outline" onclick="switchDetailSubTab('venue')">Venue &amp; Travel</button>
         </div>
 
-        <!-- Sub-pane 1: Run Sheet -->
+        <!-- Sub-pane 1: Run Sheet (Feature 2: Private MC Run Sheet) -->
         <div id="subpane-runsheet">
+          <!-- Compliance Notice -->
+          <div class="no-print" style="background:#fcfaf6;border:1px solid #e8ded0;border-left:4px solid var(--gold);padding:12px 16px;border-radius:6px;font-size:13px;color:#5a4a3a;margin-bottom:18px;">
+            <strong>🔒 Private MC Run Sheet:</strong> Private MC schedule with editable, reorderable (▲/▼) and deletable entries containing time, activity, public notes and private cues. Restricted to authorised users; no AI scheduling.
+          </div>
+
           <div class="content-card">
-            <h3 class="content-card-title runsheet-print-title" style="display:flex;justify-content:space-between;align-items:center;">
-              <span>Operational Run Sheet &amp; Cue Notes</span>
-              <button type="button" class="btn btn-outline btn-sm no-print" onclick="addRunSheetRow()">+ Add Item</button>
-            </h3>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+              <div>
+                <h3 class="content-card-title runsheet-print-title" style="margin:0;">
+                  Private MC Run Sheet &amp; Cue Schedule
+                </h3>
+                <div style="font-size:12.5px;color:var(--muted);margin-top:2px;" id="mc-runsheet-meta-count">
+                  9 Schedule Entries · Sophie &amp; James Wedding
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;" class="no-print">
+                <input type="text" id="rs-filter-search" class="text-input" style="padding:6px 12px;font-size:12.5px;width:180px;" placeholder="Search schedule..." oninput="filterRunSheetBySearch(this.value)">
+                <button type="button" class="btn btn-outline btn-sm rs-status-filter" data-status="all" onclick="filterRunSheetStatus('all')">All</button>
+                <button type="button" class="btn btn-outline btn-sm rs-status-filter" data-status="pending" onclick="filterRunSheetStatus('pending')">Pending</button>
+                <button type="button" class="btn btn-outline btn-sm rs-status-filter" data-status="done" onclick="filterRunSheetStatus('done')">Done</button>
+                <button type="button" class="btn btn-gold btn-sm" onclick="openAddRunSheetModal()">+ Add Cue Entry</button>
+              </div>
+            </div>
+
             <div id="runsheet-list-container">
-              <!-- Run sheet rows injected by JS -->
+              <!-- Run sheet cards injected by JS -->
             </div>
           </div>
         </div>
@@ -1036,6 +1071,42 @@ body {{
     </div>
   </div>
 
+  <!-- Add MC Cue Modal -->
+  <div id="add-cue-modal" class="tt-modal-backdrop" style="display:none;" aria-hidden="true">
+    <div class="tt-modal">
+      <div class="tt-modal-header">
+        <div class="tt-modal-title">Add Schedule Cue Entry</div>
+        <button type="button" class="tt-modal-close" onclick="closeAddRunSheetModal()">✕</button>
+      </div>
+      <form onsubmit="handleSaveNewRunSheetEntry(event)">
+        <div class="tt-modal-body">
+          <div style="display:grid;grid-template-columns:120px 1fr;gap:12px;margin-bottom:14px;">
+            <div class="field-group">
+              <label class="field-label">Time</label>
+              <input type="text" id="mc-new-time" class="text-input" required placeholder="e.g. 17:00">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Activity Title</label>
+              <input type="text" id="mc-new-activity" class="text-input" required placeholder="e.g. Sunset Golden Hour Photos">
+            </div>
+          </div>
+          <div class="field-group" style="margin-bottom:14px;">
+            <label class="field-label">Public Notes / Running Details</label>
+            <textarea id="mc-new-notes" class="text-input" rows="2" placeholder="Public schedule guidance or location details..."></textarea>
+          </div>
+          <div class="field-group">
+            <label class="field-label" style="color:var(--gold-hover);">🔒 Private MC Cue Notes (Confidential)</label>
+            <textarea id="mc-new-privatenotes" class="text-input" rows="2" placeholder="Private cues, technical sound directions, contact prompts..." style="border-color:#d4b483;background:#fcfaf5;"></textarea>
+          </div>
+        </div>
+        <div class="tt-modal-footer">
+          <button type="button" class="btn btn-outline" onclick="closeAddRunSheetModal()">Cancel</button>
+          <button type="submit" class="btn btn-gold">Add to Schedule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Suggest Seating Modal for MC Pro -->
   <div id="mc-suggest-seating-modal" class="tt-modal-backdrop" style="display:none;" aria-hidden="true">
     <div class="tt-modal">
@@ -1184,6 +1255,11 @@ function renderWeddingsTable() {{
           <small style="color:var(--muted);">${{confirmedCount}} confirmed · ${{daysOut}} days out</small>
         </td>
         <td><span class="tt-pill ${{pillClass}}">${{w.status}}</span></td>
+        <td>
+          <button type="button" class="btn btn-outline btn-xs" onclick="event.stopPropagation(); openWeddingDetail('${{w.id}}');" style="white-space:nowrap;font-size:11.5px;padding:4px 8px;">
+            📋 Run Sheet &rarr;
+          </button>
+        </td>
       </tr>
     `;
   }}).join('');
@@ -1210,6 +1286,7 @@ function openWeddingDetail(weddingId) {{
   detailPane.classList.add('active');
   detailPane.style.display = 'block';
 
+  switchDetailSubTab('runsheet');
   renderRunSheet();
   renderMCSeatingFloor();
   renderDetailCateringSummary();
@@ -1237,104 +1314,253 @@ function switchDetailSubTab(subKey) {{
   if (subKey === 'venue') renderMCVenueDetails();
 }}
 
+let currentRunSheetStatusFilter = 'all';
+let currentRunSheetSearchTerm = '';
+
+function openMCPrivateRunSheet() {{
+  openWeddingDetail('w1');
+}}
+
+function getWeddingRunSheetItems(wedding) {{
+  if (!wedding) return [];
+  if (wedding.privateRunSheet && wedding.privateRunSheet.length > 0) {{
+    return wedding.privateRunSheet;
+  }}
+  if (!wedding.runSheet) wedding.runSheet = [];
+  wedding.privateRunSheet = wedding.runSheet.map((rs, i) => ({{
+    id: rs.id || 'pmc_' + (i + 1),
+    time: rs.time || '14:00',
+    activity: rs.note ? rs.note.split(';')[0] : 'Wedding Schedule Item',
+    notes: rs.note || '',
+    privateNotes: 'MC technical cue: check wireless microphone level and audio cue.',
+    done: !!rs.done,
+    order: i + 1
+  }}));
+  return wedding.privateRunSheet;
+}}
+
 function renderRunSheet() {{
   const container = document.getElementById('runsheet-list-container');
   if (!container) return;
   const state = loadState();
   const wedding = state.weddings.find(w => w.id === selectedDetailWeddingId) || state.weddings[0];
-  const items = wedding.runSheet || [];
+  const allItems = getWeddingRunSheetItems(wedding);
 
-  container.innerHTML = items.map((item, idx) => `
-    <div class="runsheet-item ${{item.done ? 'done' : ''}}" id="rs-row-${{idx}}">
-      <input type="checkbox" class="checklist-input" ${{item.done ? 'checked' : ''}} onchange="toggleRunSheetDone(${{idx}}, this.checked)">
-      <input type="text" class="text-input" style="padding:6px 8px;font-size:12.5px;font-weight:700;" value="${{escapeHtml(item.time)}}" onchange="updateRunSheetTime(${{idx}}, this.value)">
-      <input type="text" class="text-input" style="padding:6px 10px;font-size:13px;" value="${{escapeHtml(item.note)}}" onchange="updateRunSheetNote(${{idx}}, this.value)">
-      <div style="display:flex;gap:4px;" class="no-print">
-        <button type="button" class="btn btn-outline btn-sm" onclick="moveRunSheetItem(${{idx}}, -1)">↑</button>
-        <button type="button" class="btn btn-outline btn-sm" onclick="moveRunSheetItem(${{idx}}, 1)">↓</button>
-        <button type="button" class="btn btn-outline btn-sm" onclick="deleteRunSheetItem(${{idx}})">✕</button>
+  const metaCount = document.getElementById('mc-runsheet-meta-count');
+  if (metaCount) {{
+    metaCount.textContent = `${{allItems.length}} Schedule Entries · ${{escapeHtml(wedding.couple)}} Wedding`;
+  }}
+
+  // Filter status buttons highlight
+  document.querySelectorAll('.rs-status-filter').forEach(btn => {{
+    const s = btn.getAttribute('data-status');
+    btn.className = (s === currentRunSheetStatusFilter) ? 'btn btn-gold btn-sm rs-status-filter' : 'btn btn-outline btn-sm rs-status-filter';
+  }});
+
+  // Filter items
+  let items = allItems;
+  if (currentRunSheetStatusFilter === 'pending') {{
+    items = items.filter(x => !x.done);
+  }} else if (currentRunSheetStatusFilter === 'done') {{
+    items = items.filter(x => x.done);
+  }}
+
+  if (currentRunSheetSearchTerm) {{
+    const term = currentRunSheetSearchTerm.toLowerCase();
+    items = items.filter(x => (x.activity || '').toLowerCase().includes(term) || (x.notes || '').toLowerCase().includes(term) || (x.privateNotes || '').toLowerCase().includes(term) || (x.time || '').toLowerCase().includes(term));
+  }}
+
+  if (items.length === 0) {{
+    container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-style:italic;">No schedule cues match your search or filter.</div>';
+    return;
+  }}
+
+  container.innerHTML = items.map((item) => {{
+    const realIdx = allItems.indexOf(item);
+    return `
+      <div class="runsheet-card ${{item.done ? 'done' : ''}}" id="rs-card-${{realIdx}}">
+        <div class="runsheet-header-row">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" class="checklist-input" ${{item.done ? 'checked' : ''}} onchange="toggleRunSheetDone(${{realIdx}}, this.checked)">
+            <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;">#${{realIdx + 1}}</span>
+          </label>
+
+          <div style="width:110px;">
+            <input type="text" class="text-input" style="padding:6px 10px;font-weight:700;font-size:13px;background:#faf6f0;border-color:#d4c5b3;" value="${{escapeHtml(item.time)}}" placeholder="Time" onchange="updateRunSheetField(${{realIdx}}, 'time', this.value)">
+          </div>
+
+          <div style="flex:1;">
+            <input type="text" class="text-input" style="padding:6px 12px;font-weight:600;font-size:14px;color:var(--ink);${{item.done ? 'text-decoration:line-through;color:#9b8c7c;' : ''}}" value="${{escapeHtml(item.activity || '')}}" placeholder="Activity Title" onchange="updateRunSheetField(${{realIdx}}, 'activity', this.value)">
+          </div>
+
+          <div style="display:flex;gap:4px;" class="no-print">
+            <button type="button" class="btn btn-outline btn-xs" title="Move Up" onclick="moveRunSheetItem(${{realIdx}}, -1)" ${{realIdx === 0 ? 'disabled style="opacity:0.35;"' : ''}}>▲</button>
+            <button type="button" class="btn btn-outline btn-xs" title="Move Down" onclick="moveRunSheetItem(${{realIdx}}, 1)" ${{realIdx === allItems.length - 1 ? 'disabled style="opacity:0.35;"' : ''}}>▼</button>
+            <button type="button" class="btn btn-outline btn-xs" style="color:#b3261e;border-color:#e0b4b4;" title="Delete Item" onclick="deleteRunSheetItem(${{realIdx}})">🗑️</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:8px;">
+          <label style="font-size:10.5px;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:2px;">Public Schedule Notes</label>
+          <input type="text" class="text-input" style="font-size:12.5px;line-height:1.45;padding:6px 10px;" value="${{escapeHtml(item.notes || '')}}" placeholder="Public notes or guest announcements..." onchange="updateRunSheetField(${{realIdx}}, 'notes', this.value)">
+        </div>
+
+        <div class="private-cue-box">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--gold-hover);">🔒 Private MC Cue Notes (Confidential)</span>
+            <span style="font-size:10.5px;color:var(--muted);">Restricted to MC &amp; Couple</span>
+          </div>
+          <input type="text" class="text-input" style="font-size:12px;line-height:1.4;background:transparent;border-color:#e3d4bf;color:#453423;padding:5px 8px;" value="${{escapeHtml(item.privateNotes || '')}}" placeholder="Private cues, technical sound directions, contact prompts..." onchange="updateRunSheetField(${{realIdx}}, 'privateNotes', this.value)">
+        </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }}).join('');
+}}
+
+function filterRunSheetStatus(status) {{
+  currentRunSheetStatusFilter = status;
+  renderRunSheet();
+}}
+
+function filterRunSheetBySearch(term) {{
+  currentRunSheetSearchTerm = term.trim();
+  renderRunSheet();
 }}
 
 function toggleRunSheetDone(index, isDone) {{
   const state = loadState();
-  const wedding = state.weddings.find(w => w.id === selectedDetailWeddingId);
-  if (wedding && wedding.runSheet && wedding.runSheet[index]) {{
-    wedding.runSheet[index].done = isDone;
+  const wedding = state.weddings.find(w => w.id === selectedDetailWeddingId) || state.weddings[0];
+  const items = getWeddingRunSheetItems(wedding);
+  if (items && items[index]) {{
+    items[index].done = isDone;
+    if (wedding.runSheet && wedding.runSheet[index]) {{
+      wedding.runSheet[index].done = isDone;
+    }}
     saveState(state);
     renderRunSheet();
   }}
 }}
 
-function updateRunSheetTime(index, val) {{
+function updateRunSheetField(index, field, val) {{
   const state = loadState();
-  const wedding = state.weddings.find(w => w.id === selectedDetailWeddingId);
-  if (wedding && wedding.runSheet && wedding.runSheet[index]) {{
-    wedding.runSheet[index].time = val;
-    saveState(state);
-  }}
-}}
-
-function updateRunSheetNote(index, val) {{
-  const state = loadState();
-  const wedding = state.weddings.find(w => w.id === selectedDetailWeddingId);
-  if (wedding && wedding.runSheet && wedding.runSheet[index]) {{
-    wedding.runSheet[index].note = val;
+  const wedding = state.weddings.find(w => w.id === selectedDetailWeddingId) || state.weddings[0];
+  const items = getWeddingRunSheetItems(wedding);
+  if (items && items[index]) {{
+    items[index][field] = val;
+    if (wedding.runSheet && wedding.runSheet[index]) {{
+      if (field === 'time') wedding.runSheet[index].time = val;
+      if (field === 'activity' || field === 'notes') wedding.runSheet[index].note = `${{items[index].activity || ''}}: ${{items[index].notes || ''}}`;
+      if (field === 'done') wedding.runSheet[index].done = items[index].done;
+    }}
     saveState(state);
   }}
 }}
 
 function moveRunSheetItem(index, delta) {{
   const state = loadState();
-  const wedding = state.weddings.find(w => w.id === selectedDetailWeddingId);
-  if (!wedding || !wedding.runSheet) return;
+  const wedding = state.weddings.find(w => w.id === selectedDetailWeddingId) || state.weddings[0];
+  const items = getWeddingRunSheetItems(wedding);
   const target = index + delta;
-  if (target < 0 || target >= wedding.runSheet.length) return;
+  if (target < 0 || target >= items.length) return;
   
-  const temp = wedding.runSheet[index];
-  wedding.runSheet[index] = wedding.runSheet[target];
-  wedding.runSheet[target] = temp;
+  const temp = items[index];
+  items[index] = items[target];
+  items[target] = temp;
+  items.forEach((it, i) => it.order = i + 1);
+
+  if (wedding.runSheet && wedding.runSheet[index] && wedding.runSheet[target]) {{
+    const rTemp = wedding.runSheet[index];
+    wedding.runSheet[index] = wedding.runSheet[target];
+    wedding.runSheet[target] = rTemp;
+  }}
   
   saveState(state);
   renderRunSheet();
+  showToast('Reordered schedule entry', 'info');
 }}
 
 function deleteRunSheetItem(index) {{
   const state = loadState();
-  const wedding = state.weddings.find(w => w.id === selectedDetailWeddingId);
-  if (wedding && wedding.runSheet) {{
-    wedding.runSheet.splice(index, 1);
+  const wedding = state.weddings.find(w => w.id === selectedDetailWeddingId) || state.weddings[0];
+  const items = getWeddingRunSheetItems(wedding);
+  if (items && items[index]) {{
+    const deleted = items.splice(index, 1);
+    items.forEach((it, i) => it.order = i + 1);
+    if (wedding.runSheet && wedding.runSheet[index]) {{
+      wedding.runSheet.splice(index, 1);
+    }}
     saveState(state);
+    logAudit('MC Cue Deleted', 'Robert Galati', `Deleted schedule item: ${{deleted[0]?.activity || 'Item'}}`, 'Run Sheet');
     renderRunSheet();
-    showToast('Run sheet item deleted', 'info');
+    showToast('Schedule cue deleted', 'info');
   }}
 }}
 
-function addRunSheetRow() {{
+function openAddRunSheetModal() {{
+  const modal = document.getElementById('add-cue-modal');
+  if (modal) {{
+    document.getElementById('mc-new-time').value = '17:00';
+    document.getElementById('mc-new-activity').value = '';
+    document.getElementById('mc-new-notes').value = '';
+    document.getElementById('mc-new-privatenotes').value = '';
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+  }}
+}}
+
+function closeAddRunSheetModal() {{
+  const modal = document.getElementById('add-cue-modal');
+  if (modal) {{
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+  }}
+}}
+
+function handleSaveNewRunSheetEntry(e) {{
+  e.preventDefault();
+  const time = document.getElementById('mc-new-time')?.value.trim() || '18:00';
+  const act = document.getElementById('mc-new-activity')?.value.trim() || 'Schedule Item';
+  const notes = document.getElementById('mc-new-notes')?.value.trim() || '';
+  const pnotes = document.getElementById('mc-new-privatenotes')?.value.trim() || '';
+
   const state = loadState();
-  const wedding = state.weddings.find(w => w.id === selectedDetailWeddingId);
-  if (!wedding) return;
+  const wedding = state.weddings.find(w => w.id === selectedDetailWeddingId) || state.weddings[0];
+  const items = getWeddingRunSheetItems(wedding);
+  const newItem = {{
+    id: 'pmc_' + Date.now(),
+    time: time,
+    activity: act,
+    notes: notes,
+    privateNotes: pnotes,
+    done: false,
+    order: items.length + 1
+  }};
+  items.push(newItem);
+
   if (!wedding.runSheet) wedding.runSheet = [];
-  
   wedding.runSheet.push({{
     id: 'rs_' + Date.now(),
-    time: '18:00',
-    note: 'Introduce couple for speeches',
+    time: time,
+    note: `${{act}}: ${{notes}}`,
     done: false
   }});
-  
+
   saveState(state);
+  logAudit('MC Cue Added', 'Robert Galati', `Added schedule entry: ${{newItem.activity}} at ${{newItem.time}}`, 'Run Sheet');
+  closeAddRunSheetModal();
   renderRunSheet();
-  showToast('Added new run sheet cue', 'success');
+  showToast(`Added "${{newItem.activity}}" to schedule`, 'success');
+}}
+
+function addRunSheetRow() {{
+  openAddRunSheetModal();
 }}
 
 function saveRunSheet() {{
   const state = loadState();
   logAudit('MC Run Sheet Saved', 'Robert Galati', `Saved run sheet timings for ${{state.weddings.find(w => w.id === selectedDetailWeddingId)?.couple}}`, 'Run Sheet');
   saveState(state);
-  showToast('Run sheet successfully saved to wedding profile!', 'success');
+  showToast('Private MC schedule saved successfully!', 'success');
 }}
 
 /* Interactive Seating Floor Plan Suite for MC Pro */

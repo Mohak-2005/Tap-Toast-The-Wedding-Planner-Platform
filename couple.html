@@ -315,6 +315,30 @@ a {
   border: 1px solid #f2c7c2;
 }
 
+.tt-pill.not-started {
+  background: #f0ebe4;
+  color: #736353;
+  border: 1px solid #ddd2c4;
+}
+
+.tt-pill.drafted {
+  background: #fdf3e7;
+  color: #a0631c;
+  border: 1px solid #f2d5b1;
+}
+
+.tt-pill.sent {
+  background: #edf4fb;
+  color: #1f618d;
+  border: 1px solid #c4dcf3;
+}
+
+.tt-pill.completed {
+  background: #edf7ee;
+  color: #236829;
+  border: 1px solid #c7e8cc;
+}
+
 /* Common Buttons */
 .btn {
   display: inline-flex;
@@ -2735,17 +2759,29 @@ body {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="3" r="2"></circle><circle cx="12" cy="21" r="2"></circle><circle cx="3" cy="12" r="2"></circle><circle cx="21" cy="12" r="2"></circle></svg>
           Seating
         </button>
+        <button type="button" class="sidebar-btn" data-tab="pages" onclick="switchCoupleTab('pages')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          Content &amp; Stories
+        </button>
         <button type="button" class="sidebar-btn" data-tab="invitations" onclick="switchCoupleTab('invitations')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
           Invitations
         </button>
         <button type="button" class="sidebar-btn" data-tab="gifts" onclick="switchCoupleTab('gifts')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
-          Gift &amp; Go
+          Gift &amp; Thank-You
         </button>
         <button type="button" class="sidebar-btn" data-tab="feed" onclick="switchCoupleTab('feed')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
           Celebration Feed
+        </button>
+        <button type="button" class="sidebar-btn" data-tab="vault" onclick="switchCoupleTab('vault')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          Wedding Vault
+        </button>
+        <button type="button" class="sidebar-btn" data-tab="anniversary" onclick="switchCoupleTab('anniversary')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          1st Anniversary
         </button>
         <button type="button" class="sidebar-btn" data-tab="venue" onclick="switchCoupleTab('venue')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
@@ -2982,6 +3018,115 @@ body {
         </div>
       </section>
 
+      <!-- TAB: CONTENT & STORIES -->
+      <section id="pane-pages" class="tab-pane" aria-labelledby="tab-pages">
+        <div class="page-header">
+          <div>
+            <div class="header-eyebrow">WEDDING EXPERIENCES &amp; MOMENTS</div>
+            <h1 class="header-title">Content &amp; Stories</h1>
+            <div style="font-size:13.5px;color:var(--muted);margin-top:4px;">
+              Craft and publish your love story, dinner menu, wedding party bios, memorial tributes, and honeymoon adventures for your guests.
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Page Selector Pills -->
+        <div style="display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;" id="pages-tab-strip">
+          <button type="button" class="btn btn-sm btn-gold page-nav-btn" id="pnav-ourStory" onclick="selectContentPage('ourStory')">📖 Our Story</button>
+          <button type="button" class="btn btn-sm btn-outline page-nav-btn" id="pnav-inMemoriam" onclick="selectContentPage('inMemoriam')">🕊️ In Memoriam</button>
+          <button type="button" class="btn btn-sm btn-outline page-nav-btn" id="pnav-diningMenu" onclick="selectContentPage('diningMenu')">🍽️ Dining &amp; Menu</button>
+          <button type="button" class="btn btn-sm btn-outline page-nav-btn" id="pnav-meetTheTeam" onclick="selectContentPage('meetTheTeam')">👥 Meet the Team</button>
+          <button type="button" class="btn btn-sm btn-outline page-nav-btn" id="pnav-honeymoonUpdates" onclick="selectContentPage('honeymoonUpdates')">✈️ Honeymoon Updates</button>
+        </div>
+
+        <!-- Editor & Live Preview Grid -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+          <!-- Left: Editor Card -->
+          <div class="content-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+              <h3 class="content-card-title" id="page-edit-heading" style="margin:0;">Edit Page</h3>
+              <div style="display:flex;align-items:center;gap:6px;position:relative;">
+                <input type="checkbox" id="page-publish-toggle" style="display:none;" onchange="togglePagePublishStatus(this.checked)">
+                <button type="button" class="tt-pill green" id="page-status-badge" onclick="togglePublishCurrentPage()" title="Click to toggle Published / Draft status" style="border:none;cursor:pointer;min-height:24px;min-width:44px;padding:3px 10px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;">Published</button>
+                
+                <div style="position:relative;">
+                  <button type="button" id="btn-page-version-history" onclick="toggleVersionHistoryDropdown(event)" title="Version History (View previous saved versions)" style="background:transparent;border:none;padding:2px 4px;cursor:pointer;font-size:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:transform 0.15s, opacity 0.15s;" onmouseover="this.style.transform='scale(1.15)';this.style.opacity='0.8';" onmouseout="this.style.transform='scale(1)';this.style.opacity='1';">
+                    🕒
+                  </button>
+                  
+                  <!-- Version History Dropdown Menu -->
+                  <div id="page-version-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);right:0;width:320px;background:#ffffff;border:1px solid var(--line-strong);border-radius:8px;box-shadow:0 10px 28px rgba(0,0,0,0.18);z-index:100;padding:12px;text-align:left;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--line);">
+                      <div style="font-weight:700;font-size:12.5px;color:var(--ink);display:flex;align-items:center;gap:6px;">
+                        <span>🕒</span> <span>Version History</span>
+                      </div>
+                      <span style="font-size:11px;color:var(--muted);" id="version-count-label">3 versions</span>
+                    </div>
+                    <div id="version-history-list" style="max-height:250px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+                      <!-- Injected by JS -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Page Title</label>
+              <input type="text" id="page-title-input" class="text-input" oninput="updatePageLivePreview()">
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Subtitle / Dedication</label>
+              <input type="text" id="page-subtitle-input" class="text-input" oninput="updatePageLivePreview()">
+            </div>
+
+            <div class="field-group">
+              <label class="field-label">Page Story &amp; Content</label>
+              <textarea id="page-content-input" class="text-input" rows="8" oninput="updatePageLivePreview()" placeholder="Write your page details, heartfelt tribute, culinary menu, or team bios..."></textarea>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+              <div class="field-group">
+                <label class="field-label">Featured Photo Caption</label>
+                <input type="text" id="page-caption-input" class="text-input" oninput="updatePageLivePreview()">
+              </div>
+              <div class="field-group">
+                <label class="field-label">Photo Badge Icon / Theme</label>
+                <select id="page-icon-select" class="text-input" onchange="updatePageLivePreview()">
+                  <option value="💍">💍 Proposal &amp; Love (Our Story)</option>
+                  <option value="🕊️">🕊️ White Dove &amp; Memory (In Memoriam)</option>
+                  <option value="🍽️">🍽️ Fine Dining &amp; Wine (Menu)</option>
+                  <option value="👥">👥 Bridal Party &amp; Crew (Team)</option>
+                  <option value="✈️">✈️ Travel &amp; Passport (Honeymoon)</option>
+                  <option value="🌿">🌿 Botanical Highlands</option>
+                  <option value="✨">✨ Celebration Gold</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--line);">
+              <span style="font-size:12px;color:var(--muted);" id="page-last-updated-text">Last updated: 10 Oct 2026</span>
+              <button type="button" class="btn btn-gold" onclick="saveCurrentContentPage()">Save Page Changes</button>
+            </div>
+          </div>
+
+          <!-- Right: Real-Time Preview Card -->
+          <div class="content-card" style="background:#faf8f5;border:1px solid var(--line-strong);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line);">
+              <span style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold-hover);">Guest View Live Preview</span>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span class="tt-pill green" id="preview-status-pill" style="min-height:24px;min-width:44px;padding:3px 10px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;border-radius:4px;">Live</span>
+                <button type="button" onclick="previewCurrentContentPage()" title="View Live Preview" style="background:#000000;color:#ffffff;border:1px solid #000000;min-height:24px;min-width:44px;padding:3px 10px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;border-radius:4px;cursor:pointer;font-size:13px;line-height:1;">👁️</button>
+              </div>
+            </div>
+
+            <div id="page-preview-container" style="background:#ffffff;border:1px solid var(--line);border-radius:8px;padding:24px;box-shadow:var(--shadow-sm);">
+              <!-- Rendered preview -->
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- TAB 4: INVITATIONS -->
       <section id="pane-invitations" class="tab-pane" aria-labelledby="tab-invitations">
         <div class="page-header">
@@ -3073,56 +3218,142 @@ body {
         </div>
       </section>
 
-      <!-- TAB 5: GIFT & GO -->
+      <!-- TAB 5: GIFT & GO & THANK-YOU MANAGER -->
       <section id="pane-gifts" class="tab-pane" aria-labelledby="tab-gifts">
         <div class="page-header">
           <div>
-            <div class="header-eyebrow">DIGITAL WISHING WELL</div>
-            <h1 class="header-title">Gift &amp; Go Manager</h1>
+            <div class="header-eyebrow">DIGITAL WISHING WELL &amp; APPRECIATION</div>
+            <h1 class="header-title">Gift &amp; Thank-You Manager</h1>
           </div>
-          <div>
+          <div style="display:flex;gap:10px;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="exportThankYouSummary()">📥 Export Status</button>
             <button type="button" class="btn btn-gold btn-sm" onclick="openRecordGiftModal()">+ Record Manual Gift</button>
           </div>
         </div>
 
-        <div class="metrics-grid" style="grid-template-columns:repeat(3, 1fr);margin-bottom:24px;">
-          <div class="metric-card">
-            <div>
-              <div class="metric-number" id="gift-total-stat">$4,280</div>
-              <div class="metric-label">Total gifts received</div>
+        <!-- Sub-tabs: Registry vs Thank-You Manager -->
+        <div style="display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:20px;">
+          <button type="button" id="subtab-gifts-registry" class="btn btn-sm btn-gold" onclick="switchGiftsSubTab('registry')">🎁 Gifting Registry ($4,280)</button>
+          <button type="button" id="subtab-gifts-thankyou" class="btn btn-sm btn-outline" onclick="switchGiftsSubTab('thankyou')">💌 Thank-You Manager (Manual Tracking)</button>
+        </div>
+
+        <!-- Sub-pane 1: Gifting Registry -->
+        <div id="subpane-gifts-registry">
+          <div class="metrics-grid" style="grid-template-columns:repeat(3, 1fr);margin-bottom:24px;">
+            <div class="metric-card">
+              <div>
+                <div class="metric-number" id="gift-total-stat">$4,280</div>
+                <div class="metric-label">Total gifts received</div>
+              </div>
+            </div>
+            <div class="metric-card">
+              <div>
+                <div class="metric-number" id="gift-thankyou-stat">9</div>
+                <div class="metric-label">Thank-yous due</div>
+              </div>
+            </div>
+            <div class="metric-card">
+              <div>
+                <div class="metric-number">$285</div>
+                <div class="metric-label">Average gift contribution</div>
+              </div>
             </div>
           </div>
-          <div class="metric-card">
-            <div>
-              <div class="metric-number" id="gift-thankyou-stat">9</div>
-              <div class="metric-label">Thank-yous due</div>
-            </div>
-          </div>
-          <div class="metric-card">
-            <div>
-              <div class="metric-number">$285</div>
-              <div class="metric-label">Average gift contribution</div>
+
+          <div class="content-card" style="padding:16px 20px;">
+            <div style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>From</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th>Message</th>
+                    <th>Thank-You Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="gifts-table-body">
+                  <!-- Injected by JS -->
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
-        <div class="content-card" style="padding:16px 20px;">
-          <div style="overflow-x:auto;">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>From</th>
-                  <th>Amount</th>
-                  <th>Date</th>
-                  <th>Message</th>
-                  <th>Thank-You Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="gifts-table-body">
-                <!-- Injected by JS -->
-              </tbody>
-            </table>
+        <!-- Sub-pane 2: Thank-You Manager (Feature 3) -->
+        <div id="subpane-gifts-thankyou" style="display:none;">
+          <!-- Compliance Notice -->
+          <div style="background:#fcfaf6;border:1px solid #e8ded0;border-left:4px solid var(--gold);padding:12px 16px;border-radius:6px;font-size:13px;color:#5a4a3a;margin-bottom:20px;">
+            <strong>💌 Thank-You Manager:</strong> Manual tracking of gift and Love Note thank-you statuses: Not Started, Drafted, Sent and Completed. Reuses existing records; no automatic drafting, sending or printing.
+          </div>
+
+          <!-- 4 Status KPI Cards & Progress Bar -->
+          <div class="content-card" style="margin-bottom:20px;padding:20px 24px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <div>
+                <span style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold-hover);">Overall Progress</span>
+                <div style="font-size:14px;color:var(--ink);font-weight:600;" id="ty-progress-label">12 of 28 Completed (43%)</div>
+              </div>
+              <div style="font-size:12px;color:var(--muted);">Tracking 12 Gifts + 16 Love Notes</div>
+            </div>
+            <div style="width:100%;height:10px;background:#ede5d8;border-radius:999px;overflow:hidden;display:flex;">
+              <div id="ty-progress-completed-bar" style="width:43%;background:#2e7d32;" title="Completed"></div>
+              <div id="ty-progress-sent-bar" style="width:18%;background:#1976d2;" title="Sent"></div>
+              <div id="ty-progress-drafted-bar" style="width:14%;background:#ed6c02;" title="Drafted"></div>
+            </div>
+          </div>
+
+          <div class="metrics-grid" style="grid-template-columns:repeat(4, 1fr);margin-bottom:20px;">
+            <div class="metric-card" style="cursor:pointer;" onclick="filterThankYouManager('Not Started')">
+              <div class="metric-number" style="color:#736353;" id="ty-stat-not-started">7</div>
+              <div class="metric-label"><span class="tt-pill not-started">Not Started</span></div>
+            </div>
+            <div class="metric-card" style="cursor:pointer;" onclick="filterThankYouManager('Drafted')">
+              <div class="metric-number" style="color:#a0631c;" id="ty-stat-drafted">4</div>
+              <div class="metric-label"><span class="tt-pill drafted">Drafted</span></div>
+            </div>
+            <div class="metric-card" style="cursor:pointer;" onclick="filterThankYouManager('Sent')">
+              <div class="metric-number" style="color:#1f618d;" id="ty-stat-sent">5</div>
+              <div class="metric-label"><span class="tt-pill sent">Sent</span></div>
+            </div>
+            <div class="metric-card" style="cursor:pointer;" onclick="filterThankYouManager('Completed')">
+              <div class="metric-number" style="color:#236829;" id="ty-stat-completed">12</div>
+              <div class="metric-label"><span class="tt-pill completed">Completed</span></div>
+            </div>
+          </div>
+
+          <!-- Filter Pills -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;gap:6px;" id="ty-filter-strip">
+              <button type="button" class="btn btn-sm btn-gold ty-filter-btn" data-filter="All" onclick="filterThankYouManager('All')">All Records (28)</button>
+              <button type="button" class="btn btn-sm btn-outline ty-filter-btn" data-filter="Not Started" onclick="filterThankYouManager('Not Started')">Not Started</button>
+              <button type="button" class="btn btn-sm btn-outline ty-filter-btn" data-filter="Drafted" onclick="filterThankYouManager('Drafted')">Drafted</button>
+              <button type="button" class="btn btn-sm btn-outline ty-filter-btn" data-filter="Sent" onclick="filterThankYouManager('Sent')">Sent</button>
+              <button type="button" class="btn btn-sm btn-outline ty-filter-btn" data-filter="Completed" onclick="filterThankYouManager('Completed')">Completed</button>
+            </div>
+            <div style="font-size:12px;color:var(--muted);">Click any status to update instantly</div>
+          </div>
+
+          <!-- Thank-You Table -->
+          <div class="content-card" style="padding:16px 20px;">
+            <div style="overflow-x:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Recipient / Guest</th>
+                    <th>Gift / Contribution</th>
+                    <th>Status</th>
+                    <th>Delivery Method</th>
+                    <th>Date Sent / Notes</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="thankyou-table-body">
+                  <!-- Injected by JS -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>
@@ -3153,6 +3384,212 @@ body {
                 <button type="submit" class="btn btn-gold" style="align-self:flex-end;">Post to Feed</button>
               </form>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: WEDDING VAULT -->
+      <section id="pane-vault" class="tab-pane" aria-labelledby="tab-vault">
+        <div class="page-header">
+          <div>
+            <div class="header-eyebrow">LIFETIME KEEPSAKE &amp; ARCHIVE</div>
+            <h1 class="header-title">Wedding Vault</h1>
+            <div style="font-size:13.5px;color:var(--muted);margin-top:4px;">
+              Your permanent digital keepsake preserving every cherished love note, toast, guest memory, and celebration photo for a lifetime.
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <span class="tt-pill green" style="font-weight:600;">🔒 Permanent Vault Active</span>
+            <button type="button" class="btn btn-outline btn-sm" onclick="exportVaultInventory()">📦 Download Vault Manifest</button>
+          </div>
+        </div>
+
+        <!-- 5 GB Storage Usage Card & Meter -->
+        <div class="content-card" style="margin-bottom:24px;padding:22px 26px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:12px;">
+            <div>
+              <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold-hover);">Storage Allocation &amp; Usage</div>
+              <div style="font-size:22px;font-family:var(--font-heading);color:var(--ink);font-weight:600;" id="vault-storage-headline">2.35 GB used of 5.00 GB (47%)</div>
+            </div>
+            <div style="text-align:right;">
+              <span class="tt-pill warm" id="vault-expiry-pill" style="font-size:12px;">⏳ Archive Expiry: 14 Nov 2027 (396 Days Left)</span>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:4px;">Includes 1 year post-wedding complimentary retention</div>
+            </div>
+          </div>
+
+          <!-- Multi-segment Storage Bar -->
+          <div style="width:100%;height:14px;background:#ede5d8;border-radius:999px;overflow:hidden;display:flex;margin-bottom:14px;">
+            <div id="vault-bar-photos" style="width:33.6%;background:#bd9661;" title="Photos &amp; Video Media: 1.68 GB"></div>
+            <div id="vault-bar-feed" style="width:5.0%;background:#e6a15c;" title="Celebration Feed &amp; Notes: 0.25 GB"></div>
+            <div id="vault-bar-gifts" style="width:5.0%;background:#4a7c59;" title="Gifts &amp; Thank-You Records: 0.25 GB"></div>
+            <div id="vault-bar-rsvps" style="width:2.4%;background:#3d6b99;" title="Guest RSVPs &amp; Seating: 0.12 GB"></div>
+            <div id="vault-bar-runsheet" style="width:1.0%;background:#7d5ba6;" title="MC Schedule &amp; Cues: 0.05 GB"></div>
+          </div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:18px;font-size:12px;color:var(--ink);">
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#bd9661;display:inline-block;"></span> Photos &amp; Videos (1.68 GB)</div>
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#e6a15c;display:inline-block;"></span> Live Feed &amp; Notes (0.25 GB)</div>
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#4a7c59;display:inline-block;"></span> Gifts &amp; Thank-Yous (0.25 GB)</div>
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#3d6b99;display:inline-block;"></span> Guest RSVPs &amp; Seating (0.12 GB)</div>
+            <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#7d5ba6;display:inline-block;"></span> MC Schedule (0.05 GB)</div>
+            <div style="display:flex;align-items:center;gap:6px;color:var(--muted);"><span style="width:10px;height:10px;border-radius:2px;background:#ede5d8;display:inline-block;"></span> Free Space (2.65 GB)</div>
+          </div>
+        </div>
+
+        <div class="twocol-layout" style="margin-bottom:24px;">
+          <!-- Left Column: Access Controls & Security -->
+          <div>
+            <div class="content-card" style="margin-bottom:20px;">
+              <h2 class="content-card-title">🔐 Vault Access Controls</h2>
+              <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">
+                Specify who can view and access this read-only wedding vault archive.
+              </p>
+              <div class="field-group" style="margin-bottom:14px;">
+                <label class="field-label">Access Permissions Level</label>
+                <select id="vault-access-select" class="text-input" onchange="handleVaultAccessChange(this.value)">
+                  <option value="couple_mc">Authorized: Couple &amp; Designated MC Only (Recommended)</option>
+                  <option value="couple_only">Strict Private: Couple Only</option>
+                  <option value="family_mc">Extended: Couple, MC &amp; Immediate Family</option>
+                </select>
+              </div>
+              <div style="background:#faf7f2;border:1px solid var(--line);border-radius:6px;padding:12px 14px;font-size:12.5px;color:#5a4a3a;line-height:1.5;margin-bottom:14px;">
+                <strong>Access Level Status:</strong> <span id="vault-access-status-text">Couple &amp; Designated MC have authorized read-only access.</span>
+              </div>
+              <button type="button" class="btn btn-gold btn-sm" onclick="saveVaultAccessControl()">Save Access Settings</button>
+            </div>
+
+            <!-- Purge / Deletion Section -->
+            <div class="content-card" style="border:1px solid #f0d5d5;background:#fffaf8;">
+              <h2 class="content-card-title" style="color:#b3261e;">⚠️ Expiry &amp; Safe Deletion Workflow</h2>
+              <p style="font-size:13px;color:#6b4444;line-height:1.5;margin-bottom:14px;">
+                Vault records are scheduled for automatic archival retention until <strong>14 November 2027</strong> (1 year post-wedding). You may request an early permanent wipe at any time.
+              </p>
+              <div id="vault-deletion-status" style="margin-bottom:14px;">
+                <span class="tt-pill not-started" style="font-size:12px;">No Deletion Pending · Retained safely</span>
+              </div>
+              <button type="button" class="btn btn-outline btn-sm" style="border-color:#b3261e;color:#b3261e;" onclick="openVaultDeleteModal()">
+                🗑️ Request Vault Data Purge
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Column: Archived Categories -->
+          <div>
+            <div class="content-card">
+              <h2 class="content-card-title">📁 Read-Only Vault Records</h2>
+              <div id="vault-categories-list" style="display:flex;flex-direction:column;gap:12px;">
+                <!-- Injected by JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: FIRST ANNIVERSARY CELEBRATION -->
+      <section id="pane-anniversary" class="tab-pane" aria-labelledby="tab-anniversary">
+        <div class="page-header">
+          <div>
+            <div class="header-eyebrow">1ST YEAR MILESTONE CELEBRATION</div>
+            <h1 class="header-title">First Anniversary <span style="font-size:16px;font-weight:500;color:var(--gold);">(14 Nov 2027)</span></h1>
+            <div style="font-size:13.5px;color:var(--muted);margin-top:4px;">
+              Celebrate your paper anniversary milestone, unlock your time capsule reflections, and relive every magical moment with your loved ones.
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button type="button" id="btn-anniv-mode-countdown" class="btn btn-gold btn-sm" onclick="toggleAnniversaryMode('countdown')">⏳ Planning Countdown</button>
+            <button type="button" id="btn-anniv-mode-simulated" class="btn btn-outline btn-sm" onclick="toggleAnniversaryMode('simulated_day')">🎉 Preview Anniversary Day (14 Nov 2027)</button>
+          </div>
+        </div>
+
+        <!-- Hero Greeting Card -->
+        <div class="content-card" style="background:linear-gradient(135deg, #221a14 0%, #3a2d22 100%);color:#fef8ef;padding:30px;border-radius:10px;margin-bottom:24px;border:1px solid #524031;box-shadow:0 12px 32px rgba(0,0,0,0.18);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:16px;">
+            <div>
+              <span style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">1ST WEDDING ANNIVERSARY</span>
+              <h2 style="font-family:var(--font-heading);font-size:28px;color:#ffffff;margin:6px 0;" id="anniv-hero-title">Happy 1st Anniversary, Sophie &amp; James!</h2>
+              <div style="font-size:13.5px;color:#dfc194;" id="anniv-hero-subtitle">Married 14 November 2026 &middot; Celebrating 1 Year of Love &middot; 14 November 2027</div>
+            </div>
+            <div style="text-align:right;">
+              <span class="tt-pill gold" id="anniv-milestone-pill" style="font-size:12.5px;padding:6px 14px;">🌟 1 Year Milestone</span>
+              <div style="font-size:11.5px;color:#c9baa9;margin-top:6px;" id="anniv-countdown-text">396 Days until 1st Anniversary</div>
+            </div>
+          </div>
+
+          <p id="anniv-greeting-text" style="font-size:15px;line-height:1.65;color:#e8ded0;max-width:760px;font-style:italic;background:rgba(255,255,255,0.05);padding:16px 20px;border-radius:8px;border-left:3px solid var(--gold);margin-bottom:20px;">
+            "Happy 1st Anniversary Sophie &amp; James! May this paper anniversary mark the beginning of a lifetime filled with continuous joy, deep laughter, and shared dreams. Looking back on your magical day at Fernwood Estate with 127 loved ones!"
+          </p>
+
+          <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:16px;background:rgba(0,0,0,0.22);padding:14px 18px;border-radius:8px;border:1px solid rgba(189,150,97,0.3);">
+            <div>
+              <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:700;">Traditional 1st Year Symbol</div>
+              <div style="font-size:14px;color:#ffffff;font-weight:600;margin-top:2px;">📜 Paper</div>
+              <div style="font-size:12px;color:#c9baa9;margin-top:2px;">Symbolizes a blank sheet waiting to be written with your life story and adventures.</div>
+            </div>
+            <div>
+              <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:700;">Modern 1st Year Symbol</div>
+              <div style="font-size:14px;color:#ffffff;font-weight:600;margin-top:2px;">⏰ Clocks</div>
+              <div style="font-size:12px;color:#c9baa9;margin-top:2px;">Symbolizes the precious time spent together throughout your joyous first year.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Links to Wedding Memories Grid -->
+        <div class="content-card" style="margin-bottom:24px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div>
+              <h2 class="content-card-title" style="margin:0;">✨ Relive Your Wedding Memories</h2>
+              <div style="font-size:13px;color:var(--muted);margin-top:2px;">Quick access to key moments and keepsakes from your wedding celebration</div>
+            </div>
+            <span style="font-size:12px;color:var(--gold-hover);font-weight:600;">6 Memory Portals</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:16px;" id="anniv-memory-links-grid">
+            <!-- Injected by JS: 6 memory cards -->
+          </div>
+        </div>
+
+        <!-- Time Capsule Reflection & Anniversary Note -->
+        <div class="twocol-layout">
+          <div>
+            <div class="content-card">
+              <h2 class="content-card-title">📝 Couple's 1st Year Time Capsule</h2>
+              <p style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px;">
+                Handcrafted time capsule message written for opening on 14 November 2027:
+              </p>
+              <div style="background:#faf7f2;border:1px solid var(--line);border-radius:6px;padding:16px;font-style:italic;color:#4a392c;font-size:13.5px;line-height:1.6;margin-bottom:14px;" id="anniv-capsule-display">
+                <!-- Injected by JS -->
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="content-card">
+              <h2 class="content-card-title">✍️ Edit 1st Year Reflections</h2>
+              <form onsubmit="handleSaveAnniversaryReflection(event)">
+                <div class="field-group" style="margin-bottom:14px;">
+                  <label class="field-label">Our Reflections on Year One</label>
+                  <textarea id="anniv-reflection-input" class="text-input" rows="4" placeholder="Write your thoughts, milestones, or memories from year one..."></textarea>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-size:11.5px;color:var(--muted);">Non-AI &middot; Hand-authored reflection</span>
+                  <button type="submit" class="btn btn-gold btn-sm">Save Reflection</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Guest Anniversary Wishes & Tributes Card -->
+        <div class="content-card" style="margin-top:24px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div>
+              <h2 class="content-card-title" style="margin:0;">💌 Guest Anniversary Wishes &amp; Tributes</h2>
+              <div style="font-size:13px;color:var(--muted);margin-top:2px;">Heartfelt anniversary toasts and blessings posted by guests from the celebration feed</div>
+            </div>
+            <span class="tt-pill gold" id="anniv-wishes-count-pill">0 Guest Wishes</span>
+          </div>
+          <div id="anniv-guest-wishes-list" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:14px;">
+            <!-- Rendered by JS -->
           </div>
         </div>
       </section>
@@ -3520,11 +3957,78 @@ body {
     </div>
   </div>
 
+  <!-- Vault Deletion Modal -->
+  <div id="vault-delete-modal" class="tt-modal-backdrop" style="display:none;" aria-hidden="true">
+    <div class="tt-modal">
+      <div class="tt-modal-header">
+        <div class="tt-modal-title" style="color:#b3261e;">⚠️ Purge Wedding Vault Data</div>
+        <button type="button" class="tt-modal-close" onclick="closeVaultDeleteModal()">✕</button>
+      </div>
+      <div class="tt-modal-body">
+        <p style="font-size:13.5px;color:var(--ink);margin-bottom:12px;">
+          This will permanently purge all archived media and wedding logs from your 5 GB allocation. This action cannot be reversed.
+        </p>
+        <p style="font-size:12.5px;color:#8c7b6c;margin-bottom:12px;">
+          Type <strong>DELETE</strong> below to confirm immediate vault wipe:
+        </p>
+        <input type="text" id="vault-delete-confirm-input" class="text-input" placeholder="Type DELETE to confirm">
+      </div>
+      <div class="tt-modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeVaultDeleteModal()">Cancel</button>
+        <button type="button" class="btn btn-outline" style="background:#b3261e;color:#ffffff;border-color:#b3261e;" onclick="confirmVaultDeletion()">Permanently Purge Vault</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Thank-You Status Edit Modal -->
+  <div id="thankyou-edit-modal" class="tt-modal-backdrop" style="display:none;" aria-hidden="true">
+    <div class="tt-modal">
+      <div class="tt-modal-header">
+        <div class="tt-modal-title">Update Thank-You Record</div>
+        <button type="button" class="tt-modal-close" onclick="closeThankYouEditModal()">✕</button>
+      </div>
+      <div class="tt-modal-body">
+        <input type="hidden" id="ty-edit-item-id">
+        <input type="hidden" id="ty-edit-item-type">
+        <div class="field-group" style="margin-bottom:12px;">
+          <label class="field-label">Recipient</label>
+          <input type="text" id="ty-edit-recipient" class="text-input" readonly style="background:#faf8f5;">
+        </div>
+        <div class="field-group" style="margin-bottom:12px;">
+          <label class="field-label">Thank-You Status</label>
+          <select id="ty-edit-status" class="text-input">
+            <option value="Not Started">Not Started</option>
+            <option value="Drafted">Drafted</option>
+            <option value="Sent">Sent</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+        <div class="field-group" style="margin-bottom:12px;">
+          <label class="field-label">Delivery Method</label>
+          <select id="ty-edit-method" class="text-input">
+            <option value="Handwritten Card">Handwritten Card</option>
+            <option value="Digital Card">Digital Card</option>
+            <option value="In Person">In Person</option>
+            <option value="Post Mail">Post Mail</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Notes &amp; Details</label>
+          <textarea id="ty-edit-notes" class="text-input" rows="3" placeholder="Add tracking notes or gift sentiment..."></textarea>
+        </div>
+      </div>
+      <div class="tt-modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeThankYouEditModal()">Cancel</button>
+        <button type="button" class="btn btn-gold" onclick="saveThankYouEdit()">Save Status</button>
+      </div>
+    </div>
+  </div>
+
   <script>
 
 /* Tap & Toast Shared Client-Side Core */
 const STORAGE_KEY = 'tt_demo_v1';
-const SEED_DATA = {"version": 2, "currentWeddingId": "w1", "weddings": [{"id": "w1", "couple": "Sophie & James", "partner1": "Sophie", "partner2": "James", "date": "2026-11-14T14:00:00", "dateDisplay": "14 Nov 2026", "timeDisplay": "2:00 PM", "venue": "Fernwood Estate, Southern Highlands", "venueAddress": "124 Range Road, Mittagong NSW 2575", "parking": "Complimentary on-site guest parking is available at the Main Lawn entrance. Follow the directional signs upon arrival.", "dressCode": "Black Tie Optional / Formal Elegance", "registry": "Digital wishing well via Gift & Go", "invited": 118, "status": "Finalising", "tasks": [{"id": "t1", "text": "Send save-the-dates", "completed": true, "due": ""}, {"id": "t2", "text": "Finalise table 9 & 10 seating", "completed": false, "due": "Due Fri"}, {"id": "t3", "text": "Send RSVP reminder to 22 guests", "completed": false, "due": "Due Mon"}], "runSheet": [{"id": "rs1", "time": "13:30", "note": "MC arrival, audio check with AV tech & Celebrant Sarah", "done": false}, {"id": "rs2", "time": "14:00", "note": "Guest seating & ceremony processional commences", "done": false}, {"id": "rs3", "time": "14:45", "note": "Announce cocktail hour, direct guests to Verandah for canap\u00e9s & bar", "done": false}, {"id": "rs4", "time": "15:45", "note": "Sound dinner bell, usher guests into Grand Pavilion", "done": false}, {"id": "rs5", "time": "16:00", "note": "Grand Entrance introduction for bridal party & Sophie & James", "done": false}, {"id": "rs6", "time": "16:15", "note": "Welcome remarks & housekeeping, introduce entr\u00e9e service", "done": false}, {"id": "rs7", "time": "17:30", "note": "Call for main speeches: Father of the Bride, Maid of Honour, Best Man", "done": false}, {"id": "rs8", "time": "19:15", "note": "Invite couple for Cake Cutting, direct guests to Dance Floor for First Dance", "done": false}, {"id": "rs9", "time": "22:15", "note": "Last drinks call & organise guests with sparklers for courtyard send-off", "done": false}]}, {"id": "w2", "couple": "Aisha & Marcus", "partner1": "Aisha", "partner2": "Marcus", "date": "2027-05-02T15:00:00", "dateDisplay": "2 May 2027", "timeDisplay": "3:00 PM", "venue": "Doltone House, Sydney", "venueAddress": "Jones Bay Wharf, Pyrmont NSW", "parking": "Valet parking available at Jones Bay Wharf.", "dressCode": "Cocktail Attire", "registry": "Gift & Go wishing well", "invited": 86, "confirmed": 46, "status": "On track", "tasks": [{"id": "t21", "text": "Book floral designer", "completed": true, "due": ""}, {"id": "t22", "text": "Send digital invitations", "completed": true, "due": ""}, {"id": "t23", "text": "Taste menu options", "completed": false, "due": "Due next month"}], "runSheet": [{"id": "rs21", "time": "14:30", "note": "MC setup & audio check", "done": false}, {"id": "rs22", "time": "15:00", "note": "Ceremony begins", "done": false}]}, {"id": "w3", "couple": "Emma & Tom", "partner1": "Emma", "partner2": "Tom", "date": "2027-06-20T14:30:00", "dateDisplay": "20 Jun 2027", "timeDisplay": "2:30 PM", "venue": "Dunbar House, Watsons Bay", "venueAddress": "9 Marine Parade, Watsons Bay NSW", "parking": "Robertson Park street parking and Watsons Bay ferry wharf.", "dressCode": "Lounge Suit / Garden Formal", "registry": "Gift & Go wishing well", "invited": 140, "confirmed": 31, "status": "Planning", "tasks": [{"id": "t31", "text": "Confirm celebrant", "completed": true, "due": ""}, {"id": "t32", "text": "Draft guest list", "completed": false, "due": "Due next week"}], "runSheet": [{"id": "rs31", "time": "14:00", "note": "Guest arrival at Dunbar lawn", "done": false}]}, {"id": "w4", "couple": "Katie & Rob", "partner1": "Katie", "partner2": "Rob", "date": "2027-07-11T15:00:00", "dateDisplay": "11 Jul 2027", "timeDisplay": "3:00 PM", "venue": "Dunbar House, Watsons Bay", "venueAddress": "9 Marine Parade, Watsons Bay NSW", "parking": "Dunbar House dedicated parking bays.", "dressCode": "Black Tie", "registry": "Gift & Go wishing well", "invited": 95, "confirmed": 9, "status": "Planning", "tasks": [{"id": "t41", "text": "Lock in photographer", "completed": false, "due": "Due in 2 weeks"}], "runSheet": [{"id": "rs41", "time": "14:30", "note": "Prelude music starts", "done": false}]}], "tables": [{"id": "head", "name": "HEAD TABLE", "capacity": 8, "isHead": true}, {"id": "table_1", "name": "Table 1", "capacity": 8, "isHead": false}, {"id": "table_2", "name": "Table 2", "capacity": 8, "isHead": false}, {"id": "table_3", "name": "Table 3", "capacity": 8, "isHead": false}, {"id": "table_4", "name": "Table 4", "capacity": 8, "isHead": false}, {"id": "table_5", "name": "Table 5", "capacity": 8, "isHead": false}, {"id": "table_6", "name": "Table 6", "capacity": 8, "isHead": false}], "guests": [{"id": "priya", "name": "Priya Sharma", "initials": "PS", "household": "The Sharma Family", "email": "priya.sharma@example.com.au", "phone": "0412 884 992", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "Vegetarian", "song": "September - Earth, Wind & Fire", "reminderSent": false, "tableId": "table_4", "seatIndex": 3}, {"id": "g_ht1", "name": "Sophie Bell", "initials": "SB", "household": "Sophie Bell", "email": "sophie.bell@example.com", "phone": "0400 111 222", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "At Last - Etta James", "reminderSent": false, "tableId": "head", "seatIndex": 0}, {"id": "g_ht2", "name": "James Gordon", "initials": "JG", "household": "James Gordon", "email": "james.gordon@example.com", "phone": "0400 222 333", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "You Are The Best Thing", "reminderSent": false, "tableId": "head", "seatIndex": 1}, {"id": "g_ht3", "name": "Hannah Martin", "initials": "HM", "household": "Hannah Martin", "email": "hannah.m@example.com", "phone": "0400 333 444", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Vegetarian", "song": "Dancing Queen", "reminderSent": false, "tableId": "head", "seatIndex": 2}, {"id": "g_ht4", "name": "Oliver Vance", "initials": "OV", "household": "Oliver Vance", "email": "oliver.v@example.com", "phone": "0400 444 555", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Mr. Brightside", "reminderSent": false, "tableId": "head", "seatIndex": 3}, {"id": "g_ht5", "name": "Charlotte Evans", "initials": "CE", "household": "Charlotte Evans", "email": "charlotte.e@example.com", "phone": "0400 555 666", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Gluten-free", "song": "Levitating", "reminderSent": false, "tableId": "head", "seatIndex": 4}, {"id": "g_ht6", "name": "Liam Fletcher", "initials": "LF", "household": "Liam Fletcher", "email": "liam.f@example.com", "phone": "0400 666 777", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Uptown Funk", "reminderSent": false, "tableId": "head", "seatIndex": 5}, {"id": "g_ht7", "name": "Grace Kelly", "initials": "GK", "household": "Grace Kelly", "email": "grace.k@example.com", "phone": "0400 777 888", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "I Wanna Dance with Somebody", "reminderSent": false, "tableId": "head", "seatIndex": 6}, {"id": "g_ht8", "name": "Alexander Wright", "initials": "AW", "household": "Alexander Wright", "email": "alex.w@example.com", "phone": "0400 888 999", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Superstition", "reminderSent": false, "tableId": "head", "seatIndex": 7}, {"id": "g_t1_1", "name": "Michael Chen", "initials": "MC", "household": "Michael Chen", "email": "michael.chen@example.com", "phone": "0411 223 901", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "Vegetarian", "song": "Stayin' Alive", "reminderSent": false, "tableId": "table_1", "seatIndex": 0}, {"id": "g_t1_2", "name": "David Vance", "initials": "DV", "household": "David Vance", "email": "david.vance@example.com", "phone": "0411 223 902", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Don't Stop Me Now", "reminderSent": false, "tableId": "table_1", "seatIndex": 1}, {"id": "g_t1_3", "name": "Jessica White", "initials": "JW", "household": "Jessica White", "email": "jessica.white@example.com", "phone": "0411 223 903", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Blinding Lights", "reminderSent": false, "tableId": "table_1", "seatIndex": 2}, {"id": "g_t1_4", "name": "Aunty Carol Evans", "initials": "AC", "household": "Aunty Carol", "email": "carol.evans@example.com", "phone": "0411 223 904", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Sweet Caroline", "reminderSent": false, "tableId": "table_1", "seatIndex": 3}, {"id": "g_t1_5", "name": "Robert King", "initials": "RK", "household": "Robert King", "email": "robert.king@example.com", "phone": "0411 223 905", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Billie Jean", "reminderSent": false, "tableId": "table_1", "seatIndex": 4}, {"id": "g_t1_6", "name": "Lucy Palmer", "initials": "LP", "household": "Lucy Palmer", "email": "lucy.palmer@example.com", "phone": "0411 223 906", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Nut allergy", "song": "Can't Stop the Feeling!", "reminderSent": false, "tableId": "table_1", "seatIndex": 5}, {"id": "g_t1_7", "name": "Edward Lewis", "initials": "EL", "household": "Edward Lewis", "email": "edward.lewis@example.com", "phone": "0411 223 907", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Shake It Off", "reminderSent": false, "tableId": "table_1", "seatIndex": 6}, {"id": "g_t1_8", "name": "Chloe Jenkins", "initials": "CJ", "household": "Chloe Jenkins", "email": "chloe.jenkins@example.com", "phone": "0411 223 908", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Gluten-free", "song": "Single Ladies", "reminderSent": false, "tableId": "table_1", "seatIndex": 7}, {"id": "g_t2_1", "name": "Nathan Knight", "initials": "NK", "household": "Nathan Knight", "email": "nathan.k@example.com", "phone": "0412 334 001", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Hey Ya!", "reminderSent": false, "tableId": "table_2", "seatIndex": 0}, {"id": "g_t2_2", "name": "Georgia Hall", "initials": "GH", "household": "Georgia Hall", "email": "georgia.h@example.com", "phone": "0412 334 002", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Shut Up and Dance", "reminderSent": false, "tableId": "table_2", "seatIndex": 1}, {"id": "g_t2_3", "name": "William Ford", "initials": "WF", "household": "William Ford", "email": "william.f@example.com", "phone": "0412 334 003", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Vegetarian", "song": "Wonderwall", "reminderSent": false, "tableId": "table_2", "seatIndex": 2}, {"id": "g_t2_4", "name": "Fiona Scott", "initials": "FS", "household": "Fiona Scott", "email": "fiona.s@example.com", "phone": "0412 334 004", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Happy - Pharrell", "reminderSent": false, "tableId": "table_2", "seatIndex": 3}, {"id": "g_t2_5", "name": "George Miller", "initials": "GM", "household": "George Miller", "email": "george.m@example.com", "phone": "0412 334 005", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Sugar - Maroon 5", "reminderSent": false, "tableId": "table_2", "seatIndex": 4}, {"id": "g_t2_6", "name": "Quinn Nelson", "initials": "QN", "household": "Quinn Nelson", "email": "quinn.n@example.com", "phone": "0412 334 006", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Crazy in Love", "reminderSent": false, "tableId": "table_2", "seatIndex": 5}, {"id": "g_t3_1", "name": "Ian Patel", "initials": "IP", "household": "Ian Patel", "email": "ian.p@example.com", "phone": "0413 445 001", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "24K Magic", "reminderSent": false, "tableId": "table_3", "seatIndex": 0}, {"id": "g_t3_2", "name": "Grace Turner", "initials": "GT", "household": "Grace Turner", "email": "grace.t@example.com", "phone": "0413 445 002", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Gluten-free", "song": "Treasure", "reminderSent": false, "tableId": "table_3", "seatIndex": 1}, {"id": "g_t3_3", "name": "Yasmine Abbas", "initials": "YA", "household": "Yasmine Abbas", "email": "yasmine.a@example.com", "phone": "0413 445 003", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Halal", "song": "Levitating", "reminderSent": false, "tableId": "table_3", "seatIndex": 2}, {"id": "g_t3_4", "name": "Zachary Webb", "initials": "ZW", "household": "Zachary Webb", "email": "zachary.w@example.com", "phone": "0413 445 004", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Get Lucky", "reminderSent": false, "tableId": "table_3", "seatIndex": 3}, {"id": "g_t4_1", "name": "Benjamin Ross", "initials": "BR", "household": "Benjamin Ross", "email": "ben.ross@example.com", "phone": "0414 556 001", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Good 4 U", "reminderSent": false, "tableId": "table_4", "seatIndex": 0}, {"id": "g_t4_2", "name": "Isabella Foster", "initials": "IF", "household": "Isabella Foster", "email": "isabella.f@example.com", "phone": "0414 556 002", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Valerie", "reminderSent": false, "tableId": "table_4", "seatIndex": 1}, {"id": "g_t4_3", "name": "Oliver Thomas", "initials": "OT", "household": "Oliver Thomas", "email": "oliver.t@example.com", "phone": "0414 556 003", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Vegetarian", "song": "Mamma Mia", "reminderSent": false, "tableId": "table_4", "seatIndex": 2}, {"id": "g_t4_5", "name": "Yuvraj Rao", "initials": "YR", "household": "Yuvraj Rao", "email": "yuvraj.r@example.com", "phone": "0414 556 005", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Dynamite", "reminderSent": false, "tableId": "table_4", "seatIndex": 4}, {"id": "g_t4_6", "name": "Natasha Price", "initials": "NP", "household": "Natasha Price", "email": "natasha.p@example.com", "phone": "0414 556 006", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "About Damn Time", "reminderSent": false, "tableId": "table_4", "seatIndex": 5}, {"id": "g_t4_7", "name": "Julian Taylor", "initials": "JT", "household": "Julian Taylor", "email": "julian.t@example.com", "phone": "0414 556 007", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Shape of You", "reminderSent": false, "tableId": "table_4", "seatIndex": 6}, {"id": "g_t4_8", "name": "Alice Davis", "initials": "AD", "household": "Alice Davis", "email": "alice.d@example.com", "phone": "0414 556 008", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Nut allergy", "song": "Watermelon Sugar", "reminderSent": false, "tableId": "table_4", "seatIndex": 7}, {"id": "g_t5_1", "name": "Harper Lewis", "initials": "HL", "household": "Harper Lewis", "email": "harper.l@example.com", "phone": "0415 667 001", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Dance Monkey", "reminderSent": false, "tableId": "table_5", "seatIndex": 0}, {"id": "g_t5_2", "name": "Kian Thorne", "initials": "KT", "household": "Kian Thorne", "email": "kian.t@example.com", "phone": "0415 667 002", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Wake Me Up", "reminderSent": false, "tableId": "table_5", "seatIndex": 1}, {"id": "g_t5_3", "name": "Chloe Lin", "initials": "CL", "household": "Chloe Lin", "email": "chloe.l@example.com", "phone": "0415 667 003", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Gluten-free", "song": "Roar", "reminderSent": false, "tableId": "table_5", "seatIndex": 2}, {"id": "g_rchen", "name": "Robert Chen", "initials": "RC", "household": "The Chen Family", "email": "robert.c@example.com", "phone": "0421 991 223", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "Vegetarian", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_slee", "name": "Sarah Lee", "initials": "SL", "household": "Sarah Lee", "email": "sarah.lee@example.com", "phone": "0433 112 445", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dwhitfield", "name": "David Whitfield", "initials": "DW", "household": "The Whitfield family", "email": "david.w@example.com", "phone": "0414 556 778", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_mkapoor", "name": "Maya Kapoor", "initials": "MK", "household": "Maya Kapoor", "email": "maya.k@example.com", "phone": "0400 334 556", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Gluten-free", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_toneill", "name": "Thomas O'Neill", "initials": "TO", "household": "Thomas O'Neill", "email": "thomas.o@example.com", "phone": "0418 776 554", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_jbrown", "name": "Jessica Brown", "initials": "JB", "household": "Jessica Brown", "email": "jessica.b@example.com", "phone": "0422 998 112", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_lscott", "name": "Liam Scott", "initials": "LS", "household": "Liam Scott", "email": "liam.s@example.com", "phone": "0411 223 344", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_ctaylor", "name": "Chloe Taylor", "initials": "CT", "household": "Chloe Taylor", "email": "chloe.t@example.com", "phone": "0422 334 455", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Vegan", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_eharris", "name": "Ethan Harris", "initials": "EH", "household": "Ethan Harris", "email": "ethan.h@example.com", "phone": "0433 445 566", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_omartin", "name": "Olivia Martin", "initials": "OM", "household": "Olivia Martin", "email": "olivia.m@example.com", "phone": "0444 556 677", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_lwhite", "name": "Lucas White", "initials": "LW", "household": "Lucas White", "email": "lucas.w@example.com", "phone": "0455 667 788", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_ghall2", "name": "Grace Hall", "initials": "GH", "household": "Grace Hall", "email": "grace.h2@example.com", "phone": "0466 778 899", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Nut allergy", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_bclark", "name": "Benjamin Clark", "initials": "BC", "household": "Benjamin Clark", "email": "ben.c@example.com", "phone": "0477 889 900", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_zadams", "name": "Zoe Adams", "initials": "ZA", "household": "Zoe Adams", "email": "zoe.a@example.com", "phone": "0488 990 011", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra1", "name": "Sarah & David Lee", "initials": "SL", "household": "The Lee Family", "email": "sarah.lee.couple@example.com", "phone": "0499 111 222", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra2", "name": "Patrick & Claire Murphy", "initials": "PM", "household": "The Murphy Family", "email": "patrick.m@example.com", "phone": "0499 222 333", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra3", "name": "Daniel & Emily Zhang", "initials": "DZ", "household": "The Zhang Family", "email": "daniel.z@example.com", "phone": "0499 333 444", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "Pescatarian", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra4", "name": "Ryan & Stephanie Scott", "initials": "RS", "household": "The Scott Family", "email": "ryan.s@example.com", "phone": "0499 444 555", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra5", "name": "Jack & Mia Wilson", "initials": "JW", "household": "The Wilson Family", "email": "jack.w@example.com", "phone": "0499 555 666", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra6", "name": "Henry & Chloe King", "initials": "HK", "household": "The King Family", "email": "henry.k@example.com", "phone": "0499 666 777", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra7", "name": "Samuel & Lily Baker", "initials": "SB", "household": "The Baker Family", "email": "samuel.b@example.com", "phone": "0499 777 888", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra8", "name": "Noah & Evelyn Carter", "initials": "NC", "household": "The Carter Family", "email": "noah.c@example.com", "phone": "0499 888 999", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra9", "name": "Mason & Harper Brooks", "initials": "MB", "household": "The Brooks Family", "email": "mason.b@example.com", "phone": "0499 999 000", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra10", "name": "Logan & Ava Hughes", "initials": "LH", "household": "The Hughes Family", "email": "logan.h@example.com", "phone": "0498 111 222", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra11", "name": "Leo & Ella Price", "initials": "LP", "household": "The Price Family", "email": "leo.p@example.com", "phone": "0498 222 333", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra12", "name": "Harrison & Scarlett Ward", "initials": "HW", "household": "The Ward Family", "email": "harrison.w@example.com", "phone": "0498 333 444", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra13", "name": "Theo & Sienna Foster", "initials": "TF", "household": "The Foster Family", "email": "theo.f@example.com", "phone": "0498 444 555", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra14", "name": "Oscar & Ruby Powell", "initials": "OP", "household": "The Powell Family", "email": "oscar.p@example.com", "phone": "0498 555 666", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra15", "name": "Archie & Isla Cooper", "initials": "AC", "household": "The Cooper Family", "email": "archie.c@example.com", "phone": "0498 666 777", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra16", "name": "George & Mia Evans", "initials": "GE", "household": "The Evans Family", "email": "george.e@example.com", "phone": "0498 777 888", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra17", "name": "Finn & Zara Mitchell", "initials": "FM", "household": "The Mitchell Family", "email": "finn.m@example.com", "phone": "0498 888 999", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra18", "name": "Edward & Sophie Turner", "initials": "ET", "household": "The Turner Family", "email": "edward.t@example.com", "phone": "0498 999 000", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec1", "name": "Marcus Vance", "initials": "MV", "household": "Marcus Vance", "email": "marcus.v@example.com", "phone": "0471 112 334", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec2", "name": "Helena Ross", "initials": "HR", "household": "Helena Ross", "email": "helena.r@example.com", "phone": "0471 223 445", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec3", "name": "Timothy Drake", "initials": "TD", "household": "Timothy Drake", "email": "tim.d@example.com", "phone": "0471 334 556", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec4", "name": "Claire Redfield", "initials": "CR", "household": "Claire Redfield", "email": "claire.r@example.com", "phone": "0471 445 667", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec5", "name": "Leon Kennedy", "initials": "LK", "household": "Leon Kennedy", "email": "leon.k@example.com", "phone": "0471 556 778", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec6", "name": "Ada Wong", "initials": "AW", "household": "Ada Wong", "email": "ada.w@example.com", "phone": "0471 667 889", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec7", "name": "Jill Valentine", "initials": "JV", "household": "Jill Valentine", "email": "jill.v@example.com", "phone": "0471 778 990", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec8", "name": "Chris Redfield", "initials": "CR", "household": "Chris Redfield", "email": "chris.r@example.com", "phone": "0471 889 001", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec9", "name": "Albert Wesker", "initials": "AW", "household": "Albert Wesker", "email": "albert.w@example.com", "phone": "0471 990 112", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa1", "name": "Bradley Cooper", "initials": "BC", "household": "The Cooper Family", "email": "bradley.c@example.com", "phone": "0461 111 222", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa2", "name": "Catherine Zeta", "initials": "CZ", "household": "Catherine Zeta", "email": "catherine.z@example.com", "phone": "0461 222 333", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa3", "name": "Daniel Craig", "initials": "DC", "household": "Daniel Craig", "email": "daniel.c@example.com", "phone": "0461 333 444", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa4", "name": "Emma Watson", "initials": "EW", "household": "Emma Watson", "email": "emma.w@example.com", "phone": "0461 444 555", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa5", "name": "Felix Baum", "initials": "FB", "household": "The Baum Family", "email": "felix.b@example.com", "phone": "0461 555 666", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa6", "name": "Gemma Chan", "initials": "GC", "household": "Gemma Chan", "email": "gemma.c@example.com", "phone": "0461 666 777", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa7", "name": "Hugh Jackman", "initials": "HJ", "household": "The Jackman Family", "email": "hugh.j@example.com", "phone": "0461 777 888", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa8", "name": "Isla Fisher", "initials": "IF", "household": "Isla Fisher", "email": "isla.f@example.com", "phone": "0461 888 999", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa9", "name": "Justin Timberlake", "initials": "JT", "household": "The Timberlake Family", "email": "justin.t@example.com", "phone": "0461 999 000", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa10", "name": "Keira Knightley", "initials": "KK", "household": "Keira Knightley", "email": "keira.k@example.com", "phone": "0462 111 222", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa11", "name": "Liam Hemsworth", "initials": "LH", "household": "The Hemsworth Family", "email": "liam.h@example.com", "phone": "0462 222 333", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa12", "name": "Margot Robbie", "initials": "MR", "household": "Margot Robbie", "email": "margot.r@example.com", "phone": "0462 333 444", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa13", "name": "Nicholas Hoult", "initials": "NH", "household": "Nicholas Hoult", "email": "nicholas.h@example.com", "phone": "0462 444 555", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa14", "name": "Olivia Colman", "initials": "OC", "household": "Olivia Colman", "email": "olivia.c@example.com", "phone": "0462 555 666", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa15", "name": "Paul Mescal", "initials": "PM", "household": "Paul Mescal", "email": "paul.m@example.com", "phone": "0462 666 777", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa16", "name": "Rachel Weisz", "initials": "RW", "household": "Rachel Weisz", "email": "rachel.w@example.com", "phone": "0462 777 888", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa17", "name": "Sam Worthington", "initials": "SW", "household": "The Worthington Family", "email": "sam.w@example.com", "phone": "0462 888 999", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa18", "name": "Toni Collette", "initials": "TC", "household": "Toni Collette", "email": "toni.c@example.com", "phone": "0462 999 000", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa19", "name": "Vince Colosimo", "initials": "VC", "household": "Vince Colosimo", "email": "vince.c@example.com", "phone": "0463 111 222", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa20", "name": "Wendy Hughes", "initials": "WH", "household": "Wendy Hughes", "email": "wendy.h@example.com", "phone": "0463 222 333", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa21", "name": "Xavier Samuel", "initials": "XS", "household": "Xavier Samuel", "email": "xavier.s@example.com", "phone": "0463 333 444", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa22", "name": "Yael Stone", "initials": "YS", "household": "Yael Stone", "email": "yael.s@example.com", "phone": "0463 444 555", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}], "feed": [{"id": "f_mile", "type": "milestone", "title": "50 guests confirmed", "subtitle": "You've hit the halfway mark on RSVPs", "time": "Just now", "likes": 24, "comments": [], "pinned": true, "hidden": false}, {"id": "f_note1", "type": "note", "author": "Aunty Carol", "title": "Aunty Carol left a note", "quote": "So excited for you both \u2014 can't wait to celebrate! \ud83d\udc95", "time": "2 minutes ago", "likes": 8, "comments": ["Can't wait to dance with you Aunty Carol!"], "replies": [{"author": "Sophie & James", "role": "couple", "text": "Thank you so much Aunty Carol! We can't wait to celebrate and dance with you! \ud83d\udc95", "time": "Just now"}], "pinned": false, "hidden": false}, {"id": "f_gift1", "type": "gift", "author": "The Whitfield family", "title": "The Whitfield family sent a gift", "subtitle": "via Gift & Go \u2014 wishing well contribution", "quote": "Wishing you both a lifetime of love and happiness!", "time": "38 minutes ago", "likes": 5, "comments": [], "replies": [], "pinned": false, "hidden": false}, {"id": "f_rsvp1", "type": "rsvp", "author": "Michael Chen", "title": "Michael Chen confirmed", "subtitle": "Attending, +1 guest \u00b7 dietary: vegetarian", "time": "1 hour ago", "likes": 3, "comments": [], "pinned": false, "hidden": false}, {"id": "f_photo1", "type": "photo", "author": "Priya", "title": "New photo added", "subtitle": "Priya uploaded a photo to the gallery", "photoDesc": "Sunset view over Southern Highlands vineyards", "time": "3 hours ago", "likes": 12, "comments": ["Absolutely breathtaking!"], "pinned": false, "hidden": false}, {"id": "f_rsvp2", "type": "rsvp", "author": "Sarah & David Lee", "title": "Sarah & David Lee confirmed", "subtitle": "Attending \u00b7 no plus-one", "time": "5 hours ago", "likes": 2, "comments": [], "pinned": false, "hidden": false}], "gifts": [{"id": "gf1", "from": "The Whitfield family", "amount": 250, "date": "Today", "message": "Wishing you both a lifetime of love and happiness!", "thankYouSent": false}, {"id": "gf2", "from": "Sarah & Michael Chen", "amount": 300, "date": "Yesterday", "message": "So thrilled for you Sophie and James!", "thankYouSent": false}, {"id": "gf3", "from": "Aunty Carol & Uncle Peter", "amount": 500, "date": "2 days ago", "message": "With all our love and blessings on your special day.", "thankYouSent": false}, {"id": "gf4", "from": "Emma & David Wilson", "amount": 200, "date": "3 days ago", "message": "Congratulations to the wonderful couple!", "thankYouSent": false}, {"id": "gf5", "from": "Marcus & Olivia Vance", "amount": 350, "date": "4 days ago", "message": "Enjoy every second of the celebration!", "thankYouSent": false}, {"id": "gf6", "from": "The O'Connor Family", "amount": 400, "date": "5 days ago", "message": "Huge congratulations Sophie and James!", "thankYouSent": false}, {"id": "gf7", "from": "Jessica & Liam Taylor", "amount": 180, "date": "6 days ago", "message": "Can't wait to raise a glass to you both!", "thankYouSent": false}, {"id": "gf8", "from": "Rob & Chloe Martin", "amount": 250, "date": "1 week ago", "message": "So happy for you guys!", "thankYouSent": false}, {"id": "gf9", "from": "Grandma Evelyn", "amount": 500, "date": "1 week ago", "message": "May God bless your beautiful marriage.", "thankYouSent": false}, {"id": "gf10", "from": "Uncle Arthur", "amount": 500, "date": "2 weeks ago", "message": "All our love.", "thankYouSent": true}, {"id": "gf11", "from": "Fiona & George Miller", "amount": 350, "date": "2 weeks ago", "message": "Cheers to your future together!", "thankYouSent": true}, {"id": "gf12", "from": "The Davis Family", "amount": 500, "date": "3 weeks ago", "message": "Warmest congratulations!", "thankYouSent": true}], "photos": [{"id": "p1", "caption": "Southern Highlands winery ceremony lawn", "author": "Priya", "time": "Yesterday"}, {"id": "p2", "caption": "Tasting session at Fernwood Estate", "author": "Sophie", "time": "3 days ago"}, {"id": "p3", "caption": "Floral arch preview in natural gum foliage", "author": "Hannah", "time": "1 week ago"}, {"id": "p4", "caption": "Golden hour over the Mittagong ranges", "author": "James", "time": "2 weeks ago"}], "invoices": [{"id": "INV-1081", "couple": "Sophie & James", "date": "08 Oct 2026", "amount": 1850, "status": "Paid", "venue": "Fernwood Estate"}, {"id": "INV-1082", "couple": "Aisha & Marcus", "date": "15 Oct 2026", "amount": 1650, "status": "Pending", "venue": "Doltone House"}, {"id": "INV-1083", "couple": "Emma & Tom", "date": "01 Nov 2026", "amount": 1950, "status": "Draft", "venue": "Dunbar House"}, {"id": "INV-1084", "couple": "Katie & Rob", "date": "12 Nov 2026", "amount": 1750, "status": "Draft", "venue": "Dunbar House"}], "clients": [{"id": "cl1", "couple": "Sophie & James", "phone": "0400 111 222", "email": "sophie.bell@example.com", "weddingDate": "14 Nov 2026", "venue": "Fernwood Estate", "tier": "Platinum MC & Coordination", "deposit": "Paid ($925)", "notes": "Outdoor ceremony on lawn. High energy reception. Live band."}, {"id": "cl2", "couple": "Aisha & Marcus", "phone": "0400 333 444", "email": "aisha.m@example.com", "weddingDate": "2 May 2027", "venue": "Doltone House", "tier": "Standard MC", "deposit": "Paid ($825)", "notes": "Strict 11:30 PM venue curfew. Formal multi-course dinner."}, {"id": "cl3", "couple": "Emma & Tom", "phone": "0400 555 666", "email": "emma.t@example.com", "weddingDate": "20 Jun 2027", "venue": "Dunbar House", "tier": "Full Day Master of Ceremonies", "deposit": "Pending", "notes": "Ferry transport coordination for guests from Circular Quay."}, {"id": "cl4", "couple": "Katie & Rob", "phone": "0400 777 888", "email": "katie.r@example.com", "weddingDate": "11 Jul 2027", "venue": "Dunbar House", "tier": "Standard MC", "deposit": "Pending", "notes": "Intimate winter wedding. Acoustic trio for cocktail hour."}], "team": [{"id": "tm1", "name": "Robert Galati", "role": "Lead Master of Ceremonies", "email": "robert@galatimc.com.au", "phone": "0418 223 901", "status": "Active"}, {"id": "tm2", "name": "Sarah Jenkins", "role": "On-day Event Coordinator", "email": "sarah.j@galatimc.com.au", "phone": "0418 223 902", "status": "Active"}, {"id": "tm3", "name": "Dave Miller", "role": "Sound & AV Technician", "email": "dave.m@galatimc.com.au", "phone": "0418 223 903", "status": "Active"}], "tenants": [{"id": "ten1", "business": "Robert Galati MC Services", "lead": "Robert Galati", "plan": "Pro", "weddings": 7, "mrr": 299, "status": "Active", "joined": "12 Jan 2025", "stripeConnected": true, "email": "robert@galatimc.com.au"}, {"id": "ten2", "business": "Coastal Celebrations MC", "lead": "Marcus Thorne", "plan": "Pro", "weddings": 5, "mrr": 299, "status": "Active", "joined": "04 Mar 2025", "stripeConnected": true, "email": "marcus@coastalmc.com.au"}, {"id": "ten3", "business": "Sydney Vows & Beats", "lead": "Elena Rostova", "plan": "Standard", "weddings": 3, "mrr": 199, "status": "Active", "joined": "18 May 2025", "stripeConnected": true, "email": "elena@sydneyvows.com.au"}, {"id": "ten4", "business": "Melbourne Elite Hosts", "lead": "Julian Brooks", "plan": "Starter", "weddings": 1, "mrr": 99, "status": "Suspended", "joined": "01 Aug 2025", "stripeConnected": false, "email": "julian@melbourneelite.com.au"}], "featureFlags": {"digitalGifting": true, "aiSeating": true, "qardPrinting": true, "photoModeration": true, "smsReminders": false}, "supportTickets": [{"id": "TCK-401", "tenant": "Robert Galati MC Services", "subject": "Custom run sheet export formatting for print", "priority": "Medium", "status": "Open", "date": "08 Oct 2026", "messages": [{"sender": "Robert Galati", "text": "Can we include dietary badges on the printed MC run sheet?", "time": "Yesterday"}, {"sender": "Tap & Toast Support", "text": "Hi Robert, that feature is coming in the next release! You can currently view dietaries in the Guest Summary tab.", "time": "2 hours ago"}]}, {"id": "TCK-402", "tenant": "Coastal Celebrations MC", "subject": "Stripe payout schedule for December events", "priority": "High", "status": "In Progress", "date": "07 Oct 2026", "messages": [{"sender": "Marcus Thorne", "text": "We need 24hr payout clearance for weekend gifting disbursements.", "time": "2 days ago"}]}, {"id": "TCK-403", "tenant": "Sydney Vows & Beats", "subject": "NFC backup options for QaRd cards", "priority": "Low", "status": "Resolved", "date": "02 Oct 2026", "messages": [{"sender": "Elena Rostova", "text": "Resolved: QR code scan works seamlessly without requiring NFC hardware.", "time": "1 week ago"}]}], "auditLog": [{"id": "aud1", "timestamp": "2026-10-09 14:15", "actor": "Michael Chen", "action": "RSVP Confirmed", "details": "Confirmed attendance (+1 guest, vegetarian)", "category": "RSVP"}, {"id": "aud2", "timestamp": "2026-10-09 13:42", "actor": "The Whitfield family", "action": "Gift & Go Received", "details": "Sent $250 AUD gift with message", "category": "Gifting"}, {"id": "aud3", "timestamp": "2026-10-09 12:10", "actor": "Aunty Carol", "action": "Feed Note Posted", "details": "Posted a Love Note on celebration feed", "category": "Feed"}, {"id": "aud4", "timestamp": "2026-10-09 11:00", "actor": "Priya Sharma", "action": "Photo Uploaded", "details": "Added photo to wedding photo wall", "category": "Photos"}, {"id": "aud5", "timestamp": "2026-10-09 09:20", "actor": "Sophie (Couple)", "action": "Seating Updated", "details": "Assigned Table 4 seating arrangement", "category": "Seating"}, {"id": "aud6", "timestamp": "2026-10-08 17:00", "actor": "Robert Galati (MC)", "action": "Run Sheet Updated", "details": "Updated reception timings and speech order", "category": "Run Sheet"}], "users": [{"id": "u_mc1", "email": "robert@galati.demo", "passwordHash": "dHRfc2FsdF9EZW1vMTIzNCE=", "name": "Robert Galati", "role": "mc", "tenantId": "ten1", "business": "Robert Galati MC Services"}, {"id": "u_couple1", "email": "sophie.james@demo.test", "passwordHash": "dHRfc2FsdF9EZW1vMTIzNCE=", "name": "Sophie & James", "role": "couple", "weddingId": "w1"}, {"id": "u_admin1", "email": "admin@tapandtoast.demo", "passwordHash": "dHRfc2FsdF9EZW1vMTIzNCE=", "name": "Platform Admin", "role": "superadmin"}], "invites": [{"code": "SJ-2026", "weddingId": "w1", "couple": "Sophie & James", "partner1": "Sophie", "partner2": "James", "mc": "Robert Galati", "weddingDate": "14 Nov 2026", "venue": "Fernwood Estate, Southern Highlands", "used": false}]};
+const SEED_DATA = {"version": 2, "currentWeddingId": "w1", "weddings": [{"id": "w1", "couple": "Sophie & James", "partner1": "Sophie", "partner2": "James", "date": "2026-11-14T14:00:00", "dateDisplay": "14 Nov 2026", "timeDisplay": "2:00 PM", "venue": "Fernwood Estate, Southern Highlands", "venueAddress": "124 Range Road, Mittagong NSW 2575", "parking": "Complimentary on-site guest parking is available at the Main Lawn entrance. Follow the directional signs upon arrival.", "dressCode": "Black Tie Optional / Formal Elegance", "registry": "Digital wishing well via Gift & Go", "invited": 118, "status": "Finalising", "tasks": [{"id": "t1", "text": "Send save-the-dates", "completed": true, "due": ""}, {"id": "t2", "text": "Finalise table 9 & 10 seating", "completed": false, "due": "Due Fri"}, {"id": "t3", "text": "Send RSVP reminder to 22 guests", "completed": false, "due": "Due Mon"}], "runSheet": [{"id": "rs1", "time": "13:30", "note": "MC arrival, audio check with AV tech & Celebrant Sarah", "done": false}, {"id": "rs2", "time": "14:00", "note": "Guest seating & ceremony processional commences", "done": false}, {"id": "rs3", "time": "14:45", "note": "Announce cocktail hour, direct guests to Verandah for canap\u00e9s & bar", "done": false}, {"id": "rs4", "time": "15:45", "note": "Sound dinner bell, usher guests into Grand Pavilion", "done": false}, {"id": "rs5", "time": "16:00", "note": "Grand Entrance introduction for bridal party & Sophie & James", "done": false}, {"id": "rs6", "time": "16:15", "note": "Welcome remarks & housekeeping, introduce entr\u00e9e service", "done": false}, {"id": "rs7", "time": "17:30", "note": "Call for main speeches: Father of the Bride, Maid of Honour, Best Man", "done": false}, {"id": "rs8", "time": "19:15", "note": "Invite couple for Cake Cutting, direct guests to Dance Floor for First Dance", "done": false}, {"id": "rs9", "time": "22:15", "note": "Last drinks call & organise guests with sparklers for courtyard send-off", "done": false}], "privateRunSheet": [{"id": "pmc1", "time": "13:30", "activity": "MC Arrival & AV Sound Check", "notes": "Run sound check on cordless mic #1 & #2 with AV tech Dave. Test Celebrant Sarah's lavalier mic.", "privateNotes": "PA speaker #3 has minor ground hum when dimmers are at 50%; keep master gain at -3dB.", "done": false, "order": 1}, {"id": "pmc2", "time": "14:00", "activity": "Guest Seating & Ceremony Processional", "notes": "Strings quartet plays processional. Ushers guide front rows for VIP parents.", "privateNotes": "Grandmother Arthur requires walking assistance; ensure front row aisle 1 is clear.", "done": false, "order": 2}, {"id": "pmc3", "time": "14:45", "activity": "Cocktail Hour Announcement", "notes": "Direct guests to Verandah for canap\u00e9s, champagne & acoustic duo.", "privateNotes": "Bride's father has surprise vintage Jaguar parked in courtyard for quick photo at 15:10.", "done": false, "order": 3}, {"id": "pmc4", "time": "15:45", "activity": "Sound Dinner Bell & Seating Call", "notes": "Sound luxury brass chime. Encourage guests to find their circular tables.", "privateNotes": "Caterer Head Chef Marco confirmed main course plating strictly starts at 16:30.", "done": false, "order": 4}, {"id": "pmc5", "time": "16:00", "activity": "Grand Entrance: Bridal Party & Couple", "notes": "High energy entrance song: 'Higher Love' (Kygo remix). Hype crowd applause.", "privateNotes": "Couple enters through French glass doors on South terrace, not main hall foyer.", "done": false, "order": 5}, {"id": "pmc6", "time": "16:15", "activity": "MC Welcome Remarks & Housekeeping", "notes": "Warm welcome, emergency exits, bar closing time (22:00), digital wishing well QR reminder.", "privateNotes": "Keep remarks under 3 minutes; kitchen is ready with hot entr\u00e9e drop immediately after.", "done": false, "order": 6}, {"id": "pmc7", "time": "17:30", "activity": "Speeches: Parents & Bridal Party", "notes": "1. Father of Bride (David), 2. Maid of Honour (Chloe), 3. Best Man (Harrison).", "privateNotes": "Best Man Harrison requested slideshow cue on projector right after slide 4 joke.", "done": false, "order": 7}, {"id": "pmc8", "time": "19:15", "activity": "Cake Cutting & First Dance", "notes": "Invite guests to surround dance floor. First dance: 'Lover' by Taylor Swift.", "privateNotes": "Sparkler cold-fountain machines 1 & 2 trigger on chorus 2 at 1:42 mark.", "done": false, "order": 8}, {"id": "pmc9", "time": "22:15", "activity": "Last Drinks & Courtyard Sparkler Send-Off", "notes": "Final DJ anthem, marshal guests outside with 45cm wedding sparklers.", "privateNotes": "Getaway vintage car driver Greg on mobile 0411 999 888 parked at circular driveway.", "done": false, "order": 9}]}, {"id": "w2", "couple": "Aisha & Marcus", "partner1": "Aisha", "partner2": "Marcus", "date": "2027-05-02T15:00:00", "dateDisplay": "2 May 2027", "timeDisplay": "3:00 PM", "venue": "Doltone House, Sydney", "venueAddress": "Jones Bay Wharf, Pyrmont NSW", "parking": "Valet parking available at Jones Bay Wharf.", "dressCode": "Cocktail Attire", "registry": "Gift & Go wishing well", "invited": 86, "confirmed": 46, "status": "On track", "tasks": [{"id": "t21", "text": "Book floral designer", "completed": true, "due": ""}, {"id": "t22", "text": "Send digital invitations", "completed": true, "due": ""}, {"id": "t23", "text": "Taste menu options", "completed": false, "due": "Due next month"}], "runSheet": [{"id": "rs21", "time": "14:30", "note": "MC setup & audio check", "done": false}, {"id": "rs22", "time": "15:00", "note": "Ceremony begins", "done": false}]}, {"id": "w3", "couple": "Emma & Tom", "partner1": "Emma", "partner2": "Tom", "date": "2027-06-20T14:30:00", "dateDisplay": "20 Jun 2027", "timeDisplay": "2:30 PM", "venue": "Dunbar House, Watsons Bay", "venueAddress": "9 Marine Parade, Watsons Bay NSW", "parking": "Robertson Park street parking and Watsons Bay ferry wharf.", "dressCode": "Lounge Suit / Garden Formal", "registry": "Gift & Go wishing well", "invited": 140, "confirmed": 31, "status": "Planning", "tasks": [{"id": "t31", "text": "Confirm celebrant", "completed": true, "due": ""}, {"id": "t32", "text": "Draft guest list", "completed": false, "due": "Due next week"}], "runSheet": [{"id": "rs31", "time": "14:00", "note": "Guest arrival at Dunbar lawn", "done": false}]}, {"id": "w4", "couple": "Katie & Rob", "partner1": "Katie", "partner2": "Rob", "date": "2027-07-11T15:00:00", "dateDisplay": "11 Jul 2027", "timeDisplay": "3:00 PM", "venue": "Dunbar House, Watsons Bay", "venueAddress": "9 Marine Parade, Watsons Bay NSW", "parking": "Dunbar House dedicated parking bays.", "dressCode": "Black Tie", "registry": "Gift & Go wishing well", "invited": 95, "confirmed": 9, "status": "Planning", "tasks": [{"id": "t41", "text": "Lock in photographer", "completed": false, "due": "Due in 2 weeks"}], "runSheet": [{"id": "rs41", "time": "14:30", "note": "Prelude music starts", "done": false}]}], "tables": [{"id": "head", "name": "HEAD TABLE", "capacity": 8, "isHead": true}, {"id": "table_1", "name": "Table 1", "capacity": 8, "isHead": false}, {"id": "table_2", "name": "Table 2", "capacity": 8, "isHead": false}, {"id": "table_3", "name": "Table 3", "capacity": 8, "isHead": false}, {"id": "table_4", "name": "Table 4", "capacity": 8, "isHead": false}, {"id": "table_5", "name": "Table 5", "capacity": 8, "isHead": false}, {"id": "table_6", "name": "Table 6", "capacity": 8, "isHead": false}], "guests": [{"id": "priya", "name": "Priya Sharma", "initials": "PS", "household": "The Sharma Family", "email": "priya.sharma@example.com.au", "phone": "0412 884 992", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "Vegetarian", "song": "September - Earth, Wind & Fire", "reminderSent": false, "tableId": "table_4", "seatIndex": 3}, {"id": "g_ht1", "name": "Sophie Bell", "initials": "SB", "household": "Sophie Bell", "email": "sophie.bell@example.com", "phone": "0400 111 222", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "At Last - Etta James", "reminderSent": false, "tableId": "head", "seatIndex": 0}, {"id": "g_ht2", "name": "James Gordon", "initials": "JG", "household": "James Gordon", "email": "james.gordon@example.com", "phone": "0400 222 333", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "You Are The Best Thing", "reminderSent": false, "tableId": "head", "seatIndex": 1}, {"id": "g_ht3", "name": "Hannah Martin", "initials": "HM", "household": "Hannah Martin", "email": "hannah.m@example.com", "phone": "0400 333 444", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Vegetarian", "song": "Dancing Queen", "reminderSent": false, "tableId": "head", "seatIndex": 2}, {"id": "g_ht4", "name": "Oliver Vance", "initials": "OV", "household": "Oliver Vance", "email": "oliver.v@example.com", "phone": "0400 444 555", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Mr. Brightside", "reminderSent": false, "tableId": "head", "seatIndex": 3}, {"id": "g_ht5", "name": "Charlotte Evans", "initials": "CE", "household": "Charlotte Evans", "email": "charlotte.e@example.com", "phone": "0400 555 666", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Gluten-free", "song": "Levitating", "reminderSent": false, "tableId": "head", "seatIndex": 4}, {"id": "g_ht6", "name": "Liam Fletcher", "initials": "LF", "household": "Liam Fletcher", "email": "liam.f@example.com", "phone": "0400 666 777", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Uptown Funk", "reminderSent": false, "tableId": "head", "seatIndex": 5}, {"id": "g_ht7", "name": "Grace Kelly", "initials": "GK", "household": "Grace Kelly", "email": "grace.k@example.com", "phone": "0400 777 888", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "I Wanna Dance with Somebody", "reminderSent": false, "tableId": "head", "seatIndex": 6}, {"id": "g_ht8", "name": "Alexander Wright", "initials": "AW", "household": "Alexander Wright", "email": "alex.w@example.com", "phone": "0400 888 999", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Superstition", "reminderSent": false, "tableId": "head", "seatIndex": 7}, {"id": "g_t1_1", "name": "Michael Chen", "initials": "MC", "household": "Michael Chen", "email": "michael.chen@example.com", "phone": "0411 223 901", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "Vegetarian", "song": "Stayin' Alive", "reminderSent": false, "tableId": "table_1", "seatIndex": 0}, {"id": "g_t1_2", "name": "David Vance", "initials": "DV", "household": "David Vance", "email": "david.vance@example.com", "phone": "0411 223 902", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Don't Stop Me Now", "reminderSent": false, "tableId": "table_1", "seatIndex": 1}, {"id": "g_t1_3", "name": "Jessica White", "initials": "JW", "household": "Jessica White", "email": "jessica.white@example.com", "phone": "0411 223 903", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Blinding Lights", "reminderSent": false, "tableId": "table_1", "seatIndex": 2}, {"id": "g_t1_4", "name": "Aunty Carol Evans", "initials": "AC", "household": "Aunty Carol", "email": "carol.evans@example.com", "phone": "0411 223 904", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Sweet Caroline", "reminderSent": false, "tableId": "table_1", "seatIndex": 3}, {"id": "g_t1_5", "name": "Robert King", "initials": "RK", "household": "Robert King", "email": "robert.king@example.com", "phone": "0411 223 905", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Billie Jean", "reminderSent": false, "tableId": "table_1", "seatIndex": 4}, {"id": "g_t1_6", "name": "Lucy Palmer", "initials": "LP", "household": "Lucy Palmer", "email": "lucy.palmer@example.com", "phone": "0411 223 906", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Nut allergy", "song": "Can't Stop the Feeling!", "reminderSent": false, "tableId": "table_1", "seatIndex": 5}, {"id": "g_t1_7", "name": "Edward Lewis", "initials": "EL", "household": "Edward Lewis", "email": "edward.lewis@example.com", "phone": "0411 223 907", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Shake It Off", "reminderSent": false, "tableId": "table_1", "seatIndex": 6}, {"id": "g_t1_8", "name": "Chloe Jenkins", "initials": "CJ", "household": "Chloe Jenkins", "email": "chloe.jenkins@example.com", "phone": "0411 223 908", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Gluten-free", "song": "Single Ladies", "reminderSent": false, "tableId": "table_1", "seatIndex": 7}, {"id": "g_t2_1", "name": "Nathan Knight", "initials": "NK", "household": "Nathan Knight", "email": "nathan.k@example.com", "phone": "0412 334 001", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Hey Ya!", "reminderSent": false, "tableId": "table_2", "seatIndex": 0}, {"id": "g_t2_2", "name": "Georgia Hall", "initials": "GH", "household": "Georgia Hall", "email": "georgia.h@example.com", "phone": "0412 334 002", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Shut Up and Dance", "reminderSent": false, "tableId": "table_2", "seatIndex": 1}, {"id": "g_t2_3", "name": "William Ford", "initials": "WF", "household": "William Ford", "email": "william.f@example.com", "phone": "0412 334 003", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Vegetarian", "song": "Wonderwall", "reminderSent": false, "tableId": "table_2", "seatIndex": 2}, {"id": "g_t2_4", "name": "Fiona Scott", "initials": "FS", "household": "Fiona Scott", "email": "fiona.s@example.com", "phone": "0412 334 004", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Happy - Pharrell", "reminderSent": false, "tableId": "table_2", "seatIndex": 3}, {"id": "g_t2_5", "name": "George Miller", "initials": "GM", "household": "George Miller", "email": "george.m@example.com", "phone": "0412 334 005", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Sugar - Maroon 5", "reminderSent": false, "tableId": "table_2", "seatIndex": 4}, {"id": "g_t2_6", "name": "Quinn Nelson", "initials": "QN", "household": "Quinn Nelson", "email": "quinn.n@example.com", "phone": "0412 334 006", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Crazy in Love", "reminderSent": false, "tableId": "table_2", "seatIndex": 5}, {"id": "g_t3_1", "name": "Ian Patel", "initials": "IP", "household": "Ian Patel", "email": "ian.p@example.com", "phone": "0413 445 001", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "24K Magic", "reminderSent": false, "tableId": "table_3", "seatIndex": 0}, {"id": "g_t3_2", "name": "Grace Turner", "initials": "GT", "household": "Grace Turner", "email": "grace.t@example.com", "phone": "0413 445 002", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Gluten-free", "song": "Treasure", "reminderSent": false, "tableId": "table_3", "seatIndex": 1}, {"id": "g_t3_3", "name": "Yasmine Abbas", "initials": "YA", "household": "Yasmine Abbas", "email": "yasmine.a@example.com", "phone": "0413 445 003", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Halal", "song": "Levitating", "reminderSent": false, "tableId": "table_3", "seatIndex": 2}, {"id": "g_t3_4", "name": "Zachary Webb", "initials": "ZW", "household": "Zachary Webb", "email": "zachary.w@example.com", "phone": "0413 445 004", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Get Lucky", "reminderSent": false, "tableId": "table_3", "seatIndex": 3}, {"id": "g_t4_1", "name": "Benjamin Ross", "initials": "BR", "household": "Benjamin Ross", "email": "ben.ross@example.com", "phone": "0414 556 001", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Good 4 U", "reminderSent": false, "tableId": "table_4", "seatIndex": 0}, {"id": "g_t4_2", "name": "Isabella Foster", "initials": "IF", "household": "Isabella Foster", "email": "isabella.f@example.com", "phone": "0414 556 002", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Valerie", "reminderSent": false, "tableId": "table_4", "seatIndex": 1}, {"id": "g_t4_3", "name": "Oliver Thomas", "initials": "OT", "household": "Oliver Thomas", "email": "oliver.t@example.com", "phone": "0414 556 003", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Vegetarian", "song": "Mamma Mia", "reminderSent": false, "tableId": "table_4", "seatIndex": 2}, {"id": "g_t4_5", "name": "Yuvraj Rao", "initials": "YR", "household": "Yuvraj Rao", "email": "yuvraj.r@example.com", "phone": "0414 556 005", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Dynamite", "reminderSent": false, "tableId": "table_4", "seatIndex": 4}, {"id": "g_t4_6", "name": "Natasha Price", "initials": "NP", "household": "Natasha Price", "email": "natasha.p@example.com", "phone": "0414 556 006", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "About Damn Time", "reminderSent": false, "tableId": "table_4", "seatIndex": 5}, {"id": "g_t4_7", "name": "Julian Taylor", "initials": "JT", "household": "Julian Taylor", "email": "julian.t@example.com", "phone": "0414 556 007", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Shape of You", "reminderSent": false, "tableId": "table_4", "seatIndex": 6}, {"id": "g_t4_8", "name": "Alice Davis", "initials": "AD", "household": "Alice Davis", "email": "alice.d@example.com", "phone": "0414 556 008", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Nut allergy", "song": "Watermelon Sugar", "reminderSent": false, "tableId": "table_4", "seatIndex": 7}, {"id": "g_t5_1", "name": "Harper Lewis", "initials": "HL", "household": "Harper Lewis", "email": "harper.l@example.com", "phone": "0415 667 001", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Dance Monkey", "reminderSent": false, "tableId": "table_5", "seatIndex": 0}, {"id": "g_t5_2", "name": "Kian Thorne", "initials": "KT", "household": "Kian Thorne", "email": "kian.t@example.com", "phone": "0415 667 002", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Wake Me Up", "reminderSent": false, "tableId": "table_5", "seatIndex": 1}, {"id": "g_t5_3", "name": "Chloe Lin", "initials": "CL", "household": "Chloe Lin", "email": "chloe.l@example.com", "phone": "0415 667 003", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Gluten-free", "song": "Roar", "reminderSent": false, "tableId": "table_5", "seatIndex": 2}, {"id": "g_rchen", "name": "Robert Chen", "initials": "RC", "household": "The Chen Family", "email": "robert.c@example.com", "phone": "0421 991 223", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "Vegetarian", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_slee", "name": "Sarah Lee", "initials": "SL", "household": "Sarah Lee", "email": "sarah.lee@example.com", "phone": "0433 112 445", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dwhitfield", "name": "David Whitfield", "initials": "DW", "household": "The Whitfield family", "email": "david.w@example.com", "phone": "0414 556 778", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_mkapoor", "name": "Maya Kapoor", "initials": "MK", "household": "Maya Kapoor", "email": "maya.k@example.com", "phone": "0400 334 556", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Gluten-free", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_toneill", "name": "Thomas O'Neill", "initials": "TO", "household": "Thomas O'Neill", "email": "thomas.o@example.com", "phone": "0418 776 554", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_jbrown", "name": "Jessica Brown", "initials": "JB", "household": "Jessica Brown", "email": "jessica.b@example.com", "phone": "0422 998 112", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_lscott", "name": "Liam Scott", "initials": "LS", "household": "Liam Scott", "email": "liam.s@example.com", "phone": "0411 223 344", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_ctaylor", "name": "Chloe Taylor", "initials": "CT", "household": "Chloe Taylor", "email": "chloe.t@example.com", "phone": "0422 334 455", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Vegan", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_eharris", "name": "Ethan Harris", "initials": "EH", "household": "Ethan Harris", "email": "ethan.h@example.com", "phone": "0433 445 566", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_omartin", "name": "Olivia Martin", "initials": "OM", "household": "Olivia Martin", "email": "olivia.m@example.com", "phone": "0444 556 677", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_lwhite", "name": "Lucas White", "initials": "LW", "household": "Lucas White", "email": "lucas.w@example.com", "phone": "0455 667 788", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_ghall2", "name": "Grace Hall", "initials": "GH", "household": "Grace Hall", "email": "grace.h2@example.com", "phone": "0466 778 899", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Nut allergy", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_bclark", "name": "Benjamin Clark", "initials": "BC", "household": "Benjamin Clark", "email": "ben.c@example.com", "phone": "0477 889 900", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_zadams", "name": "Zoe Adams", "initials": "ZA", "household": "Zoe Adams", "email": "zoe.a@example.com", "phone": "0488 990 011", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra1", "name": "Sarah & David Lee", "initials": "SL", "household": "The Lee Family", "email": "sarah.lee.couple@example.com", "phone": "0499 111 222", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra2", "name": "Patrick & Claire Murphy", "initials": "PM", "household": "The Murphy Family", "email": "patrick.m@example.com", "phone": "0499 222 333", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra3", "name": "Daniel & Emily Zhang", "initials": "DZ", "household": "The Zhang Family", "email": "daniel.z@example.com", "phone": "0499 333 444", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "Pescatarian", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra4", "name": "Ryan & Stephanie Scott", "initials": "RS", "household": "The Scott Family", "email": "ryan.s@example.com", "phone": "0499 444 555", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra5", "name": "Jack & Mia Wilson", "initials": "JW", "household": "The Wilson Family", "email": "jack.w@example.com", "phone": "0499 555 666", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra6", "name": "Henry & Chloe King", "initials": "HK", "household": "The King Family", "email": "henry.k@example.com", "phone": "0499 666 777", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra7", "name": "Samuel & Lily Baker", "initials": "SB", "household": "The Baker Family", "email": "samuel.b@example.com", "phone": "0499 777 888", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra8", "name": "Noah & Evelyn Carter", "initials": "NC", "household": "The Carter Family", "email": "noah.c@example.com", "phone": "0499 888 999", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra9", "name": "Mason & Harper Brooks", "initials": "MB", "household": "The Brooks Family", "email": "mason.b@example.com", "phone": "0499 999 000", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra10", "name": "Logan & Ava Hughes", "initials": "LH", "household": "The Hughes Family", "email": "logan.h@example.com", "phone": "0498 111 222", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra11", "name": "Leo & Ella Price", "initials": "LP", "household": "The Price Family", "email": "leo.p@example.com", "phone": "0498 222 333", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra12", "name": "Harrison & Scarlett Ward", "initials": "HW", "household": "The Ward Family", "email": "harrison.w@example.com", "phone": "0498 333 444", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra13", "name": "Theo & Sienna Foster", "initials": "TF", "household": "The Foster Family", "email": "theo.f@example.com", "phone": "0498 444 555", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra14", "name": "Oscar & Ruby Powell", "initials": "OP", "household": "The Powell Family", "email": "oscar.p@example.com", "phone": "0498 555 666", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra15", "name": "Archie & Isla Cooper", "initials": "AC", "household": "The Cooper Family", "email": "archie.c@example.com", "phone": "0498 666 777", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra16", "name": "George & Mia Evans", "initials": "GE", "household": "The Evans Family", "email": "george.e@example.com", "phone": "0498 777 888", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra17", "name": "Finn & Zara Mitchell", "initials": "FM", "household": "The Mitchell Family", "email": "finn.m@example.com", "phone": "0498 888 999", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra18", "name": "Edward & Sophie Turner", "initials": "ET", "household": "The Turner Family", "email": "edward.t@example.com", "phone": "0498 999 000", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec1", "name": "Marcus Vance", "initials": "MV", "household": "Marcus Vance", "email": "marcus.v@example.com", "phone": "0471 112 334", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec2", "name": "Helena Ross", "initials": "HR", "household": "Helena Ross", "email": "helena.r@example.com", "phone": "0471 223 445", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec3", "name": "Timothy Drake", "initials": "TD", "household": "Timothy Drake", "email": "tim.d@example.com", "phone": "0471 334 556", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec4", "name": "Claire Redfield", "initials": "CR", "household": "Claire Redfield", "email": "claire.r@example.com", "phone": "0471 445 667", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec5", "name": "Leon Kennedy", "initials": "LK", "household": "Leon Kennedy", "email": "leon.k@example.com", "phone": "0471 556 778", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec6", "name": "Ada Wong", "initials": "AW", "household": "Ada Wong", "email": "ada.w@example.com", "phone": "0471 667 889", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec7", "name": "Jill Valentine", "initials": "JV", "household": "Jill Valentine", "email": "jill.v@example.com", "phone": "0471 778 990", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec8", "name": "Chris Redfield", "initials": "CR", "household": "Chris Redfield", "email": "chris.r@example.com", "phone": "0471 889 001", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec9", "name": "Albert Wesker", "initials": "AW", "household": "Albert Wesker", "email": "albert.w@example.com", "phone": "0471 990 112", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa1", "name": "Bradley Cooper", "initials": "BC", "household": "The Cooper Family", "email": "bradley.c@example.com", "phone": "0461 111 222", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa2", "name": "Catherine Zeta", "initials": "CZ", "household": "Catherine Zeta", "email": "catherine.z@example.com", "phone": "0461 222 333", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa3", "name": "Daniel Craig", "initials": "DC", "household": "Daniel Craig", "email": "daniel.c@example.com", "phone": "0461 333 444", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa4", "name": "Emma Watson", "initials": "EW", "household": "Emma Watson", "email": "emma.w@example.com", "phone": "0461 444 555", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa5", "name": "Felix Baum", "initials": "FB", "household": "The Baum Family", "email": "felix.b@example.com", "phone": "0461 555 666", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa6", "name": "Gemma Chan", "initials": "GC", "household": "Gemma Chan", "email": "gemma.c@example.com", "phone": "0461 666 777", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa7", "name": "Hugh Jackman", "initials": "HJ", "household": "The Jackman Family", "email": "hugh.j@example.com", "phone": "0461 777 888", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa8", "name": "Isla Fisher", "initials": "IF", "household": "Isla Fisher", "email": "isla.f@example.com", "phone": "0461 888 999", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa9", "name": "Justin Timberlake", "initials": "JT", "household": "The Timberlake Family", "email": "justin.t@example.com", "phone": "0461 999 000", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa10", "name": "Keira Knightley", "initials": "KK", "household": "Keira Knightley", "email": "keira.k@example.com", "phone": "0462 111 222", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa11", "name": "Liam Hemsworth", "initials": "LH", "household": "The Hemsworth Family", "email": "liam.h@example.com", "phone": "0462 222 333", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa12", "name": "Margot Robbie", "initials": "MR", "household": "Margot Robbie", "email": "margot.r@example.com", "phone": "0462 333 444", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa13", "name": "Nicholas Hoult", "initials": "NH", "household": "Nicholas Hoult", "email": "nicholas.h@example.com", "phone": "0462 444 555", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa14", "name": "Olivia Colman", "initials": "OC", "household": "Olivia Colman", "email": "olivia.c@example.com", "phone": "0462 555 666", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa15", "name": "Paul Mescal", "initials": "PM", "household": "Paul Mescal", "email": "paul.m@example.com", "phone": "0462 666 777", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa16", "name": "Rachel Weisz", "initials": "RW", "household": "Rachel Weisz", "email": "rachel.w@example.com", "phone": "0462 777 888", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa17", "name": "Sam Worthington", "initials": "SW", "household": "The Worthington Family", "email": "sam.w@example.com", "phone": "0462 888 999", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa18", "name": "Toni Collette", "initials": "TC", "household": "Toni Collette", "email": "toni.c@example.com", "phone": "0462 999 000", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa19", "name": "Vince Colosimo", "initials": "VC", "household": "Vince Colosimo", "email": "vince.c@example.com", "phone": "0463 111 222", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa20", "name": "Wendy Hughes", "initials": "WH", "household": "Wendy Hughes", "email": "wendy.h@example.com", "phone": "0463 222 333", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa21", "name": "Xavier Samuel", "initials": "XS", "household": "Xavier Samuel", "email": "xavier.s@example.com", "phone": "0463 333 444", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa22", "name": "Yael Stone", "initials": "YS", "household": "Yael Stone", "email": "yael.s@example.com", "phone": "0463 444 555", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}], "feed": [{"id": "f_mile", "type": "milestone", "title": "50 guests confirmed", "subtitle": "You've hit the halfway mark on RSVPs", "time": "Just now", "likes": 24, "comments": [], "pinned": true, "hidden": false}, {"id": "f_note1", "type": "note", "author": "Aunty Carol", "title": "Aunty Carol left a note", "quote": "So excited for you both \u2014 can't wait to celebrate! \ud83d\udc95", "time": "2 minutes ago", "likes": 8, "comments": ["Can't wait to dance with you Aunty Carol!"], "replies": [{"author": "Sophie & James", "role": "couple", "text": "Thank you so much Aunty Carol! We can't wait to celebrate and dance with you! \ud83d\udc95", "time": "Just now"}], "pinned": false, "hidden": false}, {"id": "f_gift1", "type": "gift", "author": "The Whitfield family", "title": "The Whitfield family sent a gift", "subtitle": "via Gift & Go \u2014 wishing well contribution", "quote": "Wishing you both a lifetime of love and happiness!", "time": "38 minutes ago", "likes": 5, "comments": [], "replies": [], "pinned": false, "hidden": false}, {"id": "f_rsvp1", "type": "rsvp", "author": "Michael Chen", "title": "Michael Chen confirmed", "subtitle": "Attending, +1 guest \u00b7 dietary: vegetarian", "time": "1 hour ago", "likes": 3, "comments": [], "pinned": false, "hidden": false}, {"id": "f_photo1", "type": "photo", "author": "Priya", "title": "New photo added", "subtitle": "Priya uploaded a photo to the gallery", "photoDesc": "Sunset view over Southern Highlands vineyards", "time": "3 hours ago", "likes": 12, "comments": ["Absolutely breathtaking!"], "pinned": false, "hidden": false}, {"id": "f_rsvp2", "type": "rsvp", "author": "Sarah & David Lee", "title": "Sarah & David Lee confirmed", "subtitle": "Attending \u00b7 no plus-one", "time": "5 hours ago", "likes": 2, "comments": [], "pinned": false, "hidden": false}], "gifts": [{"id": "gf1", "from": "The Whitfield family", "amount": 250, "date": "Today", "message": "Wishing you both a lifetime of love and happiness!", "thankYouSent": false, "thankYouStatus": "Drafted", "thankYouMethod": "Handwritten Card", "thankYouNotes": "Drafted heartfelt thank-you card mentioning their lovely wishing well note.", "thankYouDate": ""}, {"id": "gf2", "from": "Sarah & Michael Chen", "amount": 300, "date": "Yesterday", "message": "So thrilled for you Sophie and James!", "thankYouSent": false, "thankYouStatus": "Drafted", "thankYouMethod": "Personal Email", "thankYouNotes": "Drafted message thanking them for the generous gift and excited to see them.", "thankYouDate": ""}, {"id": "gf3", "from": "Aunty Carol & Uncle Peter", "amount": 500, "date": "2 days ago", "message": "With all our love and blessings on your special day.", "thankYouSent": false, "thankYouStatus": "Not Started", "thankYouMethod": "Handwritten Card", "thankYouNotes": "", "thankYouDate": ""}, {"id": "gf4", "from": "Emma & David Wilson", "amount": 200, "date": "3 days ago", "message": "Congratulations to the wonderful couple!", "thankYouSent": false, "thankYouStatus": "Not Started", "thankYouMethod": "Personal Email", "thankYouNotes": "", "thankYouDate": ""}, {"id": "gf5", "from": "Marcus & Olivia Vance", "amount": 350, "date": "4 days ago", "message": "Enjoy every second of the celebration!", "thankYouSent": true, "thankYouStatus": "Sent", "thankYouMethod": "Handwritten Card", "thankYouNotes": "Sent luxury handwritten card via express post.", "thankYouDate": "Yesterday"}, {"id": "gf6", "from": "The O'Connor Family", "amount": 400, "date": "5 days ago", "message": "Huge congratulations Sophie and James!", "thankYouSent": false, "thankYouStatus": "Not Started", "thankYouMethod": "Handwritten Card", "thankYouNotes": "", "thankYouDate": ""}, {"id": "gf7", "from": "Jessica & Liam Taylor", "amount": 180, "date": "6 days ago", "message": "Can't wait to raise a glass to you both!", "thankYouSent": false, "thankYouStatus": "Not Started", "thankYouMethod": "In-Person", "thankYouNotes": "", "thankYouDate": ""}, {"id": "gf8", "from": "Rob & Chloe Martin", "amount": 250, "date": "1 week ago", "message": "So happy for you guys!", "thankYouSent": false, "thankYouStatus": "Drafted", "thankYouMethod": "Handwritten Card", "thankYouNotes": "Drafted note thanking Chloe for maid of honour support and Rob for speech prep.", "thankYouDate": ""}, {"id": "gf9", "from": "Grandma Evelyn", "amount": 500, "date": "1 week ago", "message": "May God bless your beautiful marriage.", "thankYouSent": false, "thankYouStatus": "Not Started", "thankYouMethod": "Phone Call / In-Person", "thankYouNotes": "", "thankYouDate": ""}, {"id": "gf10", "from": "Uncle Arthur", "amount": 500, "date": "2 weeks ago", "message": "All our love.", "thankYouSent": true, "thankYouStatus": "Completed", "thankYouMethod": "Handwritten Card", "thankYouNotes": "Delivered custom letter with framed photo.", "thankYouDate": "2 weeks ago"}, {"id": "gf11", "from": "Fiona & George Miller", "amount": 350, "date": "2 weeks ago", "message": "Cheers to your future together!", "thankYouSent": true, "thankYouStatus": "Completed", "thankYouMethod": "Personal Email", "thankYouNotes": "Sent formal thank-you with honeymoon photo gallery link.", "thankYouDate": "2 weeks ago"}, {"id": "gf12", "from": "The Davis Family", "amount": 500, "date": "3 weeks ago", "message": "Warmest congratulations!", "thankYouSent": true, "thankYouStatus": "Completed", "thankYouMethod": "Handwritten Card", "thankYouNotes": "Sent luxury card and warm wishes.", "thankYouDate": "3 weeks ago"}], "photos": [{"id": "p1", "caption": "Southern Highlands winery ceremony lawn", "author": "Priya", "time": "Yesterday"}, {"id": "p2", "caption": "Tasting session at Fernwood Estate", "author": "Sophie", "time": "3 days ago"}, {"id": "p3", "caption": "Floral arch preview in natural gum foliage", "author": "Hannah", "time": "1 week ago"}, {"id": "p4", "caption": "Golden hour over the Mittagong ranges", "author": "James", "time": "2 weeks ago"}], "invoices": [{"id": "INV-1081", "couple": "Sophie & James", "date": "08 Oct 2026", "amount": 1850, "status": "Paid", "venue": "Fernwood Estate"}, {"id": "INV-1082", "couple": "Aisha & Marcus", "date": "15 Oct 2026", "amount": 1650, "status": "Pending", "venue": "Doltone House"}, {"id": "INV-1083", "couple": "Emma & Tom", "date": "01 Nov 2026", "amount": 1950, "status": "Draft", "venue": "Dunbar House"}, {"id": "INV-1084", "couple": "Katie & Rob", "date": "12 Nov 2026", "amount": 1750, "status": "Draft", "venue": "Dunbar House"}], "clients": [{"id": "cl1", "couple": "Sophie & James", "phone": "0400 111 222", "email": "sophie.bell@example.com", "weddingDate": "14 Nov 2026", "venue": "Fernwood Estate", "tier": "Platinum MC & Coordination", "deposit": "Paid ($925)", "notes": "Outdoor ceremony on lawn. High energy reception. Live band."}, {"id": "cl2", "couple": "Aisha & Marcus", "phone": "0400 333 444", "email": "aisha.m@example.com", "weddingDate": "2 May 2027", "venue": "Doltone House", "tier": "Standard MC", "deposit": "Paid ($825)", "notes": "Strict 11:30 PM venue curfew. Formal multi-course dinner."}, {"id": "cl3", "couple": "Emma & Tom", "phone": "0400 555 666", "email": "emma.t@example.com", "weddingDate": "20 Jun 2027", "venue": "Dunbar House", "tier": "Full Day Master of Ceremonies", "deposit": "Pending", "notes": "Ferry transport coordination for guests from Circular Quay."}, {"id": "cl4", "couple": "Katie & Rob", "phone": "0400 777 888", "email": "katie.r@example.com", "weddingDate": "11 Jul 2027", "venue": "Dunbar House", "tier": "Standard MC", "deposit": "Pending", "notes": "Intimate winter wedding. Acoustic trio for cocktail hour."}], "team": [{"id": "tm1", "name": "Robert Galati", "role": "Lead Master of Ceremonies", "email": "robert@galatimc.com.au", "phone": "0418 223 901", "status": "Active"}, {"id": "tm2", "name": "Sarah Jenkins", "role": "On-day Event Coordinator", "email": "sarah.j@galatimc.com.au", "phone": "0418 223 902", "status": "Active"}, {"id": "tm3", "name": "Dave Miller", "role": "Sound & AV Technician", "email": "dave.m@galatimc.com.au", "phone": "0418 223 903", "status": "Active"}], "tenants": [{"id": "ten1", "business": "Robert Galati MC Services", "lead": "Robert Galati", "plan": "Pro", "weddings": 7, "mrr": 299, "status": "Active", "joined": "12 Jan 2025", "stripeConnected": true, "email": "robert@galatimc.com.au"}, {"id": "ten2", "business": "Coastal Celebrations MC", "lead": "Marcus Thorne", "plan": "Pro", "weddings": 5, "mrr": 299, "status": "Active", "joined": "04 Mar 2025", "stripeConnected": true, "email": "marcus@coastalmc.com.au"}, {"id": "ten3", "business": "Sydney Vows & Beats", "lead": "Elena Rostova", "plan": "Standard", "weddings": 3, "mrr": 199, "status": "Active", "joined": "18 May 2025", "stripeConnected": true, "email": "elena@sydneyvows.com.au"}, {"id": "ten4", "business": "Melbourne Elite Hosts", "lead": "Julian Brooks", "plan": "Starter", "weddings": 1, "mrr": 99, "status": "Suspended", "joined": "01 Aug 2025", "stripeConnected": false, "email": "julian@melbourneelite.com.au"}], "featureFlags": {"digitalGifting": true, "aiSeating": true, "qardPrinting": true, "photoModeration": true, "smsReminders": false}, "supportTickets": [{"id": "TCK-401", "tenant": "Robert Galati MC Services", "subject": "Custom run sheet export formatting for print", "priority": "Medium", "status": "Open", "date": "08 Oct 2026", "messages": [{"sender": "Robert Galati", "text": "Can we include dietary badges on the printed MC run sheet?", "time": "Yesterday"}, {"sender": "Tap & Toast Support", "text": "Hi Robert, that feature is coming in the next release! You can currently view dietaries in the Guest Summary tab.", "time": "2 hours ago"}]}, {"id": "TCK-402", "tenant": "Coastal Celebrations MC", "subject": "Stripe payout schedule for December events", "priority": "High", "status": "In Progress", "date": "07 Oct 2026", "messages": [{"sender": "Marcus Thorne", "text": "We need 24hr payout clearance for weekend gifting disbursements.", "time": "2 days ago"}]}, {"id": "TCK-403", "tenant": "Sydney Vows & Beats", "subject": "NFC backup options for QaRd cards", "priority": "Low", "status": "Resolved", "date": "02 Oct 2026", "messages": [{"sender": "Elena Rostova", "text": "Resolved: QR code scan works seamlessly without requiring NFC hardware.", "time": "1 week ago"}]}], "auditLog": [{"id": "aud1", "timestamp": "2026-10-09 14:15", "actor": "Michael Chen", "action": "RSVP Confirmed", "details": "Confirmed attendance (+1 guest, vegetarian)", "category": "RSVP"}, {"id": "aud2", "timestamp": "2026-10-09 13:42", "actor": "The Whitfield family", "action": "Gift & Go Received", "details": "Sent $250 AUD gift with message", "category": "Gifting"}, {"id": "aud3", "timestamp": "2026-10-09 12:10", "actor": "Aunty Carol", "action": "Feed Note Posted", "details": "Posted a Love Note on celebration feed", "category": "Feed"}, {"id": "aud4", "timestamp": "2026-10-09 11:00", "actor": "Priya Sharma", "action": "Photo Uploaded", "details": "Added photo to wedding photo wall", "category": "Photos"}, {"id": "aud5", "timestamp": "2026-10-09 09:20", "actor": "Sophie (Couple)", "action": "Seating Updated", "details": "Assigned Table 4 seating arrangement", "category": "Seating"}, {"id": "aud6", "timestamp": "2026-10-08 17:00", "actor": "Robert Galati (MC)", "action": "Run Sheet Updated", "details": "Updated reception timings and speech order", "category": "Run Sheet"}], "users": [{"id": "u_mc1", "email": "robert@galati.demo", "passwordHash": "dHRfc2FsdF9EZW1vMTIzNCE=", "name": "Robert Galati", "role": "mc", "tenantId": "ten1", "business": "Robert Galati MC Services"}, {"id": "u_couple1", "email": "sophie.james@demo.test", "passwordHash": "dHRfc2FsdF9EZW1vMTIzNCE=", "name": "Sophie & James", "role": "couple", "weddingId": "w1"}, {"id": "u_admin1", "email": "admin@tapandtoast.demo", "passwordHash": "dHRfc2FsdF9EZW1vMTIzNCE=", "name": "Platform Admin", "role": "superadmin"}], "invites": [{"code": "SJ-2026", "weddingId": "w1", "couple": "Sophie & James", "partner1": "Sophie", "partner2": "James", "mc": "Robert Galati", "weddingDate": "14 Nov 2026", "venue": "Fernwood Estate, Southern Highlands", "used": false}], "reusablePages": {"ourStory": {"id": "ourStory", "title": "Our Story", "subtitle": "From a rainy coffee in Surry Hills to the Southern Highlands", "status": "Published", "lastUpdated": "10 Oct 2026", "content": "We met on a drizzly Tuesday afternoon at a quiet coffee roastery in Surry Hills. What was planned as a quick 20-minute flat white turned into four hours of non-stop conversation, shared dreams of exploring the world, and uncontrollable laughter.\n\nThree years, countless road trips down the South Coast, and an unforgettable proposal under the stars at Byron Bay later\u2014we cannot wait to celebrate our love with everyone who means the world to us.", "photoCaption": "Proposal evening at Wategos Beach, Byron Bay", "photoGradient": "linear-gradient(135deg, #2b221a 0%, #15110e 100%)", "photoIcon": "\ud83d\udc8d"}, "inMemoriam": {"id": "inMemoriam", "title": "In Loving Memory", "subtitle": "Forever in our hearts, always with us in spirit", "status": "Published", "lastUpdated": "08 Oct 2026", "content": "Today, as we exchange our vows and step into this new chapter of life, we tenderly hold in our hearts those dearly loved family members and friends who watch over us from above.\n\nTheir laughter, wisdom, and unconditional love continue to guide us each day. We dedicate a quiet candle at the altar in loving memory of Sophie's grandfather Arthur Bell and James' beloved mother Eleanor Vance.", "photoCaption": "Arthur Bell (1938\u20132022) & Eleanor Vance (1949\u20132024)", "photoGradient": "linear-gradient(135deg, #1c1917 0%, #0c0a09 100%)", "photoIcon": "\ud83d\udd4a\ufe0f"}, "diningMenu": {"id": "diningMenu", "title": "Dining & Menu", "subtitle": "A seasonal culinary celebration by Executive Chef Marco Rossi", "status": "Published", "lastUpdated": "11 Oct 2026", "content": "Featuring locally sourced produce from the Southern Highlands and wines paired from the cellar of Fernwood Estate.\n\n\u2022 Canap\u00e9s: Seared Scallops with Cauliflower Puree & Truffled Wild Mushroom Tartlet\n\u2022 Entr\u00e9e: King Salmon Carpaccio with Yuzu Vinaigrette, Baby Herbs & Crispy Capers\n\u2022 Main Course: Slow-Braised Angus Beef Cheek with Truffled Potato Mousseline OR Roasted Butternut Pumpkin Risotto (V/GF)\n\u2022 Dessert: Belgian Dark Chocolate Fondant with Salted Caramel Gelato\n\u2022 Late Night: Artisan woodfired pizza served on the verandah.", "photoCaption": "Banquet prepared fresh on estate grounds with organic local produce", "photoGradient": "linear-gradient(135deg, #231c16 0%, #17120e 100%)", "photoIcon": "\ud83c\udf7d\ufe0f"}, "meetTheTeam": {"id": "meetTheTeam", "title": "Meet the Wedding Party & Team", "subtitle": "The legends standing beside us and orchestrating our celebration", "status": "Published", "lastUpdated": "09 Oct 2026", "content": "\u2022 Maid of Honour: Chloe Mitchell (Sophie's best friend since kindergarten)\n\u2022 Best Man: Harrison Blake (James' university rugby partner & oldest mate)\n\u2022 Bridesmaids: Maya Kapoor, Emma Watson, Lily Bennett\n\u2022 Groomsmen: Oliver Thomas, Benjamin Ross, Liam Davies\n\u2022 Master of Ceremonies: Robert Galati (Galati MC & Entertainment)\n\u2022 Celebrant: Sarah Jenkins Celebrancy\n\u2022 Lead Photographer: Priya Sharma Photography", "photoCaption": "The full bridal party & creative team at Fernwood Estate", "photoGradient": "linear-gradient(135deg, #2c241c 0%, #18130f 100%)", "photoIcon": "\ud83d\udc65"}, "honeymoonUpdates": {"id": "honeymoonUpdates", "title": "Honeymoon Updates", "subtitle": "Our journey through the Amalfi Coast, Tuscany & Swiss Alps", "status": "Published", "lastUpdated": "12 Oct 2026", "content": "Following our wedding celebrations, we will be flying off on our dream Italian and Alpine adventure!\n\nStarting with five sun-drenched days in Positano on the Amalfi Coast, driving through the rolling hills and vineyards of Chianti, and finishing with cozy cabin fires in Zermatt beneath the Matterhorn.\n\nThank you to everyone who contributed to our wishing well\u2014your kindness is funding our Vespa rental along the coastal cliff roads and our Tuscan sunset wine tasting!", "photoCaption": "Positano, Amalfi Coast \u2014 First stop on our honeymoon tour", "photoGradient": "linear-gradient(135deg, #1f2733 0%, #13171f 100%)", "photoIcon": "\u2708\ufe0f", "photos": [{"id": "hm_1", "title": "Sunset Vespa Ride along Positano Cliffs", "location": "Amalfi Coast, Italy", "caption": "Winding coastal cliff roads, fresh lemon granita, and the most breathtaking Mediterranean sunset. Thank you everyone for the wishing well gifts that funded our Vespa!", "icon": "\ud83d\udef5", "reactions": {"love": 32, "toast": 21, "stunning": 27, "voyage": 16}, "comments": [{"author": "Chloe Mitchell", "text": "You two look like movie stars!! Have the best time!", "time": "2 days ago"}, {"author": "Liam Davies", "text": "Sensational views mate! Enjoy a limoncello for us!", "time": "1 day ago"}]}, {"id": "hm_2", "title": "Vineyard Wine Tasting & Truffle Dinner", "location": "Chianti Hills, Tuscany", "caption": "Toasting with Chianti Classico overlooking rolling cypress hills. Still buzzing from our magical wedding night at Fernwood Estate!", "icon": "\ud83c\udf77", "reactions": {"love": 28, "toast": 36, "stunning": 19, "voyage": 12}, "comments": [{"author": "Maya Kapoor", "text": "Pure perfection! Sending so much love to you both!", "time": "18 hours ago"}]}, {"id": "hm_3", "title": "Alpine Chalet Fireplace & Matterhorn Views", "location": "Zermatt, Swiss Alps", "caption": "Watching the first winter snowflakes fall over the Matterhorn from our cozy alpine chalet. The perfect finale to our honeymoon journey.", "icon": "\ud83c\udfd4\ufe0f", "reactions": {"love": 41, "toast": 18, "stunning": 34, "voyage": 22}, "comments": [{"author": "Aunty Carol", "text": "Stay warm darlings! What a fairy tale honeymoon!", "time": "4 hours ago"}]}]}}, "weddingVault": {"storageUsedGB": 2.35, "storageTotalGB": 5.0, "expiryDate": "2027-11-14T23:59:59", "expiryDisplay": "14 Nov 2027 (1 Year Post-Wedding Included)", "accessControl": "couple_mc", "deletionRequested": false, "categories": [{"id": "cat_photos", "name": "High-Res Media & Photos", "size": "1.42 GB", "count": 284, "type": "Images / Videos", "locked": true}, {"id": "cat_audio", "name": "Audio Recordings & Music Cues", "size": "450 MB", "count": 18, "type": "Audio / MP3", "locked": true}, {"id": "cat_records", "name": "Finalized Guest & Seating Records", "size": "320 MB", "count": 14, "type": "Data Snapshot", "locked": true}, {"id": "cat_notes", "name": "Speeches, Vows & Love Notes", "size": "160 MB", "count": 32, "type": "Documents", "locked": true}, {"id": "cat_finance", "name": "Vendor Invoices & Contracts", "size": "20 MB", "count": 6, "type": "Financial", "locked": true}], "auditRecords": [{"id": "vr1", "date": "14 Nov 2026", "action": "Ceremony & Reception Media Uploaded", "size": "+1.42 GB"}, {"id": "vr2", "date": "15 Nov 2026", "action": "Seating & RSVP Master Database Frozen", "size": "+320 MB"}, {"id": "vr3", "date": "16 Nov 2026", "action": "Speech Audio & Love Notes Archived", "size": "+610 MB"}]}, "firstAnniversary": {"weddingDate": "2026-11-14", "anniversaryDate": "2027-11-14", "greetingTitle": "Happy 1st Anniversary, Sophie & James!", "greetingText": "One year ago today, surrounded by the mist-kissed hills of Fernwood Estate, you two promised forever. May the joy, laughter, and tender devotion of that breathtaking day continue to grow with each passing season. From all of us at Tap & Toast, here's to a lifetime of love and unforgettable celebrations.", "traditionalTheme": "Paper (Traditional) / Clocks (Modern)", "timeCapsuleNote": "Our promise on our wedding day was to always make each other laugh, no matter how busy life gets. Opening this today with so much gratitude!", "coupleReflection": "Looking back on Year 1 of marriage, our favorite memory was sitting on the verandah during sunset while everyone was dancing.", "memoryLinks": [{"id": "mem_photos", "title": "The Photo Gallery", "icon": "\ud83d\udcf8", "desc": "284 high-resolution celebration moments", "tab": "feed"}, {"id": "mem_notes", "title": "Guest Love Notes", "icon": "\ud83d\udc8c", "desc": "Heartfelt messages & blessings from family", "tab": "feed"}, {"id": "mem_music", "title": "First Dance & Song", "icon": "\ud83c\udfb5", "desc": "'Lover' by Taylor Swift & reception playlist", "tab": "overview"}, {"id": "mem_speeches", "title": "The Vows & Speeches", "icon": "\ud83d\udc8d", "desc": "Words spoken by Father of Bride & Best Man", "tab": "overview"}, {"id": "mem_seating", "title": "The Seating Journey", "icon": "\ud83e\ude91", "desc": "Table arrangements & memories of guests together", "tab": "seating"}], "guestWishes": [{"id": "aw_1", "author": "Chloe Mitchell", "time": "Yesterday", "text": "Happy 1st Anniversary Sophie & James! Can't believe it's been a whole year since the most magical night at Fernwood. Love you both so much! \ud83d\udc95"}, {"id": "aw_2", "author": "Liam & Jessica Taylor", "time": "2 days ago", "text": "Happy 1 Year Anniversary legends! Raising a glass of Pinot to many more decades of love and laughter! \ud83e\udd42"}]}};
 const SESSION_KEY = 'tt_session';
 
 window._tt_in_memory_state = null;
@@ -3552,6 +4056,9 @@ function getSession() {
   if (!session && window._tt_in_memory_session) {
     session = window._tt_in_memory_session;
   }
+  if (!session && typeof window !== 'undefined' && window.parent && window.parent !== window && window.parent._tt_in_memory_session) {
+    session = window.parent._tt_in_memory_session;
+  }
   if (!session) return null;
   
   // Check expiration: 30 minutes if !keepSignedIn, 7 days if keepSignedIn
@@ -3568,12 +4075,18 @@ function getSession() {
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   } catch (e) {}
   window._tt_in_memory_session = session;
+  if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+    try { window.parent._tt_in_memory_session = session; } catch (e) {}
+  }
   return session;
 }
 
 function setSession(sessionData) {
   if (!sessionData.at) sessionData.at = Date.now();
   window._tt_in_memory_session = sessionData;
+  if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+    try { window.parent._tt_in_memory_session = sessionData; } catch (e) {}
+  }
   try {
     localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
   } catch (e) {
@@ -3583,6 +4096,9 @@ function setSession(sessionData) {
 
 function clearSession() {
   window._tt_in_memory_session = null;
+  if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+    try { window.parent._tt_in_memory_session = null; } catch (e) {}
+  }
   try {
     localStorage.removeItem(SESSION_KEY);
   } catch (e) {}
@@ -3605,9 +4121,13 @@ function handleDemobarNav(event, targetRole, targetHref) {
   if (targetRole) {
     setDemoSessionForRole(targetRole);
   }
-  if (targetHref) {
-    window.location.href = targetHref;
+  if (typeof window !== 'undefined' && window.parent && window.parent !== window && typeof window.parent.loadEmbeddedRole === 'function') {
     if (event && event.preventDefault) event.preventDefault();
+    window.parent.loadEmbeddedRole(targetRole || targetHref);
+    return;
+  }
+  if (targetHref && (!event || !event.defaultPrevented)) {
+    window.location.href = targetHref;
   }
 }
 
@@ -3641,6 +4161,10 @@ function loadState() {
   if (window._tt_in_memory_state && window._tt_in_memory_state.version === 2) {
     return window._tt_in_memory_state;
   }
+  if (typeof window !== 'undefined' && window.parent && window.parent !== window && window.parent._tt_in_memory_state && window.parent._tt_in_memory_state.version === 2) {
+    window._tt_in_memory_state = window.parent._tt_in_memory_state;
+    return window._tt_in_memory_state;
+  }
   const initial = JSON.parse(JSON.stringify(SEED_DATA));
   saveState(initial);
   return initial;
@@ -3648,6 +4172,9 @@ function loadState() {
 
 function saveState(state) {
   window._tt_in_memory_state = state;
+  if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+    try { window.parent._tt_in_memory_state = state; } catch (e) {}
+  }
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch (e) {
@@ -4827,6 +5354,10 @@ function initCoupleDashboard() {
   renderQaRdPreview();
   renderGiftsTable();
   renderCoupleFeed();
+  renderReusablePages();
+  renderThankYouManager();
+  renderWeddingVault();
+  renderFirstAnniversary();
 }
 
 function switchCoupleTab(tabKey) {
@@ -4941,8 +5472,7 @@ function renderGuestListTable() {
       tableDisplay = `<span>${escapeHtml(tableObj.name)} <small style="color:var(--muted);">(Seat ${(g.seatIndex !== null && g.seatIndex !== undefined) ? g.seatIndex + 1 : '-'})</small></span>`;
     } else if (g.rsvpStatus === 'confirmed') {
       tableDisplay = `
-        <div style="display:flex;align-items:center;gap:6px;">
-          <span style="color:var(--muted);font-size:12px;">Unassigned</span>
+        <div style="display:flex;align-items:center;justify-content:center;">
           <button type="button" class="btn btn-gold btn-xs" style="padding:2px 8px;" onclick="openSeatGuestModalForGuest('${g.id}')">+ Seat</button>
         </div>
       `;
@@ -5768,6 +6298,7 @@ function renderCoupleFeed() {
           <div style="flex:1;">
             <div style="display:flex;align-items:center;gap:6px;">
               <strong>${escapeHtml(item.title)}</strong>
+              ${item.badge ? `<span class="tt-pill gold" style="font-size:10px;font-weight:600;">${escapeHtml(item.badge)}</span>` : ''}
               ${item.pinned ? '<span class="tt-pill gold" style="font-size:10px;">Pinned</span>' : ''}
               ${item.hidden ? '<span class="tt-pill danger" style="font-size:10px;">Hidden</span>' : ''}
             </div>
@@ -5934,6 +6465,859 @@ function handleSaveSettings(e) {
   saveState(state);
   initCoupleDashboard();
   showToast('Wedding settings saved successfully!', 'success');
+}
+
+/* Reusable Content Pages */
+let currentSelectedPageKey = 'ourStory';
+
+function renderReusablePages() {
+  const state = loadState();
+  const pages = state.reusablePages || {};
+  const page = pages[currentSelectedPageKey] || {
+    title: 'Our Story',
+    subtitle: 'From a chance encounter in Bowral to forever in the Southern Highlands',
+    status: 'Published',
+    content: '',
+    photoCaption: '',
+    photoTheme: '💍'
+  };
+
+  ['ourStory', 'inMemoriam', 'diningMenu', 'meetTheTeam', 'honeymoonUpdates'].forEach(k => {
+    const btn = document.getElementById('pnav-' + k);
+    if (btn) {
+      if (k === currentSelectedPageKey) {
+        btn.className = 'btn btn-sm btn-gold page-nav-btn';
+      } else {
+        btn.className = 'btn btn-sm btn-outline page-nav-btn';
+      }
+    }
+  });
+
+  const titleInput = document.getElementById('page-title-input');
+  const subInput = document.getElementById('page-subtitle-input');
+  const contentInput = document.getElementById('page-content-input');
+  const captionInput = document.getElementById('page-caption-input');
+  const iconSelect = document.getElementById('page-icon-select');
+  const publishToggle = document.getElementById('page-publish-toggle');
+  const statusBadge = document.getElementById('page-status-badge');
+  const heading = document.getElementById('page-edit-heading');
+  const updatedText = document.getElementById('page-last-updated-text');
+
+  if (titleInput) titleInput.value = page.title || '';
+  if (subInput) subInput.value = page.subtitle || '';
+  if (contentInput) contentInput.value = page.content || '';
+  if (captionInput) captionInput.value = page.photoCaption || '';
+  if (iconSelect) iconSelect.value = page.photoTheme || '💍';
+  if (publishToggle) publishToggle.checked = (page.status === 'Published');
+  if (statusBadge) {
+    statusBadge.textContent = page.status || 'Draft';
+    statusBadge.className = 'tt-pill ' + (page.status === 'Published' ? 'green' : 'not-started');
+  }
+  if (heading) heading.textContent = `Edit Page · ${page.title || 'Page'}`;
+  if (updatedText) updatedText.textContent = `Last updated: ${page.lastUpdated || 'Recently'}`;
+
+  updatePageLivePreview();
+}
+
+function selectContentPage(key) {
+  currentSelectedPageKey = key;
+  const dropdown = document.getElementById('page-version-dropdown');
+  if (dropdown) dropdown.style.display = 'none';
+  renderReusablePages();
+}
+
+function updatePageLivePreview() {
+  const title = document.getElementById('page-title-input')?.value || 'Page Title';
+  const subtitle = document.getElementById('page-subtitle-input')?.value || '';
+  const content = document.getElementById('page-content-input')?.value || '';
+  const caption = document.getElementById('page-caption-input')?.value || '';
+  const icon = document.getElementById('page-icon-select')?.value || '💍';
+  const isPublished = document.getElementById('page-publish-toggle')?.checked;
+
+  const previewPill = document.getElementById('preview-status-pill');
+  if (previewPill) {
+    previewPill.textContent = isPublished ? 'Live' : 'Not Live';
+    previewPill.className = 'tt-pill ' + (isPublished ? 'green' : 'not-started');
+  }
+
+  const container = document.getElementById('page-preview-container');
+  if (!container) return;
+
+  const paragraphs = content.split('\n\n').filter(Boolean).map(p => `<p style="font-size:13.5px;line-height:1.65;color:#443325;margin-bottom:12px;">${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('');
+
+  let extraAlbumPreview = '';
+  const state = loadState();
+  const pageObj = (state.reusablePages && state.reusablePages[currentSelectedPageKey]) || {};
+  if (currentSelectedPageKey === 'honeymoonUpdates' && pageObj.photos && pageObj.photos.length) {
+    const totalReactions = pageObj.photos.reduce((sum, p) => {
+      const r = p.reactions || {};
+      return sum + (r.love || 0) + (r.toast || 0) + (r.stunning || 0) + (r.voyage || 0);
+    }, 0);
+    const totalComments = pageObj.photos.reduce((sum, p) => sum + ((p.comments && p.comments.length) || 0), 0);
+
+    extraAlbumPreview = `
+      <div style="margin-top:20px;border-top:1px dashed #d5c4b1;padding-top:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div>
+            <div style="font-weight:700;font-size:13.5px;color:var(--ink);">✈️ Live Guest Album Engagement</div>
+            <div style="font-size:11.5px;color:var(--muted);">Guests can react with emojis and post comments on each photo</div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <span class="tt-pill gold" style="font-size:11px;">❤️ ${totalReactions} Reactions</span>
+            <span class="tt-pill outline" style="font-size:11px;">💬 ${totalComments} Comments</span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;">
+          ${pageObj.photos.map(p => {
+            const pr = p.reactions || {};
+            const pc = p.comments || [];
+            return `
+              <div style="background:#ffffff;border:1px solid #ebd9c2;border-radius:8px;padding:12px;">
+                <div style="font-size:24px;margin-bottom:4px;">${p.icon || '📸'}</div>
+                <div style="font-weight:600;font-size:12.5px;color:#2c221e;">${escapeHtml(p.title)}</div>
+                <div style="font-size:11px;color:#8a7a6a;margin-top:2px;">📍 ${escapeHtml(p.location)}</div>
+                <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;font-size:11px;">
+                  <span style="background:#faf5ee;border:1px solid #e0d1be;border-radius:12px;padding:2px 6px;">❤️ ${pr.love || 0}</span>
+                  <span style="background:#faf5ee;border:1px solid #e0d1be;border-radius:12px;padding:2px 6px;">🥂 ${pr.toast || 0}</span>
+                  <span style="background:#faf5ee;border:1px solid #e0d1be;border-radius:12px;padding:2px 6px;">😍 ${pr.stunning || 0}</span>
+                  <span style="background:#faf5ee;border:1px solid #e0d1be;border-radius:12px;padding:2px 6px;">✈️ ${pr.voyage || 0}</span>
+                </div>
+                <div style="font-size:11px;color:var(--muted);margin-top:6px;">💬 ${pc.length} guest comments</div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  container.innerHTML = `
+    <div style="text-align:center;margin-bottom:20px;border-bottom:1px solid #eee;padding-bottom:16px;">
+      <div style="font-size:32px;margin-bottom:8px;">${icon}</div>
+      <h2 style="font-family:var(--font-heading);font-size:24px;color:var(--ink);margin:0 0 6px;">${escapeHtml(title)}</h2>
+      ${subtitle ? `<div style="font-size:13px;color:var(--gold-hover);font-style:italic;">${escapeHtml(subtitle)}</div>` : ''}
+    </div>
+    <div style="background:linear-gradient(135deg, #f5efe6 0%, #ede3d5 100%);border:1px dashed #d5c4b1;border-radius:8px;padding:24px;text-align:center;margin-bottom:18px;">
+      <div style="font-size:28px;margin-bottom:4px;">📷</div>
+      <div style="font-size:12.5px;color:#5a4a3a;font-weight:600;">${escapeHtml(caption || 'Featured Photo')}</div>
+      <div style="font-size:11px;color:#8a7a6a;margin-top:2px;">Shared component · Hi-res vector rendering</div>
+    </div>
+    <div style="text-align:left;">
+      ${paragraphs || '<p style="font-style:italic;color:var(--muted);font-size:13px;">No content written yet. Use the editor on the left to write this page.</p>'}
+    </div>
+    ${extraAlbumPreview}
+  `;
+}
+
+function togglePagePublishStatus(checked) {
+  const state = loadState();
+  if (!state.reusablePages) return;
+  const page = state.reusablePages[currentSelectedPageKey];
+  if (page) {
+    page.status = checked ? 'Published' : 'Draft';
+    page.lastUpdated = 'Just now';
+    saveState(state);
+    logAudit('Content Page Updated', 'Couple', `${page.title} set to ${page.status}`, 'Content');
+    renderReusablePages();
+    showToast(`Page "${page.title}" is now ${page.status}`, 'info');
+  }
+}
+
+function togglePublishCurrentPage() {
+  const state = loadState();
+  if (!state.reusablePages) return;
+  const page = state.reusablePages[currentSelectedPageKey];
+  if (page) {
+    const newStatus = (page.status === 'Published') ? 'Draft' : 'Published';
+    page.status = newStatus;
+    page.lastUpdated = 'Just now';
+    const toggle = document.getElementById('page-publish-toggle');
+    if (toggle) toggle.checked = (newStatus === 'Published');
+    saveState(state);
+    logAudit('Content Page Status Changed', 'Couple', `${page.title} status toggled to ${newStatus}`, 'Content');
+    renderReusablePages();
+    showToast(`Page "${page.title}" is now ${newStatus}!`, 'info');
+  }
+}
+
+function saveCurrentContentPage() {
+  const state = loadState();
+  if (!state.reusablePages) return;
+  const page = state.reusablePages[currentSelectedPageKey];
+  if (!page) return;
+
+  page.title = document.getElementById('page-title-input')?.value.trim() || page.title;
+  page.subtitle = document.getElementById('page-subtitle-input')?.value.trim() || '';
+  page.content = document.getElementById('page-content-input')?.value.trim() || '';
+  page.photoCaption = document.getElementById('page-caption-input')?.value.trim() || '';
+  page.photoTheme = document.getElementById('page-icon-select')?.value || '💍';
+  page.status = (page.status === 'Published') ? 'Published' : 'Draft';
+  page.lastUpdated = 'Just now';
+
+  // Record Version Snapshot into Version History
+  if (!page.versions) page.versions = [];
+  const newVerNum = page.versions.length + 1;
+  const now = new Date();
+  const timeStr = now.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) + ', ' +
+                  now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
+  page.versions.unshift({
+    id: 'v_' + Date.now(),
+    version: 'v1.' + newVerNum + ' (Saved)',
+    timestamp: timeStr,
+    author: 'Sophie & James',
+    title: page.title,
+    subtitle: page.subtitle,
+    content: page.content,
+    photoCaption: page.photoCaption,
+    photoTheme: page.photoTheme,
+    status: page.status,
+    isCurrent: true
+  });
+
+  saveState(state);
+  logAudit('Content Page Saved', 'Couple', `Saved changes for page "${page.title}"`, 'Content');
+  renderReusablePages();
+  showToast(`Saved "${page.title}" successfully!`, 'success');
+}
+
+function previewCurrentContentPage() {
+  const container = document.getElementById('page-preview-container');
+  if (container) {
+    container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    container.style.transition = 'box-shadow 0.3s ease';
+    container.style.boxShadow = '0 0 0 3px rgba(189,150,97,0.45)';
+    setTimeout(() => { container.style.boxShadow = 'var(--shadow-sm)'; }, 1500);
+  }
+  showToast('Live preview displayed', 'info');
+}
+
+function toggleVersionHistoryDropdown(e) {
+  if (e) e.stopPropagation();
+  const dropdown = document.getElementById('page-version-dropdown');
+  if (!dropdown) return;
+  const isVisible = dropdown.style.display === 'block';
+  if (isVisible) {
+    dropdown.style.display = 'none';
+  } else {
+    renderPageVersionList();
+    dropdown.style.display = 'block';
+  }
+}
+
+function renderPageVersionList() {
+  const state = loadState();
+  const page = (state.reusablePages && state.reusablePages[currentSelectedPageKey]) || {};
+  const list = document.getElementById('version-history-list');
+  const countLabel = document.getElementById('version-count-label');
+  if (!list) return;
+
+  if (!page.versions || page.versions.length === 0) {
+    page.versions = [
+      {
+        id: 'v_' + currentSelectedPageKey + '_current',
+        version: 'v1.2 (Current)',
+        timestamp: page.lastUpdated || '12 Oct 2026, 4:15 PM',
+        author: 'Sophie & James',
+        title: page.title || 'Page',
+        subtitle: page.subtitle || '',
+        content: page.content || '',
+        photoCaption: page.photoCaption || '',
+        photoTheme: page.photoTheme || '💍',
+        status: page.status || 'Published',
+        isCurrent: true
+      },
+      {
+        id: 'v_' + currentSelectedPageKey + '_prev1',
+        version: 'v1.1',
+        timestamp: '08 Oct 2026, 11:30 AM',
+        author: 'Sophie',
+        title: page.title || 'Page',
+        subtitle: 'Initial draft with personal dedication',
+        content: (page.content || '').substring(0, 140) + '...',
+        photoCaption: page.photoCaption || 'Early snapshot',
+        photoTheme: page.photoTheme || '💍',
+        status: 'Draft',
+        isCurrent: false
+      },
+      {
+        id: 'v_' + currentSelectedPageKey + '_prev0',
+        version: 'v1.0',
+        timestamp: '01 Oct 2026, 2:00 PM',
+        author: 'James',
+        title: page.title || 'Page',
+        subtitle: 'First outline notes',
+        content: 'Initial notes for ' + (page.title || 'this page') + ' at Fernwood Estate.',
+        photoCaption: 'Initial photo upload',
+        photoTheme: page.photoTheme || '💍',
+        status: 'Draft',
+        isCurrent: false
+      }
+    ];
+    if (!state.reusablePages) state.reusablePages = {};
+    state.reusablePages[currentSelectedPageKey] = page;
+    saveState(state);
+  }
+
+  if (countLabel) countLabel.textContent = `${page.versions.length} versions`;
+
+  list.innerHTML = page.versions.map((ver, idx) => `
+    <div style="background:#faf8f5;border:1px solid ${idx === 0 ? 'var(--gold)' : '#ebdccb'};border-radius:6px;padding:10px 12px;font-size:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <div style="font-weight:700;color:var(--ink);">${escapeHtml(ver.version)}</div>
+        <span class="tt-pill ${ver.status === 'Published' ? 'green' : 'not-started'}" style="font-size:9.5px;padding:1px 5px;">${ver.status || 'Draft'}</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted);">${escapeHtml(ver.timestamp)} · ${escapeHtml(ver.author || 'Couple')}</div>
+      <div style="font-size:11px;color:#5a493b;margin:4px 0;font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">"${escapeHtml(ver.title)}: ${escapeHtml(ver.subtitle || ver.content || '')}"</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+        ${idx === 0 ? '<span style="font-size:10.5px;color:var(--gold-hover);font-weight:600;">● Active in Editor</span>' : `
+          <button type="button" class="btn btn-outline btn-xs" style="font-size:11px;padding:2px 8px;" onclick="restorePageVersion('${ver.id}')">
+            Restore ↺
+          </button>
+        `}
+      </div>
+    </div>
+  `).join('');
+}
+
+function restorePageVersion(verId) {
+  const state = loadState();
+  const page = (state.reusablePages && state.reusablePages[currentSelectedPageKey]);
+  if (!page || !page.versions) return;
+  const targetVer = page.versions.find(v => v.id === verId);
+  if (!targetVer) return;
+
+  page.title = targetVer.title;
+  page.subtitle = targetVer.subtitle;
+  page.content = targetVer.content;
+  page.photoCaption = targetVer.photoCaption;
+  page.photoTheme = targetVer.photoTheme || '💍';
+  page.status = targetVer.status || 'Published';
+  page.lastUpdated = 'Restored ' + targetVer.version;
+
+  saveState(state);
+  logAudit('Content Page Version Restored', 'Couple', `Restored ${targetVer.version} for page "${page.title}"`, 'Content');
+
+  const dropdown = document.getElementById('page-version-dropdown');
+  if (dropdown) dropdown.style.display = 'none';
+
+  renderReusablePages();
+  showToast(`Restored version ${targetVer.version} successfully!`, 'success');
+}
+
+// Global click listener to close version history dropdown on outside click
+document.addEventListener('click', function(e) {
+  const dropdown = document.getElementById('page-version-dropdown');
+  const btn = document.getElementById('btn-page-version-history');
+  if (dropdown && dropdown.style.display === 'block') {
+    if (!dropdown.contains(e.target) && (!btn || !btn.contains(e.target))) {
+      dropdown.style.display = 'none';
+    }
+  }
+});
+
+/* Thank-You Manager (Manual Tracking - No AI) */
+let currentThankYouFilter = 'All';
+
+function switchGiftsSubTab(subTab) {
+  const regPane = document.getElementById('subpane-gifts-registry');
+  const tyPane = document.getElementById('subpane-gifts-thankyou');
+  const regBtn = document.getElementById('subtab-gifts-registry');
+  const tyBtn = document.getElementById('subtab-gifts-thankyou');
+
+  if (subTab === 'thankyou') {
+    if (regPane) regPane.style.display = 'none';
+    if (tyPane) tyPane.style.display = 'block';
+    if (regBtn) regBtn.className = 'btn btn-sm btn-outline';
+    if (tyBtn) tyBtn.className = 'btn btn-sm btn-gold';
+    renderThankYouManager(currentThankYouFilter);
+  } else {
+    if (regPane) regPane.style.display = 'block';
+    if (tyPane) tyPane.style.display = 'none';
+    if (regBtn) regBtn.className = 'btn btn-sm btn-gold';
+    if (tyBtn) tyBtn.className = 'btn btn-sm btn-outline';
+    renderGiftsTable();
+  }
+}
+
+function renderThankYouManager(filter) {
+  if (filter) currentThankYouFilter = filter;
+  const state = loadState();
+  const gifts = state.gifts || [];
+  const notes = (state.feed || []).filter(f => f.type === 'note');
+
+  const items = [];
+  gifts.forEach(g => {
+    items.push({
+      id: g.id,
+      type: 'gift',
+      recipient: g.from,
+      contribution: formatAUD(g.amount) + ' · ' + (g.message ? `"${g.message.substring(0, 32)}..."` : 'Wishing Well Gift'),
+      status: g.thankYouStatus || (g.thankYouSent ? 'Completed' : 'Not Started'),
+      method: g.thankYouMethod || 'Handwritten Card',
+      date: g.thankYouDate || (g.thankYouSent ? 'Sent' : 'Pending'),
+      notes: g.thankYouNotes || ''
+    });
+  });
+
+  notes.forEach(n => {
+    items.push({
+      id: n.id,
+      type: 'note',
+      recipient: n.author || 'Guest',
+      contribution: `Love Note: "${(n.quote || n.title || '').substring(0, 36)}..."`,
+      status: n.thankYouStatus || (n.coupleLiked ? 'Completed' : 'Drafted'),
+      method: n.thankYouMethod || 'Digital Card',
+      date: n.thankYouDate || 'Feed Response',
+      notes: n.thankYouNotes || ''
+    });
+  });
+
+  const notStarted = items.filter(x => x.status === 'Not Started').length;
+  const drafted = items.filter(x => x.status === 'Drafted').length;
+  const sent = items.filter(x => x.status === 'Sent').length;
+  const completed = items.filter(x => x.status === 'Completed').length;
+  const total = items.length || 1;
+
+  const nsEl = document.getElementById('ty-stat-not-started');
+  const dEl = document.getElementById('ty-stat-drafted');
+  const sEl = document.getElementById('ty-stat-sent');
+  const cEl = document.getElementById('ty-stat-completed');
+  if (nsEl) nsEl.textContent = notStarted;
+  if (dEl) dEl.textContent = drafted;
+  if (sEl) sEl.textContent = sent;
+  if (cEl) cEl.textContent = completed;
+
+  const progLabel = document.getElementById('ty-progress-label');
+  const cPct = Math.round((completed / total) * 100);
+  const sPct = Math.round((sent / total) * 100);
+  const dPct = Math.round((drafted / total) * 100);
+
+  if (progLabel) progLabel.textContent = `${completed} of ${total} Completed (${cPct}%)`;
+  const cBar = document.getElementById('ty-progress-completed-bar');
+  const sBar = document.getElementById('ty-progress-sent-bar');
+  const dBar = document.getElementById('ty-progress-drafted-bar');
+  if (cBar) cBar.style.width = cPct + '%';
+  if (sBar) sBar.style.width = sPct + '%';
+  if (dBar) dBar.style.width = dPct + '%';
+
+  document.querySelectorAll('.ty-filter-btn').forEach(btn => {
+    const f = btn.getAttribute('data-filter');
+    btn.className = (f === currentThankYouFilter) ? 'btn btn-sm btn-gold ty-filter-btn' : 'btn btn-sm btn-outline ty-filter-btn';
+  });
+
+  const filtered = (currentThankYouFilter === 'All') ? items : items.filter(x => x.status === currentThankYouFilter);
+
+  const tbody = document.getElementById('thankyou-table-body');
+  if (!tbody) return;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted);font-style:italic;">No thank-you records found for status: "${currentThankYouFilter}".</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(item => `
+    <tr>
+      <td>
+        <strong style="color:var(--ink);">${escapeHtml(item.recipient)}</strong>
+        <div style="font-size:11px;color:var(--muted);">${item.type === 'gift' ? '🎁 Gift Contributor' : '💌 Love Note Author'}</div>
+      </td>
+      <td style="font-size:12.5px;color:#4a392c;max-width:260px;">${escapeHtml(item.contribution)}</td>
+      <td>
+        <select class="text-input" style="padding:4px 8px;font-size:12px;width:130px;" onchange="updateItemThankYouStatus('${item.id}', '${item.type}', this.value)">
+          <option value="Not Started" ${item.status === 'Not Started' ? 'selected' : ''}>⏳ Not Started</option>
+          <option value="Drafted" ${item.status === 'Drafted' ? 'selected' : ''}>✏️ Drafted</option>
+          <option value="Sent" ${item.status === 'Sent' ? 'selected' : ''}>📬 Sent</option>
+          <option value="Completed" ${item.status === 'Completed' ? 'selected' : ''}>✅ Completed</option>
+        </select>
+      </td>
+      <td style="font-size:12.5px;">${escapeHtml(item.method)}</td>
+      <td style="font-size:12px;color:var(--muted);">
+        <div>${escapeHtml(item.date)}</div>
+        ${item.notes ? `<div style="font-size:11px;color:#6b5a4b;font-style:italic;margin-top:2px;">"${escapeHtml(item.notes)}"</div>` : ''}
+      </td>
+      <td>
+        <button type="button" class="btn btn-outline btn-xs" onclick="openThankYouEditModal('${item.id}', '${item.type}')">Edit Details</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterThankYouManager(status) {
+  currentThankYouFilter = status;
+  renderThankYouManager(status);
+}
+
+function updateItemThankYouStatus(id, type, newStatus) {
+  const state = loadState();
+  if (type === 'gift') {
+    const gift = state.gifts.find(g => g.id === id);
+    if (gift) {
+      gift.thankYouStatus = newStatus;
+      gift.thankYouSent = (newStatus === 'Sent' || newStatus === 'Completed');
+      if (newStatus === 'Completed' || newStatus === 'Sent') {
+        gift.thankYouDate = '10 Oct 2026';
+      }
+      logAudit('Thank-You Status Changed', 'Couple', `Updated thank-you for ${gift.from} to ${newStatus}`, 'Gifts');
+    }
+  } else {
+    const note = (state.feed || []).find(n => n.id === id);
+    if (note) {
+      note.thankYouStatus = newStatus;
+      if (newStatus === 'Completed') note.coupleLiked = true;
+      logAudit('Thank-You Status Changed', 'Couple', `Updated thank-you for note by ${note.author} to ${newStatus}`, 'Feed');
+    }
+  }
+  saveState(state);
+  renderThankYouManager();
+  renderGiftsTable();
+  showToast(`Updated thank-you status to "${newStatus}"`, 'success');
+}
+
+function openThankYouEditModal(id, type) {
+  const state = loadState();
+  let recipient = '';
+  let status = 'Not Started';
+  let method = 'Handwritten Card';
+  let notes = '';
+
+  if (type === 'gift') {
+    const g = state.gifts.find(x => x.id === id);
+    if (g) {
+      recipient = g.from;
+      status = g.thankYouStatus || (g.thankYouSent ? 'Completed' : 'Not Started');
+      method = g.thankYouMethod || 'Handwritten Card';
+      notes = g.thankYouNotes || '';
+    }
+  } else {
+    const n = (state.feed || []).find(x => x.id === id);
+    if (n) {
+      recipient = n.author;
+      status = n.thankYouStatus || (n.coupleLiked ? 'Completed' : 'Drafted');
+      method = n.thankYouMethod || 'Digital Card';
+      notes = n.thankYouNotes || '';
+    }
+  }
+
+  document.getElementById('ty-edit-item-id').value = id;
+  document.getElementById('ty-edit-item-type').value = type;
+  document.getElementById('ty-edit-recipient').value = recipient;
+  document.getElementById('ty-edit-status').value = status;
+  document.getElementById('ty-edit-method').value = method;
+  document.getElementById('ty-edit-notes').value = notes;
+
+  const modal = document.getElementById('thankyou-edit-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+  }
+}
+
+function closeThankYouEditModal() {
+  const modal = document.getElementById('thankyou-edit-modal');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function saveThankYouEdit() {
+  const id = document.getElementById('ty-edit-item-id').value;
+  const type = document.getElementById('ty-edit-item-type').value;
+  const status = document.getElementById('ty-edit-status').value;
+  const method = document.getElementById('ty-edit-method').value;
+  const notes = document.getElementById('ty-edit-notes').value.trim();
+
+  const state = loadState();
+  if (type === 'gift') {
+    const g = state.gifts.find(x => x.id === id);
+    if (g) {
+      g.thankYouStatus = status;
+      g.thankYouMethod = method;
+      g.thankYouNotes = notes;
+      g.thankYouSent = (status === 'Sent' || status === 'Completed');
+      if (status === 'Completed' || status === 'Sent') g.thankYouDate = '10 Oct 2026';
+    }
+  } else {
+    const n = (state.feed || []).find(x => x.id === id);
+    if (n) {
+      n.thankYouStatus = status;
+      n.thankYouMethod = method;
+      n.thankYouNotes = notes;
+      if (status === 'Completed') n.coupleLiked = true;
+    }
+  }
+
+  saveState(state);
+  closeThankYouEditModal();
+  renderThankYouManager();
+  renderGiftsTable();
+  showToast('Thank-you tracking record updated', 'success');
+}
+
+function exportThankYouSummary() {
+  const state = loadState();
+  const gifts = state.gifts || [];
+  const completed = gifts.filter(g => g.thankYouStatus === 'Completed' || g.thankYouSent).length;
+  showToast(`Thank-You Status: ${completed} of ${gifts.length} wedding gifts completed (${Math.round((completed / gifts.length) * 100)}%)`, 'info');
+}
+
+/* Wedding Vault (5 GB Read-Only Archive) */
+function renderWeddingVault() {
+  const state = loadState();
+  const vault = state.weddingVault || {
+    storageUsedGB: 2.35,
+    storageTotalGB: 5.0,
+    expiryDate: '2027-11-14T23:59:59',
+    accessControl: 'couple_mc',
+    deletionRequested: false,
+    categories: []
+  };
+
+  const used = vault.storageUsedGB || 2.35;
+  const total = vault.storageTotalGB || 5.0;
+  const pct = Math.round((used / total) * 100);
+
+  const headline = document.getElementById('vault-storage-headline');
+  if (headline) headline.textContent = `${used.toFixed(2)} GB used of ${total.toFixed(2)} GB (${pct}%)`;
+
+  const accessSelect = document.getElementById('vault-access-select');
+  if (accessSelect) accessSelect.value = vault.accessControl || 'couple_mc';
+  updateVaultAccessText(vault.accessControl || 'couple_mc');
+
+  const catContainer = document.getElementById('vault-categories-list');
+  if (catContainer) {
+    const categories = vault.categories || [
+      { id: 'photos', name: 'High-Res Photos & Video Media', sizeGB: 1.68, count: 42, icon: '📸' },
+      { id: 'feed', name: 'Celebration Feed & Love Notes', sizeGB: 0.25, count: 28, icon: '💌' },
+      { id: 'gifts', name: 'Wishing Well Ledger & Thank-Yous', sizeGB: 0.25, count: 12, icon: '🎁' },
+      { id: 'rsvps', name: 'Guest RSVPs & Seating Chart', sizeGB: 0.12, count: 127, icon: '🪑' },
+      { id: 'runsheet', name: 'MC Run Sheet & Audio Cues', sizeGB: 0.05, count: 9, icon: '🎙️' }
+    ];
+
+    catContainer.innerHTML = categories.map(cat => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#faf8f5;border:1px solid var(--line);border-radius:6px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:22px;">${cat.icon}</span>
+          <div>
+            <div style="font-weight:600;font-size:13.5px;color:var(--ink);">${escapeHtml(cat.name)}</div>
+            <div style="font-size:11.5px;color:var(--muted);">${cat.count} archived records &middot; Read-only snapshot</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <span class="tt-pill gold" style="font-weight:600;">${cat.sizeGB} GB</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  const delStatus = document.getElementById('vault-deletion-status');
+  if (delStatus) {
+    if (vault.deletionRequested) {
+      delStatus.innerHTML = '<span class="tt-pill warm" style="font-size:12px;color:#b3261e;background:#fde8e8;">⚠️ Deletion Requested · Vault scheduled for purge</span>';
+    } else {
+      delStatus.innerHTML = '<span class="tt-pill not-started" style="font-size:12px;">No Deletion Pending · Retained safely until 14 Nov 2027</span>';
+    }
+  }
+}
+
+function handleVaultAccessChange(level) {
+  updateVaultAccessText(level);
+}
+
+function updateVaultAccessText(level) {
+  const statusEl = document.getElementById('vault-access-status-text');
+  if (!statusEl) return;
+  if (level === 'couple_only') {
+    statusEl.textContent = 'Couple only. MC and family accounts cannot access vault files.';
+  } else if (level === 'family_mc') {
+    statusEl.textContent = 'Extended access: Couple, MC, and family guest accounts have read-only access.';
+  } else {
+    statusEl.textContent = 'Authorized: Couple & Designated MC have authorized read-only access.';
+  }
+}
+
+function saveVaultAccessControl() {
+  const select = document.getElementById('vault-access-select');
+  if (!select) return;
+  const level = select.value;
+  const state = loadState();
+  if (!state.weddingVault) state.weddingVault = {};
+  state.weddingVault.accessControl = level;
+  saveState(state);
+  logAudit('Vault Access Updated', 'Couple', `Changed vault access to ${level}`, 'Vault');
+  showToast('Vault access control updated successfully', 'success');
+}
+
+function openVaultDeleteModal() {
+  const modal = document.getElementById('vault-delete-modal');
+  const input = document.getElementById('vault-delete-confirm-input');
+  if (input) input.value = '';
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+  }
+}
+
+function closeVaultDeleteModal() {
+  const modal = document.getElementById('vault-delete-modal');
+  if (modal) {
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+  }
+}
+
+function confirmVaultDeletion() {
+  const input = document.getElementById('vault-delete-confirm-input');
+  if (!input || input.value.trim().toUpperCase() !== 'DELETE') {
+    showToast('Please type "DELETE" exactly to confirm vault purge', 'error');
+    return;
+  }
+  const state = loadState();
+  if (!state.weddingVault) state.weddingVault = {};
+  state.weddingVault.deletionRequested = true;
+  saveState(state);
+  logAudit('Vault Deletion Requested', 'Couple', 'Submitted permanent vault purge request', 'Vault');
+  closeVaultDeleteModal();
+  renderWeddingVault();
+  showToast('Vault purge request recorded. Complies with 1-year retention policy.', 'info');
+}
+
+function exportVaultInventory() {
+  showToast('Exporting Wedding Vault manifest: 5.0 GB allocated, 2.35 GB utilized across 5 categories.', 'info');
+}
+
+/* First Anniversary (Milestone & Memories) */
+let currentAnniversaryMode = 'countdown';
+
+function renderFirstAnniversary() {
+  const state = loadState();
+  const anniv = state.firstAnniversary || {
+    weddingDate: '2026-11-14',
+    anniversaryDate: '2027-11-14',
+    greeting: "Happy 1st Anniversary Sophie & James! Looking back on your magical day at Fernwood Estate with 127 loved ones!",
+    timeCapsuleNote: "To our future selves on 14 November 2027: Remember the golden light through the pavilion windows...",
+    coupleReflection: "Year one has flown by! We survived home renovations and our dream trip to New Zealand.",
+    memoryLinks: []
+  };
+
+  const heroSub = document.getElementById('anniv-hero-subtitle');
+  if (heroSub) heroSub.textContent = 'Married 14 November 2026 · Celebrating 1 Year · 14 November 2027';
+
+  const heroGreeting = document.getElementById('anniv-greeting-text');
+  if (heroGreeting) heroGreeting.textContent = `"${anniv.greeting}"`;
+
+  const capsuleDisplay = document.getElementById('anniv-capsule-display');
+  if (capsuleDisplay) capsuleDisplay.textContent = `"${anniv.timeCapsuleNote}"`;
+
+  const reflectionInput = document.getElementById('anniv-reflection-input');
+  if (reflectionInput) reflectionInput.value = anniv.coupleReflection || '';
+
+  const countdownText = document.getElementById('anniv-countdown-text');
+  const milestonePill = document.getElementById('anniv-milestone-pill');
+  if (countdownText && milestonePill) {
+    if (currentAnniversaryMode === 'simulated_day') {
+      milestonePill.textContent = '🎉 TODAY IS YOUR 1ST ANNIVERSARY!';
+      milestonePill.className = 'tt-pill green';
+      countdownText.textContent = 'Celebrating 1 Year Today: 14 November 2027';
+    } else {
+      milestonePill.textContent = '🌟 1 Year Milestone';
+      milestonePill.className = 'tt-pill gold';
+      countdownText.textContent = '396 Days until 1st Anniversary (14 Nov 2027)';
+    }
+  }
+
+  const grid = document.getElementById('anniv-memory-links-grid');
+  if (grid) {
+    const memoryLinks = [
+      { key: 'photos', title: 'Wedding Photo Gallery', desc: '42 curated moments and guest captures', icon: '📸', target: 'feed' },
+      { key: 'notes', title: 'Love Notes & Guest Wishes', desc: '16 heartfelt guest tributes from the feed', icon: '💌', target: 'feed' },
+      { key: 'dance', title: 'First Dance & Music', desc: '"L-O-V-E" by Nat King Cole & reception songs', icon: '💃', target: 'runsheet' },
+      { key: 'vows', title: 'Wedding Vows & Ceremony', desc: 'Fernwood Lower Meadow Lawns at 2:00 PM', icon: '📜', target: 'overview' },
+      { key: 'speeches', title: 'Toasts & Speech Cues', desc: 'Maid of Honor, Best Man & Father of the Bride', icon: '🥂', target: 'overview' },
+      { key: 'seating', title: 'Final Seating & Guest Roll', desc: '127 seated guests across 12 tables', icon: '🪑', target: 'seating' }
+    ];
+
+    grid.innerHTML = memoryLinks.map(mem => `
+      <div style="background:#faf8f5;border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;">
+        <div>
+          <div style="font-size:28px;margin-bottom:8px;">${mem.icon}</div>
+          <div style="font-weight:600;font-size:14px;color:var(--ink);margin-bottom:4px;">${escapeHtml(mem.title)}</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.45;">${escapeHtml(mem.desc)}</div>
+        </div>
+        <button type="button" class="btn btn-outline btn-xs" style="margin-top:12px;align-self:flex-start;" onclick="openMemoryLink('${mem.key}', '${mem.target}')">
+          View Memory &rarr;
+        </button>
+      </div>
+    `).join('');
+  }
+
+  const wishesList = document.getElementById('anniv-guest-wishes-list');
+  const wishesCountPill = document.getElementById('anniv-wishes-count-pill');
+  const wishes = anniv.guestWishes || (state.firstAnniversary && state.firstAnniversary.guestWishes) || [];
+  if (wishesCountPill) {
+    wishesCountPill.textContent = `${wishes.length} Guest ${wishes.length === 1 ? 'Wish' : 'Wishes'}`;
+  }
+  if (wishesList) {
+    if (wishes.length === 0) {
+      wishesList.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--muted);font-style:italic;">No guest anniversary wishes received yet. When guests post anniversary love notes from the guest app, they will appear here!</div>';
+    } else {
+      wishesList.innerHTML = wishes.map(w => `
+        <div style="background:#faf8f5;border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div style="font-weight:700;font-size:13.5px;color:var(--ink);">${escapeHtml(w.guestName || 'Guest')}</div>
+              <span class="tt-pill gold" style="font-size:10px;">${escapeHtml(w.tag || '💍 1st Anniversary')}</span>
+            </div>
+            <div style="font-size:13px;color:#4a392c;line-height:1.55;font-style:italic;background:#ffffff;border-left:3px solid var(--gold);padding:8px 12px;border-radius:0 4px 4px 0;margin-bottom:8px;">
+              "${escapeHtml(w.message)}"
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);">${escapeHtml(w.time || 'Celebration Milestone')}</div>
+        </div>
+      `).join('');
+    }
+  }
+}
+
+function toggleAnniversaryMode(mode) {
+  currentAnniversaryMode = mode;
+  const btnCountdown = document.getElementById('btn-anniv-mode-countdown');
+  const btnSim = document.getElementById('btn-anniv-mode-simulated');
+  if (mode === 'simulated_day') {
+    if (btnCountdown) btnCountdown.className = 'btn btn-outline btn-sm';
+    if (btnSim) btnSim.className = 'btn btn-gold btn-sm';
+    showToast('Switched to simulated Anniversary Day view (14 Nov 2027)!', 'success');
+  } else {
+    if (btnCountdown) btnCountdown.className = 'btn btn-gold btn-sm';
+    if (btnSim) btnSim.className = 'btn btn-outline btn-sm';
+    showToast('Switched to planning countdown view', 'info');
+  }
+  renderFirstAnniversary();
+}
+
+function handleSaveAnniversaryReflection(e) {
+  e.preventDefault();
+  const input = document.getElementById('anniv-reflection-input');
+  if (!input) return;
+  const text = input.value.trim();
+  const state = loadState();
+  if (!state.firstAnniversary) state.firstAnniversary = {};
+  state.firstAnniversary.coupleReflection = text;
+  saveState(state);
+  logAudit('Anniversary Reflection Saved', 'Couple', 'Updated 1st year couple reflection note', 'Anniversary');
+  showToast('1st Year reflection saved successfully!', 'success');
+}
+
+function openMemoryLink(key, targetTab) {
+  if (targetTab === 'seating') {
+    switchCoupleTab('seating');
+    showToast('Navigated to Final Seating Chart memory portal', 'info');
+  } else if (targetTab === 'feed') {
+    switchCoupleTab('feed');
+    showToast('Navigated to Celebration Feed & Guest Love Notes', 'info');
+  } else {
+    showToast(`Reliving "${key}": wedding records securely retained in Vault.`, 'info');
+  }
 }
 
 

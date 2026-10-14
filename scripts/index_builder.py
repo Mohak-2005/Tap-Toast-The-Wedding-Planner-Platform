@@ -361,23 +361,23 @@ body {{
           <ul class="persona-feature-list">
             <li class="persona-feature-item">
               <span class="persona-feature-check">✓</span>
-              <span>Live countdown in <strong>days : hrs : mins : secs</strong></span>
+              <span><strong>Reusable Content Pages</strong>: Our Story, In Memoriam, Menu, Team, Updates</span>
             </li>
             <li class="persona-feature-item">
               <span class="persona-feature-check">✓</span>
-              <span>Guest list with <strong>Send Reminder</strong> &amp; RSVP tracking</span>
+              <span><strong>Thank-You Manager</strong>: Manual tracking (Not Started, Drafted, Sent, Completed)</span>
+            </li>
+            <li class="persona-feature-item">
+              <span class="persona-feature-check">✓</span>
+              <span><strong>Wedding Vault</strong>: 5 GB read-only archive, usage tracking &amp; safe deletion</span>
+            </li>
+            <li class="persona-feature-item">
+              <span class="persona-feature-check">✓</span>
+              <span><strong>1st Anniversary Celebration</strong>: Milestone greeting &amp; 6 memory portals</span>
             </li>
             <li class="persona-feature-item">
               <span class="persona-feature-check">✓</span>
               <span>Interactive <strong>circular table seating</strong> with drag &amp; drop</span>
-            </li>
-            <li class="persona-feature-item">
-              <span class="persona-feature-check">✓</span>
-              <span><strong>Gift &amp; Go</strong> wishing well with loving note templates</span>
-            </li>
-            <li class="persona-feature-item">
-              <span class="persona-feature-check">✓</span>
-              <span><strong>Venue &amp; Travel</strong> tab with parking &amp; Google Map</span>
             </li>
             <li class="persona-feature-item">
               <span class="persona-feature-check">✓</span>
@@ -492,7 +492,11 @@ body {{
           <ul class="persona-feature-list">
             <li class="persona-feature-item">
               <span class="persona-feature-check">✓</span>
-              <span>Minute-by-minute <strong>Wedding Run Sheet</strong> with active cues</span>
+              <span><strong>Private MC Run Sheet</strong>: editable, reorderable (▲/▼) &amp; deletable cues</span>
+            </li>
+            <li class="persona-feature-item">
+              <span class="persona-feature-check">✓</span>
+              <span>Restricted access for authorized MC &amp; Couple (no AI scheduling)</span>
             </li>
             <li class="persona-feature-item">
               <span class="persona-feature-check">✓</span>
@@ -505,10 +509,6 @@ body {{
             <li class="persona-feature-item">
               <span class="persona-feature-check">✓</span>
               <span>Multi-tenant wedding switcher across client accounts</span>
-            </li>
-            <li class="persona-feature-item">
-              <span class="persona-feature-check">✓</span>
-              <span>VIP speeches, housekeeping prompts &amp; dietary alerts</span>
             </li>
           </ul>
         </div>
@@ -631,6 +631,34 @@ body {{
           <div class="feature-highlight-title">📍 4. Venue &amp; Travel Logistics</div>
           <div class="feature-highlight-desc">
             In <strong>Couple Dashboard</strong> or <strong>MC Pro</strong>, view the dedicated <strong>Venue &amp; Travel</strong> tab with full address, parking details, transport options, and one-click Google Maps redirection to Fernwood Estate.
+          </div>
+        </div>
+
+        <div class="feature-highlight-box">
+          <div class="feature-highlight-title">📖 5. Reusable Content Pages (Shared Editor)</div>
+          <div class="feature-highlight-desc">
+            In <strong>Couple Dashboard</strong> &gt; <strong>Content Pages</strong>, edit Our Story, In Memoriam, Dining &amp; Menu, Meet the Team, and Honeymoon Updates. Switch live previews and toggle publish status to appear live in Guest Web &amp; Mobile!
+          </div>
+        </div>
+
+        <div class="feature-highlight-box">
+          <div class="feature-highlight-title">🎙️ 6. Private MC Run Sheet (High Priority)</div>
+          <div class="feature-highlight-desc">
+            In <strong>MC Pro</strong>, click on any wedding (e.g. <strong>Sophie &amp; James</strong>) or the <strong>📋 Run Sheet</strong> action to open their dedicated <strong>Private MC Run Sheet</strong>. View minute cues with editable time, activity, public notes and confidential MC cues. Click ▲/▼ to reorder items, delete or add custom cues with strict authorization restrictions (no AI scheduling).
+          </div>
+        </div>
+
+        <div class="feature-highlight-box">
+          <div class="feature-highlight-title">💌 7. Thank-You Manager (Manual Tracking)</div>
+          <div class="feature-highlight-desc">
+            In <strong>Couple Dashboard</strong> &gt; <strong>Gift &amp; Thank-You</strong> &gt; <strong>Thank-You Manager</strong>, track gift and Love Note thank-you statuses: <em>Not Started</em>, <em>Drafted</em>, <em>Sent</em>, and <em>Completed</em> with progress bars and status filters.
+          </div>
+        </div>
+
+        <div class="feature-highlight-box">
+          <div class="feature-highlight-title">🔒 8. Wedding Vault &amp; 1st Anniversary</div>
+          <div class="feature-highlight-desc">
+            In <strong>Couple Dashboard</strong>, open <strong>Wedding Vault</strong> to inspect the read-only storage allocation, 1-year retention expiry, access controls &amp; safe deletion. Then open <strong>1st Anniversary</strong> to view milestone greetings, traditional/modern themes, and 6 memory links!
           </div>
         </div>
       </div>

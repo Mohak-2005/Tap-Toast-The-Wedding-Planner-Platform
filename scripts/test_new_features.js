@@ -23,8 +23,8 @@ if (guestMobileHtml.includes('phone-mockup-frame') &&
     guestMobileHtml.includes('phone-status-bar') && 
     guestMobileHtml.includes('9:41') &&
     guestMobileHtml.includes('phone-home-indicator') &&
-    guestMobileHtml.includes('frame-nav-pill')) {
-  console.log('PASS: guest-mobile.html contains phone mockup chassis with 9:41 status bar, screen selector pills, and home indicator!');
+    guestMobileHtml.includes('phone-bottom-nav')) {
+  console.log('PASS: guest-mobile.html contains phone mockup chassis with 9:41 status bar, bottom nav, and home indicator!');
 } else {
   console.error('FAIL: Missing phone mockup elements in guest-mobile.html');
   process.exit(1);

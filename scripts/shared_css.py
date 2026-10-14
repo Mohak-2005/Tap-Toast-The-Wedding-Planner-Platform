@@ -280,6 +280,30 @@ a {
   border: 1px solid #f2c7c2;
 }
 
+.tt-pill.not-started {
+  background: #f0ebe4;
+  color: #736353;
+  border: 1px solid #ddd2c4;
+}
+
+.tt-pill.drafted {
+  background: #fdf3e7;
+  color: #a0631c;
+  border: 1px solid #f2d5b1;
+}
+
+.tt-pill.sent {
+  background: #edf4fb;
+  color: #1f618d;
+  border: 1px solid #c4dcf3;
+}
+
+.tt-pill.completed {
+  background: #edf7ee;
+  color: #236829;
+  border: 1px solid #c7e8cc;
+}
+
 /* Common Buttons */
 .btn {
   display: inline-flex;
