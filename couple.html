@@ -3134,10 +3134,7 @@ body {
             <div class="header-eyebrow">DIGITAL &amp; PHYSICAL INVITATIONS</div>
             <h1 class="header-title">The QaRd Invitation</h1>
           </div>
-          <div style="display:flex;gap:10px;">
-            <button type="button" class="btn btn-gold btn-sm" onclick="simulateScan()">📲 Simulate scan</button>
-            <button type="button" class="btn btn-primary btn-sm" onclick="sendAllInvitations()">✉️ Send invitations</button>
-          </div>
+
         </div>
 
         <div class="twocol-layout">
@@ -3180,9 +3177,9 @@ body {
               <p style="font-size:12.5px;color:var(--muted);margin:14px 0 16px;">
                 Each invitation is printed with a bespoke QR code linked directly to the guest's personalized mobile hub — no app download, login, or password required.
               </p>
-              <div style="display:flex;gap:10px;">
-                <button type="button" class="btn btn-outline" onclick="simulateScan()">Simulate Guest Scan</button>
-                <button type="button" class="btn btn-outline" onclick="showToast('Printing mock vector sheet (300 DPI)', 'info')">Print Ready PDF</button>
+              <div style="display:flex;gap:10px;margin-top:16px;">
+                <button type="button" class="btn btn-outline" onclick="simulateScan()">📲 Simulate Scan</button>
+                <button type="button" class="btn btn-gold" onclick="sendAllInvitations()">✉️ Send Invitations</button>
               </div>
             </div>
           </div>
@@ -3399,41 +3396,20 @@ body {
             </div>
           </div>
           <div style="display:flex;gap:10px;align-items:center;">
-            <span class="tt-pill green" style="font-weight:600;">🔒 Permanent Vault Active</span>
             <button type="button" class="btn btn-outline btn-sm" onclick="exportVaultInventory()">📦 Download Vault Manifest</button>
           </div>
         </div>
 
         <!-- Storage Usage & 30-Day Retention Card -->
         <div class="content-card" style="margin-bottom:24px;padding:22px 26px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap;gap:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:14px;">
             <div>
               <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold-hover);">Storage Allocation &amp; Usage</div>
               <div style="font-size:22px;font-family:var(--font-heading);color:var(--ink);font-weight:600;" id="vault-storage-headline">2.35 GB used of 5.00 GB (47%)</div>
-              <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
-                <span style="font-size:11.5px;color:var(--muted);">Simulate Timeline:</span>
-                <button type="button" class="btn btn-outline btn-xs" style="font-size:11px;padding:2px 8px;" onclick="setVaultDaysRemaining(30)">30 Days</button>
-                <button type="button" class="btn btn-outline btn-xs" style="font-size:11px;padding:2px 8px;" onclick="setVaultDaysRemaining(29)">29 Days</button>
-                <button type="button" class="btn btn-outline btn-xs" style="font-size:11px;padding:2px 8px;border-color:#b3261e;color:#b3261e;" onclick="setVaultDaysRemaining(3)">3 Days (Red Alert)</button>
-                <button type="button" class="btn btn-outline btn-xs" style="font-size:11px;padding:2px 8px;border-color:#b3261e;color:#b3261e;" onclick="setVaultDaysRemaining(0)">0 Days (Expired &amp; Purge)</button>
-              </div>
             </div>
-            <div style="text-align:right;">
-              <span class="tt-pill warm" id="vault-expiry-pill" style="font-size:13px;padding:6px 14px;font-weight:600;display:inline-block;transition:all 0.3s ease;">⏳ Archive Expiry: 30 Days</span>
-              <div id="vault-email-status-text" style="font-size:11.5px;color:var(--muted);margin-top:4px;">Automated email reminder sent before vault closes</div>
+            <div id="vault-expiry-container" style="text-align:right;">
+              <span class="tt-pill warm" id="vault-expiry-pill" style="font-size:13px;padding:7px 16px;font-weight:600;display:inline-block;transition:all 0.3s ease;">⏳ Archive Expiry: 30 Days</span>
             </div>
-          </div>
-
-          <!-- Email notification alert banner (Appears when 3, 2, 1, or 0 days remaining) -->
-          <div id="vault-email-alert-banner" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:10px 14px;border-radius:6px;font-size:12.5px;margin-bottom:14px;align-items:center;justify-content:space-between;gap:10px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:16px;">📧</span>
-              <div>
-                <strong>Email Notification Sent to Couple:</strong>
-                <span id="vault-email-alert-msg" style="margin-left:4px;">"Your Wedding Vault is expiring soon! Download memories before final closure."</span>
-              </div>
-            </div>
-            <button type="button" class="btn btn-outline btn-xs" style="background:#ffffff;border-color:#b3261e;color:#b3261e;white-space:nowrap;" onclick="showVaultEmailModal()">View Email Notice</button>
           </div>
 
           <!-- Multi-segment Storage Bar -->
@@ -3453,11 +3429,6 @@ body {
             <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#7d5ba6;display:inline-block;"></span> MC Schedule (0.05 GB)</div>
             <div style="display:flex;align-items:center;gap:6px;color:var(--muted);"><span style="width:10px;height:10px;border-radius:2px;background:#ede5d8;display:inline-block;"></span> Free Space (2.65 GB)</div>
           </div>
-
-          <!-- Purge Container (Shown only after 30 days ends) -->
-          <div id="vault-purge-container" style="display:none;margin-top:16px;padding-top:14px;border-top:1px dashed #e8ded0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-            <!-- Injected by renderVaultUI -->
-          </div>
         </div>
 
         <div class="twocol-layout" style="margin-bottom:24px;">
@@ -3471,9 +3442,9 @@ body {
               <div class="field-group" style="margin-bottom:14px;">
                 <label class="field-label">Access Permissions Level</label>
                 <select id="vault-access-select" class="text-input" onchange="handleVaultAccessChange(this.value)">
-                  <option value="couple_mc">Authorized: Couple &amp; Designated MC Only (Recommended)</option>
-                  <option value="couple_only">Strict Private: Couple Only</option>
-                  <option value="family_mc">Extended: Couple, MC &amp; Immediate Family</option>
+                  <option value="couple_only">Couple</option>
+                  <option value="couple_mc">Couple + MC</option>
+                  <option value="family_mc">Couple, MC &amp; Family</option>
                 </select>
               </div>
               
@@ -3511,34 +3482,33 @@ body {
           </div>
         </div>
 
-        <!-- Hero Greeting Card -->
-        <div class="content-card" style="background:linear-gradient(135deg, #221a14 0%, #3a2d22 100%);color:#fef8ef;padding:30px;border-radius:10px;margin-bottom:24px;border:1px solid #524031;box-shadow:0 12px 32px rgba(0,0,0,0.18);">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:16px;">
+        <!-- Hero Greeting Card (Harmonious & Elegant) -->
+        <div class="content-card" style="background:linear-gradient(135deg, #1c1510 0%, #2e231a 100%);color:#fef8ef;padding:28px 32px;border-radius:12px;margin-bottom:24px;border:1px solid #48392c;box-shadow:0 12px 30px rgba(0,0,0,0.22);">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:20px;border-bottom:1px solid rgba(189,150,97,0.25);padding-bottom:16px;">
             <div>
-              <span style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">1ST WEDDING ANNIVERSARY</span>
-              <h2 style="font-family:var(--font-heading);font-size:28px;color:#ffffff;margin:6px 0;" id="anniv-hero-title">Happy 1st Anniversary, Sophie &amp; James!</h2>
-              <div style="font-size:13.5px;color:#dfc194;" id="anniv-hero-subtitle">Married 14 November 2026 &middot; Celebrating 1 Year of Love &middot; 14 November 2027</div>
+              <span class="tt-pill gold" style="font-size:11px;padding:4px 12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">🌟 1st Year Anniversary</span>
+              <h2 style="font-family:var(--font-heading);font-size:30px;color:#ffffff;margin:8px 0 4px;" id="anniv-hero-title">Sophie &amp; James</h2>
+              <div style="font-size:13.5px;color:#c9baa9;" id="anniv-hero-subtitle">Married 14 November 2026 &middot; Fernwood Estate</div>
             </div>
             <div style="text-align:right;">
-              <span class="tt-pill gold" id="anniv-milestone-pill" style="font-size:12.5px;padding:6px 14px;">🌟 1 Year Milestone</span>
-              <div style="font-size:11.5px;color:#c9baa9;margin-top:6px;" id="anniv-countdown-text">396 Days until 1st Anniversary</div>
+              <span class="tt-pill warm" id="anniv-milestone-pill" style="font-size:12.5px;padding:6px 14px;">⏳ 396 Days to Anniversary</span>
             </div>
           </div>
 
-          <p id="anniv-greeting-text" style="font-size:15px;line-height:1.65;color:#e8ded0;max-width:760px;font-style:italic;background:rgba(255,255,255,0.05);padding:16px 20px;border-radius:8px;border-left:3px solid var(--gold);margin-bottom:20px;">
-            "Happy 1st Anniversary Sophie &amp; James! May this paper anniversary mark the beginning of a lifetime filled with continuous joy, deep laughter, and shared dreams. Looking back on your magical day at Fernwood Estate with 127 loved ones!"
+          <p id="anniv-greeting-text" style="font-size:15px;line-height:1.7;color:#f0e6d9;max-width:800px;font-style:italic;margin-bottom:22px;">
+            "Happy 1st Anniversary Sophie &amp; James! May this paper anniversary mark the beginning of a lifetime filled with continuous joy, deep laughter, and shared dreams. Cherishing all 127 memories from your celebration!"
           </p>
 
-          <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:16px;background:rgba(0,0,0,0.22);padding:14px 18px;border-radius:8px;border:1px solid rgba(189,150,97,0.3);">
+          <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:18px;background:rgba(0,0,0,0.28);padding:16px 20px;border-radius:8px;border:1px solid rgba(189,150,97,0.25);">
             <div>
-              <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:700;">Traditional 1st Year Symbol</div>
-              <div style="font-size:14px;color:#ffffff;font-weight:600;margin-top:2px;">📜 Paper</div>
-              <div style="font-size:12px;color:#c9baa9;margin-top:2px;">Symbolizes a blank sheet waiting to be written with your life story and adventures.</div>
+              <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:700;">Traditional Symbol</div>
+              <div style="font-size:15px;color:#ffffff;font-weight:600;margin-top:3px;">📜 Paper</div>
+              <div style="font-size:12px;color:#bdaea0;margin-top:2px;">A clean, blank sheet waiting to be written with your life story and adventures.</div>
             </div>
             <div>
-              <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:700;">Modern 1st Year Symbol</div>
-              <div style="font-size:14px;color:#ffffff;font-weight:600;margin-top:2px;">⏰ Clocks</div>
-              <div style="font-size:12px;color:#c9baa9;margin-top:2px;">Symbolizes the precious time spent together throughout your joyous first year.</div>
+              <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:700;">Modern Symbol</div>
+              <div style="font-size:15px;color:#ffffff;font-weight:600;margin-top:3px;">⏰ Clocks</div>
+              <div style="font-size:12px;color:#bdaea0;margin-top:2px;">Celebrating every cherished minute and precious memory shared throughout your first year.</div>
             </div>
           </div>
         </div>
@@ -3550,7 +3520,6 @@ body {
               <h2 class="content-card-title" style="margin:0;">✨ Relive Your Wedding Memories</h2>
               <div style="font-size:13px;color:var(--muted);margin-top:2px;">Quick access to key moments and keepsakes from your wedding celebration</div>
             </div>
-            <span style="font-size:12px;color:var(--gold-hover);font-weight:600;">6 Memory Portals</span>
           </div>
 
           <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:16px;" id="anniv-memory-links-grid">
@@ -3574,14 +3543,13 @@ body {
 
           <div>
             <div class="content-card">
-              <h2 class="content-card-title">✍️ Edit 1st Year Reflections</h2>
+              <h2 class="content-card-title">✍️ 1st Year Reflections</h2>
               <form onsubmit="handleSaveAnniversaryReflection(event)">
                 <div class="field-group" style="margin-bottom:14px;">
                   <label class="field-label">Our Reflections on Year One</label>
                   <textarea id="anniv-reflection-input" class="text-input" rows="4" placeholder="Write your thoughts, milestones, or memories from year one..."></textarea>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:11.5px;color:var(--muted);">Non-AI &middot; Hand-authored reflection</span>
+                <div style="display:flex;justify-content:flex-end;align-items:center;">
                   <button type="submit" class="btn btn-gold btn-sm">Save Reflection</button>
                 </div>
               </form>
@@ -6130,24 +6098,34 @@ function simulateScan() {
 
 function sendAllInvitations() {
   const state = loadState();
-  logAudit('Invitations Dispatched', 'Couple', 'Digital & physical QaRd cards dispatched to 118 households', 'General');
-  
+  let count = 0;
+  if (state.guests && state.guests.length > 0) {
+    state.guests.forEach(g => {
+      g.invitationSent = true;
+      g.invitationStatus = 'Sent';
+      count++;
+    });
+  }
+
+  logAudit('Invitations Dispatched', 'Couple', `Digital & physical QaRd cards dispatched to ${count} guests with ready cards`, 'Invitations');
+
+  if (!state.feed) state.feed = [];
   state.feed.unshift({
     id: 'f_invites_' + Date.now(),
     type: 'banner',
     author: 'Sophie & James',
-    title: 'Invitations went out this week',
-    subtitle: 'All QaRds have been dispatched via express post',
+    title: 'Official Invitations Sent',
+    subtitle: `QaRd invitations have been dispatched to ${count} guests!`,
     time: 'Just now',
-    likes: 18,
+    likes: 24,
     comments: [],
-    pinned: false,
+    pinned: true,
     hidden: false
   });
 
   saveState(state);
   initCoupleDashboard();
-  showToast('Invitations marked as sent! Updated celebration feed and audit log.', 'success');
+  showToast(`✉️ Invitations successfully sent to all ${count} guests whose cards were ready!`, 'success');
 }
 
 /* Gift & Go */
