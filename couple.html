@@ -3404,24 +3404,43 @@ body {
           </div>
         </div>
 
-        <!-- 5 GB Storage Usage Card & Meter -->
+        <!-- Storage Usage & 30-Day Retention Card -->
         <div class="content-card" style="margin-bottom:24px;padding:22px 26px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap;gap:14px;">
             <div>
               <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold-hover);">Storage Allocation &amp; Usage</div>
               <div style="font-size:22px;font-family:var(--font-heading);color:var(--ink);font-weight:600;" id="vault-storage-headline">2.35 GB used of 5.00 GB (47%)</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+                <span style="font-size:11.5px;color:var(--muted);">Simulate Timeline:</span>
+                <button type="button" class="btn btn-outline btn-xs" style="font-size:11px;padding:2px 8px;" onclick="setVaultDaysRemaining(30)">30 Days</button>
+                <button type="button" class="btn btn-outline btn-xs" style="font-size:11px;padding:2px 8px;" onclick="setVaultDaysRemaining(29)">29 Days</button>
+                <button type="button" class="btn btn-outline btn-xs" style="font-size:11px;padding:2px 8px;border-color:#b3261e;color:#b3261e;" onclick="setVaultDaysRemaining(3)">3 Days (Red Alert)</button>
+                <button type="button" class="btn btn-outline btn-xs" style="font-size:11px;padding:2px 8px;border-color:#b3261e;color:#b3261e;" onclick="setVaultDaysRemaining(0)">0 Days (Expired &amp; Purge)</button>
+              </div>
             </div>
             <div style="text-align:right;">
-              <span class="tt-pill warm" id="vault-expiry-pill" style="font-size:12px;">⏳ Archive Expiry: 14 Nov 2027 (396 Days Left)</span>
-              <div style="font-size:11.5px;color:var(--muted);margin-top:4px;">Includes 1 year post-wedding complimentary retention</div>
+              <span class="tt-pill warm" id="vault-expiry-pill" style="font-size:13px;padding:6px 14px;font-weight:600;display:inline-block;transition:all 0.3s ease;">⏳ Archive Expiry: 30 Days</span>
+              <div id="vault-email-status-text" style="font-size:11.5px;color:var(--muted);margin-top:4px;">Automated email reminder sent before vault closes</div>
             </div>
+          </div>
+
+          <!-- Email notification alert banner (Appears when 3, 2, 1, or 0 days remaining) -->
+          <div id="vault-email-alert-banner" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:10px 14px;border-radius:6px;font-size:12.5px;margin-bottom:14px;align-items:center;justify-content:space-between;gap:10px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:16px;">📧</span>
+              <div>
+                <strong>Email Notification Sent to Couple:</strong>
+                <span id="vault-email-alert-msg" style="margin-left:4px;">"Your Wedding Vault is expiring soon! Download memories before final closure."</span>
+              </div>
+            </div>
+            <button type="button" class="btn btn-outline btn-xs" style="background:#ffffff;border-color:#b3261e;color:#b3261e;white-space:nowrap;" onclick="showVaultEmailModal()">View Email Notice</button>
           </div>
 
           <!-- Multi-segment Storage Bar -->
           <div style="width:100%;height:14px;background:#ede5d8;border-radius:999px;overflow:hidden;display:flex;margin-bottom:14px;">
             <div id="vault-bar-photos" style="width:33.6%;background:#bd9661;" title="Photos &amp; Video Media: 1.68 GB"></div>
             <div id="vault-bar-feed" style="width:5.0%;background:#e6a15c;" title="Celebration Feed &amp; Notes: 0.25 GB"></div>
-            <div id="vault-bar-gifts" style="width:5.0%;background:#4a7c59;" title="Gifts &amp; Thank-You Records: 0.25 GB"></div>
+            <div id="vault-bar-gifts" style="width:5.0%;background:#4a7c59;" title="Gifts &amp; Thank-Yous: 0.25 GB"></div>
             <div id="vault-bar-rsvps" style="width:2.4%;background:#3d6b99;" title="Guest RSVPs &amp; Seating: 0.12 GB"></div>
             <div id="vault-bar-runsheet" style="width:1.0%;background:#7d5ba6;" title="MC Schedule &amp; Cues: 0.05 GB"></div>
           </div>
@@ -3433,6 +3452,11 @@ body {
             <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#3d6b99;display:inline-block;"></span> Guest RSVPs &amp; Seating (0.12 GB)</div>
             <div style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:#7d5ba6;display:inline-block;"></span> MC Schedule (0.05 GB)</div>
             <div style="display:flex;align-items:center;gap:6px;color:var(--muted);"><span style="width:10px;height:10px;border-radius:2px;background:#ede5d8;display:inline-block;"></span> Free Space (2.65 GB)</div>
+          </div>
+
+          <!-- Purge Container (Shown only after 30 days ends) -->
+          <div id="vault-purge-container" style="display:none;margin-top:16px;padding-top:14px;border-top:1px dashed #e8ded0;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+            <!-- Injected by renderVaultUI -->
           </div>
         </div>
 
@@ -3456,17 +3480,7 @@ body {
               <button type="button" class="btn btn-gold btn-sm" onclick="saveVaultAccessControl()">Save Access Settings</button>
             </div>
 
-            <!-- Purge / Deletion Section -->
-            <div class="content-card">
-              <h2 class="content-card-title">Archive Retention &amp; Permanent Wipe</h2>
-              <p style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px;">
-                Vault records are scheduled for complimentary archival retention until <strong>14 November 2027</strong>. You may request an early permanent wipe at any time.
-              </p>
-              <div id="vault-deletion-status" style="margin-bottom:14px;"></div>
-              <button type="button" class="btn btn-outline btn-sm" style="border-color:#b3261e;color:#b3261e;" onclick="openVaultDeleteModal()">
-                🗑️ Request Vault Data Purge
-              </button>
-            </div>
+
           </div>
 
           <!-- Right Column: Archived Categories -->
@@ -3600,11 +3614,7 @@ body {
               Essential travel directions, parking facilities, shuttle schedules, and venue map for guests &amp; vendors
             </div>
           </div>
-          <div style="display:flex;gap:10px;">
-            <a href="https://maps.google.com/?q=Fernwood+Estate+124+Range+Road+Mittagong+NSW+2575" target="_blank" rel="noopener noreferrer" class="btn btn-gold btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
-              📍 Open Google Maps ↗
-            </a>
-          </div>
+
         </div>
 
         <div class="venue-details-grid">
@@ -6271,7 +6281,18 @@ function handleSaveManualGift(e) {
   showToast(`Recorded gift of ${formatAUD(amount)} from ${donor}`, 'success');
 }
 
-/* Celebration Feed Moderation */
+/* Celebration Feed Moderation (Accordion Dropdown View) */
+window._openFeedAccordions = window._openFeedAccordions || new Set();
+
+function toggleFeedAccordion(itemId) {
+  if (window._openFeedAccordions.has(itemId)) {
+    window._openFeedAccordions.delete(itemId);
+  } else {
+    window._openFeedAccordions.add(itemId);
+  }
+  renderCoupleFeed();
+}
+
 function renderCoupleFeed() {
   const container = document.getElementById('couple-feed-list');
   if (!container) return;
@@ -6279,50 +6300,78 @@ function renderCoupleFeed() {
   const feed = state.feed || [];
 
   container.innerHTML = feed.map(item => {
+    const isOpen = window._openFeedAccordions.has(item.id);
+
     let repliesHtml = '';
     if (item.replies && item.replies.length > 0) {
       repliesHtml = `
-        <div style="margin-top:8px;padding-left:10px;border-left:3px solid var(--gold);display:flex;flex-direction:column;gap:6px;">
+        <div style="margin-top:10px;padding-left:12px;border-left:3px solid var(--gold);display:flex;flex-direction:column;gap:6px;">
           ${item.replies.map(r => `
-            <div style="background:#faf7f0;border:1px solid #ebd9c2;border-radius:4px;padding:6px 10px;font-size:12px;display:flex;justify-content:space-between;align-items:flex-start;">
+            <div style="background:#faf7f0;border:1px solid #ebd9c2;border-radius:4px;padding:8px 12px;font-size:12.5px;display:flex;justify-content:space-between;align-items:flex-start;">
               <div>
                 <strong style="color:#bd9661;">👑 ${escapeHtml(r.author || 'Sophie & James')} (Couple):</strong>
                 <span style="color:#2a2018;margin-left:4px;">${escapeHtml(r.text)}</span>
               </div>
-              <span style="font-size:10px;color:var(--muted);white-space:nowrap;margin-left:8px;">${escapeHtml(r.time || 'Just now')}</span>
+              <span style="font-size:10.5px;color:var(--muted);white-space:nowrap;margin-left:8px;">${escapeHtml(r.time || 'Just now')}</span>
             </div>
           `).join('')}
         </div>
       `;
     }
 
+    // Determine leading icon
+    let leadIcon = '💌';
+    if (item.type === 'milestone') leadIcon = '🎉';
+    else if (item.type === 'gift') leadIcon = '🎁';
+    else if (item.type === 'rsvp') leadIcon = '✅';
+    else if (item.type === 'photo') leadIcon = '📸';
+
     return `
-      <div class="feed-card" style="opacity:${item.hidden ? '0.5' : '1'};margin-bottom:12px;">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;">
-          <div style="flex:1;">
-            <div style="display:flex;align-items:center;gap:6px;">
-              <strong>${escapeHtml(item.title)}</strong>
-              ${item.badge ? `<span class="tt-pill gold" style="font-size:10px;font-weight:600;">${escapeHtml(item.badge)}</span>` : ''}
-              ${item.pinned ? '<span class="tt-pill gold" style="font-size:10px;">Pinned</span>' : ''}
-              ${item.hidden ? '<span class="tt-pill danger" style="font-size:10px;">Hidden</span>' : ''}
-            </div>
-            ${item.quote ? `<div style="background:#fcf9f4;border-left:3px solid var(--gold);padding:8px 12px;border-radius:0 4px 4px 0;font-style:italic;margin:8px 0;font-size:13px;color:#4a3c30;">"${escapeHtml(item.quote)}"</div>` : ''}
-            ${item.subtitle ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">${escapeHtml(item.subtitle)}</div>` : ''}
-            <div style="font-size:11px;color:#a89686;margin-top:4px;">${escapeHtml(item.time)} · ${item.likes || 0} likes · ${(item.comments || []).length} comments</div>
-            ${repliesHtml}
+      <div class="feed-accordion-item" style="border:1px solid #e8ded0;border-radius:8px;background:#ffffff;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.03);transition:all 0.2s ease;">
+        <!-- Clean Section Header Row: Click to Dropdown -->
+        <div class="feed-accordion-header" onclick="toggleFeedAccordion('${item.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;background:${isOpen ? '#fbf8f3' : '#faf8f5'};user-select:none;gap:12px;transition:background 0.2s ease;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+            <span style="font-size:16px;">${leadIcon}</span>
+            <span style="font-size:14.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              ${escapeHtml(item.title)}
+            </span>
+            ${item.pinned ? '<span class="tt-pill gold" style="font-size:10px;padding:2px 8px;">Pinned</span>' : ''}
+            ${item.hidden ? '<span class="tt-pill danger" style="font-size:10px;padding:2px 8px;">Hidden</span>' : ''}
           </div>
-          <div style="display:flex;gap:8px;margin-left:12px;flex-shrink:0;align-items:center;">
-            <button type="button" class="btn btn-gold btn-sm" onclick="toggleCoupleReplyBox('${item.id}')">💬 Reply</button>
-            <button type="button" class="btn btn-outline btn-sm couple-like-btn" style="color:#e02424;border-color:${item.coupleLiked ? '#e02424' : '#e2d9cf'};background:${item.coupleLiked ? '#fef2f2' : '#ffffff'};font-size:14px;padding:5px 12px;display:flex;align-items:center;gap:6px;border-radius:6px;cursor:pointer;" onclick="toggleCoupleLike('${item.id}')" title="Love note">
-              <span style="font-size:16px;line-height:1;display:inline-block;">❤️</span>
-              <span style="font-size:12.5px;font-weight:700;color:${item.coupleLiked ? '#c81e1e' : '#5c4d40'};">${item.likes || 0}</span>
-            </button>
+          <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+            <span style="font-size:11.5px;color:var(--muted);">${escapeHtml(item.time)}</span>
+            <span id="feed-chevron-${item.id}" style="font-size:12px;color:var(--gold);font-weight:bold;display:inline-block;transition:transform 0.2s ease;">${isOpen ? '▲' : '▼'}</span>
           </div>
         </div>
-        <div id="couple-reply-row-${item.id}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed #ebd9c2;">
-          <div style="display:flex;gap:6px;">
-            <input type="text" id="couple-reply-input-${item.id}" class="text-input" style="padding:6px 10px;font-size:12px;" placeholder="Write personal reply from Sophie &amp; James...">
-            <button type="button" class="btn btn-gold btn-sm" onclick="submitCoupleReply('${item.id}')">Send Reply</button>
+
+        <!-- Dropdown Body: Reveals Quote, Message, Replies, and Action Buttons -->
+        <div id="feed-accordion-body-${item.id}" style="display:${isOpen ? 'block' : 'none'};padding:16px 18px;border-top:1px solid #ebd9c2;background:#ffffff;">
+          ${item.quote ? `
+            <div style="background:#fcf9f4;border-left:3px solid var(--gold);padding:10px 14px;border-radius:0 6px 6px 0;font-style:italic;margin-bottom:12px;font-size:13.5px;color:#4a3c30;line-height:1.5;">
+              "${escapeHtml(item.quote)}"
+            </div>
+          ` : ''}
+          ${item.subtitle ? `<div style="font-size:12.5px;color:var(--muted);margin-bottom:10px;">${escapeHtml(item.subtitle)}</div>` : ''}
+          ${repliesHtml}
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:10px;border-top:1px solid #f5ede2;flex-wrap:wrap;gap:10px;">
+            <div style="font-size:11.5px;color:#a89686;">
+              ${escapeHtml(item.time)} &middot; ${item.likes || 0} likes &middot; ${(item.comments || []).length} comments
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button type="button" class="btn btn-gold btn-sm" onclick="event.stopPropagation(); toggleCoupleReplyBox('${item.id}')">💬 Reply</button>
+              <button type="button" class="btn btn-outline btn-sm couple-like-btn" style="color:#e02424;border-color:${item.coupleLiked ? '#e02424' : '#e2d9cf'};background:${item.coupleLiked ? '#fef2f2' : '#ffffff'};font-size:13px;padding:4px 12px;display:flex;align-items:center;gap:6px;border-radius:6px;cursor:pointer;" onclick="event.stopPropagation(); toggleCoupleLike('${item.id}')" title="Love note">
+                <span style="font-size:15px;line-height:1;">❤️</span>
+                <span style="font-size:12px;font-weight:700;color:${item.coupleLiked ? '#c81e1e' : '#5c4d40'};">${item.likes || 0}</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="couple-reply-row-${item.id}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed #ebd9c2;">
+            <div style="display:flex;gap:6px;">
+              <input type="text" id="couple-reply-input-${item.id}" class="text-input" style="padding:6px 10px;font-size:12px;" placeholder="Write personal reply from Sophie &amp; James...">
+              <button type="button" class="btn btn-gold btn-sm" onclick="submitCoupleReply('${item.id}')">Send Reply</button>
+            </div>
           </div>
         </div>
       </div>
