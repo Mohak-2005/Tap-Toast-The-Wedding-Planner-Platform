@@ -3234,7 +3234,7 @@ body {
         <!-- Sub-tabs: Registry vs Thank-You Manager -->
         <div style="display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:20px;">
           <button type="button" id="subtab-gifts-registry" class="btn btn-sm btn-gold" onclick="switchGiftsSubTab('registry')">🎁 Gifting Registry ($4,280)</button>
-          <button type="button" id="subtab-gifts-thankyou" class="btn btn-sm btn-outline" onclick="switchGiftsSubTab('thankyou')">💌 Thank-You Manager (Manual Tracking)</button>
+          <button type="button" id="subtab-gifts-thankyou" class="btn btn-sm btn-outline" onclick="switchGiftsSubTab('thankyou')">💌 Thank-You Manager</button>
         </div>
 
         <!-- Sub-pane 1: Gifting Registry -->
@@ -3452,21 +3452,17 @@ body {
                   <option value="family_mc">Extended: Couple, MC &amp; Immediate Family</option>
                 </select>
               </div>
-              <div style="background:#faf7f2;border:1px solid var(--line);border-radius:6px;padding:12px 14px;font-size:12.5px;color:#5a4a3a;line-height:1.5;margin-bottom:14px;">
-                <strong>Access Level Status:</strong> <span id="vault-access-status-text">Couple &amp; Designated MC have authorized read-only access.</span>
-              </div>
+              
               <button type="button" class="btn btn-gold btn-sm" onclick="saveVaultAccessControl()">Save Access Settings</button>
             </div>
 
             <!-- Purge / Deletion Section -->
-            <div class="content-card" style="border:1px solid #f0d5d5;background:#fffaf8;">
-              <h2 class="content-card-title" style="color:#b3261e;">⚠️ Expiry &amp; Safe Deletion Workflow</h2>
-              <p style="font-size:13px;color:#6b4444;line-height:1.5;margin-bottom:14px;">
-                Vault records are scheduled for automatic archival retention until <strong>14 November 2027</strong> (1 year post-wedding). You may request an early permanent wipe at any time.
+            <div class="content-card">
+              <h2 class="content-card-title">Archive Retention &amp; Permanent Wipe</h2>
+              <p style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px;">
+                Vault records are scheduled for complimentary archival retention until <strong>14 November 2027</strong>. You may request an early permanent wipe at any time.
               </p>
-              <div id="vault-deletion-status" style="margin-bottom:14px;">
-                <span class="tt-pill not-started" style="font-size:12px;">No Deletion Pending · Retained safely</span>
-              </div>
+              <div id="vault-deletion-status" style="margin-bottom:14px;"></div>
               <button type="button" class="btn btn-outline btn-sm" style="border-color:#b3261e;color:#b3261e;" onclick="openVaultDeleteModal()">
                 🗑️ Request Vault Data Purge
               </button>
@@ -7123,7 +7119,7 @@ function renderWeddingVault() {
     if (vault.deletionRequested) {
       delStatus.innerHTML = '<span class="tt-pill warm" style="font-size:12px;color:#b3261e;background:#fde8e8;">⚠️ Deletion Requested · Vault scheduled for purge</span>';
     } else {
-      delStatus.innerHTML = '<span class="tt-pill not-started" style="font-size:12px;">No Deletion Pending · Retained safely until 14 Nov 2027</span>';
+      delStatus.innerHTML = '';
     }
   }
 }
