@@ -799,19 +799,21 @@ body {{
                 </a>
               </div>
 
-              <div style="background:#221b15;border:1px solid #3d3023;border-radius:6px;padding:22px;text-align:center;margin-bottom:16px;">
-                <div style="width:54px;height:54px;border-radius:50%;background:rgba(189,150,97,0.15);border:2px solid var(--gold);color:var(--gold);display:grid;place-items:center;font-size:24px;margin:0 auto 12px;">
-                  📍
+              <!-- Interactive Visual Map (Replaces Image 2 text box with real street map like Image 3) -->
+              <a href="https://maps.google.com/?q=Fernwood+Estate+124+Range+Road+Mittagong+NSW+2575" target="_blank" rel="noopener noreferrer" style="display:block;position:relative;height:320px;border-radius:8px;overflow:hidden;border:1px solid #3d3023;margin-bottom:16px;text-decoration:none;box-shadow:0 6px 20px rgba(0,0,0,0.35);cursor:pointer;background:#e5e3df;" title="Click to open Fernwood Estate in Google Maps">
+                <iframe src="https://maps.google.com/maps?q=Fernwood+Estate+124+Range+Road+Mittagong+NSW+2575&amp;t=&amp;z=14&amp;ie=UTF8&amp;iwloc=&amp;output=embed" width="100%" height="100%" style="border:0;display:block;pointer-events:none;" loading="lazy"></iframe>
+                <!-- Floating Location Card Overlay (Always visible on top of map) -->
+                <div style="position:absolute;top:12px;left:12px;background:rgba(25,20,16,0.92);backdrop-filter:blur(6px);padding:10px 14px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.4);border:1px solid #4a3a2a;display:flex;align-items:center;gap:10px;pointer-events:none;max-width:calc(100% - 24px);">
+                  <div style="width:34px;height:34px;border-radius:50%;background:#e53935;color:#ffffff;display:grid;place-items:center;font-size:16px;flex-shrink:0;box-shadow:0 2px 8px rgba(229,57,53,0.5);">
+                    📍
+                  </div>
+                  <div>
+                    <strong style="color:#ffffff;font-size:13px;display:block;line-height:1.2;">Fernwood Estate</strong>
+                    <span style="color:#dfc194;font-size:11.5px;display:block;">124 Range Road, Mittagong NSW 2575</span>
+                    <span style="color:#a8e6b8;font-size:10.5px;font-weight:600;display:inline-block;margin-top:2px;">Click anywhere on map to open in Google Maps ↗</span>
+                  </div>
                 </div>
-                <strong style="color:#ffffff;font-size:15px;display:block;margin-bottom:4px;">Fernwood Estate</strong>
-                <div style="color:#dfc194;font-size:13px;margin-bottom:12px;">124 Range Road, Mittagong NSW 2575</div>
-                <p style="font-size:12px;color:#bcaaa0;line-height:1.5;max-width:360px;margin:0 auto 16px;">
-                  Located 1.5 hours south of Sydney CBD via the M31 Hume Motorway. Take the Mittagong / Old Hume Highway exit.
-                </p>
-                <a href="https://maps.google.com/?q=Fernwood+Estate+124+Range+Road+Mittagong+NSW+2575" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" style="background:#15110e;color:#fcecd7;border-color:var(--gold);">
-                  Click to Open Direct Map Location
-                </a>
-              </div>
+              </a>
 
               <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#9e8e7e;">
                 <span>Approx. 8 mins drive from Bowral town centre</span>
