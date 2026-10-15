@@ -877,20 +877,28 @@
       display: block;
     }
 
-    /* Chat Panel inside Mockup Frame */
+    /* Joey Chatbot Floating Pop-up Modal (Requirement 3: Small pop-up, not full screen) */
     .mc-chat-panel {
       position: absolute;
-      top: 42px;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      bottom: 78px;
+      right: 14px;
+      left: 14px;
+      height: 480px;
+      max-height: calc(100% - 140px);
       background: #ffffff;
       z-index: 150;
       display: none;
       flex-direction: column;
-      border-radius: 0 0 42px 42px;
+      border-radius: 16px;
       overflow: hidden;
-      box-shadow: var(--shadow-lg);
+      box-shadow: 0 16px 45px rgba(0,0,0,0.38), 0 0 0 1px rgba(0,0,0,0.08);
+      border: 1px solid var(--line-strong);
+      animation: mcChatSlide 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes mcChatSlide {
+      from { opacity: 0; transform: translateY(12px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
     .mc-chat-header {
       background: #181310;
@@ -1168,16 +1176,14 @@
         </div>
       </div>
 
-      <!-- Level 1: Master Home Header (Professional Branding) -->
+      <!-- Level 1: Master Home Header (Professional Branding: Tap & Toast only) -->
       <header class="mc-home-header" id="mc-home-header" style="display:none;">
         <div class="mc-home-brand">
           <div class="mc-home-logo-box">T</div>
           <div class="mc-home-title-box">
-            <span class="mc-home-title">Tap &amp; Toast <span style="color:var(--gold);">MC Pro</span></span>
-            <span class="mc-home-subtitle">Executive MC Console</span>
+            <span class="mc-home-title">Tap &amp; Toast</span>
           </div>
         </div>
-        <span class="mc-home-badge" id="mc-home-active-badge">1 LIVE TODAY</span>
       </header>
 
       <!-- Level 2: Active Wedding Console Header (With Back to All Weddings) -->
@@ -1299,17 +1305,6 @@
             <!-- Month Day Cells Grid (Image 1) -->
             <div class="calendar-month-grid" id="calendar-month-grid">
               <!-- Rendered dynamically -->
-            </div>
-          </div>
-
-          <!-- Selected Day Booking Details -->
-          <div class="card" id="calendar-day-details" style="padding:12px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:8px;">
-              <strong style="font-size:13px;" id="cal-selected-date-title">Saturday, 14 Nov 2026</strong>
-              <span class="pill pill-green" id="cal-selected-status">Live Event</span>
-            </div>
-            <div id="cal-selected-events-list" style="font-size:12px;display:flex;flex-direction:column;gap:6px;">
-              <!-- Event details rendered here -->
             </div>
           </div>
         </div>
@@ -2106,42 +2101,20 @@
       const listEl = document.getElementById('home-weddings-card-list');
       if (listEl) {
         listEl.innerHTML = weddings.map((w, idx) => {
-          const status = w.status || (idx === 0 ? 'Paid' : idx === 1 ? 'Pending' : 'Draft');
-          const statusClass = status.toLowerCase();
           return `
             <div class="card" style="padding:14px;border-left:4px solid ${idx === 0 ? 'var(--gold)' : '#c0b3a3'};box-shadow:var(--shadow-sm);cursor:pointer;" onclick="openWeddingConsole('${w.id}')">
-              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-                <div>
-                  <h3 style="font-family:var(--font-heading);font-size:16px;color:var(--ink);">${escapeHtml(w.couple)}</h3>
-                  <p style="font-size:11.5px;color:var(--muted);margin-top:2px;">${escapeHtml(w.venue)}</p>
-                </div>
-                <!-- Interactive Status Pop-up Button (Requirement 5 & Image 5) -->
-                <div class="status-badge-wrap" onclick="event.stopPropagation()">
-                  <button type="button" class="status-interactive-btn status-${statusClass}" onclick="toggleStatusPopover(event, '${w.id}')">
-                    Status: <span id="status-label-${w.id}">${escapeHtml(status)}</span> ▾
-                  </button>
-                  <div class="status-dropdown-popover" id="status-popover-${w.id}">
-                    <button type="button" class="status-dropdown-item" onclick="setWeddingStatus('${w.id}', 'Paid')">
-                      <span class="pill pill-green" style="font-size:9.5px;padding:2px 6px;">Paid</span>
-                    </button>
-                    <button type="button" class="status-dropdown-item" onclick="setWeddingStatus('${w.id}', 'Pending')">
-                      <span class="pill pill-gold" style="font-size:9.5px;padding:2px 6px;">Pending</span>
-                    </button>
-                    <button type="button" class="status-dropdown-item" onclick="setWeddingStatus('${w.id}', 'Draft')">
-                      <span class="pill pill-dark" style="font-size:9.5px;padding:2px 6px;">Draft</span>
-                    </button>
-                  </div>
-                </div>
+              <div style="margin-bottom:8px;">
+                <h3 style="font-family:var(--font-heading);font-size:16px;color:var(--ink);">${escapeHtml(w.couple)}</h3>
+                <p style="font-size:11.5px;color:var(--muted);margin-top:2px;">${escapeHtml(w.venue)}</p>
               </div>
 
-              <!-- Only: Date, Location, and Executive Lead MC (Requirement 2) -->
-              <div style="display:flex;justify-content:space-between;align-items:center;background:#fbf8f3;padding:8px 10px;border-radius:8px;margin-top:8px;font-size:11.5px;">
-                <span>Date: <strong>${escapeHtml(w.date ? w.date.split('T')[0] : '2026-11-14')}</strong></span>
-                <span style="color:var(--gold-hover);font-weight:700;">Executive Lead MC</span>
-              </div>
-
-              <div style="display:flex;justify-content:flex-end;margin-top:10px;">
-                <button type="button" class="btn btn-gold btn-sm" onclick="event.stopPropagation();openWeddingConsole('${w.id}')">
+              <!-- Date on left, Executive Lead MC directly below Date, Open Console on right (Requirement 2) -->
+              <div style="background:#fbf8f3;padding:10px 12px;border-radius:8px;margin-top:8px;display:flex;justify-content:space-between;align-items:flex-end;">
+                <div style="display:flex;flex-direction:column;gap:3px;font-size:11.5px;">
+                  <span>Date: <strong>${escapeHtml(w.date ? w.date.split('T')[0] : '2026-11-14')}</strong></span>
+                  <span style="color:var(--gold-hover);font-weight:700;font-size:11px;">Executive Lead MC</span>
+                </div>
+                <button type="button" class="btn btn-gold btn-sm" style="padding:6px 12px;font-size:11.5px;" onclick="event.stopPropagation();openWeddingConsole('${w.id}')">
                   Open Console &rarr;
                 </button>
               </div>
@@ -2150,22 +2123,41 @@
         }).join('');
       }
 
-      // Invoices
+      // Invoices (Requirement 1 & Image 1: Paid, Pending, Draft interactive status pop-up on invoice cards)
       const invList = document.getElementById('home-invoice-list');
       if (invList) {
         const invoices = state.invoices || [];
-        invList.innerHTML = invoices.map(inv => `
-          <div class="card" style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
-            <div>
-              <strong style="font-size:13px;display:block;">${escapeHtml(inv.couple)}</strong>
-              <span style="font-size:11px;color:var(--muted);">${escapeHtml(inv.id)} &bull; ${escapeHtml(inv.date)}</span>
+        invList.innerHTML = invoices.map(inv => {
+          const status = inv.status || 'Draft';
+          const statusClass = status.toLowerCase();
+          return `
+            <div class="card" style="padding:12px 14px;display:flex;justify-content:space-between;align-items:center;position:relative;">
+              <div>
+                <strong style="font-size:13.5px;display:block;color:var(--ink);">${escapeHtml(inv.couple)}</strong>
+                <span style="font-size:11px;color:var(--muted);">${escapeHtml(inv.id)} &bull; ${escapeHtml(inv.date)}</span>
+              </div>
+              <div style="text-align:right;position:relative;">
+                <div style="font-weight:700;font-size:14px;color:var(--ink);margin-bottom:4px;">$${inv.amount} AUD</div>
+                <div class="status-badge-wrap" onclick="event.stopPropagation()">
+                  <button type="button" class="status-interactive-btn status-${statusClass}" onclick="toggleStatusPopover(event, '${inv.id}')" title="Change invoice status">
+                    <span id="status-label-${inv.id}">${escapeHtml(status)}</span> ▾
+                  </button>
+                  <div class="status-dropdown-popover" id="status-popover-${inv.id}">
+                    <button type="button" class="status-dropdown-item" onclick="setInvoiceStatus('${inv.id}', 'Paid')">
+                      <span class="pill pill-green" style="font-size:10px;padding:2px 8px;font-weight:600;">Paid</span>
+                    </button>
+                    <button type="button" class="status-dropdown-item" onclick="setInvoiceStatus('${inv.id}', 'Pending')">
+                      <span class="pill pill-gold" style="font-size:10px;padding:2px 8px;font-weight:600;">Pending</span>
+                    </button>
+                    <button type="button" class="status-dropdown-item" onclick="setInvoiceStatus('${inv.id}', 'Draft')">
+                      <span class="pill pill-dark" style="font-size:10px;padding:2px 8px;font-weight:600;">Draft</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div style="text-align:right;">
-              <div style="font-weight:700;font-size:13px;">$${inv.amount} AUD</div>
-              <span class="pill pill-green" style="font-size:9.5px;">${escapeHtml(inv.status)}</span>
-            </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       }
 
       // Team
@@ -2184,12 +2176,13 @@
       }
     }
 
-    /* Status Pop-up Menu Logic (Requirement 5) */
-    function toggleStatusPopover(e, wId) {
+    /* Status Pop-up Menu Logic (Requirement 1 & Image 1: Invoice status paid, pending, draft) */
+    function toggleStatusPopover(e, id) {
       e.stopPropagation();
+      const popover = document.getElementById(`status-popover-${id}`);
+      const isCurrentlyOpen = popover && popover.style.display === 'flex';
       closeAllStatusPopovers();
-      const popover = document.getElementById(`status-popover-${wId}`);
-      if (popover) {
+      if (popover && !isCurrentlyOpen) {
         popover.style.display = 'flex';
       }
     }
@@ -2198,16 +2191,20 @@
       document.querySelectorAll('.status-dropdown-popover').forEach(p => p.style.display = 'none');
     }
 
-    function setWeddingStatus(wId, newStatus) {
+    function setInvoiceStatus(invId, newStatus) {
       const state = loadState();
-      const wedding = (state.weddings || []).find(w => w.id === wId);
-      if (wedding) {
-        wedding.status = newStatus;
+      const invoice = (state.invoices || []).find(i => i.id === invId);
+      if (invoice) {
+        invoice.status = newStatus;
         saveState(state);
-        showToast(`Status updated to ${newStatus}`);
+        showToast(`Invoice ${invId} marked as ${newStatus}`);
         renderHomePanes();
       }
       closeAllStatusPopovers();
+    }
+
+    function setWeddingStatus(id, newStatus) {
+      setInvoiceStatus(id, newStatus);
     }
 
     /* Profile Photo Upload & Profile Save (Requirement 5) */
@@ -2340,38 +2337,7 @@
     }
 
     function updateCalendarDayDetails() {
-      const state = loadState();
-      const weddings = state.weddings || [];
-      const monthStr = (calendarCurrentMonth + 1 < 10 ? '0' : '') + (calendarCurrentMonth + 1);
-      const dayStr = (selectedCalendarDay < 10 ? '0' : '') + selectedCalendarDay;
-      const targetDate = `${calendarCurrentYear}-${monthStr}-${dayStr}`;
-
-      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      document.getElementById('cal-selected-date-title').textContent = `${selectedCalendarDay} ${monthNames[calendarCurrentMonth]} ${calendarCurrentYear}`;
-
-      const bookedWedding = weddings.find(w => w.date && w.date.startsWith(targetDate));
-      const detailsEl = document.getElementById('cal-selected-events-list');
-      const statusPill = document.getElementById('cal-selected-status');
-
-      if (bookedWedding) {
-        statusPill.textContent = 'Live MC Booking';
-        statusPill.className = 'pill pill-green';
-        detailsEl.innerHTML = `
-          <div style="background:#fcf8f2;padding:8px 10px;border-radius:6px;border:1px solid #ebd3a8;">
-            <strong style="font-size:13px;display:block;">💍 ${escapeHtml(bookedWedding.couple)}</strong>
-            <span style="color:var(--muted);">${escapeHtml(bookedWedding.venue)}</span>
-            <div style="margin-top:6px;">
-              <button type="button" class="btn btn-gold btn-sm" onclick="openWeddingConsole('${bookedWedding.id}')">
-                Open Wedding Console &rarr;
-              </button>
-            </div>
-          </div>
-        `;
-      } else {
-        statusPill.textContent = 'Available';
-        statusPill.className = 'pill pill-gold';
-        detailsEl.innerHTML = `<span style="color:var(--muted);font-style:italic;">No booked weddings on this date. Available for new client inquiries.</span>`;
-      }
+      // Cleaned up per user request: day events are visible and clickable directly on the calendar month grid
     }
 
     /* Render Wedding Level Panes */

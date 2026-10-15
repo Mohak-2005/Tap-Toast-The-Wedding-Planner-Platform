@@ -101,15 +101,14 @@ for (const f of filesToCheckDemobar) {
 }
 console.log('PASS [5]: All 7 portal pages have mc-mobile.html in their top demobar navigation!');
 
-// 6. Check Calendar month grid (Image 1)
+// 6. Check Calendar month grid (Image 1 & User Request 4)
 const calendarRequired = [
   'calendar-month-grid',
   'calendar-weekday',
   'calendar-day-cell',
   'changeCalendarMonth',
   'selectCalendarDate',
-  'calendar-month-display',
-  'cal-selected-date-title'
+  'calendar-month-display'
 ];
 for (const s of calendarRequired) {
   if (!mcMobileHtml.includes(s)) {
@@ -117,15 +116,24 @@ for (const s of calendarRequired) {
     process.exit(1);
   }
 }
-console.log('PASS [6]: mc-mobile.html includes full Image 1 interactive month calendar grid!');
+if (mcMobileHtml.includes('id="calendar-day-details"')) {
+  console.error('FAIL: mc-mobile.html still contains calendar-day-details card (should be removed per User Request 4)');
+  process.exit(1);
+}
+console.log('PASS [6]: mc-mobile.html includes full Image 1 calendar grid and removed redundant details card!');
 
-// 7. Check Monochrome professional navigation & clean wedding cards (Image 2)
+// 7. Check Monochrome professional navigation, clean wedding cards & Executive Lead MC below Date (User Request 2)
 if (mcMobileHtml.includes('Guests: 118 Seated') || mcMobileHtml.includes('118 Seated')) {
   console.error('FAIL: mc-mobile.html still contains guests seated in wedding card');
   process.exit(1);
 }
 if (!mcMobileHtml.includes('Executive Lead MC')) {
   console.error('FAIL: mc-mobile.html missing Executive Lead MC role in wedding card');
+  process.exit(1);
+}
+// Verify Executive Lead MC is positioned alongside Date on the left, not above Open Console
+if (!mcMobileHtml.includes('<span>Date: <strong>')) {
+  console.error('FAIL: mc-mobile.html missing formatted date in wedding card');
   process.exit(1);
 }
 // Check that bottom nav uses SVG icons instead of emojis
@@ -136,9 +144,9 @@ for (const emo of navEmojis) {
     process.exit(1);
   }
 }
-console.log('PASS [7]: mc-mobile.html uses professional monochrome SVG navigation and clean wedding cards!');
+console.log('PASS [7]: mc-mobile.html uses professional monochrome SVG navigation and placed Executive Lead MC below Date!');
 
-// 8. Check Joey Chatbot FAB and Header standardization (Images 3 & 4)
+// 8. Check Joey Chatbot FAB, Header, and Floating Pop-up Modal (User Request 3)
 const chatbotFiles = ['mc-mobile.html', 'guest-mobile.html', 'couple.html', 'mc.html', 'scripts/chatbot_component.py'];
 for (const f of chatbotFiles) {
   const content = fs.readFileSync(f, 'utf8');
@@ -155,16 +163,25 @@ if (!mcMobileHtml.includes('#bd9661') || !mcMobileHtml.includes('mc-chat-fab')) 
   console.error('FAIL: mc-mobile.html missing Image 3 gold circular chatbot FAB styling');
   process.exit(1);
 }
-console.log('PASS [8]: Joey chatbot header standardized ("The Wedding Assistant") and Image 3 FAB styled across all portals!');
+// Verify small pop-up modal styling rather than full-screen overlay
+if (mcMobileHtml.includes('top: 42px;\n      left: 0;\n      right: 0;\n      bottom: 0;')) {
+  console.error('FAIL: mc-mobile.html chatbot panel still takes over full screen');
+  process.exit(1);
+}
+if (!mcMobileHtml.includes('bottom: 78px;') || !mcMobileHtml.includes('border-radius: 16px;')) {
+  console.error('FAIL: mc-mobile.html missing floating pop-up card CSS for Joey chatbot');
+  process.exit(1);
+}
+console.log('PASS [8]: Joey chatbot header standardized, Image 3 FAB styled, and rendered as a compact floating pop-up modal!');
 
-// 9. Check Status Pop-up with Paid, Pending, Draft options (Image 5)
+// 9. Check Status Pop-up with Paid, Pending, Draft options on INVOICE page (User Request 1 & Image 1)
 const statusRequired = [
   'status-interactive-btn',
   'status-dropdown-popover',
   'Paid',
   'Pending',
   'Draft',
-  'setWeddingStatus',
+  'setInvoiceStatus',
   'toggleStatusPopover'
 ];
 for (const s of statusRequired) {
@@ -173,7 +190,12 @@ for (const s of statusRequired) {
     process.exit(1);
   }
 }
-console.log('PASS [9]: mc-mobile.html has interactive Image 5 status button with Paid/Pending/Draft popover!');
+// Verify status dropdown is on invoice list and NOT on weddings cards
+if (mcMobileHtml.includes('<div class="status-badge-wrap" onclick="event.stopPropagation()">\n                  <button type="button" class="status-interactive-btn status-${statusClass}" onclick="toggleStatusPopover(event, \'${w.id}\')">')) {
+  console.error('FAIL: mc-mobile.html still has status dropdown on home weddings cards (should be on invoice page)');
+  process.exit(1);
+}
+console.log('PASS [9]: mc-mobile.html has interactive Image 1 status button with Paid/Pending/Draft popover on INVOICE page!');
 
 // 10. Check Profile Photo and Description Uploader in MC Settings
 const profileRequired = [
@@ -191,5 +213,22 @@ for (const s of profileRequired) {
 }
 console.log('PASS [10]: mc-mobile.html has complete profile photo upload and bio description editor!');
 
-console.log('\nALL 10 ADVANCED VERIFICATION SUITES PASSED FLAWLESSLY!');
+// 11. Check Master Header: Tap & Toast only (User Request 5)
+const headerExtract = mcMobileHtml.match(/<header class="mc-home-header"[\s\S]*?<\/header>/);
+if (!headerExtract) {
+  console.error('FAIL: mc-mobile.html missing mc-home-header');
+  process.exit(1);
+}
+if (!headerExtract[0].includes('Tap &amp; Toast') && !headerExtract[0].includes('Tap & Toast')) {
+  console.error('FAIL: mc-home-header missing Tap & Toast title');
+  process.exit(1);
+}
+if (headerExtract[0].includes('MC Pro') || headerExtract[0].includes('1 LIVE TODAY') || headerExtract[0].includes('Executive MC Console')) {
+  console.error('FAIL: mc-home-header still contains MC Pro, 1 LIVE TODAY, or Executive MC Console');
+  process.exit(1);
+}
+console.log('PASS [11]: mc-mobile.html header cleanly shows Tap & Toast without MC Pro, 1 LIVE TODAY, or Executive subtitle!');
+
+console.log('\nALL 11 ADVANCED VERIFICATION SUITES PASSED FLAWLESSLY!');
+
 
