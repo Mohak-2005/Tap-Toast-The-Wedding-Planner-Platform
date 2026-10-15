@@ -2328,13 +2328,13 @@ function renderSeatingFloor() {{
           </span>
         </div>
       </div>
-      <div style="display:flex;gap:4px;margin-top:6px;align-items:center;">
-        <select class="text-input" style="padding:3px 6px;font-size:11px;flex:1;" onchange="if(this.value){{handleAssignToTable('${{g.id}}', this.value);this.value='';}}">
+      <div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
+        <select class="text-input" style="height:32px;padding:0 8px;font-size:12px;flex:1;border-radius:6px;border:1px solid #dcd3c8;background:#ffffff;box-sizing:border-box;" onchange="if(this.value){{handleAssignToTable('${{g.id}}', this.value);this.value='';}}">
           <option value="">Seat at Table...</option>
           <option value="head">Head Table</option>
           ${{roundTables.map(tbl => `<option value="${{tbl.id}}">${{tbl.name}} (${{state.guests.filter(x => x.tableId === tbl.id).length}}/${{tbl.capacity}})</option>`).join('')}}
         </select>
-        <button type="button" class="btn btn-xs btn-gold" onclick="handleQuickAssign('${{g.id}}')" title="Auto-assign next free seat">Auto</button>
+        <button type="button" class="btn btn-gold" style="height:32px;padding:0 12px;font-size:12px;font-weight:600;border-radius:6px;box-sizing:border-box;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;" onclick="handleQuickAssign('${{g.id}}')" title="Seat guest at next free seat">Seat</button>
       </div>
     </div>
   `).join('');

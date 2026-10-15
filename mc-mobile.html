@@ -1,0 +1,1764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tap &amp; Toast — MC Mobile Console (402×874)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1c1511;
+      --ink-soft: #2b221a;
+      --cream: #faf7f2;
+      --cream-dark: #f0eae1;
+      --gold: #bd9661;
+      --gold-hover: #a67f4c;
+      --gold-light: #dfc194;
+      --gold-tint: #fbf7ee;
+      --muted: #7d7065;
+      --line: #e8e2d8;
+      --line-strong: #d5cbbe;
+      --white: #ffffff;
+      --success: #2e7d32;
+      --danger: #b3261e;
+      --font-heading: 'Playfair Display', Georgia, serif;
+      --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --shadow-sm: 0 1px 3px rgba(28, 21, 17, 0.08);
+      --shadow-md: 0 4px 14px rgba(28, 21, 17, 0.12);
+      --shadow-lg: 0 16px 36px rgba(28, 21, 17, 0.22);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 25%, #231c16 0%, #110e0b 100%);
+      font-family: var(--font-body);
+      color: var(--ink);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Top Demo Bar */
+    .tt-demobar {
+      background: #140f0c;
+      border-bottom: 1px solid #2b221a;
+      padding: 7px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      z-index: 1000;
+      flex-shrink: 0;
+    }
+    .tt-demobar-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tt-mark {
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      font-family: var(--font-heading);
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: 4px;
+    }
+    .tt-demobar-title {
+      font-family: var(--font-heading);
+      font-size: 15px;
+      color: #ffffff;
+      font-weight: 600;
+    }
+    .tt-demobar-badge {
+      background: #2a2018;
+      color: var(--gold-light);
+      border: 1px solid #4a382a;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .tt-demobar-links {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+    }
+    .tt-demobar-link {
+      color: #bfaea0;
+      text-decoration: none;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .tt-demobar-link:hover {
+      color: #ffffff;
+      background: #261e18;
+    }
+    .tt-demobar-link.active {
+      background: var(--gold);
+      color: #140f0c;
+      font-weight: 700;
+    }
+    .tt-demobar-reset {
+      background: #261e18;
+      color: #dfc194;
+      border: 1px solid #4a3a2d;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .tt-demobar-reset:hover {
+      background: #382c23;
+      color: #fff;
+    }
+
+    /* Phone Stage / Mockup Chassis */
+    .mobile-stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      overflow: hidden;
+    }
+
+    .phone-mockup-frame {
+      width: 402px !important;
+      max-width: 402px !important;
+      height: 874px !important;
+      max-height: calc(100vh - 54px) !important;
+      background: var(--cream);
+      border-radius: 46px;
+      border: 4px solid #1c1511;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.45), 0 6px 18px rgba(0, 0, 0, 0.25);
+      overflow: hidden !important;
+      position: relative;
+      display: flex !important;
+      flex-direction: column !important;
+      box-sizing: border-box;
+    }
+
+    @media (max-width: 480px) {
+      body {
+        background: var(--cream);
+      }
+      .mobile-stage {
+        padding: 0;
+      }
+      .phone-mockup-frame {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+    }
+
+    /* Phone Status Bar */
+    .phone-status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px 8px;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #15110e;
+      user-select: none;
+      background: var(--cream);
+      border-bottom: 1px solid rgba(0,0,0,0.04);
+      flex-shrink: 0;
+      z-index: 50;
+    }
+    .phone-status-icons {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .phone-status-battery {
+      width: 22px;
+      height: 11px;
+      border: 1.5px solid #15110e;
+      border-radius: 3px;
+      padding: 1px;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .phone-status-battery::after {
+      content: '';
+      position: absolute;
+      right: -3.5px;
+      top: 2.5px;
+      width: 2px;
+      height: 4px;
+      background: #15110e;
+      border-radius: 0 1px 1px 0;
+    }
+    .phone-battery-level {
+      width: 90%;
+      height: 100%;
+      background: #2e7d32;
+      border-radius: 1px;
+    }
+
+    /* App Header */
+    .mc-mobile-header {
+      background: #1c1511;
+      color: #ffffff;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #33261e;
+      flex-shrink: 0;
+    }
+    .mc-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .mc-avatar-circle {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #2e231b;
+      border: 1.5px solid var(--gold);
+      color: var(--gold);
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .mc-header-meta {
+      display: flex;
+      flex-direction: column;
+    }
+    .mc-header-name {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.2;
+    }
+    .mc-header-role {
+      font-size: 10.5px;
+      color: var(--gold-light);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .mc-signout-btn {
+      background: #2a2018;
+      border: 1px solid #453426;
+      color: #dfc194;
+      font-size: 11px;
+      padding: 5px 9px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .mc-signout-btn:hover {
+      background: #3b2d22;
+      color: #ffffff;
+    }
+
+    /* Wedding Selector Banner */
+    .mc-wedding-banner {
+      background: #271f18;
+      border-bottom: 1px solid #3d3024;
+      padding: 7px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .mc-wedding-select {
+      background: #17120e;
+      color: #f7ede1;
+      border: 1px solid #544131;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+      flex: 1;
+      cursor: pointer;
+      outline: none;
+    }
+    .mc-wedding-badge {
+      background: #473215;
+      color: #f2cb7b;
+      border: 1px solid #6b4d24;
+      font-size: 10px;
+      padding: 3px 7px;
+      border-radius: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    /* Main Scrollable Content Container */
+    .phone-content-scroll {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      background: var(--cream);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Bottom Navigation Bar */
+    .phone-bottom-nav {
+      background: #181310;
+      border-top: 1px solid #33261e;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 8px 4px 6px;
+      flex-shrink: 0;
+      z-index: 60;
+    }
+    .nav-tab-btn {
+      background: transparent;
+      border: none;
+      color: #a49182;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 8px;
+      transition: all 0.15s ease;
+      flex: 1;
+    }
+    .nav-tab-btn .tab-icon {
+      font-size: 17px;
+    }
+    .nav-tab-btn.active {
+      color: var(--gold-light);
+      background: rgba(189, 150, 97, 0.15);
+    }
+    .nav-tab-btn:hover {
+      color: #ffffff;
+    }
+
+    /* Phone Home Indicator */
+    .phone-home-indicator {
+      width: 130px;
+      height: 4.5px;
+      background: #4a3d31;
+      border-radius: 3px;
+      margin: 4px auto 6px;
+      flex-shrink: 0;
+    }
+
+    /* UI Generic Components */
+    .mc-pane {
+      display: none;
+      padding: 14px;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .mc-pane.active {
+      display: flex;
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+      outline: none;
+    }
+    .btn-gold {
+      background: var(--gold);
+      color: #140f0c;
+      border-color: var(--gold);
+    }
+    .btn-gold:hover {
+      background: var(--gold-hover);
+      border-color: var(--gold-hover);
+      color: #ffffff;
+    }
+    .btn-outline {
+      background: #ffffff;
+      color: var(--ink);
+      border-color: var(--line-strong);
+    }
+    .btn-outline:hover {
+      background: var(--cream-dark);
+    }
+    .btn-danger {
+      background: #fdf2f2;
+      color: #b3261e;
+      border-color: #f1b3b3;
+    }
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 11.5px;
+    }
+    .btn-block {
+      width: 100%;
+    }
+
+    .text-input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-family: inherit;
+      color: var(--ink);
+      background: #ffffff;
+      outline: none;
+    }
+    .text-input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 2px rgba(189, 150, 97, 0.2);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .pill-gold { background: #fdf5e8; color: #8a6523; border: 1px solid #ebd3a8; }
+    .pill-green { background: #eaf6ec; color: #236c2a; border: 1px solid #bee3c3; }
+    .pill-dark { background: #261f18; color: #dfc194; border: 1px solid #4a3a2a; }
+
+    /* Runsheet Cue Cards */
+    .cue-card {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      transition: all 0.2s ease;
+    }
+    .cue-card.done {
+      background: #f6faf6;
+      border-color: #c9e6ca;
+    }
+    .cue-top-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cue-checkbox {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--gold);
+    }
+    .cue-time-badge {
+      background: #f4ede1;
+      border: 1px solid #d4c4b0;
+      color: #3b2c1f;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3px 7px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .cue-title-input {
+      flex: 1;
+      font-weight: 700;
+      font-size: 13px;
+      border: 1px solid transparent;
+      background: transparent;
+      padding: 2px 4px;
+      border-radius: 4px;
+      color: var(--ink);
+    }
+    .cue-title-input:focus {
+      background: #ffffff;
+      border-color: var(--gold);
+    }
+    .cue-card.done .cue-title-input {
+      text-decoration: line-through;
+      color: #7b8e7c;
+    }
+    .cue-actions {
+      display: flex;
+      gap: 4px;
+    }
+    .cue-actions button {
+      padding: 3px 6px;
+      font-size: 11px;
+      background: #f6f3ee;
+      border: 1px solid #ddd3c5;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #382c21;
+    }
+    .cue-actions button:hover {
+      background: #eae2d5;
+    }
+
+    /* MC Cue Notes Box */
+    .mc-cue-notes-box {
+      background: var(--gold-tint);
+      border: 1px solid #eedec3;
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .mc-cue-notes-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--gold-hover);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .mc-cue-notes-input {
+      background: transparent;
+      border: none;
+      font-size: 12px;
+      color: #3f2f1e;
+      font-family: inherit;
+      outline: none;
+      width: 100%;
+    }
+
+    /* Seating Circular Preview */
+    .table-badge-row {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .table-pill-btn {
+      background: #ffffff;
+      border: 1.5px solid var(--line-strong);
+      border-radius: 18px;
+      padding: 6px 12px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--ink);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .table-pill-btn.active {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #140f0c;
+    }
+
+    /* Auth Screen Inside Mobile Chassis */
+    #mc-mobile-auth {
+      display: flex;
+      flex-direction: column;
+      padding: 24px 20px;
+      flex: 1;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background: radial-gradient(circle at 50% 20%, #292019 0%, #15110e 100%);
+      color: #ffffff;
+      min-height: 100%;
+    }
+    .auth-brand-logo {
+      width: 52px;
+      height: 52px;
+      border-radius: 8px;
+      border: 2px solid var(--gold);
+      display: grid;
+      place-items: center;
+      font-family: var(--font-heading);
+      font-size: 26px;
+      color: var(--gold);
+      margin-bottom: 12px;
+      box-shadow: 0 4px 18px rgba(189, 150, 97, 0.25);
+    }
+    .auth-title {
+      font-family: var(--font-heading);
+      font-size: 22px;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+    .auth-subtitle {
+      font-size: 12px;
+      color: #c9b7a7;
+      margin-bottom: 20px;
+      max-width: 290px;
+      line-height: 1.4;
+    }
+    .auth-card {
+      background: #201813;
+      border: 1px solid #453324;
+      border-radius: 14px;
+      padding: 16px;
+      width: 100%;
+      text-align: left;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .auth-tabs {
+      display: flex;
+      border-bottom: 1px solid #3d2d20;
+      margin-bottom: 14px;
+    }
+    .auth-tab {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #9d8876;
+      padding: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      border-bottom: 2px solid transparent;
+    }
+    .auth-tab.active {
+      color: var(--gold-light);
+      border-bottom-color: var(--gold);
+    }
+
+    /* Toast */
+    .toast-popup {
+      position: absolute;
+      bottom: 60px;
+      left: 16px;
+      right: 16px;
+      background: #181310;
+      border: 1px solid var(--gold);
+      color: #ffffff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      z-index: 1000;
+      animation: toastIn 0.2s ease forwards;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Modals */
+    .mobile-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(18, 14, 11, 0.7);
+      backdrop-filter: blur(3px);
+      z-index: 200;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .mobile-modal-sheet {
+      background: #ffffff;
+      width: 100%;
+      max-height: 85%;
+      border-radius: 20px 20px 0 0;
+      padding: 18px 16px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+      box-shadow: 0 -8px 30px rgba(0,0,0,0.25);
+    }
+    .sheet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 10px;
+    }
+    .sheet-title {
+      font-family: var(--font-heading);
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .sheet-close {
+      background: #f0eae1;
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 13px;
+      display: grid;
+      place-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Demo Bar (Matching Suite) -->
+  <nav class="tt-demobar" aria-label="Demo Navigation">
+    <div class="tt-demobar-brand">
+      <span class="tt-mark">T</span>
+      <span class="tt-demobar-title">Tap &amp; Toast</span>
+      <span class="tt-demobar-badge">MC MOBILE</span>
+    </div>
+    <div class="tt-demobar-links">
+      <a href="index.html" class="tt-demobar-link" title="Showcase Hub">Showcase</a>
+      <a href="login.html" class="tt-demobar-link">Sign In</a>
+      <a href="register.html" class="tt-demobar-link">Register</a>
+      <a href="guest-mobile.html" class="tt-demobar-link">Guest Mobile</a>
+      <a href="mc-mobile.html" class="tt-demobar-link active">MC Mobile</a>
+      <a href="couple.html" class="tt-demobar-link" onclick="handleDemobarNav(event, 'couple', 'couple.html')">Couple Dashboard</a>
+      <a href="mc.html" class="tt-demobar-link" onclick="handleDemobarNav(event, 'mc', 'mc.html')">MC Pro</a>
+      <a href="superadmin.html" class="tt-demobar-link" onclick="handleDemobarNav(event, 'superadmin', 'superadmin.html')">Super Admin</a>
+    </div>
+    <div class="tt-demobar-actions">
+      <button type="button" class="tt-demobar-reset" onclick="resetDemoData()">↺ Reset Demo Data</button>
+    </div>
+  </nav>
+
+  <!-- Phone Stage -->
+  <div class="mobile-stage">
+    <div class="phone-mockup-frame">
+      <!-- Phone Status Bar -->
+      <div class="phone-status-bar">
+        <span id="phone-clock">9:41</span>
+        <div class="phone-status-icons">
+          <span style="font-size:11px;letter-spacing:1px;">􀙇 5G</span>
+          <div class="phone-status-battery">
+            <div class="phone-battery-level"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- App Header (When Logged In) -->
+      <header class="mc-mobile-header" id="mc-app-header" style="display:none;">
+        <div class="mc-header-left">
+          <div class="mc-avatar-circle" id="mc-avatar">RG</div>
+          <div class="mc-header-meta">
+            <span class="mc-header-name" id="mc-user-name">Robert Galati</span>
+            <span class="mc-header-role">🎧 Master of Ceremonies</span>
+          </div>
+        </div>
+        <button type="button" class="mc-signout-btn" onclick="handleSignOut()">Sign Out</button>
+      </header>
+
+      <!-- Wedding Selector & Live Status Banner -->
+      <div class="mc-wedding-banner" id="mc-wedding-banner" style="display:none;">
+        <select class="mc-wedding-select" id="mc-wedding-selector" onchange="handleWeddingChange(this.value)">
+          <option value="w1">💍 Sophie &amp; James (Fernwood Estate · Active)</option>
+          <option value="w2">💍 Aisha &amp; Marcus (Belgenny Farm · Upcoming)</option>
+          <option value="w3">💍 Elena &amp; Mateo (Bendooley Estate · Draft)</option>
+        </select>
+        <span class="mc-wedding-badge" id="mc-wedding-badge">LIVE RUN SHEET</span>
+      </div>
+
+      <!-- Scrollable Main Content -->
+      <div class="phone-content-scroll" id="phone-content-scroll">
+        
+        <!-- ================= AUTH VIEW ================= -->
+        <div id="mc-mobile-auth">
+          <div class="auth-brand-logo">🥂</div>
+          <h1 class="auth-title">MC Mobile Console</h1>
+          <p class="auth-subtitle">Live cues, confidential MC notes, floor seating &amp; emergency broadcast at your fingertips.</p>
+
+          <!-- 1-Click Demo Login -->
+          <button type="button" class="btn btn-gold btn-block" style="margin-bottom:16px;padding:11px;font-size:13px;box-shadow:0 4px 14px rgba(189,150,97,0.35);" onclick="handleQuickMCDemoLogin()">
+            ⚡ 1-Click MC Demo Sign In (Robert Galati)
+          </button>
+
+          <div class="auth-card">
+            <div class="auth-tabs">
+              <button type="button" class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</button>
+              <button type="button" class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Register New MC</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="mc-login-form" onsubmit="handleMCLogin(event)">
+              <div style="margin-bottom:10px;">
+                <label style="font-size:11px;color:#c9b7a7;display:block;margin-bottom:4px;">MC Account Email</label>
+                <input type="email" id="login-email" class="text-input" style="background:#17120e;border-color:#4a382b;color:#ffffff;" required value="robert@galati.demo" placeholder="name@domain.com">
+              </div>
+              <div style="margin-bottom:10px;">
+                <label style="font-size:11px;color:#c9b7a7;display:block;margin-bottom:4px;">Master Password</label>
+                <div style="position:relative;">
+                  <input type="password" id="login-pwd" class="text-input" style="background:#17120e;border-color:#4a382b;color:#ffffff;padding-right:32px;" required value="demo123">
+                  <span onclick="togglePasswordVisibility('login-pwd')" style="position:absolute;right:8px;top:8px;cursor:pointer;font-size:13px;color:#aa9787;">👁️</span>
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:11px;color:#aa9787;">
+                <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+                  <input type="checkbox" id="login-remember" checked> Keep signed in
+                </label>
+                <a href="javascript:void(0)" onclick="openForgotModal(event)" style="color:var(--gold-light);text-decoration:none;">Forgot?</a>
+              </div>
+              <div id="login-error-box" style="display:none;color:#ff8585;font-size:11px;margin-bottom:8px;background:#381616;padding:6px 8px;border-radius:4px;border:1px solid #702626;"></div>
+              <button type="submit" class="btn btn-gold btn-block" style="padding:10px;font-size:12.5px;">Sign In to Console</button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="mc-register-form" style="display:none;" onsubmit="handleMCRegister(event)">
+              <div style="margin-bottom:8px;">
+                <label style="font-size:11px;color:#c9b7a7;display:block;margin-bottom:2px;">Full Name</label>
+                <input type="text" id="reg-name" class="text-input" style="background:#17120e;border-color:#4a382b;color:#ffffff;" required placeholder="e.g. Jordan Vance">
+              </div>
+              <div style="margin-bottom:8px;">
+                <label style="font-size:11px;color:#c9b7a7;display:block;margin-bottom:2px;">MC Agency / Business Name</label>
+                <input type="text" id="reg-biz" class="text-input" style="background:#17120e;border-color:#4a382b;color:#ffffff;" required placeholder="e.g. Vance MC &amp; Entertainment">
+              </div>
+              <div style="margin-bottom:8px;">
+                <label style="font-size:11px;color:#c9b7a7;display:block;margin-bottom:2px;">Email Address</label>
+                <input type="email" id="reg-email" class="text-input" style="background:#17120e;border-color:#4a382b;color:#ffffff;" required placeholder="mc@vance.demo">
+              </div>
+              <div style="margin-bottom:12px;">
+                <label style="font-size:11px;color:#c9b7a7;display:block;margin-bottom:2px;">Password</label>
+                <input type="password" id="reg-pwd" class="text-input" style="background:#17120e;border-color:#4a382b;color:#ffffff;" required placeholder="••••••••">
+              </div>
+              <button type="submit" class="btn btn-gold btn-block" style="padding:10px;font-size:12.5px;">Create MC Account</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- ================= PANE 1: RUN SHEET ================= -->
+        <div class="mc-pane" id="pane-runsheet">
+          <!-- Emergency Alert Notice / Broadcast -->
+          <div style="background:#201813;border:1px solid #4a382a;border-radius:10px;padding:10px 12px;color:#ffffff;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+              <span style="font-size:16px;">📢</span>
+              <span id="mc-broadcast-text" style="color:#f2e6d9;">All cues running on schedule · Audio tested</span>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" style="background:#2e2219;color:#dfc194;border-color:#5c4533;padding:3px 7px;font-size:11px;" onclick="openBroadcastModal()">Broadcast</button>
+          </div>
+
+          <!-- Controls Bar -->
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div style="display:flex;gap:4px;" id="rs-filter-pills">
+              <button type="button" class="btn btn-gold btn-sm" onclick="filterRunSheet('all', this)">All</button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="filterRunSheet('pending', this)">Upcoming</button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="filterRunSheet('done', this)">Done</button>
+            </div>
+            <button type="button" class="btn btn-gold btn-sm" onclick="openAddCueModal()">+ Add Cue</button>
+          </div>
+
+          <!-- Search Input -->
+          <div>
+            <input type="text" class="text-input" placeholder="🔍 Filter cues, activities, or notes..." oninput="handleSearchCues(this.value)">
+          </div>
+
+          <!-- Run Sheet Items List -->
+          <div id="mc-runsheet-list" style="display:flex;flex-direction:column;gap:10px;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- ================= PANE 2: SEATING & FLOOR ================= -->
+        <div class="mc-pane" id="pane-seating">
+          <!-- Metrics Overview -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="card" style="padding:10px;text-align:center;">
+              <div style="font-size:18px;font-weight:800;color:var(--ink);" id="seat-metric-seated">118 / 120</div>
+              <div style="font-size:11px;color:var(--muted);">Guests Seated (98%)</div>
+            </div>
+            <div class="card" style="padding:10px;text-align:center;">
+              <div style="font-size:18px;font-weight:800;color:var(--gold-hover);" id="seat-metric-unassigned">2 Pending</div>
+              <div style="font-size:11px;color:var(--muted);">Unassigned Guests</div>
+            </div>
+          </div>
+
+          <!-- Dietary Highlights -->
+          <div class="card" style="padding:10px;">
+            <div style="font-size:11.5px;font-weight:700;color:var(--ink);margin-bottom:6px;display:flex;justify-content:space-between;">
+              <span>🍽️ Catering Dietary Highlights</span>
+              <span class="pill pill-gold">18 Special Meals</span>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <span class="pill pill-green">🌱 4 Vegan</span>
+              <span class="pill pill-green">🥬 8 Vegetarian</span>
+              <span class="pill pill-gold">🌾 6 Gluten-Free</span>
+              <span class="pill pill-dark">🥜 2 Nut Allergy</span>
+            </div>
+          </div>
+
+          <!-- Floor Plan Table Switcher -->
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Floor Plan &bull; Tap Table to View</div>
+            <div class="table-badge-row" id="table-pill-row">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Selected Table Inspection -->
+          <div class="card" id="selected-table-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid var(--line);padding-bottom:6px;">
+              <strong style="font-size:13.5px;" id="st-name">Head Table</strong>
+              <span class="pill pill-dark" id="st-capacity">10 / 10 Seated</span>
+            </div>
+            <div id="st-guests-list" style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
+              <!-- Seated guests rendered here -->
+            </div>
+          </div>
+
+          <!-- Unassigned Guests Section (With matching 32px height and Seat button) -->
+          <div class="card" style="background:#fffcf7;border-color:#e0d0bb;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <strong style="font-size:13px;color:#5a3f1d;">🪑 Unassigned Guests</strong>
+              <span class="pill pill-gold" id="unassigned-count-pill">2 to seat</span>
+            </div>
+            <div id="unassigned-guests-list" style="display:flex;flex-direction:column;gap:8px;">
+              <!-- Unassigned cards rendered here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PANE 3: GUESTS DIRECTORY ================= -->
+        <div class="mc-pane" id="pane-guests">
+          <div style="display:flex;gap:8px;">
+            <input type="text" class="text-input" placeholder="🔍 Search guests or dietary requirement..." oninput="handleSearchGuests(this.value)">
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);padding:0 2px;">
+            <span id="guest-count-label">Showing 100 Guests</span>
+            <span style="color:var(--success);font-weight:600;">✓ 96 Confirmed RSVPs</span>
+          </div>
+          <div id="mc-guest-directory-list" style="display:flex;flex-direction:column;gap:6px;">
+            <!-- Guests rendered here -->
+          </div>
+        </div>
+
+        <!-- ================= PANE 4: VENUE & LOGISTICS ================= -->
+        <div class="mc-pane" id="pane-venue">
+          <div class="card">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;">
+              <div>
+                <h3 style="font-family:var(--font-heading);font-size:16px;">Fernwood Estate</h3>
+                <p style="font-size:12px;color:var(--muted);">1842 Range Road, Southern Highlands NSW</p>
+              </div>
+              <span class="pill pill-green">Verified</span>
+            </div>
+            <button type="button" class="btn btn-outline btn-block btn-sm" onclick="showToast('Directions link copied to clipboard')">📍 Open Navigation Directions</button>
+          </div>
+
+          <!-- Key Emergency & Vendor Contacts -->
+          <div class="card">
+            <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;color:var(--ink);">📞 Key On-Site Vendor Contacts</div>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:#faf8f5;border-radius:6px;border:1px solid #ebd3a8;">
+                <div>
+                  <strong>Sarah Lin</strong> <span style="color:var(--muted);">· Venue Manager</span>
+                </div>
+                <a href="tel:0412345678" class="btn btn-gold btn-sm" style="text-decoration:none;">Call</a>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:#faf8f5;border-radius:6px;border:1px solid #ebd3a8;">
+                <div>
+                  <strong>Chef Marco Rossi</strong> <span style="color:var(--muted);">· Catering Lead</span>
+                </div>
+                <a href="tel:0434567890" class="btn btn-gold btn-sm" style="text-decoration:none;">Call</a>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:#faf8f5;border-radius:6px;border:1px solid #ebd3a8;">
+                <div>
+                  <strong>Dave Miller</strong> <span style="color:var(--muted);">· Sound &amp; AV Tech</span>
+                </div>
+                <a href="tel:0445678901" class="btn btn-gold btn-sm" style="text-decoration:none;">Call</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sound & Mic Checklist -->
+          <div class="card">
+            <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;color:var(--ink);">🎤 MC Tech &amp; Audio Checklist</div>
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="checkbox" checked onchange="showToast('Sound check saved')"> Wireless Handheld Mic A (Battery 100%)
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="checkbox" checked onchange="showToast('Sound check saved')"> Wireless Handheld Mic B (Spare)
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="checkbox" checked onchange="showToast('Sound check saved')"> Celebrant Lapel Transceiver
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                <input type="checkbox" onchange="showToast('Sound check saved')"> Dancefloor Uplighting &amp; First Dance Cue
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= PANE 5: GIGS & WEDDINGS ================= -->
+        <div class="mc-pane" id="pane-gigs">
+          <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Booked Wedding Engagements</div>
+          <div id="mc-weddings-gigs-list" style="display:flex;flex-direction:column;gap:8px;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Phone Bottom Nav Bar -->
+      <nav class="phone-bottom-nav" id="mc-bottom-nav" style="display:none;">
+        <button type="button" class="nav-tab-btn active" data-pane="pane-runsheet" onclick="switchPane('pane-runsheet', this)">
+          <span class="tab-icon">📋</span>
+          <span>Run Sheet</span>
+        </button>
+        <button type="button" class="nav-tab-btn" data-pane="pane-seating" onclick="switchPane('pane-seating', this)">
+          <span class="tab-icon">🪑</span>
+          <span>Seating</span>
+        </button>
+        <button type="button" class="nav-tab-btn" data-pane="pane-guests" onclick="switchPane('pane-guests', this)">
+          <span class="tab-icon">👥</span>
+          <span>Guests</span>
+        </button>
+        <button type="button" class="nav-tab-btn" data-pane="pane-venue" onclick="switchPane('pane-venue', this)">
+          <span class="tab-icon">📍</span>
+          <span>Venue</span>
+        </button>
+        <button type="button" class="nav-tab-btn" data-pane="pane-gigs" onclick="switchPane('pane-gigs', this)">
+          <span class="tab-icon">📅</span>
+          <span>Gigs</span>
+        </button>
+      </nav>
+
+      <!-- Home Indicator -->
+      <div class="phone-home-indicator"></div>
+
+      <!-- Toast Popup -->
+      <div class="toast-popup" id="toast-popup">
+        <span id="toast-icon">✓</span>
+        <span id="toast-msg">Action completed</span>
+      </div>
+
+      <!-- Add Run Sheet Cue Modal Sheet -->
+      <div class="mobile-modal-backdrop" id="add-cue-sheet">
+        <div class="mobile-modal-sheet">
+          <div class="sheet-header">
+            <h3 class="sheet-title">Add Schedule Cue</h3>
+            <button type="button" class="sheet-close" onclick="closeAddCueModal()">&times;</button>
+          </div>
+          <form onsubmit="handleSaveNewCue(event)">
+            <div style="margin-bottom:8px;">
+              <label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:3px;">Cue Time (24h or AM/PM)</label>
+              <input type="text" id="new-cue-time" class="text-input" required placeholder="e.g. 19:45" value="19:45">
+            </div>
+            <div style="margin-bottom:8px;">
+              <label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:3px;">Activity Title</label>
+              <input type="text" id="new-cue-title" class="text-input" required placeholder="e.g. First Dance &amp; Champagne Toast">
+            </div>
+            <div style="margin-bottom:8px;">
+              <label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:3px;">Public Schedule Notes</label>
+              <input type="text" id="new-cue-public" class="text-input" placeholder="Guest announcements, song title...">
+            </div>
+            <div style="margin-bottom:12px;">
+              <label style="font-size:11px;font-weight:700;color:var(--gold-hover);display:block;margin-bottom:3px;">MC Cue Notes</label>
+              <input type="text" id="new-cue-private" class="text-input" style="background:#fcfaf6;border-color:#ebd3a8;" placeholder="Private sound directions, microphone cues...">
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button type="button" class="btn btn-outline btn-block" onclick="closeAddCueModal()">Cancel</button>
+              <button type="submit" class="btn btn-gold btn-block">Add to Run Sheet</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Emergency Broadcast Modal Sheet -->
+      <div class="mobile-modal-backdrop" id="broadcast-sheet">
+        <div class="mobile-modal-sheet">
+          <div class="sheet-header">
+            <h3 class="sheet-title">Emergency MC Broadcast</h3>
+            <button type="button" class="sheet-close" onclick="closeBroadcastModal()">&times;</button>
+          </div>
+          <form onsubmit="handleSaveBroadcast(event)">
+            <div style="margin-bottom:10px;">
+              <label style="font-size:11.5px;color:var(--muted);display:block;margin-bottom:4px;">Urgent Banner Text for Event Crew</label>
+              <input type="text" id="broadcast-input" class="text-input" required placeholder="e.g. Cake cutting delayed 10m - sound tech alerted" value="Cake cutting delayed 10m - sound tech alerted">
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button type="button" class="btn btn-outline btn-block" onclick="closeBroadcastModal()">Cancel</button>
+              <button type="submit" class="btn btn-gold btn-block">Broadcast Alert</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    /* Tap & Toast Shared Core & State Synchronization */
+    const STORAGE_KEY = 'tt_demo_v1';
+    const SESSION_KEY = 'tt_session';
+    const SEED_DATA = {"version": 2, "currentWeddingId": "w1", "weddings": [{"id": "w1", "couple": "Sophie & James", "partner1": "Sophie", "partner2": "James", "date": "2026-11-14T14:00:00", "dateDisplay": "14 Nov 2026", "timeDisplay": "2:00 PM", "venue": "Fernwood Estate, Southern Highlands", "venueAddress": "124 Range Road, Mittagong NSW 2575", "parking": "Complimentary on-site guest parking is available at the Main Lawn entrance. Follow the directional signs upon arrival.", "dressCode": "Black Tie Optional / Formal Elegance", "registry": "Digital wishing well via Gift & Go", "invited": 118, "status": "Finalising", "tasks": [{"id": "t1", "text": "Send save-the-dates", "completed": true, "due": ""}, {"id": "t2", "text": "Finalise table 9 & 10 seating", "completed": false, "due": "Due Fri"}, {"id": "t3", "text": "Send RSVP reminder to 22 guests", "completed": false, "due": "Due Mon"}], "runSheet": [{"id": "rs1", "time": "13:30", "note": "MC arrival, audio check with AV tech & Celebrant Sarah", "done": false}, {"id": "rs2", "time": "14:00", "note": "Guest seating & ceremony processional commences", "done": false}, {"id": "rs3", "time": "14:45", "note": "Announce cocktail hour, direct guests to Verandah for canap\u00e9s & bar", "done": false}, {"id": "rs4", "time": "15:45", "note": "Sound dinner bell, usher guests into Grand Pavilion", "done": false}, {"id": "rs5", "time": "16:00", "note": "Grand Entrance introduction for bridal party & Sophie & James", "done": false}, {"id": "rs6", "time": "16:15", "note": "Welcome remarks & housekeeping, introduce entr\u00e9e service", "done": false}, {"id": "rs7", "time": "17:30", "note": "Call for main speeches: Father of the Bride, Maid of Honour, Best Man", "done": false}, {"id": "rs8", "time": "19:15", "note": "Invite couple for Cake Cutting, direct guests to Dance Floor for First Dance", "done": false}, {"id": "rs9", "time": "22:15", "note": "Last drinks call & organise guests with sparklers for courtyard send-off", "done": false}], "privateRunSheet": [{"id": "pmc1", "time": "13:30", "activity": "MC Arrival & AV Sound Check", "notes": "Run sound check on cordless mic #1 & #2 with AV tech Dave. Test Celebrant Sarah's lavalier mic.", "privateNotes": "PA speaker #3 has minor ground hum when dimmers are at 50%; keep master gain at -3dB.", "done": false, "order": 1}, {"id": "pmc2", "time": "14:00", "activity": "Guest Seating & Ceremony Processional", "notes": "Strings quartet plays processional. Ushers guide front rows for VIP parents.", "privateNotes": "Grandmother Arthur requires walking assistance; ensure front row aisle 1 is clear.", "done": false, "order": 2}, {"id": "pmc3", "time": "14:45", "activity": "Cocktail Hour Announcement", "notes": "Direct guests to Verandah for canap\u00e9s, champagne & acoustic duo.", "privateNotes": "Bride's father has surprise vintage Jaguar parked in courtyard for quick photo at 15:10.", "done": false, "order": 3}, {"id": "pmc4", "time": "15:45", "activity": "Sound Dinner Bell & Seating Call", "notes": "Sound luxury brass chime. Encourage guests to find their circular tables.", "privateNotes": "Caterer Head Chef Marco confirmed main course plating strictly starts at 16:30.", "done": false, "order": 4}, {"id": "pmc5", "time": "16:00", "activity": "Grand Entrance: Bridal Party & Couple", "notes": "High energy entrance song: 'Higher Love' (Kygo remix). Hype crowd applause.", "privateNotes": "Couple enters through French glass doors on South terrace, not main hall foyer.", "done": false, "order": 5}, {"id": "pmc6", "time": "16:15", "activity": "MC Welcome Remarks & Housekeeping", "notes": "Warm welcome, emergency exits, bar closing time (22:00), digital wishing well QR reminder.", "privateNotes": "Keep remarks under 3 minutes; kitchen is ready with hot entr\u00e9e drop immediately after.", "done": false, "order": 6}, {"id": "pmc7", "time": "17:30", "activity": "Speeches: Parents & Bridal Party", "notes": "1. Father of Bride (David), 2. Maid of Honour (Chloe), 3. Best Man (Harrison).", "privateNotes": "Best Man Harrison requested slideshow cue on projector right after slide 4 joke.", "done": false, "order": 7}, {"id": "pmc8", "time": "19:15", "activity": "Cake Cutting & First Dance", "notes": "Invite guests to surround dance floor. First dance: 'Lover' by Taylor Swift.", "privateNotes": "Sparkler cold-fountain machines 1 & 2 trigger on chorus 2 at 1:42 mark.", "done": false, "order": 8}, {"id": "pmc9", "time": "22:15", "activity": "Last Drinks & Courtyard Sparkler Send-Off", "notes": "Final DJ anthem, marshal guests outside with 45cm wedding sparklers.", "privateNotes": "Getaway vintage car driver Greg on mobile 0411 999 888 parked at circular driveway.", "done": false, "order": 9}]}, {"id": "w2", "couple": "Aisha & Marcus", "partner1": "Aisha", "partner2": "Marcus", "date": "2027-05-02T15:00:00", "dateDisplay": "2 May 2027", "timeDisplay": "3:00 PM", "venue": "Doltone House, Sydney", "venueAddress": "Jones Bay Wharf, Pyrmont NSW", "parking": "Valet parking available at Jones Bay Wharf.", "dressCode": "Cocktail Attire", "registry": "Gift & Go wishing well", "invited": 86, "confirmed": 46, "status": "On track", "tasks": [{"id": "t21", "text": "Book floral designer", "completed": true, "due": ""}, {"id": "t22", "text": "Send digital invitations", "completed": true, "due": ""}, {"id": "t23", "text": "Taste menu options", "completed": false, "due": "Due next month"}], "runSheet": [{"id": "rs21", "time": "14:30", "note": "MC setup & audio check", "done": false}, {"id": "rs22", "time": "15:00", "note": "Ceremony begins", "done": false}]}, {"id": "w3", "couple": "Emma & Tom", "partner1": "Emma", "partner2": "Tom", "date": "2027-06-20T14:30:00", "dateDisplay": "20 Jun 2027", "timeDisplay": "2:30 PM", "venue": "Dunbar House, Watsons Bay", "venueAddress": "9 Marine Parade, Watsons Bay NSW", "parking": "Robertson Park street parking and Watsons Bay ferry wharf.", "dressCode": "Lounge Suit / Garden Formal", "registry": "Gift & Go wishing well", "invited": 140, "confirmed": 31, "status": "Planning", "tasks": [{"id": "t31", "text": "Confirm celebrant", "completed": true, "due": ""}, {"id": "t32", "text": "Draft guest list", "completed": false, "due": "Due next week"}], "runSheet": [{"id": "rs31", "time": "14:00", "note": "Guest arrival at Dunbar lawn", "done": false}]}, {"id": "w4", "couple": "Katie & Rob", "partner1": "Katie", "partner2": "Rob", "date": "2027-07-11T15:00:00", "dateDisplay": "11 Jul 2027", "timeDisplay": "3:00 PM", "venue": "Dunbar House, Watsons Bay", "venueAddress": "9 Marine Parade, Watsons Bay NSW", "parking": "Dunbar House dedicated parking bays.", "dressCode": "Black Tie", "registry": "Gift & Go wishing well", "invited": 95, "confirmed": 9, "status": "Planning", "tasks": [{"id": "t41", "text": "Lock in photographer", "completed": false, "due": "Due in 2 weeks"}], "runSheet": [{"id": "rs41", "time": "14:30", "note": "Prelude music starts", "done": false}]}], "tables": [{"id": "head", "name": "HEAD TABLE", "capacity": 8, "isHead": true}, {"id": "table_1", "name": "Table 1", "capacity": 8, "isHead": false}, {"id": "table_2", "name": "Table 2", "capacity": 8, "isHead": false}, {"id": "table_3", "name": "Table 3", "capacity": 8, "isHead": false}, {"id": "table_4", "name": "Table 4", "capacity": 8, "isHead": false}, {"id": "table_5", "name": "Table 5", "capacity": 8, "isHead": false}, {"id": "table_6", "name": "Table 6", "capacity": 8, "isHead": false}], "guests": [{"id": "priya", "name": "Priya Sharma", "initials": "PS", "household": "The Sharma Family", "email": "priya.sharma@example.com.au", "phone": "0412 884 992", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "Vegetarian", "song": "September - Earth, Wind & Fire", "reminderSent": false, "tableId": "table_4", "seatIndex": 3}, {"id": "g_ht1", "name": "Sophie Bell", "initials": "SB", "household": "Sophie Bell", "email": "sophie.bell@example.com", "phone": "0400 111 222", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "At Last - Etta James", "reminderSent": false, "tableId": "head", "seatIndex": 0}, {"id": "g_ht2", "name": "James Gordon", "initials": "JG", "household": "James Gordon", "email": "james.gordon@example.com", "phone": "0400 222 333", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "You Are The Best Thing", "reminderSent": false, "tableId": "head", "seatIndex": 1}, {"id": "g_ht3", "name": "Hannah Martin", "initials": "HM", "household": "Hannah Martin", "email": "hannah.m@example.com", "phone": "0400 333 444", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Vegetarian", "song": "Dancing Queen", "reminderSent": false, "tableId": "head", "seatIndex": 2}, {"id": "g_ht4", "name": "Oliver Vance", "initials": "OV", "household": "Oliver Vance", "email": "oliver.v@example.com", "phone": "0400 444 555", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Mr. Brightside", "reminderSent": false, "tableId": "head", "seatIndex": 3}, {"id": "g_ht5", "name": "Charlotte Evans", "initials": "CE", "household": "Charlotte Evans", "email": "charlotte.e@example.com", "phone": "0400 555 666", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Gluten-free", "song": "Levitating", "reminderSent": false, "tableId": "head", "seatIndex": 4}, {"id": "g_ht6", "name": "Liam Fletcher", "initials": "LF", "household": "Liam Fletcher", "email": "liam.f@example.com", "phone": "0400 666 777", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Uptown Funk", "reminderSent": false, "tableId": "head", "seatIndex": 5}, {"id": "g_ht7", "name": "Grace Kelly", "initials": "GK", "household": "Grace Kelly", "email": "grace.k@example.com", "phone": "0400 777 888", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "I Wanna Dance with Somebody", "reminderSent": false, "tableId": "head", "seatIndex": 6}, {"id": "g_ht8", "name": "Alexander Wright", "initials": "AW", "household": "Alexander Wright", "email": "alex.w@example.com", "phone": "0400 888 999", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Superstition", "reminderSent": false, "tableId": "head", "seatIndex": 7}, {"id": "g_t1_1", "name": "Michael Chen", "initials": "MC", "household": "Michael Chen", "email": "michael.chen@example.com", "phone": "0411 223 901", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "Vegetarian", "song": "Stayin' Alive", "reminderSent": false, "tableId": "table_1", "seatIndex": 0}, {"id": "g_t1_2", "name": "David Vance", "initials": "DV", "household": "David Vance", "email": "david.vance@example.com", "phone": "0411 223 902", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Don't Stop Me Now", "reminderSent": false, "tableId": "table_1", "seatIndex": 1}, {"id": "g_t1_3", "name": "Jessica White", "initials": "JW", "household": "Jessica White", "email": "jessica.white@example.com", "phone": "0411 223 903", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Blinding Lights", "reminderSent": false, "tableId": "table_1", "seatIndex": 2}, {"id": "g_t1_4", "name": "Aunty Carol Evans", "initials": "AC", "household": "Aunty Carol", "email": "carol.evans@example.com", "phone": "0411 223 904", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Sweet Caroline", "reminderSent": false, "tableId": "table_1", "seatIndex": 3}, {"id": "g_t1_5", "name": "Robert King", "initials": "RK", "household": "Robert King", "email": "robert.king@example.com", "phone": "0411 223 905", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Billie Jean", "reminderSent": false, "tableId": "table_1", "seatIndex": 4}, {"id": "g_t1_6", "name": "Lucy Palmer", "initials": "LP", "household": "Lucy Palmer", "email": "lucy.palmer@example.com", "phone": "0411 223 906", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Nut allergy", "song": "Can't Stop the Feeling!", "reminderSent": false, "tableId": "table_1", "seatIndex": 5}, {"id": "g_t1_7", "name": "Edward Lewis", "initials": "EL", "household": "Edward Lewis", "email": "edward.lewis@example.com", "phone": "0411 223 907", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Shake It Off", "reminderSent": false, "tableId": "table_1", "seatIndex": 6}, {"id": "g_t1_8", "name": "Chloe Jenkins", "initials": "CJ", "household": "Chloe Jenkins", "email": "chloe.jenkins@example.com", "phone": "0411 223 908", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Gluten-free", "song": "Single Ladies", "reminderSent": false, "tableId": "table_1", "seatIndex": 7}, {"id": "g_t2_1", "name": "Nathan Knight", "initials": "NK", "household": "Nathan Knight", "email": "nathan.k@example.com", "phone": "0412 334 001", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Hey Ya!", "reminderSent": false, "tableId": "table_2", "seatIndex": 0}, {"id": "g_t2_2", "name": "Georgia Hall", "initials": "GH", "household": "Georgia Hall", "email": "georgia.h@example.com", "phone": "0412 334 002", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Shut Up and Dance", "reminderSent": false, "tableId": "table_2", "seatIndex": 1}, {"id": "g_t2_3", "name": "William Ford", "initials": "WF", "household": "William Ford", "email": "william.f@example.com", "phone": "0412 334 003", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Vegetarian", "song": "Wonderwall", "reminderSent": false, "tableId": "table_2", "seatIndex": 2}, {"id": "g_t2_4", "name": "Fiona Scott", "initials": "FS", "household": "Fiona Scott", "email": "fiona.s@example.com", "phone": "0412 334 004", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Happy - Pharrell", "reminderSent": false, "tableId": "table_2", "seatIndex": 3}, {"id": "g_t2_5", "name": "George Miller", "initials": "GM", "household": "George Miller", "email": "george.m@example.com", "phone": "0412 334 005", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Sugar - Maroon 5", "reminderSent": false, "tableId": "table_2", "seatIndex": 4}, {"id": "g_t2_6", "name": "Quinn Nelson", "initials": "QN", "household": "Quinn Nelson", "email": "quinn.n@example.com", "phone": "0412 334 006", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Crazy in Love", "reminderSent": false, "tableId": "table_2", "seatIndex": 5}, {"id": "g_t3_1", "name": "Ian Patel", "initials": "IP", "household": "Ian Patel", "email": "ian.p@example.com", "phone": "0413 445 001", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "24K Magic", "reminderSent": false, "tableId": "table_3", "seatIndex": 0}, {"id": "g_t3_2", "name": "Grace Turner", "initials": "GT", "household": "Grace Turner", "email": "grace.t@example.com", "phone": "0413 445 002", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Gluten-free", "song": "Treasure", "reminderSent": false, "tableId": "table_3", "seatIndex": 1}, {"id": "g_t3_3", "name": "Yasmine Abbas", "initials": "YA", "household": "Yasmine Abbas", "email": "yasmine.a@example.com", "phone": "0413 445 003", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Halal", "song": "Levitating", "reminderSent": false, "tableId": "table_3", "seatIndex": 2}, {"id": "g_t3_4", "name": "Zachary Webb", "initials": "ZW", "household": "Zachary Webb", "email": "zachary.w@example.com", "phone": "0413 445 004", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Get Lucky", "reminderSent": false, "tableId": "table_3", "seatIndex": 3}, {"id": "g_t4_1", "name": "Benjamin Ross", "initials": "BR", "household": "Benjamin Ross", "email": "ben.ross@example.com", "phone": "0414 556 001", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Good 4 U", "reminderSent": false, "tableId": "table_4", "seatIndex": 0}, {"id": "g_t4_2", "name": "Isabella Foster", "initials": "IF", "household": "Isabella Foster", "email": "isabella.f@example.com", "phone": "0414 556 002", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Valerie", "reminderSent": false, "tableId": "table_4", "seatIndex": 1}, {"id": "g_t4_3", "name": "Oliver Thomas", "initials": "OT", "household": "Oliver Thomas", "email": "oliver.t@example.com", "phone": "0414 556 003", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Vegetarian", "song": "Mamma Mia", "reminderSent": false, "tableId": "table_4", "seatIndex": 2}, {"id": "g_t4_5", "name": "Yuvraj Rao", "initials": "YR", "household": "Yuvraj Rao", "email": "yuvraj.r@example.com", "phone": "0414 556 005", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Dynamite", "reminderSent": false, "tableId": "table_4", "seatIndex": 4}, {"id": "g_t4_6", "name": "Natasha Price", "initials": "NP", "household": "Natasha Price", "email": "natasha.p@example.com", "phone": "0414 556 006", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "About Damn Time", "reminderSent": false, "tableId": "table_4", "seatIndex": 5}, {"id": "g_t4_7", "name": "Julian Taylor", "initials": "JT", "household": "Julian Taylor", "email": "julian.t@example.com", "phone": "0414 556 007", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Shape of You", "reminderSent": false, "tableId": "table_4", "seatIndex": 6}, {"id": "g_t4_8", "name": "Alice Davis", "initials": "AD", "household": "Alice Davis", "email": "alice.d@example.com", "phone": "0414 556 008", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Nut allergy", "song": "Watermelon Sugar", "reminderSent": false, "tableId": "table_4", "seatIndex": 7}, {"id": "g_t5_1", "name": "Harper Lewis", "initials": "HL", "household": "Harper Lewis", "email": "harper.l@example.com", "phone": "0415 667 001", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Dance Monkey", "reminderSent": false, "tableId": "table_5", "seatIndex": 0}, {"id": "g_t5_2", "name": "Kian Thorne", "initials": "KT", "household": "Kian Thorne", "email": "kian.t@example.com", "phone": "0415 667 002", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "song": "Wake Me Up", "reminderSent": false, "tableId": "table_5", "seatIndex": 1}, {"id": "g_t5_3", "name": "Chloe Lin", "initials": "CL", "household": "Chloe Lin", "email": "chloe.l@example.com", "phone": "0415 667 003", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Gluten-free", "song": "Roar", "reminderSent": false, "tableId": "table_5", "seatIndex": 2}, {"id": "g_rchen", "name": "Robert Chen", "initials": "RC", "household": "The Chen Family", "email": "robert.c@example.com", "phone": "0421 991 223", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "Vegetarian", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_slee", "name": "Sarah Lee", "initials": "SL", "household": "Sarah Lee", "email": "sarah.lee@example.com", "phone": "0433 112 445", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dwhitfield", "name": "David Whitfield", "initials": "DW", "household": "The Whitfield family", "email": "david.w@example.com", "phone": "0414 556 778", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_mkapoor", "name": "Maya Kapoor", "initials": "MK", "household": "Maya Kapoor", "email": "maya.k@example.com", "phone": "0400 334 556", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Gluten-free", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_toneill", "name": "Thomas O'Neill", "initials": "TO", "household": "Thomas O'Neill", "email": "thomas.o@example.com", "phone": "0418 776 554", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_jbrown", "name": "Jessica Brown", "initials": "JB", "household": "Jessica Brown", "email": "jessica.b@example.com", "phone": "0422 998 112", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_lscott", "name": "Liam Scott", "initials": "LS", "household": "Liam Scott", "email": "liam.s@example.com", "phone": "0411 223 344", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_ctaylor", "name": "Chloe Taylor", "initials": "CT", "household": "Chloe Taylor", "email": "chloe.t@example.com", "phone": "0422 334 455", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Vegan", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_eharris", "name": "Ethan Harris", "initials": "EH", "household": "Ethan Harris", "email": "ethan.h@example.com", "phone": "0433 445 566", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_omartin", "name": "Olivia Martin", "initials": "OM", "household": "Olivia Martin", "email": "olivia.m@example.com", "phone": "0444 556 677", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_lwhite", "name": "Lucas White", "initials": "LW", "household": "Lucas White", "email": "lucas.w@example.com", "phone": "0455 667 788", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_ghall2", "name": "Grace Hall", "initials": "GH", "household": "Grace Hall", "email": "grace.h2@example.com", "phone": "0466 778 899", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "Nut allergy", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_bclark", "name": "Benjamin Clark", "initials": "BC", "household": "Benjamin Clark", "email": "ben.c@example.com", "phone": "0477 889 900", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "plusOne": true, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_zadams", "name": "Zoe Adams", "initials": "ZA", "household": "Zoe Adams", "email": "zoe.a@example.com", "phone": "0488 990 011", "rsvpStatus": "confirmed", "guestCount": 1, "dietary": "None", "plusOne": false, "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra1", "name": "Sarah & David Lee", "initials": "SL", "household": "The Lee Family", "email": "sarah.lee.couple@example.com", "phone": "0499 111 222", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra2", "name": "Patrick & Claire Murphy", "initials": "PM", "household": "The Murphy Family", "email": "patrick.m@example.com", "phone": "0499 222 333", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra3", "name": "Daniel & Emily Zhang", "initials": "DZ", "household": "The Zhang Family", "email": "daniel.z@example.com", "phone": "0499 333 444", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "Pescatarian", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra4", "name": "Ryan & Stephanie Scott", "initials": "RS", "household": "The Scott Family", "email": "ryan.s@example.com", "phone": "0499 444 555", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra5", "name": "Jack & Mia Wilson", "initials": "JW", "household": "The Wilson Family", "email": "jack.w@example.com", "phone": "0499 555 666", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra6", "name": "Henry & Chloe King", "initials": "HK", "household": "The King Family", "email": "henry.k@example.com", "phone": "0499 666 777", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra7", "name": "Samuel & Lily Baker", "initials": "SB", "household": "The Baker Family", "email": "samuel.b@example.com", "phone": "0499 777 888", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra8", "name": "Noah & Evelyn Carter", "initials": "NC", "household": "The Carter Family", "email": "noah.c@example.com", "phone": "0499 888 999", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra9", "name": "Mason & Harper Brooks", "initials": "MB", "household": "The Brooks Family", "email": "mason.b@example.com", "phone": "0499 999 000", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra10", "name": "Logan & Ava Hughes", "initials": "LH", "household": "The Hughes Family", "email": "logan.h@example.com", "phone": "0498 111 222", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra11", "name": "Leo & Ella Price", "initials": "LP", "household": "The Price Family", "email": "leo.p@example.com", "phone": "0498 222 333", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra12", "name": "Harrison & Scarlett Ward", "initials": "HW", "household": "The Ward Family", "email": "harrison.w@example.com", "phone": "0498 333 444", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra13", "name": "Theo & Sienna Foster", "initials": "TF", "household": "The Foster Family", "email": "theo.f@example.com", "phone": "0498 444 555", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra14", "name": "Oscar & Ruby Powell", "initials": "OP", "household": "The Powell Family", "email": "oscar.p@example.com", "phone": "0498 555 666", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra15", "name": "Archie & Isla Cooper", "initials": "AC", "household": "The Cooper Family", "email": "archie.c@example.com", "phone": "0498 666 777", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra16", "name": "George & Mia Evans", "initials": "GE", "household": "The Evans Family", "email": "george.e@example.com", "phone": "0498 777 888", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra17", "name": "Finn & Zara Mitchell", "initials": "FM", "household": "The Mitchell Family", "email": "finn.m@example.com", "phone": "0498 888 999", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_conf_extra18", "name": "Edward & Sophie Turner", "initials": "ET", "household": "The Turner Family", "email": "edward.t@example.com", "phone": "0498 999 000", "rsvpStatus": "confirmed", "guestCount": 2, "dietary": "None", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec1", "name": "Marcus Vance", "initials": "MV", "household": "Marcus Vance", "email": "marcus.v@example.com", "phone": "0471 112 334", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec2", "name": "Helena Ross", "initials": "HR", "household": "Helena Ross", "email": "helena.r@example.com", "phone": "0471 223 445", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec3", "name": "Timothy Drake", "initials": "TD", "household": "Timothy Drake", "email": "tim.d@example.com", "phone": "0471 334 556", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec4", "name": "Claire Redfield", "initials": "CR", "household": "Claire Redfield", "email": "claire.r@example.com", "phone": "0471 445 667", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec5", "name": "Leon Kennedy", "initials": "LK", "household": "Leon Kennedy", "email": "leon.k@example.com", "phone": "0471 556 778", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec6", "name": "Ada Wong", "initials": "AW", "household": "Ada Wong", "email": "ada.w@example.com", "phone": "0471 667 889", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec7", "name": "Jill Valentine", "initials": "JV", "household": "Jill Valentine", "email": "jill.v@example.com", "phone": "0471 778 990", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec8", "name": "Chris Redfield", "initials": "CR", "household": "Chris Redfield", "email": "chris.r@example.com", "phone": "0471 889 001", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_dec9", "name": "Albert Wesker", "initials": "AW", "household": "Albert Wesker", "email": "albert.w@example.com", "phone": "0471 990 112", "rsvpStatus": "declined", "guestCount": 0, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa1", "name": "Bradley Cooper", "initials": "BC", "household": "The Cooper Family", "email": "bradley.c@example.com", "phone": "0461 111 222", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa2", "name": "Catherine Zeta", "initials": "CZ", "household": "Catherine Zeta", "email": "catherine.z@example.com", "phone": "0461 222 333", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa3", "name": "Daniel Craig", "initials": "DC", "household": "Daniel Craig", "email": "daniel.c@example.com", "phone": "0461 333 444", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa4", "name": "Emma Watson", "initials": "EW", "household": "Emma Watson", "email": "emma.w@example.com", "phone": "0461 444 555", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa5", "name": "Felix Baum", "initials": "FB", "household": "The Baum Family", "email": "felix.b@example.com", "phone": "0461 555 666", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa6", "name": "Gemma Chan", "initials": "GC", "household": "Gemma Chan", "email": "gemma.c@example.com", "phone": "0461 666 777", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa7", "name": "Hugh Jackman", "initials": "HJ", "household": "The Jackman Family", "email": "hugh.j@example.com", "phone": "0461 777 888", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa8", "name": "Isla Fisher", "initials": "IF", "household": "Isla Fisher", "email": "isla.f@example.com", "phone": "0461 888 999", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa9", "name": "Justin Timberlake", "initials": "JT", "household": "The Timberlake Family", "email": "justin.t@example.com", "phone": "0461 999 000", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa10", "name": "Keira Knightley", "initials": "KK", "household": "Keira Knightley", "email": "keira.k@example.com", "phone": "0462 111 222", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa11", "name": "Liam Hemsworth", "initials": "LH", "household": "The Hemsworth Family", "email": "liam.h@example.com", "phone": "0462 222 333", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa12", "name": "Margot Robbie", "initials": "MR", "household": "Margot Robbie", "email": "margot.r@example.com", "phone": "0462 333 444", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa13", "name": "Nicholas Hoult", "initials": "NH", "household": "Nicholas Hoult", "email": "nicholas.h@example.com", "phone": "0462 444 555", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa14", "name": "Olivia Colman", "initials": "OC", "household": "Olivia Colman", "email": "olivia.c@example.com", "phone": "0462 555 666", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa15", "name": "Paul Mescal", "initials": "PM", "household": "Paul Mescal", "email": "paul.m@example.com", "phone": "0462 666 777", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa16", "name": "Rachel Weisz", "initials": "RW", "household": "Rachel Weisz", "email": "rachel.w@example.com", "phone": "0462 777 888", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa17", "name": "Sam Worthington", "initials": "SW", "household": "The Worthington Family", "email": "sam.w@example.com", "phone": "0462 888 999", "rsvpStatus": "awaiting", "guestCount": 2, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa18", "name": "Toni Collette", "initials": "TC", "household": "Toni Collette", "email": "toni.c@example.com", "phone": "0462 999 000", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa19", "name": "Vince Colosimo", "initials": "VC", "household": "Vince Colosimo", "email": "vince.c@example.com", "phone": "0463 111 222", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa20", "name": "Wendy Hughes", "initials": "WH", "household": "Wendy Hughes", "email": "wendy.h@example.com", "phone": "0463 222 333", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa21", "name": "Xavier Samuel", "initials": "XS", "household": "Xavier Samuel", "email": "xavier.s@example.com", "phone": "0463 333 444", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}, {"id": "g_awa22", "name": "Yael Stone", "initials": "YS", "household": "Yael Stone", "email": "yael.s@example.com", "phone": "0463 444 555", "rsvpStatus": "awaiting", "guestCount": 1, "dietary": "", "reminderSent": false, "tableId": null, "seatIndex": null}], "feed": [{"id": "f_mile", "type": "milestone", "title": "50 guests confirmed", "subtitle": "You've hit the halfway mark on RSVPs", "time": "Just now", "likes": 24, "comments": [], "pinned": true, "hidden": false}, {"id": "f_note1", "type": "note", "author": "Aunty Carol", "title": "Aunty Carol left a note", "quote": "So excited for you both \u2014 can't wait to celebrate! \ud83d\udc95", "time": "2 minutes ago", "likes": 8, "comments": ["Can't wait to dance with you Aunty Carol!"], "replies": [{"author": "Sophie & James", "role": "couple", "text": "Thank you so much Aunty Carol! We can't wait to celebrate and dance with you! \ud83d\udc95", "time": "Just now"}], "pinned": false, "hidden": false}, {"id": "f_gift1", "type": "gift", "author": "The Whitfield family", "title": "The Whitfield family sent a gift", "subtitle": "via Gift & Go \u2014 wishing well contribution", "quote": "Wishing you both a lifetime of love and happiness!", "time": "38 minutes ago", "likes": 5, "comments": [], "replies": [], "pinned": false, "hidden": false}, {"id": "f_rsvp1", "type": "rsvp", "author": "Michael Chen", "title": "Michael Chen confirmed", "subtitle": "Attending, +1 guest \u00b7 dietary: vegetarian", "time": "1 hour ago", "likes": 3, "comments": [], "pinned": false, "hidden": false}, {"id": "f_photo1", "type": "photo", "author": "Priya", "title": "New photo added", "subtitle": "Priya uploaded a photo to the gallery", "photoDesc": "Sunset view over Southern Highlands vineyards", "time": "3 hours ago", "likes": 12, "comments": ["Absolutely breathtaking!"], "pinned": false, "hidden": false}, {"id": "f_rsvp2", "type": "rsvp", "author": "Sarah & David Lee", "title": "Sarah & David Lee confirmed", "subtitle": "Attending \u00b7 no plus-one", "time": "5 hours ago", "likes": 2, "comments": [], "pinned": false, "hidden": false}], "gifts": [{"id": "gf1", "from": "The Whitfield family", "amount": 250, "date": "Today", "message": "Wishing you both a lifetime of love and happiness!", "thankYouSent": false, "thankYouStatus": "Drafted", "thankYouMethod": "Handwritten Card", "thankYouNotes": "Drafted heartfelt thank-you card mentioning their lovely wishing well note.", "thankYouDate": ""}, {"id": "gf2", "from": "Sarah & Michael Chen", "amount": 300, "date": "Yesterday", "message": "So thrilled for you Sophie and James!", "thankYouSent": false, "thankYouStatus": "Drafted", "thankYouMethod": "Personal Email", "thankYouNotes": "Drafted message thanking them for the generous gift and excited to see them.", "thankYouDate": ""}, {"id": "gf3", "from": "Aunty Carol & Uncle Peter", "amount": 500, "date": "2 days ago", "message": "With all our love and blessings on your special day.", "thankYouSent": false, "thankYouStatus": "Not Started", "thankYouMethod": "Handwritten Card", "thankYouNotes": "", "thankYouDate": ""}, {"id": "gf4", "from": "Emma & David Wilson", "amount": 200, "date": "3 days ago", "message": "Congratulations to the wonderful couple!", "thankYouSent": false, "thankYouStatus": "Not Started", "thankYouMethod": "Personal Email", "thankYouNotes": "", "thankYouDate": ""}, {"id": "gf5", "from": "Marcus & Olivia Vance", "amount": 350, "date": "4 days ago", "message": "Enjoy every second of the celebration!", "thankYouSent": true, "thankYouStatus": "Sent", "thankYouMethod": "Handwritten Card", "thankYouNotes": "Sent luxury handwritten card via express post.", "thankYouDate": "Yesterday"}, {"id": "gf6", "from": "The O'Connor Family", "amount": 400, "date": "5 days ago", "message": "Huge congratulations Sophie and James!", "thankYouSent": false, "thankYouStatus": "Not Started", "thankYouMethod": "Handwritten Card", "thankYouNotes": "", "thankYouDate": ""}, {"id": "gf7", "from": "Jessica & Liam Taylor", "amount": 180, "date": "6 days ago", "message": "Can't wait to raise a glass to you both!", "thankYouSent": false, "thankYouStatus": "Not Started", "thankYouMethod": "In-Person", "thankYouNotes": "", "thankYouDate": ""}, {"id": "gf8", "from": "Rob & Chloe Martin", "amount": 250, "date": "1 week ago", "message": "So happy for you guys!", "thankYouSent": false, "thankYouStatus": "Drafted", "thankYouMethod": "Handwritten Card", "thankYouNotes": "Drafted note thanking Chloe for maid of honour support and Rob for speech prep.", "thankYouDate": ""}, {"id": "gf9", "from": "Grandma Evelyn", "amount": 500, "date": "1 week ago", "message": "May God bless your beautiful marriage.", "thankYouSent": false, "thankYouStatus": "Not Started", "thankYouMethod": "Phone Call / In-Person", "thankYouNotes": "", "thankYouDate": ""}, {"id": "gf10", "from": "Uncle Arthur", "amount": 500, "date": "2 weeks ago", "message": "All our love.", "thankYouSent": true, "thankYouStatus": "Completed", "thankYouMethod": "Handwritten Card", "thankYouNotes": "Delivered custom letter with framed photo.", "thankYouDate": "2 weeks ago"}, {"id": "gf11", "from": "Fiona & George Miller", "amount": 350, "date": "2 weeks ago", "message": "Cheers to your future together!", "thankYouSent": true, "thankYouStatus": "Completed", "thankYouMethod": "Personal Email", "thankYouNotes": "Sent formal thank-you with honeymoon photo gallery link.", "thankYouDate": "2 weeks ago"}, {"id": "gf12", "from": "The Davis Family", "amount": 500, "date": "3 weeks ago", "message": "Warmest congratulations!", "thankYouSent": true, "thankYouStatus": "Completed", "thankYouMethod": "Handwritten Card", "thankYouNotes": "Sent luxury card and warm wishes.", "thankYouDate": "3 weeks ago"}], "photos": [{"id": "p1", "caption": "Southern Highlands winery ceremony lawn", "author": "Priya", "time": "Yesterday"}, {"id": "p2", "caption": "Tasting session at Fernwood Estate", "author": "Sophie", "time": "3 days ago"}, {"id": "p3", "caption": "Floral arch preview in natural gum foliage", "author": "Hannah", "time": "1 week ago"}, {"id": "p4", "caption": "Golden hour over the Mittagong ranges", "author": "James", "time": "2 weeks ago"}], "invoices": [{"id": "INV-1081", "couple": "Sophie & James", "date": "08 Oct 2026", "amount": 1850, "status": "Paid", "venue": "Fernwood Estate"}, {"id": "INV-1082", "couple": "Aisha & Marcus", "date": "15 Oct 2026", "amount": 1650, "status": "Pending", "venue": "Doltone House"}, {"id": "INV-1083", "couple": "Emma & Tom", "date": "01 Nov 2026", "amount": 1950, "status": "Draft", "venue": "Dunbar House"}, {"id": "INV-1084", "couple": "Katie & Rob", "date": "12 Nov 2026", "amount": 1750, "status": "Draft", "venue": "Dunbar House"}], "clients": [{"id": "cl1", "couple": "Sophie & James", "phone": "0400 111 222", "email": "sophie.bell@example.com", "weddingDate": "14 Nov 2026", "venue": "Fernwood Estate", "tier": "Platinum MC & Coordination", "deposit": "Paid ($925)", "notes": "Outdoor ceremony on lawn. High energy reception. Live band."}, {"id": "cl2", "couple": "Aisha & Marcus", "phone": "0400 333 444", "email": "aisha.m@example.com", "weddingDate": "2 May 2027", "venue": "Doltone House", "tier": "Standard MC", "deposit": "Paid ($825)", "notes": "Strict 11:30 PM venue curfew. Formal multi-course dinner."}, {"id": "cl3", "couple": "Emma & Tom", "phone": "0400 555 666", "email": "emma.t@example.com", "weddingDate": "20 Jun 2027", "venue": "Dunbar House", "tier": "Full Day Master of Ceremonies", "deposit": "Pending", "notes": "Ferry transport coordination for guests from Circular Quay."}, {"id": "cl4", "couple": "Katie & Rob", "phone": "0400 777 888", "email": "katie.r@example.com", "weddingDate": "11 Jul 2027", "venue": "Dunbar House", "tier": "Standard MC", "deposit": "Pending", "notes": "Intimate winter wedding. Acoustic trio for cocktail hour."}], "team": [{"id": "tm1", "name": "Robert Galati", "role": "Lead Master of Ceremonies", "email": "robert@galatimc.com.au", "phone": "0418 223 901", "status": "Active"}, {"id": "tm2", "name": "Sarah Jenkins", "role": "On-day Event Coordinator", "email": "sarah.j@galatimc.com.au", "phone": "0418 223 902", "status": "Active"}, {"id": "tm3", "name": "Dave Miller", "role": "Sound & AV Technician", "email": "dave.m@galatimc.com.au", "phone": "0418 223 903", "status": "Active"}], "tenants": [{"id": "ten1", "business": "Robert Galati MC Services", "lead": "Robert Galati", "plan": "Pro", "weddings": 7, "mrr": 299, "status": "Active", "joined": "12 Jan 2025", "stripeConnected": true, "email": "robert@galatimc.com.au"}, {"id": "ten2", "business": "Coastal Celebrations MC", "lead": "Marcus Thorne", "plan": "Pro", "weddings": 5, "mrr": 299, "status": "Active", "joined": "04 Mar 2025", "stripeConnected": true, "email": "marcus@coastalmc.com.au"}, {"id": "ten3", "business": "Sydney Vows & Beats", "lead": "Elena Rostova", "plan": "Standard", "weddings": 3, "mrr": 199, "status": "Active", "joined": "18 May 2025", "stripeConnected": true, "email": "elena@sydneyvows.com.au"}, {"id": "ten4", "business": "Melbourne Elite Hosts", "lead": "Julian Brooks", "plan": "Starter", "weddings": 1, "mrr": 99, "status": "Suspended", "joined": "01 Aug 2025", "stripeConnected": false, "email": "julian@melbourneelite.com.au"}], "featureFlags": {"digitalGifting": true, "aiSeating": true, "qardPrinting": true, "photoModeration": true, "smsReminders": false}, "supportTickets": [{"id": "TCK-401", "tenant": "Robert Galati MC Services", "subject": "Custom run sheet export formatting for print", "priority": "Medium", "status": "Open", "date": "08 Oct 2026", "messages": [{"sender": "Robert Galati", "text": "Can we include dietary badges on the printed MC run sheet?", "time": "Yesterday"}, {"sender": "Tap & Toast Support", "text": "Hi Robert, that feature is coming in the next release! You can currently view dietaries in the Guest Summary tab.", "time": "2 hours ago"}]}, {"id": "TCK-402", "tenant": "Coastal Celebrations MC", "subject": "Stripe payout schedule for December events", "priority": "High", "status": "In Progress", "date": "07 Oct 2026", "messages": [{"sender": "Marcus Thorne", "text": "We need 24hr payout clearance for weekend gifting disbursements.", "time": "2 days ago"}]}, {"id": "TCK-403", "tenant": "Sydney Vows & Beats", "subject": "NFC backup options for QaRd cards", "priority": "Low", "status": "Resolved", "date": "02 Oct 2026", "messages": [{"sender": "Elena Rostova", "text": "Resolved: QR code scan works seamlessly without requiring NFC hardware.", "time": "1 week ago"}]}], "auditLog": [{"id": "aud1", "timestamp": "2026-10-09 14:15", "actor": "Michael Chen", "action": "RSVP Confirmed", "details": "Confirmed attendance (+1 guest, vegetarian)", "category": "RSVP"}, {"id": "aud2", "timestamp": "2026-10-09 13:42", "actor": "The Whitfield family", "action": "Gift & Go Received", "details": "Sent $250 AUD gift with message", "category": "Gifting"}, {"id": "aud3", "timestamp": "2026-10-09 12:10", "actor": "Aunty Carol", "action": "Feed Note Posted", "details": "Posted a Love Note on celebration feed", "category": "Feed"}, {"id": "aud4", "timestamp": "2026-10-09 11:00", "actor": "Priya Sharma", "action": "Photo Uploaded", "details": "Added photo to wedding photo wall", "category": "Photos"}, {"id": "aud5", "timestamp": "2026-10-09 09:20", "actor": "Sophie (Couple)", "action": "Seating Updated", "details": "Assigned Table 4 seating arrangement", "category": "Seating"}, {"id": "aud6", "timestamp": "2026-10-08 17:00", "actor": "Robert Galati (MC)", "action": "Run Sheet Updated", "details": "Updated reception timings and speech order", "category": "Run Sheet"}], "users": [{"id": "u_mc1", "email": "robert@galati.demo", "passwordHash": "dHRfc2FsdF9EZW1vMTIzNCE=", "name": "Robert Galati", "role": "mc", "tenantId": "ten1", "business": "Robert Galati MC Services"}, {"id": "u_couple1", "email": "sophie.james@demo.test", "passwordHash": "dHRfc2FsdF9EZW1vMTIzNCE=", "name": "Sophie & James", "role": "couple", "weddingId": "w1"}, {"id": "u_admin1", "email": "admin@tapandtoast.demo", "passwordHash": "dHRfc2FsdF9EZW1vMTIzNCE=", "name": "Platform Admin", "role": "superadmin"}], "invites": [{"code": "SJ-2026", "weddingId": "w1", "couple": "Sophie & James", "partner1": "Sophie", "partner2": "James", "mc": "Robert Galati", "weddingDate": "14 Nov 2026", "venue": "Fernwood Estate, Southern Highlands", "used": false}], "reusablePages": {"ourStory": {"id": "ourStory", "title": "Our Story", "subtitle": "From a rainy coffee in Surry Hills to the Southern Highlands", "status": "Published", "lastUpdated": "10 Oct 2026", "content": "We met on a drizzly Tuesday afternoon at a quiet coffee roastery in Surry Hills. What was planned as a quick 20-minute flat white turned into four hours of non-stop conversation, shared dreams of exploring the world, and uncontrollable laughter.\n\nThree years, countless road trips down the South Coast, and an unforgettable proposal under the stars at Byron Bay later\u2014we cannot wait to celebrate our love with everyone who means the world to us.", "photoCaption": "Proposal evening at Wategos Beach, Byron Bay", "photoGradient": "linear-gradient(135deg, #2b221a 0%, #15110e 100%)", "photoIcon": "\ud83d\udc8d"}, "inMemoriam": {"id": "inMemoriam", "title": "In Loving Memory", "subtitle": "Forever in our hearts, always with us in spirit", "status": "Published", "lastUpdated": "08 Oct 2026", "content": "Today, as we exchange our vows and step into this new chapter of life, we tenderly hold in our hearts those dearly loved family members and friends who watch over us from above.\n\nTheir laughter, wisdom, and unconditional love continue to guide us each day. We dedicate a quiet candle at the altar in loving memory of Sophie's grandfather Arthur Bell and James' beloved mother Eleanor Vance.", "photoCaption": "Arthur Bell (1938\u20132022) & Eleanor Vance (1949\u20132024)", "photoGradient": "linear-gradient(135deg, #1c1917 0%, #0c0a09 100%)", "photoIcon": "\ud83d\udd4a\ufe0f"}, "diningMenu": {"id": "diningMenu", "title": "Dining & Menu", "subtitle": "A seasonal culinary celebration by Executive Chef Marco Rossi", "status": "Published", "lastUpdated": "11 Oct 2026", "content": "Featuring locally sourced produce from the Southern Highlands and wines paired from the cellar of Fernwood Estate.\n\n\u2022 Canap\u00e9s: Seared Scallops with Cauliflower Puree & Truffled Wild Mushroom Tartlet\n\u2022 Entr\u00e9e: King Salmon Carpaccio with Yuzu Vinaigrette, Baby Herbs & Crispy Capers\n\u2022 Main Course: Slow-Braised Angus Beef Cheek with Truffled Potato Mousseline OR Roasted Butternut Pumpkin Risotto (V/GF)\n\u2022 Dessert: Belgian Dark Chocolate Fondant with Salted Caramel Gelato\n\u2022 Late Night: Artisan woodfired pizza served on the verandah.", "photoCaption": "Banquet prepared fresh on estate grounds with organic local produce", "photoGradient": "linear-gradient(135deg, #231c16 0%, #17120e 100%)", "photoIcon": "\ud83c\udf7d\ufe0f"}, "meetTheTeam": {"id": "meetTheTeam", "title": "Meet the Wedding Party & Team", "subtitle": "The legends standing beside us and orchestrating our celebration", "status": "Published", "lastUpdated": "09 Oct 2026", "content": "\u2022 Maid of Honour: Chloe Mitchell (Sophie's best friend since kindergarten)\n\u2022 Best Man: Harrison Blake (James' university rugby partner & oldest mate)\n\u2022 Bridesmaids: Maya Kapoor, Emma Watson, Lily Bennett\n\u2022 Groomsmen: Oliver Thomas, Benjamin Ross, Liam Davies\n\u2022 Master of Ceremonies: Robert Galati (Galati MC & Entertainment)\n\u2022 Celebrant: Sarah Jenkins Celebrancy\n\u2022 Lead Photographer: Priya Sharma Photography", "photoCaption": "The full bridal party & creative team at Fernwood Estate", "photoGradient": "linear-gradient(135deg, #2c241c 0%, #18130f 100%)", "photoIcon": "\ud83d\udc65"}, "honeymoonUpdates": {"id": "honeymoonUpdates", "title": "Honeymoon Updates", "subtitle": "Our journey through the Amalfi Coast, Tuscany & Swiss Alps", "status": "Published", "lastUpdated": "12 Oct 2026", "content": "Following our wedding celebrations, we will be flying off on our dream Italian and Alpine adventure!\n\nStarting with five sun-drenched days in Positano on the Amalfi Coast, driving through the rolling hills and vineyards of Chianti, and finishing with cozy cabin fires in Zermatt beneath the Matterhorn.\n\nThank you to everyone who contributed to our wishing well\u2014your kindness is funding our Vespa rental along the coastal cliff roads and our Tuscan sunset wine tasting!", "photoCaption": "Positano, Amalfi Coast \u2014 First stop on our honeymoon tour", "photoGradient": "linear-gradient(135deg, #1f2733 0%, #13171f 100%)", "photoIcon": "\u2708\ufe0f", "photos": [{"id": "hm_1", "title": "Sunset Vespa Ride along Positano Cliffs", "location": "Amalfi Coast, Italy", "caption": "Winding coastal cliff roads, fresh lemon granita, and the most breathtaking Mediterranean sunset. Thank you everyone for the wishing well gifts that funded our Vespa!", "icon": "\ud83d\udef5", "reactions": {"love": 32, "toast": 21, "stunning": 27, "voyage": 16}, "comments": [{"author": "Chloe Mitchell", "text": "You two look like movie stars!! Have the best time!", "time": "2 days ago"}, {"author": "Liam Davies", "text": "Sensational views mate! Enjoy a limoncello for us!", "time": "1 day ago"}]}, {"id": "hm_2", "title": "Vineyard Wine Tasting & Truffle Dinner", "location": "Chianti Hills, Tuscany", "caption": "Toasting with Chianti Classico overlooking rolling cypress hills. Still buzzing from our magical wedding night at Fernwood Estate!", "icon": "\ud83c\udf77", "reactions": {"love": 28, "toast": 36, "stunning": 19, "voyage": 12}, "comments": [{"author": "Maya Kapoor", "text": "Pure perfection! Sending so much love to you both!", "time": "18 hours ago"}]}, {"id": "hm_3", "title": "Alpine Chalet Fireplace & Matterhorn Views", "location": "Zermatt, Swiss Alps", "caption": "Watching the first winter snowflakes fall over the Matterhorn from our cozy alpine chalet. The perfect finale to our honeymoon journey.", "icon": "\ud83c\udfd4\ufe0f", "reactions": {"love": 41, "toast": 18, "stunning": 34, "voyage": 22}, "comments": [{"author": "Aunty Carol", "text": "Stay warm darlings! What a fairy tale honeymoon!", "time": "4 hours ago"}]}]}}, "weddingVault": {"storageUsedGB": 2.35, "storageTotalGB": 5.0, "expiryDate": "2027-11-14T23:59:59", "expiryDisplay": "14 Nov 2027 (1 Year Post-Wedding Included)", "accessControl": "couple_mc", "deletionRequested": false, "categories": [{"id": "cat_photos", "name": "High-Res Media & Photos", "size": "1.42 GB", "count": 284, "type": "Images / Videos", "locked": true}, {"id": "cat_audio", "name": "Audio Recordings & Music Cues", "size": "450 MB", "count": 18, "type": "Audio / MP3", "locked": true}, {"id": "cat_records", "name": "Finalized Guest & Seating Records", "size": "320 MB", "count": 14, "type": "Data Snapshot", "locked": true}, {"id": "cat_notes", "name": "Speeches, Vows & Love Notes", "size": "160 MB", "count": 32, "type": "Documents", "locked": true}, {"id": "cat_finance", "name": "Vendor Invoices & Contracts", "size": "20 MB", "count": 6, "type": "Financial", "locked": true}], "auditRecords": [{"id": "vr1", "date": "14 Nov 2026", "action": "Ceremony & Reception Media Uploaded", "size": "+1.42 GB"}, {"id": "vr2", "date": "15 Nov 2026", "action": "Seating & RSVP Master Database Frozen", "size": "+320 MB"}, {"id": "vr3", "date": "16 Nov 2026", "action": "Speech Audio & Love Notes Archived", "size": "+610 MB"}]}, "firstAnniversary": {"weddingDate": "2026-11-14", "anniversaryDate": "2027-11-14", "greetingTitle": "Happy 1st Anniversary, Sophie & James!", "greetingText": "One year ago today, surrounded by the mist-kissed hills of Fernwood Estate, you two promised forever. May the joy, laughter, and tender devotion of that breathtaking day continue to grow with each passing season. From all of us at Tap & Toast, here's to a lifetime of love and unforgettable celebrations.", "traditionalTheme": "Paper (Traditional) / Clocks (Modern)", "timeCapsuleNote": "Our promise on our wedding day was to always make each other laugh, no matter how busy life gets. Opening this today with so much gratitude!", "coupleReflection": "Looking back on Year 1 of marriage, our favorite memory was sitting on the verandah during sunset while everyone was dancing.", "memoryLinks": [{"id": "mem_photos", "title": "The Photo Gallery", "icon": "\ud83d\udcf8", "desc": "284 high-resolution celebration moments", "tab": "feed"}, {"id": "mem_notes", "title": "Guest Love Notes", "icon": "\ud83d\udc8c", "desc": "Heartfelt messages & blessings from family", "tab": "feed"}, {"id": "mem_music", "title": "First Dance & Song", "icon": "\ud83c\udfb5", "desc": "'Lover' by Taylor Swift & reception playlist", "tab": "overview"}, {"id": "mem_speeches", "title": "The Vows & Speeches", "icon": "\ud83d\udc8d", "desc": "Words spoken by Father of Bride & Best Man", "tab": "overview"}, {"id": "mem_seating", "title": "The Seating Journey", "icon": "\ud83e\ude91", "desc": "Table arrangements & memories of guests together", "tab": "seating"}], "guestWishes": [{"id": "aw_1", "author": "Chloe Mitchell", "time": "Yesterday", "text": "Happy 1st Anniversary Sophie & James! Can't believe it's been a whole year since the most magical night at Fernwood. Love you both so much! \ud83d\udc95"}, {"id": "aw_2", "author": "Liam & Jessica Taylor", "time": "2 days ago", "text": "Happy 1 Year Anniversary legends! Raising a glass of Pinot to many more decades of love and laughter! \ud83e\udd42"}]}};
+
+    window._tt_in_memory_state = null;
+    window._tt_in_memory_session = null;
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {
+        console.warn('localStorage read error', e);
+      }
+      if (window._tt_in_memory_state) return window._tt_in_memory_state;
+      return JSON.parse(JSON.stringify(SEED_DATA));
+    }
+
+    function saveState(state) {
+      window._tt_in_memory_state = state;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.warn('localStorage save error', e);
+      }
+      try {
+        if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'STATE_UPDATED', state: state }, '*');
+        }
+      } catch (e) {}
+    }
+
+    function getSession() {
+      let session = null;
+      try {
+        const raw = localStorage.getItem(SESSION_KEY);
+        if (raw) session = JSON.parse(raw);
+      } catch (e) {}
+      if (!session && window._tt_in_memory_session) session = window._tt_in_memory_session;
+      return session;
+    }
+
+    function setSession(sessionData) {
+      if (!sessionData.at) sessionData.at = Date.now();
+      window._tt_in_memory_session = sessionData;
+      try {
+        localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+      } catch (e) {}
+      try {
+        if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'SESSION_UPDATED', session: sessionData }, '*');
+        }
+      } catch (e) {}
+    }
+
+    function clearSession() {
+      window._tt_in_memory_session = null;
+      try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+    }
+
+    function handleDemobarNav(e, role, targetUrl) {
+      if (e && e.preventDefault) e.preventDefault();
+      try {
+        if (role === 'mc') {
+          setSession({ role: 'mc', email: 'robert@galati.demo', name: 'Robert Galati', businessName: 'Galati MC & Entertainment', keepSignedIn: true, at: Date.now() });
+        } else if (role === 'couple') {
+          setSession({ role: 'couple', email: 'sophie.james@demo.test', name: 'Sophie & James', keepSignedIn: true, at: Date.now() });
+        } else if (role === 'superadmin') {
+          setSession({ role: 'superadmin', email: 'admin@tapandtoast.demo', name: 'Platform Admin', keepSignedIn: true, at: Date.now() });
+        }
+      } catch (err) {}
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'NAVIGATE', url: targetUrl, role: role }, '*');
+        }
+      } catch (err) {}
+      window.location.href = targetUrl;
+    }
+
+    function resetDemoData() {
+      try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+      window._tt_in_memory_state = null;
+      showToast('Demo data successfully reset to seed state');
+      setTimeout(() => location.reload(), 300);
+    }
+
+    function showToast(msg, isSuccess = true) {
+      const toast = document.getElementById('toast-popup');
+      const text = document.getElementById('toast-msg');
+      const icon = document.getElementById('toast-icon');
+      if (!toast) return;
+      text.textContent = msg;
+      icon.textContent = isSuccess ? '✓' : '⚠️';
+      toast.style.display = 'flex';
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => {
+        toast.style.display = 'none';
+      }, 3200);
+    }
+
+    function escapeHtml(str) {
+      if (str == null) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    /* Global MC State */
+    let currentWeddingId = 'w1';
+    let currentFilter = 'all';
+    let currentCueSearch = '';
+    let currentGuestSearch = '';
+    let selectedTableId = 'head';
+
+    /* App Initialization */
+    window.addEventListener('DOMContentLoaded', () => {
+      updateClock();
+      setInterval(updateClock, 1000);
+      checkAuthAndRender();
+    });
+
+    function updateClock() {
+      const d = new Date();
+      const el = document.getElementById('phone-clock');
+      if (el) {
+        let hours = d.getHours();
+        let minutes = d.getMinutes();
+        el.textContent = `${hours}:${minutes < 10 ? '0' : ''}${minutes}`;
+      }
+    }
+
+    function checkAuthAndRender() {
+      const session = getSession();
+      const authView = document.getElementById('mc-mobile-auth');
+      const appHeader = document.getElementById('mc-app-header');
+      const weddingBanner = document.getElementById('mc-wedding-banner');
+      const bottomNav = document.getElementById('mc-bottom-nav');
+
+      if (session && session.role === 'mc') {
+        authView.style.display = 'none';
+        appHeader.style.display = 'flex';
+        weddingBanner.style.display = 'flex';
+        bottomNav.style.display = 'flex';
+        document.getElementById('mc-user-name').textContent = session.name || 'Robert Galati';
+        const initials = (session.name || 'RG').split(' ').map(x => x[0]).join('').substring(0,2).toUpperCase();
+        document.getElementById('mc-avatar').textContent = initials;
+        
+        renderAllPanes();
+        switchPane('pane-runsheet');
+      } else {
+        authView.style.display = 'flex';
+        appHeader.style.display = 'none';
+        weddingBanner.style.display = 'none';
+        bottomNav.style.display = 'none';
+        document.querySelectorAll('.mc-pane').forEach(p => p.classList.remove('active'));
+      }
+    }
+
+    /* Auth Handlers */
+    function switchAuthTab(tab) {
+      const tabLogin = document.getElementById('tab-login');
+      const tabReg = document.getElementById('tab-register');
+      const formLogin = document.getElementById('mc-login-form');
+      const formReg = document.getElementById('mc-register-form');
+
+      if (tab === 'login') {
+        tabLogin.classList.add('active');
+        tabReg.classList.remove('active');
+        formLogin.style.display = 'block';
+        formReg.style.display = 'none';
+      } else {
+        tabLogin.classList.remove('active');
+        tabReg.classList.add('active');
+        formLogin.style.display = 'none';
+        formReg.style.display = 'block';
+      }
+    }
+
+    function togglePasswordVisibility(id) {
+      const input = document.getElementById(id);
+      if (input) {
+        input.type = input.type === 'password' ? 'text' : 'password';
+      }
+    }
+
+    function handleQuickMCDemoLogin() {
+      const user = {
+        role: 'mc',
+        email: 'robert@galati.demo',
+        name: 'Robert Galati',
+        businessName: 'Galati MC & Entertainment',
+        keepSignedIn: true,
+        at: Date.now()
+      };
+      setSession(user);
+      showToast('Signed in as Robert Galati (MC)');
+      checkAuthAndRender();
+    }
+
+    function handleMCLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const remember = document.getElementById('login-remember').checked;
+      const user = {
+        role: 'mc',
+        email: email,
+        name: email.split('@')[0].replace('.', ' ').replace(/(^|\s)\S/g, l => l.toUpperCase()),
+        businessName: 'Professional MC Console',
+        keepSignedIn: remember,
+        at: Date.now()
+      };
+      setSession(user);
+      showToast('Welcome to MC Mobile Console');
+      checkAuthAndRender();
+    }
+
+    function handleMCRegister(e) {
+      e.preventDefault();
+      const name = document.getElementById('reg-name').value.trim();
+      const biz = document.getElementById('reg-biz').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const user = {
+        role: 'mc',
+        email: email,
+        name: name,
+        businessName: biz,
+        keepSignedIn: true,
+        at: Date.now()
+      };
+      setSession(user);
+      showToast('MC account registered successfully!');
+      checkAuthAndRender();
+    }
+
+    function handleSignOut() {
+      clearSession();
+      showToast('Signed out from MC Mobile');
+      checkAuthAndRender();
+    }
+
+    function openForgotModal(e) {
+      if (e) e.preventDefault();
+      showToast('Demo MC Login: robert@galati.demo / demo123 (or use 1-Click login)');
+    }
+
+    /* Pane Switcher */
+    function switchPane(paneId, btn) {
+      document.querySelectorAll('.mc-pane').forEach(p => p.classList.remove('active'));
+      const target = document.getElementById(paneId);
+      if (target) target.classList.add('active');
+
+      document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+      if (btn) {
+        btn.classList.add('active');
+      } else {
+        const matched = document.querySelector(`.nav-tab-btn[data-pane="${paneId}"]`);
+        if (matched) matched.classList.add('active');
+      }
+      document.getElementById('phone-content-scroll').scrollTop = 0;
+    }
+
+    function handleWeddingChange(wId) {
+      currentWeddingId = wId;
+      showToast('Loaded wedding schedule for ' + (wId === 'w1' ? 'Sophie & James' : wId === 'w2' ? 'Aisha & Marcus' : 'Elena & Mateo'));
+      renderAllPanes();
+    }
+
+    function renderAllPanes() {
+      renderRunSheet();
+      renderSeating();
+      renderGuests();
+      renderGigs();
+    }
+
+    /* --- RUN SHEET LOGIC --- */
+    function getActiveRunSheet() {
+      const state = loadState();
+      const wedding = (state.weddings || []).find(w => w.id === currentWeddingId) || (state.weddings && state.weddings[0]);
+      if (!wedding) return [];
+      if (wedding.privateRunSheet && wedding.privateRunSheet.length > 0) {
+        return wedding.privateRunSheet;
+      }
+      if (!wedding.runSheet) wedding.runSheet = [];
+      wedding.privateRunSheet = wedding.runSheet.map((rs, i) => ({
+        id: rs.id || 'cue_' + (i + 1),
+        time: rs.time || '16:00',
+        activity: rs.note ? rs.note.split(';')[0] : 'Wedding Cue Item',
+        notes: rs.note || 'Public schedule timing',
+        privateNotes: 'MC Cue Notes: check wireless mic and audio cue.',
+        done: !!rs.done
+      }));
+      saveState(state);
+      return wedding.privateRunSheet;
+    }
+
+    function renderRunSheet() {
+      const container = document.getElementById('mc-runsheet-list');
+      if (!container) return;
+      const allItems = getActiveRunSheet();
+
+      let items = allItems;
+      if (currentFilter === 'pending') items = items.filter(x => !x.done);
+      else if (currentFilter === 'done') items = items.filter(x => x.done);
+
+      if (currentCueSearch) {
+        const q = currentCueSearch.toLowerCase();
+        items = items.filter(x => (x.activity || '').toLowerCase().includes(q) || (x.notes || '').toLowerCase().includes(q) || (x.privateNotes || '').toLowerCase().includes(q));
+      }
+
+      if (items.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:12px;">No cues match the selected filter.</div>';
+        return;
+      }
+
+      container.innerHTML = items.map(item => {
+        const realIdx = allItems.indexOf(item);
+        return `
+          <div class="cue-card ${item.done ? 'done' : ''}" id="cue-card-${realIdx}">
+            <div class="cue-top-row">
+              <input type="checkbox" class="cue-checkbox" ${item.done ? 'checked' : ''} onchange="toggleCueDone(${realIdx}, this.checked)">
+              <span class="cue-time-badge">${escapeHtml(item.time)}</span>
+              <input type="text" class="cue-title-input" value="${escapeHtml(item.activity)}" onchange="updateCueField(${realIdx}, 'activity', this.value)">
+              <div class="cue-actions">
+                <button type="button" title="Move Up" onclick="moveCue(${realIdx}, -1)" ${realIdx === 0 ? 'disabled style="opacity:0.35;"' : ''}>▲</button>
+                <button type="button" title="Move Down" onclick="moveCue(${realIdx}, 1)" ${realIdx === allItems.length - 1 ? 'disabled style="opacity:0.35;"' : ''}>▼</button>
+                <button type="button" style="color:#b3261e;" title="Delete" onclick="deleteCue(${realIdx})">🗑️</button>
+              </div>
+            </div>
+
+            <!-- Public Notes -->
+            <div style="font-size:11.5px;color:var(--muted);padding-left:26px;">
+              <input type="text" class="text-input" style="padding:4px 8px;font-size:11.5px;background:#f9f6f0;" value="${escapeHtml(item.notes || '')}" placeholder="Public schedule note..." onchange="updateCueField(${realIdx}, 'notes', this.value)">
+            </div>
+
+            <!-- MC Cue Notes (Confidential) -->
+            <div class="mc-cue-notes-box">
+              <div class="mc-cue-notes-label">MC Cue Notes</div>
+              <input type="text" class="mc-cue-notes-input" value="${escapeHtml(item.privateNotes || '')}" placeholder="Private cue notes, microphone directions, audio prompts..." onchange="updateCueField(${realIdx}, 'privateNotes', this.value)">
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleCueDone(idx, isDone) {
+      const state = loadState();
+      const wedding = (state.weddings || []).find(w => w.id === currentWeddingId) || state.weddings[0];
+      const items = wedding.privateRunSheet || [];
+      if (items[idx]) {
+        items[idx].done = isDone;
+        saveState(state);
+        showToast(isDone ? 'Marked cue as completed' : 'Marked cue pending');
+        renderRunSheet();
+      }
+    }
+
+    function updateCueField(idx, field, value) {
+      const state = loadState();
+      const wedding = (state.weddings || []).find(w => w.id === currentWeddingId) || state.weddings[0];
+      const items = wedding.privateRunSheet || [];
+      if (items[idx]) {
+        items[idx][field] = value;
+        saveState(state);
+        showToast('Schedule cue updated');
+      }
+    }
+
+    function moveCue(idx, dir) {
+      const state = loadState();
+      const wedding = (state.weddings || []).find(w => w.id === currentWeddingId) || state.weddings[0];
+      const items = wedding.privateRunSheet || [];
+      const target = idx + dir;
+      if (target >= 0 && target < items.length) {
+        const temp = items[idx];
+        items[idx] = items[target];
+        items[target] = temp;
+        saveState(state);
+        renderRunSheet();
+      }
+    }
+
+    function deleteCue(idx) {
+      if (!confirm('Delete this cue from the schedule?')) return;
+      const state = loadState();
+      const wedding = (state.weddings || []).find(w => w.id === currentWeddingId) || state.weddings[0];
+      wedding.privateRunSheet.splice(idx, 1);
+      saveState(state);
+      showToast('Cue removed from schedule');
+      renderRunSheet();
+    }
+
+    function filterRunSheet(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('#rs-filter-pills button').forEach(b => {
+        b.className = 'btn btn-outline btn-sm';
+      });
+      if (btn) btn.className = 'btn btn-gold btn-sm';
+      renderRunSheet();
+    }
+
+    function handleSearchCues(q) {
+      currentCueSearch = q;
+      renderRunSheet();
+    }
+
+    function openAddCueModal() {
+      document.getElementById('add-cue-sheet').style.display = 'flex';
+    }
+
+    function closeAddCueModal() {
+      document.getElementById('add-cue-sheet').style.display = 'none';
+    }
+
+    function handleSaveNewCue(e) {
+      e.preventDefault();
+      const time = document.getElementById('new-cue-time').value.trim();
+      const title = document.getElementById('new-cue-title').value.trim();
+      const pubNotes = document.getElementById('new-cue-public').value.trim();
+      const privNotes = document.getElementById('new-cue-private').value.trim();
+
+      const state = loadState();
+      const wedding = (state.weddings || []).find(w => w.id === currentWeddingId) || state.weddings[0];
+      if (!wedding.privateRunSheet) wedding.privateRunSheet = [];
+
+      wedding.privateRunSheet.push({
+        id: 'cue_' + Date.now(),
+        time: time || '19:00',
+        activity: title || 'New MC Cue',
+        notes: pubNotes,
+        privateNotes: privNotes || 'MC Cue Notes: check wireless mic level.',
+        done: false
+      });
+
+      saveState(state);
+      closeAddCueModal();
+      showToast('Added cue to schedule');
+      renderRunSheet();
+    }
+
+    function openBroadcastModal() {
+      document.getElementById('broadcast-sheet').style.display = 'flex';
+    }
+
+    function closeBroadcastModal() {
+      document.getElementById('broadcast-sheet').style.display = 'none';
+    }
+
+    function handleSaveBroadcast(e) {
+      e.preventDefault();
+      const text = document.getElementById('broadcast-input').value.trim();
+      document.getElementById('mc-broadcast-text').textContent = text;
+      closeBroadcastModal();
+      showToast('Emergency alert broadcasted');
+    }
+
+    /* --- SEATING & FLOOR PLAN LOGIC --- */
+    function renderSeating() {
+      const state = loadState();
+      const tables = state.tables || [];
+      const guests = state.guests || [];
+
+      // Tables pill list
+      const pillRow = document.getElementById('table-pill-row');
+      if (pillRow) {
+        pillRow.innerHTML = tables.map(t => `
+          <button type="button" class="table-pill-btn ${t.id === selectedTableId ? 'active' : ''}" onclick="selectTable('${t.id}')">
+            ${escapeHtml(t.name)} (${guests.filter(g => g.tableId === t.id).length}/${t.capacity})
+          </button>
+        `).join('');
+      }
+
+      // Selected table view
+      const activeTable = tables.find(t => t.id === selectedTableId) || tables[0];
+      if (activeTable) {
+        document.getElementById('st-name').textContent = activeTable.name;
+        const seated = guests.filter(g => g.tableId === activeTable.id);
+        document.getElementById('st-capacity').textContent = `${seated.length} / ${activeTable.capacity} Seated`;
+        
+        const listEl = document.getElementById('st-guests-list');
+        if (seated.length === 0) {
+          listEl.innerHTML = '<div style="color:var(--muted);font-style:italic;">No guests seated at this table yet.</div>';
+        } else {
+          listEl.innerHTML = seated.map((g, i) => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:#f9f6f0;border-radius:6px;border:1px solid #eee5d8;">
+              <span style="font-weight:600;">${i+1}. ${escapeHtml(g.name)}</span>
+              <div style="display:flex;gap:4px;align-items:center;">
+                ${g.dietary && g.dietary !== 'None' ? `<span class="pill pill-gold" style="font-size:9.5px;">${escapeHtml(g.dietary)}</span>` : ''}
+                <button type="button" class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:10px;" onclick="unseatGuest('${g.id}')">Unseat</button>
+              </div>
+            </div>
+          `).join('');
+        }
+      }
+
+      // Metrics
+      const totalSeated = guests.filter(g => g.tableId).length;
+      document.getElementById('seat-metric-seated').textContent = `${totalSeated} / ${guests.length}`;
+      const unassigned = guests.filter(g => !g.tableId);
+      document.getElementById('seat-metric-unassigned').textContent = `${unassigned.length} Pending`;
+      document.getElementById('unassigned-count-pill').textContent = `${unassigned.length} to seat`;
+
+      // Render Unassigned Guests with matched 32px height and Seat button
+      const unassignedList = document.getElementById('unassigned-guests-list');
+      if (unassigned.length === 0) {
+        unassignedList.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:10px;">All guests have been allocated to tables!</div>';
+      } else {
+        unassignedList.innerHTML = unassigned.slice(0, 10).map(g => `
+          <div style="background:#ffffff;border:1px solid #ebd8c0;border-radius:8px;padding:8px 10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <strong style="font-size:12.5px;color:var(--ink);display:block;">${escapeHtml(g.name)}</strong>
+                <span style="font-size:11px;color:var(--muted);">${g.plusOne ? '+1 guest' : 'No plus-one'} ${g.dietary && g.dietary !== 'None' ? '· ' + g.dietary : ''}</span>
+              </div>
+            </div>
+            <!-- Matched 32px height container and Seat button -->
+            <div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
+              <select class="text-input" style="height:32px;padding:0 8px;font-size:12px;flex:1;border-radius:6px;border:1px solid #dcd3c8;background:#ffffff;box-sizing:border-box;" onchange="if(this.value){assignGuestToTable('${g.id}', this.value);this.value='';}">
+                <option value="">Seat at Table...</option>
+                ${tables.map(t => `<option value="${t.id}">${t.name} (${guests.filter(x => x.tableId === t.id).length}/${t.capacity})</option>`).join('')}
+              </select>
+              <button type="button" class="btn btn-gold" style="height:32px;padding:0 12px;font-size:12px;font-weight:600;border-radius:6px;box-sizing:border-box;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;" onclick="autoSeatGuest('${g.id}')" title="Seat guest at next free seat">Seat</button>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function selectTable(tblId) {
+      selectedTableId = tblId;
+      renderSeating();
+    }
+
+    function assignGuestToTable(guestId, tableId) {
+      const state = loadState();
+      const guest = (state.guests || []).find(g => g.id === guestId);
+      if (guest) {
+        guest.tableId = tableId;
+        saveState(state);
+        showToast(`Seated ${guest.name}`);
+        renderSeating();
+      }
+    }
+
+    function autoSeatGuest(guestId) {
+      const state = loadState();
+      const tables = state.tables || [];
+      const guests = state.guests || [];
+      const targetTable = tables.find(t => guests.filter(g => g.tableId === t.id).length < t.capacity);
+      if (targetTable) {
+        assignGuestToTable(guestId, targetTable.id);
+      } else {
+        showToast('All tables are at full capacity!', false);
+      }
+    }
+
+    function unseatGuest(guestId) {
+      const state = loadState();
+      const guest = (state.guests || []).find(g => g.id === guestId);
+      if (guest) {
+        guest.tableId = null;
+        saveState(state);
+        showToast(`Unseated ${guest.name}`);
+        renderSeating();
+      }
+    }
+
+    /* --- GUESTS DIRECTORY LOGIC --- */
+    function renderGuests() {
+      const state = loadState();
+      let guests = state.guests || [];
+      const tables = state.tables || [];
+
+      if (currentGuestSearch) {
+        const q = currentGuestSearch.toLowerCase();
+        guests = guests.filter(g => (g.name || '').toLowerCase().includes(q) || (g.dietary || '').toLowerCase().includes(q));
+      }
+
+      document.getElementById('guest-count-label').textContent = `Showing ${guests.length} Guests`;
+      const container = document.getElementById('mc-guest-directory-list');
+      if (!container) return;
+
+      container.innerHTML = guests.slice(0, 50).map(g => {
+        const table = tables.find(t => t.id === g.tableId);
+        return `
+          <div style="background:#ffffff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <strong style="font-size:12.5px;color:var(--ink);">${escapeHtml(g.name)}</strong>
+              <div style="font-size:11px;color:var(--muted);">${g.plusOne ? '+1 guest' : 'Individual'} ${g.dietary && g.dietary !== 'None' ? '· ' + g.dietary : ''}</div>
+            </div>
+            <span class="pill ${table ? 'pill-dark' : 'pill-gold'}" style="font-size:10px;">
+              ${table ? escapeHtml(table.name) : 'Unassigned'}
+            </span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function handleSearchGuests(q) {
+      currentGuestSearch = q;
+      renderGuests();
+    }
+
+    /* --- GIGS & MULTI-WEDDING LOGIC --- */
+    function renderGigs() {
+      const state = loadState();
+      const weddings = state.weddings || [];
+      const container = document.getElementById('mc-weddings-gigs-list');
+      if (!container) return;
+
+      container.innerHTML = weddings.map(w => `
+        <div class="card" style="padding:12px;border-left:4px solid ${w.id === currentWeddingId ? 'var(--gold)' : '#c0b4a6'};">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+            <div>
+              <h4 style="font-size:13.5px;font-weight:700;color:var(--ink);">${escapeHtml(w.couple)}</h4>
+              <p style="font-size:11.5px;color:var(--muted);">${escapeHtml(w.date)} &bull; ${escapeHtml(w.venue)}</p>
+            </div>
+            <span class="pill ${w.id === currentWeddingId ? 'pill-green' : 'pill-gold'}">${w.id === currentWeddingId ? 'Active Live' : 'Booked'}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:11.5px;color:var(--muted);">
+            <span>MC Fee: <strong>$2,400 AUD</strong> (Deposit Paid)</span>
+            ${w.id !== currentWeddingId ? `<button type="button" class="btn btn-outline btn-sm" onclick="handleWeddingChange('${w.id}')">Switch to Wedding</button>` : '<span style="color:var(--gold-hover);font-weight:700;">Currently Active</span>'}
+          </div>
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>

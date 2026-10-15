@@ -2144,7 +2144,7 @@ body {
       <a href="login.html" class="tt-demobar-link">Sign In</a>
       <a href="register.html" class="tt-demobar-link">Register</a>
       <a href="guest-mobile.html" class="tt-demobar-link">Guest Mobile</a>
-      <a href="guest-web.html" class="tt-demobar-link">Guest Web</a>
+      <a href="mc-mobile.html" class="tt-demobar-link" onclick="handleDemobarNav(event, 'mc', 'mc-mobile.html')">MC Mobile</a>
       <a href="couple.html" class="tt-demobar-link" onclick="handleDemobarNav(event, 'couple', 'couple.html')">Couple Dashboard</a>
       <a href="mc.html" class="tt-demobar-link active" onclick="handleDemobarNav(event, 'mc', 'mc.html')">MC Pro</a>
       <a href="superadmin.html" class="tt-demobar-link" onclick="handleDemobarNav(event, 'superadmin', 'superadmin.html')">Super Admin</a>
@@ -3255,7 +3255,7 @@ body {
             <textarea id="mc-new-notes" class="text-input" rows="2" placeholder="Public schedule guidance or location details..."></textarea>
           </div>
           <div class="field-group">
-            <label class="field-label" style="color:var(--gold-hover);">🔒 Private MC Cue Notes (Confidential)</label>
+            <label class="field-label" style="color:var(--gold-hover);">MC Cue Notes</label>
             <textarea id="mc-new-privatenotes" class="text-input" rows="2" placeholder="Private cues, technical sound directions, contact prompts..." style="border-color:#d4b483;background:#fcfaf5;"></textarea>
           </div>
         </div>
@@ -4804,8 +4804,7 @@ function renderRunSheet() {
 
         <div class="private-cue-box">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
-            <span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--gold-hover);">🔒 Private MC Cue Notes (Confidential)</span>
-            <span style="font-size:10.5px;color:var(--muted);">Restricted to MC &amp; Couple</span>
+            <span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--gold-hover);">MC Cue Notes</span>
           </div>
           <input type="text" class="text-input" style="font-size:12px;line-height:1.4;background:transparent;border-color:#e3d4bf;color:#453423;padding:5px 8px;" value="${escapeHtml(item.privateNotes || '')}" placeholder="Private cues, technical sound directions, contact prompts..." onchange="updateRunSheetField(${realIdx}, 'privateNotes', this.value)">
         </div>
@@ -5027,13 +5026,13 @@ function renderMCSeatingFloor() {
         </div>
         ${g.dietary && g.dietary !== 'None' ? `<span class="tt-pill warm" style="font-size:9.5px;padding:2px 6px;">${escapeHtml(g.dietary)}</span>` : ''}
       </div>
-      <div style="display:flex;gap:6px;">
-        <select class="text-input" style="padding:4px 6px;font-size:11.5px;flex:1;" onchange="mcAssignGuestToSeat('${g.id}', this.value, 0)">
+      <div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
+        <select class="text-input" style="height:32px;padding:0 8px;font-size:12px;flex:1;border-radius:6px;border:1px solid #dcd3c8;background:#ffffff;box-sizing:border-box;" onchange="mcAssignGuestToSeat('${g.id}', this.value, 0)">
           <option value="">Seat at Table...</option>
           <option value="head">Head Table</option>
           ${roundTables.map(tbl => `<option value="${tbl.id}">${tbl.name} (${state.guests.filter(x => x.tableId === tbl.id).length}/${tbl.capacity})</option>`).join('')}
         </select>
-        <button type="button" class="btn btn-gold btn-xs" style="padding:4px 8px;" onclick="mcAutoAssignGuest('${g.id}')">Auto</button>
+        <button type="button" class="btn btn-gold" style="height:32px;padding:0 12px;font-size:12px;font-weight:600;border-radius:6px;box-sizing:border-box;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;" onclick="mcAutoAssignGuest('${g.id}')" title="Seat guest at next free seat">Seat</button>
       </div>
     </div>
   `).join('');
