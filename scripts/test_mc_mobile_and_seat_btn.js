@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-console.log('=== VERIFYING MC MOBILE & SEAT BUTTON & MC CUE NOTES ===');
+console.log('=== VERIFYING MC MOBILE ADVANCED ARCHITECTURE ===');
 
 // 1. Check couple.html Seat button and select height
 const coupleHtml = fs.readFileSync('couple.html', 'utf8');
@@ -31,7 +31,7 @@ if (mcHtml.includes('Private MC Cue Notes (Confidential)')) {
 }
 console.log('PASS [2]: mc.html has Seat button, matched 32px select, and clean MC Cue Notes label!');
 
-// 3. Check mc-mobile.html exists and has all features
+// 3. Check mc-mobile.html exists and has all requested features
 if (!fs.existsSync('mc-mobile.html')) {
   console.error('FAIL: mc-mobile.html does not exist');
   process.exit(1);
@@ -47,20 +47,40 @@ const requiredStrings = [
   'mc-login-form',
   'mc-register-form',
   'MC Cue Notes',
-  'pane-runsheet',
-  'pane-seating',
-  'pane-guests',
-  'pane-venue',
-  'pane-gigs',
-  '>Seat</button>'
+  // Requirement 1: Profile in bottom tab / settings with Sign Out
+  'home-settings',
+  'Sign Out of MC Console',
+  // Requirement 2: 3-way Seating (Guest List, Seating Arrangement with circular diagram Image 3, Unseated Guests)
+  'seg-btn-guestlist',
+  'seg-btn-seatingarr',
+  'seg-btn-unseated',
+  'round-table-diagram',
+  'seat-dot',
+  'floorplan-dotted-canvas',
+  '>Seat</button>',
+  // Requirement 4: Home page with all weddings opening console on click
+  'home-weddings',
+  'openWeddingConsole',
+  'mc-back-btn',
+  // Requirement 5: Bottom nav with "All Weddings, Calendar, Invoice, Team, Settings" and Chatbot
+  'mc-home-bottom-nav',
+  'All Weddings',
+  'Calendar',
+  'Invoice',
+  'Team',
+  'Settings',
+  'mc-chat-fab',
+  'mc-chat-panel',
+  'generateMCJoeyResponse'
 ];
+
 for (const s of requiredStrings) {
   if (!mcMobileHtml.includes(s)) {
-    console.error(`FAIL: mc-mobile.html missing required feature: ${s}`);
+    console.error(`FAIL: mc-mobile.html missing required feature: "${s}"`);
     process.exit(1);
   }
 }
-console.log('PASS [3]: mc-mobile.html contains luxury 402x874 chassis, full MC auth, run sheet, and seating!');
+console.log('PASS [3]: mc-mobile.html contains Home page, 5 bottom tabs, Joey Chatbot, and Image 3 circular seating!');
 
 // 4. Check App.tsx
 const appTsx = fs.readFileSync('src/App.tsx', 'utf8');
@@ -81,4 +101,4 @@ for (const f of filesToCheckDemobar) {
 }
 console.log('PASS [5]: All 7 portal pages have mc-mobile.html in their top demobar navigation!');
 
-console.log('\nALL 5 VERIFICATION SUITES PASSED FLAWLESSLY!');
+console.log('\nALL 5 ADVANCED VERIFICATION SUITES PASSED FLAWLESSLY!');

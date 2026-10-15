@@ -17,7 +17,7 @@ def build_mc_mobile_html():
   <title>Tap &amp; Toast — MC Mobile Console (402×874)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {{
       --ink: #1c1511;
@@ -146,7 +146,7 @@ def build_mc_mobile_html():
       color: #fff;
     }}
 
-    /* Phone Stage / Mockup Chassis */
+    /* Phone Stage / Mockup Chassis (402px x 874px) */
     .mobile-stage {{
       flex: 1;
       display: flex;
@@ -237,98 +237,113 @@ def build_mc_mobile_html():
       border-radius: 1px;
     }}
 
-    /* App Header */
-    .mc-mobile-header {{
-      background: #1c1511;
+    /* Professional Home Header (Level 1) */
+    .mc-home-header {{
+      background: #19130f;
       color: #ffffff;
-      padding: 10px 14px;
+      padding: 12px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid #33261e;
       flex-shrink: 0;
     }}
-    .mc-header-left {{
+    .mc-home-brand {{
       display: flex;
       align-items: center;
       gap: 10px;
     }}
-    .mc-avatar-circle {{
+    .mc-home-logo-box {{
       width: 34px;
       height: 34px;
-      border-radius: 50%;
-      background: #2e231b;
+      border-radius: 6px;
+      background: #2b2018;
       border: 1.5px solid var(--gold);
       color: var(--gold);
       display: grid;
       place-items: center;
+      font-family: var(--font-heading);
+      font-size: 17px;
       font-weight: 700;
-      font-size: 13px;
+      box-shadow: 0 2px 8px rgba(189,150,97,0.25);
     }}
-    .mc-header-meta {{
+    .mc-home-title-box {{
       display: flex;
       flex-direction: column;
     }}
-    .mc-header-name {{
-      font-size: 13.5px;
+    .mc-home-title {{
+      font-family: var(--font-heading);
+      font-size: 15px;
       font-weight: 700;
       color: #ffffff;
-      line-height: 1.2;
+      letter-spacing: 0.3px;
     }}
-    .mc-header-role {{
-      font-size: 10.5px;
+    .mc-home-subtitle {{
+      font-size: 10px;
       color: var(--gold-light);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }}
-    .mc-signout-btn {{
-      background: #2a2018;
-      border: 1px solid #453426;
-      color: #dfc194;
-      font-size: 11px;
-      padding: 5px 9px;
-      border-radius: 6px;
-      cursor: pointer;
       font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
     }}
-    .mc-signout-btn:hover {{
-      background: #3b2d22;
-      color: #ffffff;
+    .mc-home-badge {{
+      background: #38281a;
+      color: #dfc194;
+      border: 1px solid #5a422d;
+      font-size: 10.5px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: 700;
     }}
 
-    /* Wedding Selector Banner */
-    .mc-wedding-banner {{
-      background: #271f18;
-      border-bottom: 1px solid #3d3024;
-      padding: 7px 12px;
+    /* Active Wedding Console Header (Level 2) */
+    .mc-wedding-header {{
+      background: #19130f;
+      color: #ffffff;
+      padding: 9px 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
+      border-bottom: 1px solid #33261e;
       flex-shrink: 0;
     }}
-    .mc-wedding-select {{
-      background: #17120e;
-      color: #f7ede1;
-      border: 1px solid #544131;
-      border-radius: 6px;
-      padding: 5px 8px;
+    .mc-back-btn {{
+      background: #2b2018;
+      border: 1px solid #4a382a;
+      color: #dfc194;
       font-size: 11.5px;
       font-weight: 600;
-      flex: 1;
+      padding: 5px 9px;
+      border-radius: 6px;
       cursor: pointer;
-      outline: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
     }}
-    .mc-wedding-badge {{
-      background: #473215;
-      color: #f2cb7b;
-      border: 1px solid #6b4d24;
-      font-size: 10px;
-      padding: 3px 7px;
-      border-radius: 12px;
+    .mc-back-btn:hover {{
+      background: #3d2d20;
+      color: #ffffff;
+    }}
+    .mc-wedding-info {{
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }}
+    .mc-wedding-name {{
+      font-size: 13px;
       font-weight: 700;
-      white-space: nowrap;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }}
+    .mc-wedding-live-pill {{
+      font-size: 9.5px;
+      color: #7ce382;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
     }}
 
     /* Main Scrollable Content Container */
@@ -340,9 +355,10 @@ def build_mc_mobile_html():
       background: var(--cream);
       display: flex;
       flex-direction: column;
+      position: relative;
     }}
 
-    /* Bottom Navigation Bar */
+    /* Bottom Navigation Bars */
     .phone-bottom-nav {{
       background: #181310;
       border-top: 1px solid #33261e;
@@ -361,10 +377,10 @@ def build_mc_mobile_html():
       flex-direction: column;
       align-items: center;
       gap: 3px;
-      font-size: 10px;
+      font-size: 9.5px;
       font-weight: 600;
       cursor: pointer;
-      padding: 4px 8px;
+      padding: 4px 6px;
       border-radius: 8px;
       transition: all 0.15s ease;
       flex: 1;
@@ -440,11 +456,6 @@ def build_mc_mobile_html():
     }}
     .btn-outline:hover {{
       background: var(--cream-dark);
-    }}
-    .btn-danger {{
-      background: #fdf2f2;
-      color: #b3261e;
-      border-color: #f1b3b3;
     }}
     .btn-sm {{
       padding: 5px 10px;
@@ -585,29 +596,240 @@ def build_mc_mobile_html():
       width: 100%;
     }}
 
-    /* Seating Circular Preview */
-    .table-badge-row {{
+    /* 3-Way Seating Segment Switcher (Requirement 2) */
+    .seating-segment-bar {{
+      display: flex;
+      background: #ece5d9;
+      border-radius: 8px;
+      padding: 3px;
+      gap: 3px;
+      margin-bottom: 12px;
+    }}
+    .seating-segment-btn {{
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 7px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }}
+    .seating-segment-btn.active {{
+      background: #ffffff;
+      color: var(--ink);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }}
+
+    /* Circular Table Canvas & Diagram (Image 3) */
+    .floorplan-dotted-canvas {{
+      background-color: #faf9f6;
+      background-image: radial-gradient(#d5cbbe 1.2px, transparent 1.2px);
+      background-size: 16px 16px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 36px 16px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }}
+    .round-table-diagram {{
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      border: 2px solid var(--gold);
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    }}
+    .round-table-name {{
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+      text-align: center;
+      padding: 0 8px;
+      line-height: 1.2;
+    }}
+    .round-table-count {{
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 3px;
+      font-weight: 600;
+    }}
+    .seat-dot {{
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #1c1511;
+      color: #dfc194;
+      font-size: 9.5px;
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+      border: 1.5px solid #2e231b;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+      z-index: 5;
+    }}
+    .seat-dot:hover {{
+      transform: scale(1.18);
+      background: #3b2c21;
+    }}
+    .seat-dot.empty {{
+      background: #ffffff;
+      border: 1.5px dashed #c4b5a0;
+      color: #b5a48e;
+      box-shadow: none;
+    }}
+
+    /* Floating Joey Chatbot Button & Panel (Requirement 5) */
+    .mc-chat-fab {{
+      position: absolute;
+      bottom: 74px;
+      right: 14px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #1c1511;
+      border: 2px solid var(--gold);
+      color: var(--gold);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+      z-index: 120;
+      transition: transform 0.15s ease;
+    }}
+    .mc-chat-fab:hover {{
+      transform: scale(1.08);
+      background: #2b211a;
+    }}
+    .mc-chat-fab-pulse {{
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: #2e7d32;
+      border: 2px solid #1c1511;
+      border-radius: 50%;
+      top: 1px;
+      right: 1px;
+    }}
+
+    /* Chat Panel inside Mockup Frame */
+    .mc-chat-panel {{
+      position: absolute;
+      top: 42px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #ffffff;
+      z-index: 150;
+      display: none;
+      flex-direction: column;
+      border-radius: 0 0 42px 42px;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }}
+    .mc-chat-header {{
+      background: #181310;
+      color: #ffffff;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #33261e;
+      flex-shrink: 0;
+    }}
+    .mc-chat-title-wrap {{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }}
+    .mc-chat-avatar {{
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #2e231b;
+      border: 1.5px solid var(--gold);
+      display: grid;
+      place-items: center;
+      color: var(--gold);
+      font-size: 15px;
+    }}
+    .mc-chat-body {{
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #fbf9f6;
+    }}
+    .chat-bubble {{
+      max-width: 82%;
+      padding: 9px 12px;
+      border-radius: 12px;
+      font-size: 12.5px;
+      line-height: 1.4;
+    }}
+    .chat-bubble-bot {{
+      background: #ffffff;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      align-self: flex-start;
+      border-bottom-left-radius: 3px;
+    }}
+    .chat-bubble-user {{
+      background: #1c1511;
+      color: #ffffff;
+      align-self: flex-end;
+      border-bottom-right-radius: 3px;
+    }}
+    .chat-chips-row {{
       display: flex;
       gap: 6px;
       overflow-x: auto;
-      padding-bottom: 4px;
+      padding: 6px 14px;
+      background: #f4ede3;
+      border-top: 1px solid var(--line);
       scrollbar-width: none;
     }}
-    .table-pill-btn {{
+    .chat-chip {{
       background: #ffffff;
-      border: 1.5px solid var(--line-strong);
-      border-radius: 18px;
-      padding: 6px 12px;
-      font-size: 11.5px;
-      font-weight: 700;
+      border: 1px solid var(--line-strong);
+      padding: 4px 9px;
+      border-radius: 14px;
+      font-size: 11px;
+      font-weight: 600;
       color: var(--ink);
       white-space: nowrap;
       cursor: pointer;
     }}
-    .table-pill-btn.active {{
+    .chat-chip:hover {{
       background: var(--gold);
       border-color: var(--gold);
       color: #140f0c;
+    }}
+    .mc-chat-footer {{
+      padding: 10px 14px;
+      background: #ffffff;
+      border-top: 1px solid var(--line);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
     }}
 
     /* Auth Screen Inside Mobile Chassis */
@@ -791,27 +1013,31 @@ def build_mc_mobile_html():
         </div>
       </div>
 
-      <!-- App Header (When Logged In) -->
-      <header class="mc-mobile-header" id="mc-app-header" style="display:none;">
-        <div class="mc-header-left">
-          <div class="mc-avatar-circle" id="mc-avatar">RG</div>
-          <div class="mc-header-meta">
-            <span class="mc-header-name" id="mc-user-name">Robert Galati</span>
-            <span class="mc-header-role">🎧 Master of Ceremonies</span>
+      <!-- Level 1: Master Home Header (Professional Branding) -->
+      <header class="mc-home-header" id="mc-home-header" style="display:none;">
+        <div class="mc-home-brand">
+          <div class="mc-home-logo-box">T</div>
+          <div class="mc-home-title-box">
+            <span class="mc-home-title">Tap &amp; Toast <span style="color:var(--gold);">MC Pro</span></span>
+            <span class="mc-home-subtitle">Executive MC Console</span>
           </div>
         </div>
-        <button type="button" class="mc-signout-btn" onclick="handleSignOut()">Sign Out</button>
+        <span class="mc-home-badge" id="mc-home-active-badge">🟢 1 LIVE TODAY</span>
       </header>
 
-      <!-- Wedding Selector & Live Status Banner -->
-      <div class="mc-wedding-banner" id="mc-wedding-banner" style="display:none;">
-        <select class="mc-wedding-select" id="mc-wedding-selector" onchange="handleWeddingChange(this.value)">
-          <option value="w1">💍 Sophie &amp; James (Fernwood Estate · Active)</option>
-          <option value="w2">💍 Aisha &amp; Marcus (Belgenny Farm · Upcoming)</option>
-          <option value="w3">💍 Elena &amp; Mateo (Bendooley Estate · Draft)</option>
-        </select>
-        <span class="mc-wedding-badge" id="mc-wedding-badge">LIVE RUN SHEET</span>
-      </div>
+      <!-- Level 2: Active Wedding Console Header (With Back to All Weddings) -->
+      <header class="mc-wedding-header" id="mc-wedding-header" style="display:none;">
+        <button type="button" class="mc-back-btn" onclick="navigateToHome('home-weddings')">
+          ← All Weddings
+        </button>
+        <div class="mc-wedding-info">
+          <span class="mc-wedding-name" id="mc-active-wedding-title">💍 Sophie &amp; James</span>
+          <span class="mc-wedding-live-pill" id="mc-active-wedding-sub">🟢 LIVE CONSOLE</span>
+        </div>
+        <div style="width:75px;text-align:right;">
+          <span class="pill pill-gold" style="font-size:9.5px;padding:2px 6px;" id="mc-quick-day-pill">Nov 14</span>
+        </div>
+      </header>
 
       <!-- Scrollable Main Content -->
       <div class="phone-content-scroll" id="phone-content-scroll">
@@ -852,7 +1078,6 @@ def build_mc_mobile_html():
                 </label>
                 <a href="javascript:void(0)" onclick="openForgotModal(event)" style="color:var(--gold-light);text-decoration:none;">Forgot?</a>
               </div>
-              <div id="login-error-box" style="display:none;color:#ff8585;font-size:11px;margin-bottom:8px;background:#381616;padding:6px 8px;border-radius:4px;border:1px solid #702626;"></div>
               <button type="submit" class="btn btn-gold btn-block" style="padding:10px;font-size:12.5px;">Sign In to Console</button>
             </form>
 
@@ -879,8 +1104,135 @@ def build_mc_mobile_html():
           </div>
         </div>
 
-        <!-- ================= PANE 1: RUN SHEET ================= -->
-        <div class="mc-pane" id="pane-runsheet">
+        <!-- ================= LEVEL 1: MASTER HOME PANES ================= -->
+
+        <!-- Home Pane 1: ALL WEDDINGS (Requirement 4) -->
+        <div class="mc-pane" id="home-weddings">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <h2 style="font-family:var(--font-heading);font-size:18px;color:var(--ink);">Assigned Weddings</h2>
+              <p style="font-size:11.5px;color:var(--muted);">Select a wedding to enter live run sheet &amp; floor plan</p>
+            </div>
+            <span class="pill pill-gold" id="home-weddings-count-pill">3 Active</span>
+          </div>
+
+          <div id="home-weddings-card-list" style="display:flex;flex-direction:column;gap:12px;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Home Pane 2: CALENDAR -->
+        <div class="mc-pane" id="home-calendar">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <h2 style="font-family:var(--font-heading);font-size:18px;color:var(--ink);">MC Gigs &amp; Calendar</h2>
+              <p style="font-size:11.5px;color:var(--muted);">Upcoming call times, rehearsals &amp; bookings</p>
+            </div>
+            <span class="pill pill-green">2026 / 2027</span>
+          </div>
+
+          <div class="card" style="padding:12px;">
+            <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;color:var(--ink);">📅 Upcoming Schedule Overview</div>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#fbf8f3;border-radius:8px;border-left:3px solid var(--gold);">
+                <div>
+                  <strong>Sat, 14 Nov 2026</strong> &bull; 13:30 Call Time
+                  <div style="font-size:11px;color:var(--muted);">Sophie &amp; James &bull; Fernwood Estate</div>
+                </div>
+                <span class="pill pill-green">Today</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#fbf8f3;border-radius:8px;border-left:3px solid #8e7c6b;">
+                <div>
+                  <strong>Sun, 02 May 2027</strong> &bull; 14:00 Call Time
+                  <div style="font-size:11px;color:var(--muted);">Aisha &amp; Marcus &bull; Doltone House</div>
+                </div>
+                <span class="pill pill-gold">Confirmed</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#fbf8f3;border-radius:8px;border-left:3px solid #8e7c6b;">
+                <div>
+                  <strong>Sun, 20 Jun 2027</strong> &bull; 13:30 Call Time
+                  <div style="font-size:11px;color:var(--muted);">Emma &amp; Tom &bull; Dunbar House</div>
+                </div>
+                <span class="pill pill-dark">Upcoming</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Home Pane 3: INVOICE -->
+        <div class="mc-pane" id="home-invoice">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <h2 style="font-family:var(--font-heading);font-size:18px;color:var(--ink);">Invoices &amp; Earnings</h2>
+              <p style="font-size:11.5px;color:var(--muted);">Payment milestones, contracts &amp; receipts</p>
+            </div>
+            <span class="pill pill-gold">Total: $7,400 AUD</span>
+          </div>
+
+          <div id="home-invoice-list" style="display:flex;flex-direction:column;gap:8px;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Home Pane 4: TEAM -->
+        <div class="mc-pane" id="home-team">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <h2 style="font-family:var(--font-heading);font-size:18px;color:var(--ink);">Event Crew &amp; Team</h2>
+              <p style="font-size:11.5px;color:var(--muted);">MC associates, sound engineers &amp; technicians</p>
+            </div>
+            <span class="pill pill-green">3 Active Crew</span>
+          </div>
+
+          <div id="home-team-list" style="display:flex;flex-direction:column;gap:8px;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Home Pane 5: SETTINGS / PROFILE (Requirement 1) -->
+        <div class="mc-pane" id="home-settings">
+          <div class="card" style="text-align:center;padding:20px 14px;">
+            <div style="width:58px;height:58px;border-radius:50%;background:#2e231b;border:2px solid var(--gold);color:var(--gold);display:grid;place-items:center;font-size:22px;font-weight:700;margin:0 auto 10px;">
+              RG
+            </div>
+            <h3 style="font-size:16px;font-weight:700;color:var(--ink);" id="settings-user-name">Robert Galati</h3>
+            <p style="font-size:12px;color:var(--gold-hover);font-weight:600;margin-bottom:4px;">🎧 Master of Ceremonies &amp; Event Host</p>
+            <p style="font-size:11px;color:var(--muted);">Galati MC &amp; Entertainment &bull; ABN 48 192 847 291</p>
+          </div>
+
+          <div class="card">
+            <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;color:var(--ink);">MC Account Details</div>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;">
+              <div style="display:flex;justify-content:space-between;border-bottom:1px solid #f0eae1;padding-bottom:5px;">
+                <span style="color:var(--muted);">Email:</span>
+                <strong id="settings-user-email">robert@galati.demo</strong>
+              </div>
+              <div style="display:flex;justify-content:space-between;border-bottom:1px solid #f0eae1;padding-bottom:5px;">
+                <span style="color:var(--muted);">Direct Line:</span>
+                <strong>+61 418 223 901</strong>
+              </div>
+              <div style="display:flex;justify-content:space-between;border-bottom:1px solid #f0eae1;padding-bottom:5px;">
+                <span style="color:var(--muted);">Service Tier:</span>
+                <span class="pill pill-gold">Elite MC / Producer</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;">
+                <span style="color:var(--muted);">Security:</span>
+                <span style="color:var(--success);font-weight:600;">✓ 2FA Verified</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sign Out Button (Requirement 1) -->
+          <button type="button" class="btn btn-outline btn-block" style="color:#b3261e;border-color:#f1b3b3;background:#fff8f8;padding:12px;font-size:13px;font-weight:700;" onclick="handleSignOut()">
+            🚪 Sign Out of MC Console
+          </button>
+        </div>
+
+
+        <!-- ================= LEVEL 2: ACTIVE WEDDING CONSOLE PANES ================= -->
+
+        <!-- Wedding Pane 1: RUN SHEET -->
+        <div class="mc-pane" id="wedding-runsheet">
           <!-- Emergency Alert Notice / Broadcast -->
           <div style="background:#201813;border:1px solid #4a382a;border-radius:10px;padding:10px 12px;color:#ffffff;display:flex;align-items:center;justify-content:space-between;gap:8px;">
             <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
@@ -911,90 +1263,71 @@ def build_mc_mobile_html():
           </div>
         </div>
 
-        <!-- ================= PANE 2: SEATING & FLOOR ================= -->
-        <div class="mc-pane" id="pane-seating">
-          <!-- Metrics Overview -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <div class="card" style="padding:10px;text-align:center;">
-              <div style="font-size:18px;font-weight:800;color:var(--ink);" id="seat-metric-seated">118 / 120</div>
-              <div style="font-size:11px;color:var(--muted);">Guests Seated (98%)</div>
+        <!-- Wedding Pane 2: SEATING & GUESTS (Requirement 2 & Image 2/3) -->
+        <div class="mc-pane" id="wedding-seating">
+          <!-- 3-Way Segment Switcher (Requirement 2) -->
+          <div class="seating-segment-bar">
+            <button type="button" class="seating-segment-btn active" id="seg-btn-guestlist" onclick="switchSeatingSegment('guestlist')">
+              👥 Guest List
+            </button>
+            <button type="button" class="seating-segment-btn" id="seg-btn-seatingarr" onclick="switchSeatingSegment('seatingarr')">
+              🪑 Seating Arrangement
+            </button>
+            <button type="button" class="seating-segment-btn" id="seg-btn-unseated" onclick="switchSeatingSegment('unseated')">
+              ⏳ Unseated Guests
+            </button>
+          </div>
+
+          <!-- Segment 1: ENTIRE GUEST LIST -->
+          <div id="seating-seg-guestlist" style="display:flex;flex-direction:column;gap:10px;">
+            <div>
+              <input type="text" class="text-input" placeholder="🔍 Search guests by name or dietary..." oninput="handleSearchGuestList(this.value)">
             </div>
-            <div class="card" style="padding:10px;text-align:center;">
-              <div style="font-size:18px;font-weight:800;color:var(--gold-hover);" id="seat-metric-unassigned">2 Pending</div>
-              <div style="font-size:11px;color:var(--muted);">Unassigned Guests</div>
+            <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);padding:0 2px;">
+              <span id="gl-count-label">Showing 100 Guests</span>
+              <span style="color:var(--success);font-weight:600;">✓ 96 Confirmed RSVPs</span>
+            </div>
+            <div id="gl-roster-list" style="display:flex;flex-direction:column;gap:6px;">
+              <!-- Roster rendered dynamically -->
             </div>
           </div>
 
-          <!-- Dietary Highlights -->
-          <div class="card" style="padding:10px;">
-            <div style="font-size:11.5px;font-weight:700;color:var(--ink);margin-bottom:6px;display:flex;justify-content:space-between;">
-              <span>🍽️ Catering Dietary Highlights</span>
-              <span class="pill pill-gold">18 Special Meals</span>
+          <!-- Segment 2: SEATING ARRANGEMENT OF EACH TABLE (Image 3 - Circular diagrams with scrollbar) -->
+          <div id="seating-seg-seatingarr" style="display:none;flex-direction:column;gap:16px;">
+            <div style="font-size:11.5px;color:var(--muted);text-align:center;">
+              Scroll down to inspect all tables and seated guests
             </div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-              <span class="pill pill-green">🌱 4 Vegan</span>
-              <span class="pill pill-green">🥬 8 Vegetarian</span>
-              <span class="pill pill-gold">🌾 6 Gluten-Free</span>
-              <span class="pill pill-dark">🥜 2 Nut Allergy</span>
+            <div id="seating-tables-scroll-list" style="display:flex;flex-direction:column;gap:18px;">
+              <!-- All tables with Image 3 circular diagrams rendered dynamically -->
             </div>
           </div>
 
-          <!-- Floor Plan Table Switcher -->
-          <div>
-            <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;">Floor Plan &bull; Tap Table to View</div>
-            <div class="table-badge-row" id="table-pill-row">
-              <!-- Rendered dynamically -->
+          <!-- Segment 3: UNSEATED / REMAINING GUESTS -->
+          <div id="seating-seg-unseated" style="display:none;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#fff8ee;padding:10px 12px;border-radius:8px;border:1px solid #ebd3a8;">
+              <div>
+                <strong style="font-size:13px;color:#6b4d1b;">Remaining Guests to Seat</strong>
+                <div style="font-size:11px;color:var(--muted);">Assign remaining guests to free seats</div>
+              </div>
+              <button type="button" class="btn btn-gold btn-sm" onclick="autoSeatAllRemaining()">Seat All</button>
             </div>
-          </div>
-
-          <!-- Selected Table Inspection -->
-          <div class="card" id="selected-table-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid var(--line);padding-bottom:6px;">
-              <strong style="font-size:13.5px;" id="st-name">Head Table</strong>
-              <span class="pill pill-dark" id="st-capacity">10 / 10 Seated</span>
-            </div>
-            <div id="st-guests-list" style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
-              <!-- Seated guests rendered here -->
-            </div>
-          </div>
-
-          <!-- Unassigned Guests Section (With matching 32px height and Seat button) -->
-          <div class="card" style="background:#fffcf7;border-color:#e0d0bb;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-              <strong style="font-size:13px;color:#5a3f1d;">🪑 Unassigned Guests</strong>
-              <span class="pill pill-gold" id="unassigned-count-pill">2 to seat</span>
-            </div>
-            <div id="unassigned-guests-list" style="display:flex;flex-direction:column;gap:8px;">
-              <!-- Unassigned cards rendered here -->
+            <div id="unseated-cards-list" style="display:flex;flex-direction:column;gap:8px;">
+              <!-- Unassigned cards with matching 32px height select and Seat button -->
             </div>
           </div>
         </div>
 
-        <!-- ================= PANE 3: GUESTS DIRECTORY ================= -->
-        <div class="mc-pane" id="pane-guests">
-          <div style="display:flex;gap:8px;">
-            <input type="text" class="text-input" placeholder="🔍 Search guests or dietary requirement..." oninput="handleSearchGuests(this.value)">
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);padding:0 2px;">
-            <span id="guest-count-label">Showing 100 Guests</span>
-            <span style="color:var(--success);font-weight:600;">✓ 96 Confirmed RSVPs</span>
-          </div>
-          <div id="mc-guest-directory-list" style="display:flex;flex-direction:column;gap:6px;">
-            <!-- Guests rendered here -->
-          </div>
-        </div>
-
-        <!-- ================= PANE 4: VENUE & LOGISTICS ================= -->
-        <div class="mc-pane" id="pane-venue">
+        <!-- Wedding Pane 3: VENUE & LOGISTICS -->
+        <div class="mc-pane" id="wedding-venue">
           <div class="card">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;">
               <div>
-                <h3 style="font-family:var(--font-heading);font-size:16px;">Fernwood Estate</h3>
-                <p style="font-size:12px;color:var(--muted);">1842 Range Road, Southern Highlands NSW</p>
+                <h3 style="font-family:var(--font-heading);font-size:16px;" id="venue-title">Fernwood Estate</h3>
+                <p style="font-size:12px;color:var(--muted);" id="venue-address">1842 Range Road, Southern Highlands NSW</p>
               </div>
               <span class="pill pill-green">Verified</span>
             </div>
-            <button type="button" class="btn btn-outline btn-block btn-sm" onclick="showToast('Directions link copied to clipboard')">📍 Open Navigation Directions</button>
+            <button type="button" class="btn btn-outline btn-block btn-sm" onclick="showToast('Directions copied to clipboard')">📍 Open Navigation Directions</button>
           </div>
 
           <!-- Key Emergency & Vendor Contacts -->
@@ -1042,37 +1375,94 @@ def build_mc_mobile_html():
           </div>
         </div>
 
-        <!-- ================= PANE 5: GIGS & WEDDINGS ================= -->
-        <div class="mc-pane" id="pane-gigs">
-          <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Booked Wedding Engagements</div>
-          <div id="mc-weddings-gigs-list" style="display:flex;flex-direction:column;gap:8px;">
-            <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Floating Joey Chatbot Trigger (Requirement 5) -->
+      <button type="button" class="mc-chat-fab" id="mc-chat-trigger" style="display:none;" onclick="toggleChatPanel()" aria-label="Open Joey Assistant" title="Open Joey MC Assistant">
+        <span style="font-size:22px;">💬</span>
+        <span class="mc-chat-fab-pulse"></span>
+      </button>
+
+      <!-- Joey Chatbot Modal Panel (Requirement 5) -->
+      <div class="mc-chat-panel" id="mc-chat-panel">
+        <div class="mc-chat-header">
+          <div class="mc-chat-title-wrap">
+            <div class="mc-chat-avatar">🤖</div>
+            <div>
+              <div style="font-size:13.5px;font-weight:700;">Joey &bull; MC Assistant</div>
+              <div style="font-size:10.5px;color:var(--gold-light);">AI Stage &amp; Run Sheet Companion</div>
+            </div>
+          </div>
+          <button type="button" style="background:transparent;border:none;color:#ffffff;font-size:16px;cursor:pointer;" onclick="toggleChatPanel()">&times;</button>
+        </div>
+
+        <div class="mc-chat-body" id="mc-chat-messages">
+          <div class="chat-bubble chat-bubble-bot">
+            Hello Robert! I am <strong>Joey</strong>, your MC AI Assistant.
+          </div>
+          <div class="chat-bubble chat-bubble-bot">
+            I can check schedule timing, look up seated guests, dietary requirements, or vendor contacts.
           </div>
         </div>
 
+        <div class="chat-chips-row">
+          <span class="chat-chip" onclick="sendQuickChat('Next schedule cue')">⏰ Next cue</span>
+          <span class="chat-chip" onclick="sendQuickChat('Who is at Head Table?')">👑 Head Table</span>
+          <span class="chat-chip" onclick="sendQuickChat('Dietary alerts')">🥜 Allergies</span>
+          <span class="chat-chip" onclick="sendQuickChat('Venue Manager phone')">📞 Venue phone</span>
+        </div>
+
+        <form class="mc-chat-footer" onsubmit="handleChatSubmit(event)">
+          <input type="text" id="chat-input" class="text-input" style="padding:7px 10px;font-size:12px;" placeholder="Ask Joey about cues, guests, tables..." required>
+          <button type="submit" class="btn btn-gold btn-sm" style="padding:7px 12px;">➤</button>
+        </form>
       </div>
 
-      <!-- Phone Bottom Nav Bar -->
-      <nav class="phone-bottom-nav" id="mc-bottom-nav" style="display:none;">
-        <button type="button" class="nav-tab-btn active" data-pane="pane-runsheet" onclick="switchPane('pane-runsheet', this)">
+      <!-- LEVEL 1: HOME BOTTOM NAV (Requirement 5: all weddings, calendar, invoice, team, settings) -->
+      <nav class="phone-bottom-nav" id="mc-home-bottom-nav" style="display:none;">
+        <button type="button" class="nav-tab-btn active" data-home-pane="home-weddings" onclick="switchHomePane('home-weddings', this)">
+          <span class="tab-icon">💍</span>
+          <span>All Weddings</span>
+        </button>
+        <button type="button" class="nav-tab-btn" data-home-pane="home-calendar" onclick="switchHomePane('home-calendar', this)">
+          <span class="tab-icon">📅</span>
+          <span>Calendar</span>
+        </button>
+        <button type="button" class="nav-tab-btn" data-home-pane="home-invoice" onclick="switchHomePane('home-invoice', this)">
+          <span class="tab-icon">🧾</span>
+          <span>Invoice</span>
+        </button>
+        <button type="button" class="nav-tab-btn" data-home-pane="home-team" onclick="switchHomePane('home-team', this)">
+          <span class="tab-icon">👥</span>
+          <span>Team</span>
+        </button>
+        <button type="button" class="nav-tab-btn" data-home-pane="home-settings" onclick="switchHomePane('home-settings', this)">
+          <span class="tab-icon">⚙️</span>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <!-- LEVEL 2: ACTIVE WEDDING BOTTOM NAV -->
+      <nav class="phone-bottom-nav" id="mc-wedding-bottom-nav" style="display:none;">
+        <button type="button" class="nav-tab-btn active" data-wedding-pane="wedding-runsheet" onclick="switchWeddingPane('wedding-runsheet', this)">
           <span class="tab-icon">📋</span>
           <span>Run Sheet</span>
         </button>
-        <button type="button" class="nav-tab-btn" data-pane="pane-seating" onclick="switchPane('pane-seating', this)">
+        <button type="button" class="nav-tab-btn" data-wedding-pane="wedding-seating" onclick="switchWeddingPane('wedding-seating', this)">
           <span class="tab-icon">🪑</span>
           <span>Seating</span>
         </button>
-        <button type="button" class="nav-tab-btn" data-pane="pane-guests" onclick="switchPane('pane-guests', this)">
-          <span class="tab-icon">👥</span>
-          <span>Guests</span>
-        </button>
-        <button type="button" class="nav-tab-btn" data-pane="pane-venue" onclick="switchPane('pane-venue', this)">
+        <button type="button" class="nav-tab-btn" data-wedding-pane="wedding-venue" onclick="switchWeddingPane('wedding-venue', this)">
           <span class="tab-icon">📍</span>
           <span>Venue</span>
         </button>
-        <button type="button" class="nav-tab-btn" data-pane="pane-gigs" onclick="switchPane('pane-gigs', this)">
-          <span class="tab-icon">📅</span>
-          <span>Gigs</span>
+        <button type="button" class="nav-tab-btn" onclick="navigateToHome('home-settings')">
+          <span class="tab-icon">👤</span>
+          <span>Profile</span>
+        </button>
+        <button type="button" class="nav-tab-btn" onclick="navigateToHome('home-weddings')">
+          <span class="tab-icon">🏠</span>
+          <span>Weddings</span>
         </button>
       </nav>
 
@@ -1224,7 +1614,7 @@ def build_mc_mobile_html():
     function resetDemoData() {{
       try {{ localStorage.removeItem(STORAGE_KEY); }} catch(e) {{}}
       window._tt_in_memory_state = null;
-      showToast('Demo data successfully reset to seed state');
+      showToast('Demo data reset to seed state');
       setTimeout(() => location.reload(), 300);
     }}
 
@@ -1252,12 +1642,13 @@ def build_mc_mobile_html():
         .replace(/'/g, '&#039;');
     }}
 
-    /* Global MC State */
+    /* Global Navigation State */
+    let currentAppLevel = 'home'; // 'home' or 'wedding'
     let currentWeddingId = 'w1';
-    let currentFilter = 'all';
+    let currentRunSheetFilter = 'all';
     let currentCueSearch = '';
     let currentGuestSearch = '';
-    let selectedTableId = 'head';
+    let activeSeatingSegment = 'guestlist';
 
     /* App Initialization */
     window.addEventListener('DOMContentLoaded', () => {{
@@ -1279,31 +1670,46 @@ def build_mc_mobile_html():
     function checkAuthAndRender() {{
       const session = getSession();
       const authView = document.getElementById('mc-mobile-auth');
-      const appHeader = document.getElementById('mc-app-header');
-      const weddingBanner = document.getElementById('mc-wedding-banner');
-      const bottomNav = document.getElementById('mc-bottom-nav');
+      const homeHeader = document.getElementById('mc-home-header');
+      const weddingHeader = document.getElementById('mc-wedding-header');
+      const homeBottomNav = document.getElementById('mc-home-bottom-nav');
+      const weddingBottomNav = document.getElementById('mc-wedding-bottom-nav');
+      const chatFab = document.getElementById('mc-chat-trigger');
 
       if (session && session.role === 'mc') {{
         authView.style.display = 'none';
-        appHeader.style.display = 'flex';
-        weddingBanner.style.display = 'flex';
-        bottomNav.style.display = 'flex';
-        document.getElementById('mc-user-name').textContent = session.name || 'Robert Galati';
-        const initials = (session.name || 'RG').split(' ').map(x => x[0]).join('').substring(0,2).toUpperCase();
-        document.getElementById('mc-avatar').textContent = initials;
-        
-        renderAllPanes();
-        switchPane('pane-runsheet');
+        chatFab.style.display = 'grid';
+
+        document.getElementById('settings-user-name').textContent = session.name || 'Robert Galati';
+        document.getElementById('settings-user-email').textContent = session.email || 'robert@galati.demo';
+
+        if (currentAppLevel === 'home') {{
+          homeHeader.style.display = 'flex';
+          weddingHeader.style.display = 'none';
+          homeBottomNav.style.display = 'flex';
+          weddingBottomNav.style.display = 'none';
+          renderHomePanes();
+          switchHomePane('home-weddings');
+        }} else {{
+          homeHeader.style.display = 'none';
+          weddingHeader.style.display = 'flex';
+          homeBottomNav.style.display = 'none';
+          weddingBottomNav.style.display = 'flex';
+          renderWeddingPanes();
+          switchWeddingPane('wedding-runsheet');
+        }}
       }} else {{
         authView.style.display = 'flex';
-        appHeader.style.display = 'none';
-        weddingBanner.style.display = 'none';
-        bottomNav.style.display = 'none';
+        homeHeader.style.display = 'none';
+        weddingHeader.style.display = 'none';
+        homeBottomNav.style.display = 'none';
+        weddingBottomNav.style.display = 'none';
+        chatFab.style.display = 'none';
         document.querySelectorAll('.mc-pane').forEach(p => p.classList.remove('active'));
       }}
     }}
 
-    /* Auth Handlers */
+    /* Auth Actions */
     function switchAuthTab(tab) {{
       const tabLogin = document.getElementById('tab-login');
       const tabReg = document.getElementById('tab-register');
@@ -1341,6 +1747,7 @@ def build_mc_mobile_html():
       }};
       setSession(user);
       showToast('Signed in as Robert Galati (MC)');
+      currentAppLevel = 'home';
       checkAuthAndRender();
     }}
 
@@ -1358,6 +1765,7 @@ def build_mc_mobile_html():
       }};
       setSession(user);
       showToast('Welcome to MC Mobile Console');
+      currentAppLevel = 'home';
       checkAuthAndRender();
     }}
 
@@ -1376,11 +1784,13 @@ def build_mc_mobile_html():
       }};
       setSession(user);
       showToast('MC account registered successfully!');
+      currentAppLevel = 'home';
       checkAuthAndRender();
     }}
 
     function handleSignOut() {{
       clearSession();
+      currentAppLevel = 'home';
       showToast('Signed out from MC Mobile');
       checkAuthAndRender();
     }}
@@ -1390,33 +1800,130 @@ def build_mc_mobile_html():
       showToast('Demo MC Login: robert@galati.demo / demo123 (or use 1-Click login)');
     }}
 
-    /* Pane Switcher */
-    function switchPane(paneId, btn) {{
+    /* Navigation Level 1 (Home Page) */
+    function switchHomePane(paneId, btn) {{
       document.querySelectorAll('.mc-pane').forEach(p => p.classList.remove('active'));
       const target = document.getElementById(paneId);
       if (target) target.classList.add('active');
 
-      document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#mc-home-bottom-nav .nav-tab-btn').forEach(b => b.classList.remove('active'));
       if (btn) {{
         btn.classList.add('active');
       }} else {{
-        const matched = document.querySelector(`.nav-tab-btn[data-pane="${{paneId}}"]`);
+        const matched = document.querySelector(`#mc-home-bottom-nav .nav-tab-btn[data-home-pane="${{paneId}}"]`);
         if (matched) matched.classList.add('active');
       }}
       document.getElementById('phone-content-scroll').scrollTop = 0;
     }}
 
-    function handleWeddingChange(wId) {{
-      currentWeddingId = wId;
-      showToast('Loaded wedding schedule for ' + (wId === 'w1' ? 'Sophie & James' : wId === 'w2' ? 'Aisha & Marcus' : 'Elena & Mateo'));
-      renderAllPanes();
+    function navigateToHome(initialPane = 'home-weddings') {{
+      currentAppLevel = 'home';
+      checkAuthAndRender();
+      switchHomePane(initialPane);
     }}
 
-    function renderAllPanes() {{
+    function openWeddingConsole(wId) {{
+      currentWeddingId = wId;
+      currentAppLevel = 'wedding';
+      const state = loadState();
+      const wedding = (state.weddings || []).find(w => w.id === wId) || state.weddings[0];
+
+      document.getElementById('mc-active-wedding-title').textContent = `💍 ${{wedding.couple}}`;
+      document.getElementById('mc-active-wedding-sub').textContent = wId === 'w1' ? '🟢 LIVE CONSOLE' : '📅 SCHEDULE CONSOLE';
+      document.getElementById('venue-title').textContent = wedding.venue ? wedding.venue.split(',')[0] : 'Wedding Venue';
+      document.getElementById('venue-address').textContent = wedding.venue || '1842 Range Road, Southern Highlands NSW';
+
+      checkAuthAndRender();
+      showToast(`Opened ${{wedding.couple}} Wedding Console`);
+    }}
+
+    /* Navigation Level 2 (Wedding Console) */
+    function switchWeddingPane(paneId, btn) {{
+      document.querySelectorAll('.mc-pane').forEach(p => p.classList.remove('active'));
+      const target = document.getElementById(paneId);
+      if (target) target.classList.add('active');
+
+      document.querySelectorAll('#mc-wedding-bottom-nav .nav-tab-btn').forEach(b => b.classList.remove('active'));
+      if (btn) {{
+        btn.classList.add('active');
+      }} else {{
+        const matched = document.querySelector(`#mc-wedding-bottom-nav .nav-tab-btn[data-wedding-pane="${{paneId}}"]`);
+        if (matched) matched.classList.add('active');
+      }}
+      document.getElementById('phone-content-scroll').scrollTop = 0;
+    }}
+
+    /* Render Home Level Panes */
+    function renderHomePanes() {{
+      const state = loadState();
+      const weddings = state.weddings || [];
+
+      // Render All Weddings Cards (Requirement 4)
+      const listEl = document.getElementById('home-weddings-card-list');
+      if (listEl) {{
+        listEl.innerHTML = weddings.map((w, idx) => `
+          <div class="card" style="padding:14px;border-left:4px solid ${{idx === 0 ? 'var(--gold)' : '#b5a593'}};box-shadow:var(--shadow-sm);cursor:pointer;" onclick="openWeddingConsole('${{w.id}}')">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+              <div>
+                <h3 style="font-family:var(--font-heading);font-size:16px;color:var(--ink);">💍 ${{escapeHtml(w.couple)}}</h3>
+                <p style="font-size:11.5px;color:var(--muted);margin-top:2px;">📍 ${{escapeHtml(w.venue)}}</p>
+              </div>
+              <span class="pill ${{idx === 0 ? 'pill-green' : 'pill-gold'}}">${{idx === 0 ? '🟢 Live Today' : '📅 Booked'}}</span>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#fbf8f3;padding:8px 10px;border-radius:8px;margin-top:8px;font-size:11.5px;">
+              <span>📅 Date: <strong>${{escapeHtml(w.date ? w.date.split('T')[0] : '2026-11-14')}}</strong></span>
+              <span>Guests: <strong>${{idx === 0 ? '118 Seated' : '95 Confirmed'}}</strong></span>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
+              <span style="font-size:11.5px;color:var(--gold-hover);font-weight:700;">Executive MC + Sound Tier</span>
+              <button type="button" class="btn btn-gold btn-sm" onclick="event.stopPropagation();openWeddingConsole('${{w.id}}')">
+                Open Console &rarr;
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }}
+
+      // Invoices
+      const invList = document.getElementById('home-invoice-list');
+      if (invList) {{
+        const invoices = state.invoices || [];
+        invList.innerHTML = invoices.map(inv => `
+          <div class="card" style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <strong style="font-size:13px;display:block;">${{escapeHtml(inv.couple)}}</strong>
+              <span style="font-size:11px;color:var(--muted);">${{escapeHtml(inv.id)}} &bull; ${{escapeHtml(inv.date)}}</span>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:700;font-size:13px;">$${{inv.amount}} AUD</div>
+              <span class="pill pill-green" style="font-size:9.5px;">${{escapeHtml(inv.status)}}</span>
+            </div>
+          </div>
+        `).join('');
+      }}
+
+      // Team
+      const teamList = document.getElementById('home-team-list');
+      if (teamList) {{
+        const team = state.team || [];
+        teamList.innerHTML = team.map(tm => `
+          <div class="card" style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <strong style="font-size:13px;display:block;">${{escapeHtml(tm.name)}}</strong>
+              <span style="font-size:11px;color:var(--gold-hover);">${{escapeHtml(tm.role)}}</span>
+            </div>
+            <span class="pill pill-green" style="font-size:9.5px;">${{escapeHtml(tm.status || 'Active')}}</span>
+          </div>
+        `).join('');
+      }}
+    }}
+
+    /* Render Wedding Level Panes */
+    function renderWeddingPanes() {{
       renderRunSheet();
-      renderSeating();
-      renderGuests();
-      renderGigs();
+      renderSeatingSegmentContent();
     }}
 
     /* --- RUN SHEET LOGIC --- */
@@ -1433,7 +1940,7 @@ def build_mc_mobile_html():
         time: rs.time || '16:00',
         activity: rs.note ? rs.note.split(';')[0] : 'Wedding Cue Item',
         notes: rs.note || 'Public schedule timing',
-        privateNotes: 'MC Cue Notes: check wireless mic and audio cue.',
+        privateNotes: 'MC technical cue: check wireless microphone level and audio cue.',
         done: !!rs.done
       }}));
       saveState(state);
@@ -1446,8 +1953,8 @@ def build_mc_mobile_html():
       const allItems = getActiveRunSheet();
 
       let items = allItems;
-      if (currentFilter === 'pending') items = items.filter(x => !x.done);
-      else if (currentFilter === 'done') items = items.filter(x => x.done);
+      if (currentRunSheetFilter === 'pending') items = items.filter(x => !x.done);
+      else if (currentRunSheetFilter === 'done') items = items.filter(x => x.done);
 
       if (currentCueSearch) {{
         const q = currentCueSearch.toLowerCase();
@@ -1479,7 +1986,7 @@ def build_mc_mobile_html():
               <input type="text" class="text-input" style="padding:4px 8px;font-size:11.5px;background:#f9f6f0;" value="${{escapeHtml(item.notes || '')}}" placeholder="Public schedule note..." onchange="updateCueField(${{realIdx}}, 'notes', this.value)">
             </div>
 
-            <!-- MC Cue Notes (Confidential) -->
+            <!-- MC Cue Notes (Clean label as requested in Part 2) -->
             <div class="mc-cue-notes-box">
               <div class="mc-cue-notes-label">MC Cue Notes</div>
               <input type="text" class="mc-cue-notes-input" value="${{escapeHtml(item.privateNotes || '')}}" placeholder="Private cue notes, microphone directions, audio prompts..." onchange="updateCueField(${{realIdx}}, 'privateNotes', this.value)">
@@ -1537,7 +2044,7 @@ def build_mc_mobile_html():
     }}
 
     function filterRunSheet(filter, btn) {{
-      currentFilter = filter;
+      currentRunSheetFilter = filter;
       document.querySelectorAll('#rs-filter-pills button').forEach(b => {{
         b.className = 'btn btn-outline btn-sm';
       }});
@@ -1600,81 +2107,174 @@ def build_mc_mobile_html():
       showToast('Emergency alert broadcasted');
     }}
 
-    /* --- SEATING & FLOOR PLAN LOGIC --- */
-    function renderSeating() {{
-      const state = loadState();
-      const tables = state.tables || [];
-      const guests = state.guests || [];
+    /* --- SEATING & GUESTS 3-WAY SEGMENT SWITCHER (Requirement 2 & Image 2/3) --- */
+    function switchSeatingSegment(seg) {{
+      activeSeatingSegment = seg;
+      document.querySelectorAll('.seating-segment-btn').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById(`seg-btn-${{seg}}`);
+      if (activeBtn) activeBtn.classList.add('active');
 
-      // Tables pill list
-      const pillRow = document.getElementById('table-pill-row');
-      if (pillRow) {{
-        pillRow.innerHTML = tables.map(t => `
-          <button type="button" class="table-pill-btn ${{t.id === selectedTableId ? 'active' : ''}}" onclick="selectTable('${{t.id}}')">
-            ${{escapeHtml(t.name)}} (${{guests.filter(g => g.tableId === t.id).length}}/${{t.capacity}})
-          </button>
-        `).join('');
-      }}
+      document.getElementById('seating-seg-guestlist').style.display = (seg === 'guestlist') ? 'flex' : 'none';
+      document.getElementById('seating-seg-seatingarr').style.display = (seg === 'seatingarr') ? 'flex' : 'none';
+      document.getElementById('seating-seg-unseated').style.display = (seg === 'unseated') ? 'flex' : 'none';
 
-      // Selected table view
-      const activeTable = tables.find(t => t.id === selectedTableId) || tables[0];
-      if (activeTable) {{
-        document.getElementById('st-name').textContent = activeTable.name;
-        const seated = guests.filter(g => g.tableId === activeTable.id);
-        document.getElementById('st-capacity').textContent = `${{seated.length}} / ${{activeTable.capacity}} Seated`;
-        
-        const listEl = document.getElementById('st-guests-list');
-        if (seated.length === 0) {{
-          listEl.innerHTML = '<div style="color:var(--muted);font-style:italic;">No guests seated at this table yet.</div>';
-        }} else {{
-          listEl.innerHTML = seated.map((g, i) => `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:#f9f6f0;border-radius:6px;border:1px solid #eee5d8;">
-              <span style="font-weight:600;">${{i+1}}. ${{escapeHtml(g.name)}}</span>
-              <div style="display:flex;gap:4px;align-items:center;">
-                ${{g.dietary && g.dietary !== 'None' ? `<span class="pill pill-gold" style="font-size:9.5px;">${{escapeHtml(g.dietary)}}</span>` : ''}}
-                <button type="button" class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:10px;" onclick="unseatGuest('${{g.id}}')">Unseat</button>
-              </div>
-            </div>
-          `).join('');
-        }}
-      }}
+      renderSeatingSegmentContent();
+    }}
 
-      // Metrics
-      const totalSeated = guests.filter(g => g.tableId).length;
-      document.getElementById('seat-metric-seated').textContent = `${{totalSeated}} / ${{guests.length}}`;
-      const unassigned = guests.filter(g => !g.tableId);
-      document.getElementById('seat-metric-unassigned').textContent = `${{unassigned.length}} Pending`;
-      document.getElementById('unassigned-count-pill').textContent = `${{unassigned.length}} to seat`;
-
-      // Render Unassigned Guests with matched 32px height and Seat button
-      const unassignedList = document.getElementById('unassigned-guests-list');
-      if (unassigned.length === 0) {{
-        unassignedList.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:10px;">All guests have been allocated to tables!</div>';
-      }} else {{
-        unassignedList.innerHTML = unassigned.slice(0, 10).map(g => `
-          <div style="background:#ffffff;border:1px solid #ebd8c0;border-radius:8px;padding:8px 10px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <strong style="font-size:12.5px;color:var(--ink);display:block;">${{escapeHtml(g.name)}}</strong>
-                <span style="font-size:11px;color:var(--muted);">${{g.plusOne ? '+1 guest' : 'No plus-one'}} ${{g.dietary && g.dietary !== 'None' ? '· ' + g.dietary : ''}}</span>
-              </div>
-            </div>
-            <!-- Matched 32px height container and Seat button -->
-            <div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
-              <select class="text-input" style="height:32px;padding:0 8px;font-size:12px;flex:1;border-radius:6px;border:1px solid #dcd3c8;background:#ffffff;box-sizing:border-box;" onchange="if(this.value){{assignGuestToTable('${{g.id}}', this.value);this.value='';}}">
-                <option value="">Seat at Table...</option>
-                ${{tables.map(t => `<option value="${{t.id}}">${{t.name}} (${{guests.filter(x => x.tableId === t.id).length}}/${{t.capacity}})</option>`).join('')}}
-              </select>
-              <button type="button" class="btn btn-gold" style="height:32px;padding:0 12px;font-size:12px;font-weight:600;border-radius:6px;box-sizing:border-box;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;" onclick="autoSeatGuest('${{g.id}}')" title="Seat guest at next free seat">Seat</button>
-            </div>
-          </div>
-        `).join('');
+    function renderSeatingSegmentContent() {{
+      if (activeSeatingSegment === 'guestlist') {{
+        renderGuestListSegment();
+      }} else if (activeSeatingSegment === 'seatingarr') {{
+        renderSeatingArrangementSegment();
+      }} else if (activeSeatingSegment === 'unseated') {{
+        renderUnseatedSegment();
       }}
     }}
 
-    function selectTable(tblId) {{
-      selectedTableId = tblId;
-      renderSeating();
+    /* Segment 1: Entire Guest List */
+    function renderGuestListSegment() {{
+      const state = loadState();
+      let guests = state.guests || [];
+      const tables = state.tables || [];
+
+      if (currentGuestSearch) {{
+        const q = currentGuestSearch.toLowerCase();
+        guests = guests.filter(g => (g.name || '').toLowerCase().includes(q) || (g.dietary || '').toLowerCase().includes(q));
+      }}
+
+      document.getElementById('gl-count-label').textContent = `Showing ${{guests.length}} Guests`;
+      const container = document.getElementById('gl-roster-list');
+      if (!container) return;
+
+      container.innerHTML = guests.map(g => {{
+        const table = tables.find(t => t.id === g.tableId);
+        const initials = (g.name || 'G').split(' ').map(x => x[0]).join('').substring(0,2).toUpperCase();
+        return `
+          <div style="background:#ffffff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="width:30px;height:30px;border-radius:50%;background:#1c1511;color:#dfc194;font-size:10px;font-weight:700;display:grid;place-items:center;">
+                ${{initials}}
+              </div>
+              <div>
+                <strong style="font-size:12.5px;color:var(--ink);">${{escapeHtml(g.name)}}</strong>
+                <div style="font-size:11px;color:var(--muted);">${{g.plusOne ? '+1 guest' : 'Individual'}} ${{g.dietary && g.dietary !== 'None' ? '· ' + g.dietary : ''}}</div>
+              </div>
+            </div>
+            <span class="pill ${{table ? 'pill-dark' : 'pill-gold'}}" style="font-size:10px;">
+              ${{table ? escapeHtml(table.name) : 'Unassigned'}}
+            </span>
+          </div>
+        `;
+      }}).join('');
+    }}
+
+    function handleSearchGuestList(q) {{
+      currentGuestSearch = q;
+      renderGuestListSegment();
+    }}
+
+    /* Segment 2: Seating Arrangement of Each Table (Image 3 - Circular diagrams scrollable) */
+    function renderSeatingArrangementSegment() {{
+      const state = loadState();
+      const tables = state.tables || [];
+      const guests = state.guests || [];
+      const container = document.getElementById('seating-tables-scroll-list');
+      if (!container) return;
+
+      container.innerHTML = tables.map(tbl => {{
+        const seated = guests.filter(g => g.tableId === tbl.id);
+        const total = tbl.capacity || 8;
+        const radius = 65; // Radius to center seat dots exactly on gold ring
+        const centerX = 65;
+        const centerY = 65;
+        let seatDotsHtml = '';
+
+        for (let i = 0; i < total; i++) {{
+          const angle = (i * (2 * Math.PI / total)) - (Math.PI / 2);
+          const x = Math.round(centerX + radius * Math.cos(angle) - 14);
+          const y = Math.round(centerY + radius * Math.sin(angle) - 14);
+          const guest = seated[i];
+          const initials = guest ? ((guest.name || 'G').split(' ').map(p => p[0]).join('').substring(0,2).toUpperCase()) : '+';
+
+          seatDotsHtml += `
+            <div class="seat-dot ${{guest ? '' : 'empty'}}" style="left:${{x}}px;top:${{y}}px;" title="${{guest ? escapeHtml(guest.name) : 'Empty Seat'}}" onclick="showToast('${{guest ? escapeHtml(guest.name) + ' (' + (guest.dietary || 'Standard Meal') + ')' : 'Seat available'}}')">
+              ${{initials}}
+            </div>
+          `;
+        }}
+
+        return `
+          <div class="card" style="padding:14px;display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:8px;">
+              <div>
+                <strong style="font-size:14px;color:var(--ink);">${{escapeHtml(tbl.name)}}</strong>
+                <div style="font-size:11px;color:var(--muted);">${{tbl.id === 'head' ? 'VIP Head Table &bull; Bridal Party' : 'Banquet Round Table'}}</div>
+              </div>
+              <span class="pill ${{seated.length >= total ? 'pill-green' : 'pill-gold'}}">
+                ${{seated.length}} / ${{total}} Seated
+              </span>
+            </div>
+
+            <!-- Circular Floorplan Canvas (Image 3) -->
+            <div class="floorplan-dotted-canvas">
+              <div class="round-table-diagram">
+                <span class="round-table-name">${{escapeHtml(tbl.name)}}</span>
+                <span class="round-table-count">${{seated.length}} / ${{total}}</span>
+                ${{seatDotsHtml}}
+              </div>
+            </div>
+
+            <!-- Seated Guests List Accordion / Roster -->
+            <div style="display:flex;flex-direction:column;gap:5px;margin-top:4px;">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Seated Guests at ${{escapeHtml(tbl.name)}}:</div>
+              ${{seated.length === 0 ? '<div style="color:var(--muted);font-style:italic;font-size:11.5px;">No guests seated at this table yet.</div>' : seated.map((g, idx) => `
+                <div style="display:flex;justify-content:space-between;align-items:center;background:#faf8f5;border:1px solid #ede4d7;padding:5px 8px;border-radius:6px;font-size:12px;">
+                  <span><strong>${{idx + 1}}.</strong> ${{escapeHtml(g.name)}}</span>
+                  <div style="display:flex;align-items:center;gap:4px;">
+                    ${{g.dietary && g.dietary !== 'None' ? `<span class="pill pill-gold" style="font-size:9px;padding:1px 5px;">${{escapeHtml(g.dietary)}}</span>` : ''}}
+                    <button type="button" class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:10px;" onclick="unseatGuest('${{g.id}}')">Unseat</button>
+                  </div>
+                </div>
+              `).join('')}}
+            </div>
+          </div>
+        `;
+      }}).join('');
+    }}
+
+    /* Segment 3: Unseated Guests (With matched 32px height select and Seat button) */
+    function renderUnseatedSegment() {{
+      const state = loadState();
+      const tables = state.tables || [];
+      const guests = state.guests || [];
+      const unassigned = guests.filter(g => !g.tableId);
+      const container = document.getElementById('unseated-cards-list');
+      if (!container) return;
+
+      if (unassigned.length === 0) {{
+        container.innerHTML = '<div style="color:var(--success);font-size:13px;text-align:center;padding:24px;font-weight:600;">✓ All guests have been successfully seated at tables!</div>';
+        return;
+      }}
+
+      container.innerHTML = unassigned.map(g => `
+        <div style="background:#ffffff;border:1px solid #ebd8c0;border-radius:8px;padding:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <strong style="font-size:13px;color:var(--ink);display:block;">${{escapeHtml(g.name)}}</strong>
+              <span style="font-size:11px;color:var(--muted);">${{g.plusOne ? '+1 guest' : 'No plus-one'}} ${{g.dietary && g.dietary !== 'None' ? '· ' + g.dietary : ''}}</span>
+            </div>
+            ${{g.dietary && g.dietary !== 'None' ? `<span class="pill pill-gold" style="font-size:9.5px;">${{escapeHtml(g.dietary)}}</span>` : ''}}
+          </div>
+          <!-- Matched 32px height container and Seat button (Part 1 feedback) -->
+          <div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
+            <select class="text-input" style="height:32px;padding:0 8px;font-size:12px;flex:1;border-radius:6px;border:1px solid #dcd3c8;background:#ffffff;box-sizing:border-box;" onchange="if(this.value){{assignGuestToTable('${{g.id}}', this.value);this.value='';}}">
+              <option value="">Seat at Table...</option>
+              ${{tables.map(t => `<option value="${{t.id}}">${{t.name}} (${{guests.filter(x => x.tableId === t.id).length}}/${{t.capacity}})</option>`).join('')}}
+            </select>
+            <button type="button" class="btn btn-gold" style="height:32px;padding:0 12px;font-size:12px;font-weight:600;border-radius:6px;box-sizing:border-box;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;" onclick="autoSeatGuest('${{g.id}}')" title="Seat guest at next free seat">Seat</button>
+          </div>
+        </div>
+      `).join('');
     }}
 
     function assignGuestToTable(guestId, tableId) {{
@@ -1684,7 +2284,7 @@ def build_mc_mobile_html():
         guest.tableId = tableId;
         saveState(state);
         showToast(`Seated ${{guest.name}}`);
-        renderSeating();
+        renderSeatingSegmentContent();
       }}
     }}
 
@@ -1700,6 +2300,30 @@ def build_mc_mobile_html():
       }}
     }}
 
+    function autoSeatAllRemaining() {{
+      const state = loadState();
+      const tables = state.tables || [];
+      const guests = state.guests || [];
+      const unassigned = guests.filter(g => !g.tableId);
+      let count = 0;
+
+      for (const g of unassigned) {{
+        const targetTable = tables.find(t => guests.filter(x => x.tableId === t.id).length < t.capacity);
+        if (targetTable) {{
+          g.tableId = targetTable.id;
+          count++;
+        }}
+      }}
+
+      if (count > 0) {{
+        saveState(state);
+        showToast(`Auto-seated ${{count}} remaining guests!`);
+        renderSeatingSegmentContent();
+      }} else {{
+        showToast('No remaining seats available', false);
+      }}
+    }}
+
     function unseatGuest(guestId) {{
       const state = loadState();
       const guest = (state.guests || []).find(g => g.id === guestId);
@@ -1707,68 +2331,94 @@ def build_mc_mobile_html():
         guest.tableId = null;
         saveState(state);
         showToast(`Unseated ${{guest.name}}`);
-        renderSeating();
+        renderSeatingSegmentContent();
       }}
     }}
 
-    /* --- GUESTS DIRECTORY LOGIC --- */
-    function renderGuests() {{
-      const state = loadState();
-      let guests = state.guests || [];
-      const tables = state.tables || [];
+    /* --- JOEY MC CHATBOT LOGIC (Requirement 5) --- */
+    function toggleChatPanel() {{
+      const panel = document.getElementById('mc-chat-panel');
+      const isVisible = panel.style.display === 'flex';
+      panel.style.display = isVisible ? 'none' : 'flex';
+      if (!isVisible) {{
+        setTimeout(() => {{
+          const input = document.getElementById('chat-input');
+          if (input) input.focus();
+        }}, 100);
+      }}
+    }}
 
-      if (currentGuestSearch) {{
-        const q = currentGuestSearch.toLowerCase();
-        guests = guests.filter(g => (g.name || '').toLowerCase().includes(q) || (g.dietary || '').toLowerCase().includes(q));
+    function handleChatSubmit(e) {{
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      sendChatMessage(text);
+    }}
+
+    function sendQuickChat(text) {{
+      sendChatMessage(text);
+    }}
+
+    function sendChatMessage(text) {{
+      const body = document.getElementById('mc-chat-messages');
+
+      // Append User Message
+      const userBubble = document.createElement('div');
+      userBubble.className = 'chat-bubble chat-bubble-user';
+      userBubble.textContent = text;
+      body.appendChild(userBubble);
+      body.scrollTop = body.scrollHeight;
+
+      // Generate Intelligent MC Assistant Reply
+      setTimeout(() => {{
+        const botReply = generateMCJoeyResponse(text);
+        const botBubble = document.createElement('div');
+        botBubble.className = 'chat-bubble chat-bubble-bot';
+        botBubble.innerHTML = botReply;
+        body.appendChild(botBubble);
+        body.scrollTop = body.scrollHeight;
+      }}, 300);
+    }}
+
+    function generateMCJoeyResponse(prompt) {{
+      const state = loadState();
+      const q = prompt.toLowerCase();
+      const wedding = (state.weddings || []).find(w => w.id === currentWeddingId) || state.weddings[0];
+      const cues = wedding.privateRunSheet || wedding.runSheet || [];
+      const guests = state.guests || [];
+
+      if (q.includes('next') || q.includes('cue') || q.includes('schedule') || q.includes('time')) {{
+        const pending = cues.filter(c => !c.done);
+        if (pending.length > 0) {{
+          const next = pending[0];
+          return `⏰ <strong>Next Cue:</strong> at <strong>${{escapeHtml(next.time)}}</strong> &bull; ${{escapeHtml(next.activity)}}.<br><br><em>MC Cue Notes:</em> ${{escapeHtml(next.privateNotes || 'Check wireless mic batteries.')}}`;
+        }}
+        return 'All scheduled cues for today have been marked as completed!';
       }}
 
-      document.getElementById('guest-count-label').textContent = `Showing ${{guests.length}} Guests`;
-      const container = document.getElementById('mc-guest-directory-list');
-      if (!container) return;
+      if (q.includes('head table') || q.includes('bridal party')) {{
+        const headGuests = guests.filter(g => g.tableId === 'head');
+        return `👑 <strong>Head Table (${{headGuests.length}} guests seated):</strong><br>` + headGuests.map(g => `&bull; ${{escapeHtml(g.name)}} ${{g.dietary && g.dietary !== 'None' ? '(' + g.dietary + ')' : ''}}`).join('<br>');
+      }}
 
-      container.innerHTML = guests.slice(0, 50).map(g => {{
-        const table = tables.find(t => t.id === g.tableId);
-        return `
-          <div style="background:#ffffff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;">
-            <div>
-              <strong style="font-size:12.5px;color:var(--ink);">${{escapeHtml(g.name)}}</strong>
-              <div style="font-size:11px;color:var(--muted);">${{g.plusOne ? '+1 guest' : 'Individual'}} ${{g.dietary && g.dietary !== 'None' ? '· ' + g.dietary : ''}}</div>
-            </div>
-            <span class="pill ${{table ? 'pill-dark' : 'pill-gold'}}" style="font-size:10px;">
-              ${{table ? escapeHtml(table.name) : 'Unassigned'}}
-            </span>
-          </div>
-        `;
-      }}).join('');
-    }}
+      if (q.includes('dietary') || q.includes('allergy') || q.includes('allergies') || q.includes('vegan') || q.includes('gluten')) {{
+        const special = guests.filter(g => g.dietary && g.dietary !== 'None');
+        const count = special.length;
+        return `🍽️ <strong>Dietary Alerts (${{count}} special meals):</strong><br>` + special.slice(0, 8).map(g => `&bull; ${{escapeHtml(g.name)}}: <strong>${{escapeHtml(g.dietary)}}</strong>`).join('<br>') + (count > 8 ? `<br><em>+ ${{count - 8}} more in the Guest List tab</em>` : '');
+      }}
 
-    function handleSearchGuests(q) {{
-      currentGuestSearch = q;
-      renderGuests();
-    }}
+      if (q.includes('venue') || q.includes('sarah') || q.includes('phone') || q.includes('contact') || q.includes('manager')) {{
+        return `📍 <strong>Fernwood Estate Contacts:</strong><br>&bull; Sarah Lin (Venue Manager): <strong>0412 345 678</strong><br>&bull; Chef Marco Rossi (Catering): <strong>0434 567 890</strong><br>&bull; Dave Miller (Sound Tech): <strong>0445 678 901</strong>`;
+      }}
 
-    /* --- GIGS & MULTI-WEDDING LOGIC --- */
-    function renderGigs() {{
-      const state = loadState();
-      const weddings = state.weddings || [];
-      const container = document.getElementById('mc-weddings-gigs-list');
-      if (!container) return;
+      if (q.includes('unseated') || q.includes('remaining') || q.includes('pending seat')) {{
+        const unseated = guests.filter(g => !g.tableId);
+        return `🪑 There are currently <strong>${{unseated.length}} unseated guests</strong>. You can seat them from the <strong>Seating &rarr; Unseated Guests</strong> tab using the 'Seat All' button!`;
+      }}
 
-      container.innerHTML = weddings.map(w => `
-        <div class="card" style="padding:12px;border-left:4px solid ${{w.id === currentWeddingId ? 'var(--gold)' : '#c0b4a6'}};">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-            <div>
-              <h4 style="font-size:13.5px;font-weight:700;color:var(--ink);">${{escapeHtml(w.couple)}}</h4>
-              <p style="font-size:11.5px;color:var(--muted);">${{escapeHtml(w.date)}} &bull; ${{escapeHtml(w.venue)}}</p>
-            </div>
-            <span class="pill ${{w.id === currentWeddingId ? 'pill-green' : 'pill-gold'}}">${{w.id === currentWeddingId ? 'Active Live' : 'Booked'}}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:11.5px;color:var(--muted);">
-            <span>MC Fee: <strong>$2,400 AUD</strong> (Deposit Paid)</span>
-            ${{w.id !== currentWeddingId ? `<button type="button" class="btn btn-outline btn-sm" onclick="handleWeddingChange('${{w.id}}')">Switch to Wedding</button>` : '<span style="color:var(--gold-hover);font-weight:700;">Currently Active</span>'}}
-          </div>
-        </div>
-      `).join('');
+      return `Understood! I've logged your query regarding "<strong>${{escapeHtml(prompt)}}</strong>". All cues and seating data for ${{escapeHtml(wedding.couple)}} are synced live with the Couple and MC Pro consoles.`;
     }}
   </script>
 </body>
@@ -1776,7 +2426,7 @@ def build_mc_mobile_html():
 """
     with open('mc-mobile.html', 'w', encoding='utf-8') as f:
         f.write(html)
-    print("mc-mobile.html generated successfully!")
+    print("mc-mobile.html generated successfully with Master Home, Circular Seating, and Joey Chatbot!")
 
 if __name__ == '__main__':
     build_mc_mobile_html()
