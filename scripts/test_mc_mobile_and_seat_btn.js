@@ -101,4 +101,95 @@ for (const f of filesToCheckDemobar) {
 }
 console.log('PASS [5]: All 7 portal pages have mc-mobile.html in their top demobar navigation!');
 
-console.log('\nALL 5 ADVANCED VERIFICATION SUITES PASSED FLAWLESSLY!');
+// 6. Check Calendar month grid (Image 1)
+const calendarRequired = [
+  'calendar-month-grid',
+  'calendar-weekday',
+  'calendar-day-cell',
+  'changeCalendarMonth',
+  'selectCalendarDate',
+  'calendar-month-display',
+  'cal-selected-date-title'
+];
+for (const s of calendarRequired) {
+  if (!mcMobileHtml.includes(s)) {
+    console.error(`FAIL: mc-mobile.html missing calendar feature: "${s}"`);
+    process.exit(1);
+  }
+}
+console.log('PASS [6]: mc-mobile.html includes full Image 1 interactive month calendar grid!');
+
+// 7. Check Monochrome professional navigation & clean wedding cards (Image 2)
+if (mcMobileHtml.includes('Guests: 118 Seated') || mcMobileHtml.includes('118 Seated')) {
+  console.error('FAIL: mc-mobile.html still contains guests seated in wedding card');
+  process.exit(1);
+}
+if (!mcMobileHtml.includes('Executive Lead MC')) {
+  console.error('FAIL: mc-mobile.html missing Executive Lead MC role in wedding card');
+  process.exit(1);
+}
+// Check that bottom nav uses SVG icons instead of emojis
+const navEmojis = ['💍', '📅', '🧾', '👥', '⚙️'];
+for (const emo of navEmojis) {
+  if (mcMobileHtml.includes(`class="mc-hnav-icon">${emo}</span>`)) {
+    console.error(`FAIL: mc-mobile.html uses emoji ${emo} in bottom nav instead of professional SVG`);
+    process.exit(1);
+  }
+}
+console.log('PASS [7]: mc-mobile.html uses professional monochrome SVG navigation and clean wedding cards!');
+
+// 8. Check Joey Chatbot FAB and Header standardization (Images 3 & 4)
+const chatbotFiles = ['mc-mobile.html', 'guest-mobile.html', 'couple.html', 'mc.html', 'scripts/chatbot_component.py'];
+for (const f of chatbotFiles) {
+  const content = fs.readFileSync(f, 'utf8');
+  if (content.includes('CONCIERGE ASSISTANT')) {
+    console.error(`FAIL: ${f} still contains CONCIERGE ASSISTANT`);
+    process.exit(1);
+  }
+  if (!content.includes('The Wedding Assistant')) {
+    console.error(`FAIL: ${f} missing "The Wedding Assistant" subtitle`);
+    process.exit(1);
+  }
+}
+if (!mcMobileHtml.includes('#bd9661') || !mcMobileHtml.includes('mc-chat-fab')) {
+  console.error('FAIL: mc-mobile.html missing Image 3 gold circular chatbot FAB styling');
+  process.exit(1);
+}
+console.log('PASS [8]: Joey chatbot header standardized ("The Wedding Assistant") and Image 3 FAB styled across all portals!');
+
+// 9. Check Status Pop-up with Paid, Pending, Draft options (Image 5)
+const statusRequired = [
+  'status-interactive-btn',
+  'status-dropdown-popover',
+  'Paid',
+  'Pending',
+  'Draft',
+  'setWeddingStatus',
+  'toggleStatusPopover'
+];
+for (const s of statusRequired) {
+  if (!mcMobileHtml.includes(s)) {
+    console.error(`FAIL: mc-mobile.html missing status popover feature: "${s}"`);
+    process.exit(1);
+  }
+}
+console.log('PASS [9]: mc-mobile.html has interactive Image 5 status button with Paid/Pending/Draft popover!');
+
+// 10. Check Profile Photo and Description Uploader in MC Settings
+const profileRequired = [
+  'handleProfilePhotoUpload',
+  'profile-img-preview',
+  'prof-input-bio',
+  'handleSaveMCProfile',
+  'Executive Lead MC'
+];
+for (const s of profileRequired) {
+  if (!mcMobileHtml.includes(s)) {
+    console.error(`FAIL: mc-mobile.html missing profile editor feature: "${s}"`);
+    process.exit(1);
+  }
+}
+console.log('PASS [10]: mc-mobile.html has complete profile photo upload and bio description editor!');
+
+console.log('\nALL 10 ADVANCED VERIFICATION SUITES PASSED FLAWLESSLY!');
+

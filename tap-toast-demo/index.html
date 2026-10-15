@@ -931,7 +931,7 @@ body {
       <a href="login.html" class="tt-demobar-link">Sign In</a>
       <a href="register.html" class="tt-demobar-link">Register</a>
       <a href="guest-mobile.html" class="tt-demobar-link">Guest Mobile</a>
-      <a href="guest-web.html" class="tt-demobar-link">Guest Web</a>
+      <a href="mc-mobile.html" class="tt-demobar-link" onclick="handleDemobarNav(event, 'mc', 'mc-mobile.html')">MC Mobile</a>
       <a href="couple.html" class="tt-demobar-link" onclick="handleDemobarNav(event, 'couple', 'couple.html')">Couple Dashboard</a>
       <a href="mc.html" class="tt-demobar-link" onclick="handleDemobarNav(event, 'mc', 'mc.html')">MC Pro</a>
       <a href="superadmin.html" class="tt-demobar-link" onclick="handleDemobarNav(event, 'superadmin', 'superadmin.html')">Super Admin</a>
@@ -999,7 +999,7 @@ body {
             </li>
             <li class="persona-feature-item">
               <span class="persona-feature-check">✓</span>
-              <span><strong>Thank-You Manager</strong>: Manual tracking (Not Started, Drafted, Sent, Completed)</span>
+              <span><strong>Thank-You Manager</strong>: Track (Not Started, Drafted, Sent, Completed)</span>
             </li>
             <li class="persona-feature-item">
               <span class="persona-feature-check">✓</span>
@@ -1072,42 +1072,43 @@ body {
       </div>
 
       <!-- Card 3: Guest Web -->
+      <!-- Card 3: MC Mobile -->
       <div class="persona-card">
         <div class="persona-card-top">
-          <span class="persona-card-tag tag-guest-w">Guest Desktop Web</span>
-          <h2 class="persona-card-title">Guest Desktop Portal</h2>
-          <div class="persona-card-user">The Johnson Family &bull; Wedding Website</div>
+          <span class="persona-card-tag tag-mc">Mobile MC &bull; 402&times;874 Chassis</span>
+          <h2 class="persona-card-title">MC Mobile Console</h2>
+          <div class="persona-card-user">Robert Galati &bull; Mobile Companion</div>
           <p class="persona-card-desc">
-            Editorial desktop experience featuring full RSVP management, travel guide, and celebration feed.
+            High-precision mobile console for MCs on the floor with live minute cues, MC cue notes, and fast seating.
           </p>
         </div>
         <div class="persona-card-body">
           <ul class="persona-feature-list">
             <li class="persona-feature-item">
               <span class="persona-feature-check">✓</span>
-              <span>High-fashion editorial layout &amp; wedding schedule</span>
+              <span>Live schedule cues with checkboxes &amp; order reordering</span>
             </li>
             <li class="persona-feature-item">
               <span class="persona-feature-check">✓</span>
-              <span>Celebration feed with <strong>red heart like reactions</strong></span>
+              <span><strong>Confidential MC Cue Notes</strong> for private audio cues</span>
             </li>
             <li class="persona-feature-item">
               <span class="persona-feature-check">✓</span>
-              <span>Digital wishing well contributions &amp; blessings</span>
+              <span>Interactive table layout &amp; unassigned guest seating</span>
             </li>
             <li class="persona-feature-item">
               <span class="persona-feature-check">✓</span>
-              <span>Dedicated Venue Details popup &amp; directions</span>
+              <span>Catering dietary breakdown &amp; on-site vendor contacts</span>
             </li>
             <li class="persona-feature-item">
               <span class="persona-feature-check">✓</span>
-              <span>Dietary preference submissions &amp; RSVP acceptance</span>
+              <span>1-Click demo authentication &amp; emergency alerts</span>
             </li>
           </ul>
         </div>
         <div class="persona-card-footer">
-          <a href="guest-web.html" class="btn btn-gold btn-block" style="text-decoration:none;text-align:center;">
-            💻 Launch Guest Desktop Portal &rarr;
+          <a href="mc-mobile.html" class="btn btn-gold btn-block" style="text-decoration:none;text-align:center;">
+            🎧 Launch MC Mobile Console &rarr;
           </a>
         </div>
       </div>
@@ -1130,7 +1131,7 @@ body {
             </li>
             <li class="persona-feature-item">
               <span class="persona-feature-check">✓</span>
-              <span>Restricted access for authorized MC &amp; Couple (no AI scheduling)</span>
+              <span>Restricted access for authorized MC &amp; Couple</span>
             </li>
             <li class="persona-feature-item">
               <span class="persona-feature-check">✓</span>
@@ -1278,12 +1279,12 @@ body {
         <div class="feature-highlight-box">
           <div class="feature-highlight-title">🎙️ 6. Private MC Run Sheet (High Priority)</div>
           <div class="feature-highlight-desc">
-            In <strong>MC Pro</strong>, click on any wedding (e.g. <strong>Sophie &amp; James</strong>) or the <strong>📋 Run Sheet</strong> action to open their dedicated <strong>Private MC Run Sheet</strong>. View minute cues with editable time, activity, public notes and confidential MC cues. Click ▲/▼ to reorder items, delete or add custom cues with strict authorization restrictions (no AI scheduling).
+            In <strong>MC Pro</strong>, click on any wedding (e.g. <strong>Sophie &amp; James</strong>) or the <strong>📋 Run Sheet</strong> action to open their dedicated <strong>Private MC Run Sheet</strong>. View minute cues with editable time, activity, public notes and confidential MC cues. Click ▲/▼ to reorder items, delete or add custom cues with strict authorization restrictions.
           </div>
         </div>
 
         <div class="feature-highlight-box">
-          <div class="feature-highlight-title">💌 7. Thank-You Manager (Manual Tracking)</div>
+          <div class="feature-highlight-title">💌 7. Thank-You Manager</div>
           <div class="feature-highlight-desc">
             In <strong>Couple Dashboard</strong> &gt; <strong>Gift &amp; Thank-You</strong> &gt; <strong>Thank-You Manager</strong>, track gift and Love Note thank-you statuses: <em>Not Started</em>, <em>Drafted</em>, <em>Sent</em>, and <em>Completed</em> with progress bars and status filters.
           </div>
@@ -1336,8 +1337,12 @@ function getSession() {
   if (!session && window._tt_in_memory_session) {
     session = window._tt_in_memory_session;
   }
-  if (!session && typeof window !== 'undefined' && window.parent && window.parent !== window && window.parent._tt_in_memory_session) {
-    session = window.parent._tt_in_memory_session;
+  if (!session && typeof window !== 'undefined') {
+    try {
+      if (window.parent && window.parent !== window && window.parent._tt_in_memory_session) {
+        session = window.parent._tt_in_memory_session;
+      }
+    } catch (e) {}
   }
   if (!session) return null;
   
@@ -1441,9 +1446,13 @@ function loadState() {
   if (window._tt_in_memory_state && window._tt_in_memory_state.version === 2) {
     return window._tt_in_memory_state;
   }
-  if (typeof window !== 'undefined' && window.parent && window.parent !== window && window.parent._tt_in_memory_state && window.parent._tt_in_memory_state.version === 2) {
-    window._tt_in_memory_state = window.parent._tt_in_memory_state;
-    return window._tt_in_memory_state;
+  if (typeof window !== 'undefined') {
+    try {
+      if (window.parent && window.parent !== window && window.parent._tt_in_memory_state && window.parent._tt_in_memory_state.version === 2) {
+        window._tt_in_memory_state = window.parent._tt_in_memory_state;
+        return window._tt_in_memory_state;
+      }
+    } catch (e) {}
   }
   const initial = JSON.parse(JSON.stringify(SEED_DATA));
   saveState(initial);

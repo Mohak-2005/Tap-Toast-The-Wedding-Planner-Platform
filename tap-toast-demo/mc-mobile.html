@@ -347,21 +347,21 @@
       position: relative;
     }
 
-    /* Bottom Navigation Bars */
+    /* Professional Black / Monochrome Bottom Navigation Bars */
     .phone-bottom-nav {
       background: #181310;
       border-top: 1px solid #33261e;
       display: flex;
       align-items: center;
       justify-content: space-around;
-      padding: 8px 4px 6px;
+      padding: 7px 4px 6px;
       flex-shrink: 0;
       z-index: 60;
     }
     .nav-tab-btn {
       background: transparent;
       border: none;
-      color: #a49182;
+      color: #9c8a7b;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -374,15 +374,22 @@
       transition: all 0.15s ease;
       flex: 1;
     }
-    .nav-tab-btn .tab-icon {
-      font-size: 17px;
+    .nav-tab-btn svg {
+      stroke: #9c8a7b;
+      transition: stroke 0.15s ease;
     }
     .nav-tab-btn.active {
       color: var(--gold-light);
       background: rgba(189, 150, 97, 0.15);
     }
+    .nav-tab-btn.active svg {
+      stroke: var(--gold-light);
+    }
     .nav-tab-btn:hover {
       color: #ffffff;
+    }
+    .nav-tab-btn:hover svg {
+      stroke: #ffffff;
     }
 
     /* Phone Home Indicator */
@@ -482,6 +489,167 @@
     .pill-gold { background: #fdf5e8; color: #8a6523; border: 1px solid #ebd3a8; }
     .pill-green { background: #eaf6ec; color: #236c2a; border: 1px solid #bee3c3; }
     .pill-dark { background: #261f18; color: #dfc194; border: 1px solid #4a3a2a; }
+
+    /* Status Interactive Pill & Pop-up Menu (Requirement 5 & Image 5) */
+    .status-badge-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    .status-interactive-btn {
+      background: #eaf6ec;
+      color: #236c2a;
+      border: 1px solid #bee3c3;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 10.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+    .status-interactive-btn.status-pending {
+      background: #fdf5e8;
+      color: #8a6523;
+      border-color: #ebd3a8;
+    }
+    .status-interactive-btn.status-draft {
+      background: #f0ede8;
+      color: #61564c;
+      border-color: #d8d0c5;
+    }
+    .status-interactive-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .status-dropdown-popover {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 4px;
+      background: #ffffff;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      z-index: 250;
+      display: none;
+      flex-direction: column;
+      padding: 4px;
+      min-width: 105px;
+    }
+    .status-dropdown-item {
+      background: transparent;
+      border: none;
+      padding: 6px 10px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-dropdown-item:hover {
+      background: #f6f2ea;
+    }
+
+    /* Month Calendar Grid (Requirement 1 & Image 1) */
+    .calendar-container {
+      background: #ffffff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 10px;
+      box-shadow: var(--shadow-sm);
+    }
+    .calendar-header-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .calendar-month-title {
+      font-family: var(--font-heading);
+      font-size: 15.5px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .calendar-nav-arrow {
+      background: #f5f0e6;
+      border: 1px solid #e2d7c5;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      color: var(--ink);
+    }
+    .calendar-nav-arrow:hover {
+      background: #eae2d3;
+    }
+    .calendar-days-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    .calendar-weekday {
+      font-size: 10px;
+      font-weight: 700;
+      color: #8c7d6e;
+      letter-spacing: 0.5px;
+    }
+    .calendar-month-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3.5px;
+    }
+    .calendar-day-cell {
+      background: #ffffff;
+      border: 1px solid #ede5d8;
+      border-radius: 8px;
+      min-height: 48px;
+      padding: 3px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    .calendar-day-cell:hover {
+      background: #faf7f2;
+      border-color: #d8c8b4;
+    }
+    .calendar-day-cell.active-selected {
+      border: 1.5px solid var(--gold);
+      background: #fffcf8;
+    }
+    .calendar-day-num {
+      font-size: 10px;
+      font-weight: 700;
+      color: #3b2e23;
+      margin-bottom: 2px;
+    }
+    .calendar-event-pill {
+      background: #181310;
+      color: #e8d7be;
+      border-radius: 4px;
+      font-size: 8.5px;
+      font-weight: 700;
+      padding: 2px 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: auto;
+      line-height: 1.1;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
 
     /* Runsheet Cue Cards */
     .cue-card {
@@ -683,37 +851,30 @@
       box-shadow: none;
     }
 
-    /* Floating Joey Chatbot Button & Panel (Requirement 5) */
+    /* Floating Joey Chatbot Button (Image 3 match) */
     .mc-chat-fab {
       position: absolute;
       bottom: 74px;
       right: 14px;
-      width: 48px;
-      height: 48px;
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
-      background: #1c1511;
-      border: 2px solid var(--gold);
-      color: var(--gold);
+      background: #bd9661;
+      border: 2.5px solid #ffffff;
       display: grid;
       place-items: center;
       cursor: pointer;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.35);
       z-index: 120;
       transition: transform 0.15s ease;
+      padding: 0;
     }
     .mc-chat-fab:hover {
       transform: scale(1.08);
-      background: #2b211a;
+      background: #a8824e;
     }
-    .mc-chat-fab-pulse {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      background: #2e7d32;
-      border: 2px solid #1c1511;
-      border-radius: 50%;
-      top: 1px;
-      right: 1px;
+    .mc-chat-fab svg {
+      display: block;
     }
 
     /* Chat Panel inside Mockup Frame */
@@ -746,16 +907,21 @@
       align-items: center;
       gap: 10px;
     }
-    .mc-chat-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: #2e231b;
-      border: 1.5px solid var(--gold);
-      display: grid;
-      place-items: center;
-      color: var(--gold);
+    .mc-chat-header-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .mc-chat-title {
       font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 0;
+      line-height: 1.2;
+    }
+    .mc-chat-subtitle {
+      font-size: 11px;
+      color: var(--gold-light);
+      margin: 0;
     }
     .mc-chat-body {
       flex: 1;
@@ -995,7 +1161,7 @@
       <div class="phone-status-bar">
         <span id="phone-clock">9:41</span>
         <div class="phone-status-icons">
-          <span style="font-size:11px;letter-spacing:1px;">􀙇 5G</span>
+          <span style="font-size:11px;letter-spacing:1px;font-weight:700;">5G</span>
           <div class="phone-status-battery">
             <div class="phone-battery-level"></div>
           </div>
@@ -1011,7 +1177,7 @@
             <span class="mc-home-subtitle">Executive MC Console</span>
           </div>
         </div>
-        <span class="mc-home-badge" id="mc-home-active-badge">🟢 1 LIVE TODAY</span>
+        <span class="mc-home-badge" id="mc-home-active-badge">1 LIVE TODAY</span>
       </header>
 
       <!-- Level 2: Active Wedding Console Header (With Back to All Weddings) -->
@@ -1020,11 +1186,11 @@
           ← All Weddings
         </button>
         <div class="mc-wedding-info">
-          <span class="mc-wedding-name" id="mc-active-wedding-title">💍 Sophie &amp; James</span>
-          <span class="mc-wedding-live-pill" id="mc-active-wedding-sub">🟢 LIVE CONSOLE</span>
+          <span class="mc-wedding-name" id="mc-active-wedding-title">Sophie &amp; James</span>
+          <span class="mc-wedding-live-pill" id="mc-active-wedding-sub">LIVE CONSOLE</span>
         </div>
         <div style="width:75px;text-align:right;">
-          <span class="pill pill-gold" style="font-size:9.5px;padding:2px 6px;" id="mc-quick-day-pill">Nov 14</span>
+          <span class="pill pill-gold" style="font-size:9.5px;padding:2px 6px;" id="mc-quick-day-pill">14 Nov</span>
         </div>
       </header>
 
@@ -1095,14 +1261,14 @@
 
         <!-- ================= LEVEL 1: MASTER HOME PANES ================= -->
 
-        <!-- Home Pane 1: ALL WEDDINGS (Requirement 4) -->
+        <!-- Home Pane 1: ALL WEDDINGS (Requirement 2 & 4) -->
         <div class="mc-pane" id="home-weddings">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div>
               <h2 style="font-family:var(--font-heading);font-size:18px;color:var(--ink);">Assigned Weddings</h2>
               <p style="font-size:11.5px;color:var(--muted);">Select a wedding to enter live run sheet &amp; floor plan</p>
             </div>
-            <span class="pill pill-gold" id="home-weddings-count-pill">3 Active</span>
+            <span class="pill pill-gold" id="home-weddings-count-pill">4 Active</span>
           </div>
 
           <div id="home-weddings-card-list" style="display:flex;flex-direction:column;gap:12px;">
@@ -1110,40 +1276,40 @@
           </div>
         </div>
 
-        <!-- Home Pane 2: CALENDAR -->
+        <!-- Home Pane 2: CALENDAR (Requirement 1 & Image 1 Month Grid) -->
         <div class="mc-pane" id="home-calendar">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div>
-              <h2 style="font-family:var(--font-heading);font-size:18px;color:var(--ink);">MC Gigs &amp; Calendar</h2>
-              <p style="font-size:11.5px;color:var(--muted);">Upcoming call times, rehearsals &amp; bookings</p>
+          <div class="calendar-container">
+            <div class="calendar-header-nav">
+              <button type="button" class="calendar-nav-arrow" onclick="changeCalendarMonth(-1)">‹</button>
+              <div class="calendar-month-title" id="calendar-month-display">November 2026</div>
+              <button type="button" class="calendar-nav-arrow" onclick="changeCalendarMonth(1)">›</button>
             </div>
-            <span class="pill pill-green">2026 / 2027</span>
+
+            <!-- Days of Week Row -->
+            <div class="calendar-days-row">
+              <div class="calendar-weekday">SUN</div>
+              <div class="calendar-weekday">MON</div>
+              <div class="calendar-weekday">TUE</div>
+              <div class="calendar-weekday">WED</div>
+              <div class="calendar-weekday">THU</div>
+              <div class="calendar-weekday">FRI</div>
+              <div class="calendar-weekday">SAT</div>
+            </div>
+
+            <!-- Month Day Cells Grid (Image 1) -->
+            <div class="calendar-month-grid" id="calendar-month-grid">
+              <!-- Rendered dynamically -->
+            </div>
           </div>
 
-          <div class="card" style="padding:12px;">
-            <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;color:var(--ink);">📅 Upcoming Schedule Overview</div>
-            <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#fbf8f3;border-radius:8px;border-left:3px solid var(--gold);">
-                <div>
-                  <strong>Sat, 14 Nov 2026</strong> &bull; 13:30 Call Time
-                  <div style="font-size:11px;color:var(--muted);">Sophie &amp; James &bull; Fernwood Estate</div>
-                </div>
-                <span class="pill pill-green">Today</span>
-              </div>
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#fbf8f3;border-radius:8px;border-left:3px solid #8e7c6b;">
-                <div>
-                  <strong>Sun, 02 May 2027</strong> &bull; 14:00 Call Time
-                  <div style="font-size:11px;color:var(--muted);">Aisha &amp; Marcus &bull; Doltone House</div>
-                </div>
-                <span class="pill pill-gold">Confirmed</span>
-              </div>
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#fbf8f3;border-radius:8px;border-left:3px solid #8e7c6b;">
-                <div>
-                  <strong>Sun, 20 Jun 2027</strong> &bull; 13:30 Call Time
-                  <div style="font-size:11px;color:var(--muted);">Emma &amp; Tom &bull; Dunbar House</div>
-                </div>
-                <span class="pill pill-dark">Upcoming</span>
-              </div>
+          <!-- Selected Day Booking Details -->
+          <div class="card" id="calendar-day-details" style="padding:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:8px;">
+              <strong style="font-size:13px;" id="cal-selected-date-title">Saturday, 14 Nov 2026</strong>
+              <span class="pill pill-green" id="cal-selected-status">Live Event</span>
+            </div>
+            <div id="cal-selected-events-list" style="font-size:12px;display:flex;flex-direction:column;gap:6px;">
+              <!-- Event details rendered here -->
             </div>
           </div>
         </div>
@@ -1178,42 +1344,69 @@
           </div>
         </div>
 
-        <!-- Home Pane 5: SETTINGS / PROFILE (Requirement 1) -->
+        <!-- Home Pane 5: SETTINGS / PROPER PROFILE PAGE (Requirement 5) -->
         <div class="mc-pane" id="home-settings">
-          <div class="card" style="text-align:center;padding:20px 14px;">
-            <div style="width:58px;height:58px;border-radius:50%;background:#2e231b;border:2px solid var(--gold);color:var(--gold);display:grid;place-items:center;font-size:22px;font-weight:700;margin:0 auto 10px;">
-              RG
-            </div>
-            <h3 style="font-size:16px;font-weight:700;color:var(--ink);" id="settings-user-name">Robert Galati</h3>
-            <p style="font-size:12px;color:var(--gold-hover);font-weight:600;margin-bottom:4px;">🎧 Master of Ceremonies &amp; Event Host</p>
-            <p style="font-size:11px;color:var(--muted);">Galati MC &amp; Entertainment &bull; ABN 48 192 847 291</p>
-          </div>
-
-          <div class="card">
-            <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;color:var(--ink);">MC Account Details</div>
-            <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;">
-              <div style="display:flex;justify-content:space-between;border-bottom:1px solid #f0eae1;padding-bottom:5px;">
-                <span style="color:var(--muted);">Email:</span>
-                <strong id="settings-user-email">robert@galati.demo</strong>
+          <div class="card" style="padding:16px;">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+              <!-- Photo Upload Avatar -->
+              <div style="position:relative;width:64px;height:64px;flex-shrink:0;">
+                <img id="profile-img-preview" src="" alt="Profile" style="width:64px;height:64px;border-radius:50%;object-fit:cover;display:none;border:2px solid var(--gold);">
+                <div id="profile-initials-preview" style="width:64px;height:64px;border-radius:50%;background:#1c1511;border:2px solid var(--gold);color:var(--gold);display:grid;place-items:center;font-size:22px;font-weight:700;">
+                  RG
+                </div>
+                <button type="button" onclick="document.getElementById('profile-file-input').click()" style="position:absolute;bottom:-2px;right:-2px;width:24px;height:24px;border-radius:50%;background:var(--gold);border:2px solid #ffffff;color:#181310;font-size:11px;display:grid;place-items:center;cursor:pointer;" title="Upload profile photo">
+                  📷
+                </button>
+                <input type="file" id="profile-file-input" accept="image/*" style="display:none;" onchange="handleProfilePhotoUpload(event)">
               </div>
-              <div style="display:flex;justify-content:space-between;border-bottom:1px solid #f0eae1;padding-bottom:5px;">
-                <span style="color:var(--muted);">Direct Line:</span>
-                <strong>+61 418 223 901</strong>
-              </div>
-              <div style="display:flex;justify-content:space-between;border-bottom:1px solid #f0eae1;padding-bottom:5px;">
-                <span style="color:var(--muted);">Service Tier:</span>
-                <span class="pill pill-gold">Elite MC / Producer</span>
-              </div>
-              <div style="display:flex;justify-content:space-between;">
-                <span style="color:var(--muted);">Security:</span>
-                <span style="color:var(--success);font-weight:600;">✓ 2FA Verified</span>
+              <div>
+                <h3 style="font-size:16px;font-weight:700;color:var(--ink);" id="settings-display-name">Robert Galati</h3>
+                <p style="font-size:11.5px;color:var(--gold-hover);font-weight:600;" id="settings-display-title">Executive Lead MC &amp; Event Host</p>
+                <span style="font-size:10.5px;color:var(--muted);">Tap camera icon to change photo</span>
               </div>
             </div>
+
+            <!-- Profile Edit Form -->
+            <form onsubmit="handleSaveMCProfile(event)" style="display:flex;flex-direction:column;gap:10px;">
+              <div>
+                <label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:3px;">Full Name</label>
+                <input type="text" id="prof-input-name" class="text-input" value="Robert Galati" required>
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:3px;">Professional Role Title</label>
+                <input type="text" id="prof-input-title" class="text-input" value="Executive Lead MC &amp; Event Host" required>
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:3px;">Agency / Business Name</label>
+                <input type="text" id="prof-input-biz" class="text-input" value="Galati MC &amp; Entertainment" required>
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:3px;">MC Biography &amp; Description</label>
+                <textarea id="prof-input-bio" class="text-input" rows="3" placeholder="Describe your hosting experience and credentials...">Award-winning Master of Ceremonies with 12+ years orchestrating luxury weddings across Sydney and the Southern Highlands. Renowned for seamless run-sheet flow, magnetic crowd engagement, and bilingual announcements.</textarea>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div>
+                  <label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:3px;">Direct Phone</label>
+                  <input type="text" id="prof-input-phone" class="text-input" value="+61 418 223 901">
+                </div>
+                <div>
+                  <label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:3px;">Direct Email</label>
+                  <input type="email" id="prof-input-email" class="text-input" value="robert@galati.demo">
+                </div>
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:3px;">Website / Portfolio</label>
+                <input type="text" id="prof-input-web" class="text-input" value="www.galatimc.com.au">
+              </div>
+              <button type="submit" class="btn btn-gold btn-block" style="padding:10px;font-size:12.5px;margin-top:4px;">
+                ✓ Save Profile Details
+              </button>
+            </form>
           </div>
 
-          <!-- Sign Out Button (Requirement 1) -->
+          <!-- Sign Out Button -->
           <button type="button" class="btn btn-outline btn-block" style="color:#b3261e;border-color:#f1b3b3;background:#fff8f8;padding:12px;font-size:13px;font-weight:700;" onclick="handleSignOut()">
-            🚪 Sign Out of MC Console
+            Sign Out of MC Console
           </button>
         </div>
 
@@ -1225,7 +1418,6 @@
           <!-- Emergency Alert Notice / Broadcast -->
           <div style="background:#201813;border:1px solid #4a382a;border-radius:10px;padding:10px 12px;color:#ffffff;display:flex;align-items:center;justify-content:space-between;gap:8px;">
             <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
-              <span style="font-size:16px;">📢</span>
               <span id="mc-broadcast-text" style="color:#f2e6d9;">All cues running on schedule · Audio tested</span>
             </div>
             <button type="button" class="btn btn-outline btn-sm" style="background:#2e2219;color:#dfc194;border-color:#5c4533;padding:3px 7px;font-size:11px;" onclick="openBroadcastModal()">Broadcast</button>
@@ -1243,7 +1435,7 @@
 
           <!-- Search Input -->
           <div>
-            <input type="text" class="text-input" placeholder="🔍 Filter cues, activities, or notes..." oninput="handleSearchCues(this.value)">
+            <input type="text" class="text-input" placeholder="Filter cues, activities, or notes..." oninput="handleSearchCues(this.value)">
           </div>
 
           <!-- Run Sheet Items List -->
@@ -1254,27 +1446,27 @@
 
         <!-- Wedding Pane 2: SEATING & GUESTS (Requirement 2 & Image 2/3) -->
         <div class="mc-pane" id="wedding-seating">
-          <!-- 3-Way Segment Switcher (Requirement 2) -->
+          <!-- 3-Way Segment Switcher -->
           <div class="seating-segment-bar">
             <button type="button" class="seating-segment-btn active" id="seg-btn-guestlist" onclick="switchSeatingSegment('guestlist')">
-              👥 Guest List
+              Guest List
             </button>
             <button type="button" class="seating-segment-btn" id="seg-btn-seatingarr" onclick="switchSeatingSegment('seatingarr')">
-              🪑 Seating Arrangement
+              Seating Arrangement
             </button>
             <button type="button" class="seating-segment-btn" id="seg-btn-unseated" onclick="switchSeatingSegment('unseated')">
-              ⏳ Unseated Guests
+              Unseated Guests
             </button>
           </div>
 
           <!-- Segment 1: ENTIRE GUEST LIST -->
           <div id="seating-seg-guestlist" style="display:flex;flex-direction:column;gap:10px;">
             <div>
-              <input type="text" class="text-input" placeholder="🔍 Search guests by name or dietary..." oninput="handleSearchGuestList(this.value)">
+              <input type="text" class="text-input" placeholder="Search guests by name or dietary..." oninput="handleSearchGuestList(this.value)">
             </div>
             <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);padding:0 2px;">
               <span id="gl-count-label">Showing 100 Guests</span>
-              <span style="color:var(--success);font-weight:600;">✓ 96 Confirmed RSVPs</span>
+              <span style="color:var(--success);font-weight:600;">96 Confirmed RSVPs</span>
             </div>
             <div id="gl-roster-list" style="display:flex;flex-direction:column;gap:6px;">
               <!-- Roster rendered dynamically -->
@@ -1316,12 +1508,12 @@
               </div>
               <span class="pill pill-green">Verified</span>
             </div>
-            <button type="button" class="btn btn-outline btn-block btn-sm" onclick="showToast('Directions copied to clipboard')">📍 Open Navigation Directions</button>
+            <button type="button" class="btn btn-outline btn-block btn-sm" onclick="showToast('Directions copied to clipboard')">Open Navigation Directions</button>
           </div>
 
           <!-- Key Emergency & Vendor Contacts -->
           <div class="card">
-            <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;color:var(--ink);">📞 Key On-Site Vendor Contacts</div>
+            <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;color:var(--ink);">Key On-Site Vendor Contacts</div>
             <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;">
               <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:#faf8f5;border-radius:6px;border:1px solid #ebd3a8;">
                 <div>
@@ -1346,7 +1538,7 @@
 
           <!-- Sound & Mic Checklist -->
           <div class="card">
-            <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;color:var(--ink);">🎤 MC Tech &amp; Audio Checklist</div>
+            <div style="font-size:12.5px;font-weight:700;margin-bottom:8px;color:var(--ink);">MC Tech &amp; Audio Checklist</div>
             <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
                 <input type="checkbox" checked onchange="showToast('Sound check saved')"> Wireless Handheld Mic A (Battery 100%)
@@ -1366,39 +1558,59 @@
 
       </div>
 
-      <!-- Floating Joey Chatbot Trigger (Requirement 5) -->
-      <button type="button" class="mc-chat-fab" id="mc-chat-trigger" style="display:none;" onclick="toggleChatPanel()" aria-label="Open Joey Assistant" title="Open Joey MC Assistant">
-        <span style="font-size:22px;">💬</span>
-        <span class="mc-chat-fab-pulse"></span>
+      <!-- Floating Joey Chatbot Trigger (Image 3 Official Avatar) -->
+      <button type="button" class="mc-chat-fab" id="mc-chat-trigger" style="display:none;" onclick="toggleChatPanel()" aria-label="Open Joey Assistant" title="Open Joey Assistant">
+        <svg width="34" height="34" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="14" r="13" fill="#1c1612" stroke="#ffffff" stroke-width="1.3"/>
+          <rect x="7" y="7" width="14" height="10" rx="3.5" fill="#bd9661"/>
+          <circle cx="10.5" cy="11.5" r="1.3" fill="#1c1612"/>
+          <circle cx="17.5" cy="11.5" r="1.3" fill="#1c1612"/>
+          <path d="M14 3.5V7" stroke="#dfc194" stroke-width="1.6" stroke-linecap="round"/>
+          <polygon points="14,1.8 15.2,3.8 12.8,3.8" fill="#dfc194"/>
+          <path d="M12 14.2C12.8 15 15.2 15 16 14.2" stroke="#1c1612" stroke-width="1.2" stroke-linecap="round"/>
+          <path d="M10 20L14 21.2L18 20L15.8 22.8L14 21.2L12.2 22.8Z" fill="#dfc194"/>
+          <circle cx="14" cy="21.2" r="1" fill="#1c1612"/>
+        </svg>
       </button>
 
-      <!-- Joey Chatbot Modal Panel (Requirement 5) -->
+      <!-- Joey Chatbot Modal Panel (Clean Header: Joey / The Wedding Assistant) -->
       <div class="mc-chat-panel" id="mc-chat-panel">
         <div class="mc-chat-header">
           <div class="mc-chat-title-wrap">
-            <div class="mc-chat-avatar">🤖</div>
-            <div>
-              <div style="font-size:13.5px;font-weight:700;">Joey &bull; MC Assistant</div>
-              <div style="font-size:10.5px;color:var(--gold-light);">AI Stage &amp; Run Sheet Companion</div>
+            <div style="width:34px;height:34px;border-radius:50%;background:#1c1612;display:grid;place-items:center;border:1.5px solid var(--gold);">
+              <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+                <rect x="7" y="7" width="14" height="10" rx="3.5" fill="#bd9661"/>
+                <circle cx="10.5" cy="11.5" r="1.3" fill="#1c1612"/>
+                <circle cx="17.5" cy="11.5" r="1.3" fill="#1c1612"/>
+                <path d="M14 3.5V7" stroke="#dfc194" stroke-width="1.6" stroke-linecap="round"/>
+                <polygon points="14,1.8 15.2,3.8 12.8,3.8" fill="#dfc194"/>
+                <path d="M12 14.2C12.8 15 15.2 15 16 14.2" stroke="#1c1612" stroke-width="1.2" stroke-linecap="round"/>
+                <path d="M10 20L14 21.2L18 20L15.8 22.8L14 21.2L12.2 22.8Z" fill="#dfc194"/>
+                <circle cx="14" cy="21.2" r="1" fill="#1c1612"/>
+              </svg>
+            </div>
+            <div class="mc-chat-header-info">
+              <h3 class="mc-chat-title">Joey</h3>
+              <div class="mc-chat-subtitle">The Wedding Assistant</div>
             </div>
           </div>
-          <button type="button" style="background:transparent;border:none;color:#ffffff;font-size:16px;cursor:pointer;" onclick="toggleChatPanel()">&times;</button>
+          <button type="button" style="background:transparent;border:none;color:#ffffff;font-size:18px;cursor:pointer;padding:4px;" onclick="toggleChatPanel()">&times;</button>
         </div>
 
         <div class="mc-chat-body" id="mc-chat-messages">
           <div class="chat-bubble chat-bubble-bot">
-            Hello Robert! I am <strong>Joey</strong>, your MC AI Assistant.
+            Hello, I am <strong>Joey</strong>, your wedding assistant.
           </div>
           <div class="chat-bubble chat-bubble-bot">
-            I can check schedule timing, look up seated guests, dietary requirements, or vendor contacts.
+            How may I help you?
           </div>
         </div>
 
         <div class="chat-chips-row">
-          <span class="chat-chip" onclick="sendQuickChat('Next schedule cue')">⏰ Next cue</span>
-          <span class="chat-chip" onclick="sendQuickChat('Who is at Head Table?')">👑 Head Table</span>
-          <span class="chat-chip" onclick="sendQuickChat('Dietary alerts')">🥜 Allergies</span>
-          <span class="chat-chip" onclick="sendQuickChat('Venue Manager phone')">📞 Venue phone</span>
+          <span class="chat-chip" onclick="sendQuickChat('Next schedule cue')">Next cue</span>
+          <span class="chat-chip" onclick="sendQuickChat('Who is at Head Table?')">Head Table</span>
+          <span class="chat-chip" onclick="sendQuickChat('Dietary alerts')">Dietary Alerts</span>
+          <span class="chat-chip" onclick="sendQuickChat('Venue Manager phone')">Venue Phone</span>
         </div>
 
         <form class="mc-chat-footer" onsubmit="handleChatSubmit(event)">
@@ -1407,50 +1619,50 @@
         </form>
       </div>
 
-      <!-- LEVEL 1: HOME BOTTOM NAV (Requirement 5: all weddings, calendar, invoice, team, settings) -->
+      <!-- LEVEL 1: HOME BOTTOM NAV (Professional Monochrome Black SVG Icons) -->
       <nav class="phone-bottom-nav" id="mc-home-bottom-nav" style="display:none;">
         <button type="button" class="nav-tab-btn active" data-home-pane="home-weddings" onclick="switchHomePane('home-weddings', this)">
-          <span class="tab-icon">💍</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5"/></svg>
           <span>All Weddings</span>
         </button>
         <button type="button" class="nav-tab-btn" data-home-pane="home-calendar" onclick="switchHomePane('home-calendar', this)">
-          <span class="tab-icon">📅</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           <span>Calendar</span>
         </button>
         <button type="button" class="nav-tab-btn" data-home-pane="home-invoice" onclick="switchHomePane('home-invoice', this)">
-          <span class="tab-icon">🧾</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           <span>Invoice</span>
         </button>
         <button type="button" class="nav-tab-btn" data-home-pane="home-team" onclick="switchHomePane('home-team', this)">
-          <span class="tab-icon">👥</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span>Team</span>
         </button>
         <button type="button" class="nav-tab-btn" data-home-pane="home-settings" onclick="switchHomePane('home-settings', this)">
-          <span class="tab-icon">⚙️</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           <span>Settings</span>
         </button>
       </nav>
 
-      <!-- LEVEL 2: ACTIVE WEDDING BOTTOM NAV -->
+      <!-- LEVEL 2: ACTIVE WEDDING BOTTOM NAV (Professional Monochrome Black SVG Icons) -->
       <nav class="phone-bottom-nav" id="mc-wedding-bottom-nav" style="display:none;">
         <button type="button" class="nav-tab-btn active" data-wedding-pane="wedding-runsheet" onclick="switchWeddingPane('wedding-runsheet', this)">
-          <span class="tab-icon">📋</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="11" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
           <span>Run Sheet</span>
         </button>
         <button type="button" class="nav-tab-btn" data-wedding-pane="wedding-seating" onclick="switchWeddingPane('wedding-seating', this)">
-          <span class="tab-icon">🪑</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><circle cx="12" cy="4" r="2"/><circle cx="12" cy="20" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="20" cy="12" r="2"/></svg>
           <span>Seating</span>
         </button>
         <button type="button" class="nav-tab-btn" data-wedding-pane="wedding-venue" onclick="switchWeddingPane('wedding-venue', this)">
-          <span class="tab-icon">📍</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
           <span>Venue</span>
         </button>
         <button type="button" class="nav-tab-btn" onclick="navigateToHome('home-settings')">
-          <span class="tab-icon">👤</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <span>Profile</span>
         </button>
         <button type="button" class="nav-tab-btn" onclick="navigateToHome('home-weddings')">
-          <span class="tab-icon">🏠</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           <span>Weddings</span>
         </button>
       </nav>
@@ -1478,7 +1690,7 @@
             </div>
             <div style="margin-bottom:8px;">
               <label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:3px;">Activity Title</label>
-              <input type="text" id="new-cue-title" class="text-input" required placeholder="e.g. First Dance &amp; Champagne Toast">
+              <input type="text" id="new-cue-title" class="text-input" required placeholder="e.g. First Dance &amp; Toast">
             </div>
             <div style="margin-bottom:8px;">
               <label style="font-size:11px;font-weight:700;color:var(--muted);display:block;margin-bottom:3px;">Public Schedule Notes</label>
@@ -1638,11 +1850,15 @@
     let currentCueSearch = '';
     let currentGuestSearch = '';
     let activeSeatingSegment = 'guestlist';
+    let calendarCurrentMonth = 10; // 0-indexed: 10 = Nov
+    let calendarCurrentYear = 2026;
+    let selectedCalendarDay = 14;
 
     /* App Initialization */
     window.addEventListener('DOMContentLoaded', () => {
       updateClock();
       setInterval(updateClock, 1000);
+      document.addEventListener('click', closeAllStatusPopovers);
       checkAuthAndRender();
     });
 
@@ -1669,8 +1885,8 @@
         authView.style.display = 'none';
         chatFab.style.display = 'grid';
 
-        document.getElementById('settings-user-name').textContent = session.name || 'Robert Galati';
-        document.getElementById('settings-user-email').textContent = session.email || 'robert@galati.demo';
+        // Update profile in Settings
+        loadProfileDataIntoUI(session);
 
         if (currentAppLevel === 'home') {
           homeHeader.style.display = 'flex';
@@ -1695,6 +1911,41 @@
         weddingBottomNav.style.display = 'none';
         chatFab.style.display = 'none';
         document.querySelectorAll('.mc-pane').forEach(p => p.classList.remove('active'));
+      }
+    }
+
+    function loadProfileDataIntoUI(session) {
+      const state = loadState();
+      const prof = (state.mcProfile) || {};
+      const name = prof.name || session.name || 'Robert Galati';
+      const title = prof.title || 'Executive Lead MC & Event Host';
+      const email = prof.email || session.email || 'robert@galati.demo';
+      const biz = prof.biz || session.businessName || 'Galati MC & Entertainment';
+      const bio = prof.bio || "Award-winning Master of Ceremonies with 12+ years orchestrating luxury weddings across Sydney and the Southern Highlands. Renowned for seamless run-sheet flow, magnetic crowd engagement, and bilingual announcements.";
+      const phone = prof.phone || '+61 418 223 901';
+      const web = prof.web || 'www.galatimc.com.au';
+      const avatar = prof.avatar || session.avatar || '';
+
+      document.getElementById('settings-display-name').textContent = name;
+      document.getElementById('settings-display-title').textContent = title;
+      document.getElementById('prof-input-name').value = name;
+      document.getElementById('prof-input-title').value = title;
+      document.getElementById('prof-input-biz').value = biz;
+      document.getElementById('prof-input-bio').value = bio;
+      document.getElementById('prof-input-phone').value = phone;
+      document.getElementById('prof-input-email').value = email;
+      document.getElementById('prof-input-web').value = web;
+
+      const imgEl = document.getElementById('profile-img-preview');
+      const initialsEl = document.getElementById('profile-initials-preview');
+      if (avatar) {
+        imgEl.src = avatar;
+        imgEl.style.display = 'block';
+        initialsEl.style.display = 'none';
+      } else {
+        imgEl.style.display = 'none';
+        initialsEl.style.display = 'grid';
+        initialsEl.textContent = name.split(' ').map(x => x[0]).join('').substring(0,2).toUpperCase();
       }
     }
 
@@ -1748,7 +1999,7 @@
         role: 'mc',
         email: email,
         name: email.split('@')[0].replace('.', ' ').replace(/(^|\s)\S/g, l => l.toUpperCase()),
-        businessName: 'Professional MC Console',
+        businessName: 'Galati MC & Entertainment',
         keepSignedIn: remember,
         at: Date.now()
       };
@@ -1803,6 +2054,10 @@
         if (matched) matched.classList.add('active');
       }
       document.getElementById('phone-content-scroll').scrollTop = 0;
+
+      if (paneId === 'home-calendar') {
+        renderCalendarGrid();
+      }
     }
 
     function navigateToHome(initialPane = 'home-weddings') {
@@ -1817,8 +2072,8 @@
       const state = loadState();
       const wedding = (state.weddings || []).find(w => w.id === wId) || state.weddings[0];
 
-      document.getElementById('mc-active-wedding-title').textContent = `💍 ${wedding.couple}`;
-      document.getElementById('mc-active-wedding-sub').textContent = wId === 'w1' ? '🟢 LIVE CONSOLE' : '📅 SCHEDULE CONSOLE';
+      document.getElementById('mc-active-wedding-title').textContent = wedding.couple;
+      document.getElementById('mc-active-wedding-sub').textContent = wId === 'w1' ? 'LIVE CONSOLE' : 'SCHEDULE CONSOLE';
       document.getElementById('venue-title').textContent = wedding.venue ? wedding.venue.split(',')[0] : 'Wedding Venue';
       document.getElementById('venue-address').textContent = wedding.venue || '1842 Range Road, Southern Highlands NSW';
 
@@ -1842,37 +2097,57 @@
       document.getElementById('phone-content-scroll').scrollTop = 0;
     }
 
-    /* Render Home Level Panes */
+    /* Render Home Level Panes (Requirement 2 & 5: Clean Cards & Status Popovers) */
     function renderHomePanes() {
       const state = loadState();
       const weddings = state.weddings || [];
 
-      // Render All Weddings Cards (Requirement 4)
+      // Render All Weddings Cards (Clean format: couple name, wedding loc, date, executive lead mc)
       const listEl = document.getElementById('home-weddings-card-list');
       if (listEl) {
-        listEl.innerHTML = weddings.map((w, idx) => `
-          <div class="card" style="padding:14px;border-left:4px solid ${idx === 0 ? 'var(--gold)' : '#b5a593'};box-shadow:var(--shadow-sm);cursor:pointer;" onclick="openWeddingConsole('${w.id}')">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-              <div>
-                <h3 style="font-family:var(--font-heading);font-size:16px;color:var(--ink);">💍 ${escapeHtml(w.couple)}</h3>
-                <p style="font-size:11.5px;color:var(--muted);margin-top:2px;">📍 ${escapeHtml(w.venue)}</p>
+        listEl.innerHTML = weddings.map((w, idx) => {
+          const status = w.status || (idx === 0 ? 'Paid' : idx === 1 ? 'Pending' : 'Draft');
+          const statusClass = status.toLowerCase();
+          return `
+            <div class="card" style="padding:14px;border-left:4px solid ${idx === 0 ? 'var(--gold)' : '#c0b3a3'};box-shadow:var(--shadow-sm);cursor:pointer;" onclick="openWeddingConsole('${w.id}')">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+                <div>
+                  <h3 style="font-family:var(--font-heading);font-size:16px;color:var(--ink);">${escapeHtml(w.couple)}</h3>
+                  <p style="font-size:11.5px;color:var(--muted);margin-top:2px;">${escapeHtml(w.venue)}</p>
+                </div>
+                <!-- Interactive Status Pop-up Button (Requirement 5 & Image 5) -->
+                <div class="status-badge-wrap" onclick="event.stopPropagation()">
+                  <button type="button" class="status-interactive-btn status-${statusClass}" onclick="toggleStatusPopover(event, '${w.id}')">
+                    Status: <span id="status-label-${w.id}">${escapeHtml(status)}</span> ▾
+                  </button>
+                  <div class="status-dropdown-popover" id="status-popover-${w.id}">
+                    <button type="button" class="status-dropdown-item" onclick="setWeddingStatus('${w.id}', 'Paid')">
+                      <span class="pill pill-green" style="font-size:9.5px;padding:2px 6px;">Paid</span>
+                    </button>
+                    <button type="button" class="status-dropdown-item" onclick="setWeddingStatus('${w.id}', 'Pending')">
+                      <span class="pill pill-gold" style="font-size:9.5px;padding:2px 6px;">Pending</span>
+                    </button>
+                    <button type="button" class="status-dropdown-item" onclick="setWeddingStatus('${w.id}', 'Draft')">
+                      <span class="pill pill-dark" style="font-size:9.5px;padding:2px 6px;">Draft</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-              <span class="pill ${idx === 0 ? 'pill-green' : 'pill-gold'}">${idx === 0 ? '🟢 Live Today' : '📅 Booked'}</span>
-            </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;background:#fbf8f3;padding:8px 10px;border-radius:8px;margin-top:8px;font-size:11.5px;">
-              <span>📅 Date: <strong>${escapeHtml(w.date ? w.date.split('T')[0] : '2026-11-14')}</strong></span>
-              <span>Guests: <strong>${idx === 0 ? '118 Seated' : '95 Confirmed'}</strong></span>
-            </div>
+              <!-- Only: Date, Location, and Executive Lead MC (Requirement 2) -->
+              <div style="display:flex;justify-content:space-between;align-items:center;background:#fbf8f3;padding:8px 10px;border-radius:8px;margin-top:8px;font-size:11.5px;">
+                <span>Date: <strong>${escapeHtml(w.date ? w.date.split('T')[0] : '2026-11-14')}</strong></span>
+                <span style="color:var(--gold-hover);font-weight:700;">Executive Lead MC</span>
+              </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
-              <span style="font-size:11.5px;color:var(--gold-hover);font-weight:700;">Executive MC + Sound Tier</span>
-              <button type="button" class="btn btn-gold btn-sm" onclick="event.stopPropagation();openWeddingConsole('${w.id}')">
-                Open Console &rarr;
-              </button>
+              <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+                <button type="button" class="btn btn-gold btn-sm" onclick="event.stopPropagation();openWeddingConsole('${w.id}')">
+                  Open Console &rarr;
+                </button>
+              </div>
             </div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       }
 
       // Invoices
@@ -1909,6 +2184,196 @@
       }
     }
 
+    /* Status Pop-up Menu Logic (Requirement 5) */
+    function toggleStatusPopover(e, wId) {
+      e.stopPropagation();
+      closeAllStatusPopovers();
+      const popover = document.getElementById(`status-popover-${wId}`);
+      if (popover) {
+        popover.style.display = 'flex';
+      }
+    }
+
+    function closeAllStatusPopovers() {
+      document.querySelectorAll('.status-dropdown-popover').forEach(p => p.style.display = 'none');
+    }
+
+    function setWeddingStatus(wId, newStatus) {
+      const state = loadState();
+      const wedding = (state.weddings || []).find(w => w.id === wId);
+      if (wedding) {
+        wedding.status = newStatus;
+        saveState(state);
+        showToast(`Status updated to ${newStatus}`);
+        renderHomePanes();
+      }
+      closeAllStatusPopovers();
+    }
+
+    /* Profile Photo Upload & Profile Save (Requirement 5) */
+    function handleProfilePhotoUpload(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const dataUrl = event.target.result;
+        const imgEl = document.getElementById('profile-img-preview');
+        const initialsEl = document.getElementById('profile-initials-preview');
+        imgEl.src = dataUrl;
+        imgEl.style.display = 'block';
+        initialsEl.style.display = 'none';
+
+        // Persist in state and session
+        const state = loadState();
+        if (!state.mcProfile) state.mcProfile = {};
+        state.mcProfile.avatar = dataUrl;
+        saveState(state);
+
+        const session = getSession() || {};
+        session.avatar = dataUrl;
+        setSession(session);
+
+        showToast('Profile photo updated successfully!');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleSaveMCProfile(e) {
+      e.preventDefault();
+      const name = document.getElementById('prof-input-name').value.trim();
+      const title = document.getElementById('prof-input-title').value.trim();
+      const biz = document.getElementById('prof-input-biz').value.trim();
+      const bio = document.getElementById('prof-input-bio').value.trim();
+      const phone = document.getElementById('prof-input-phone').value.trim();
+      const email = document.getElementById('prof-input-email').value.trim();
+      const web = document.getElementById('prof-input-web').value.trim();
+
+      const state = loadState();
+      if (!state.mcProfile) state.mcProfile = {};
+      state.mcProfile.name = name;
+      state.mcProfile.title = title;
+      state.mcProfile.biz = biz;
+      state.mcProfile.bio = bio;
+      state.mcProfile.phone = phone;
+      state.mcProfile.email = email;
+      state.mcProfile.web = web;
+      saveState(state);
+
+      const session = getSession() || {};
+      session.name = name;
+      session.businessName = biz;
+      session.email = email;
+      setSession(session);
+
+      document.getElementById('settings-display-name').textContent = name;
+      document.getElementById('settings-display-title').textContent = title;
+
+      showToast('Profile saved successfully!');
+    }
+
+    /* --- MONTH CALENDAR GRID LOGIC (Requirement 1 & Image 1) --- */
+    function changeCalendarMonth(offset) {
+      calendarCurrentMonth += offset;
+      if (calendarCurrentMonth < 0) {
+        calendarCurrentMonth = 11;
+        calendarCurrentYear--;
+      } else if (calendarCurrentMonth > 11) {
+        calendarCurrentMonth = 0;
+        calendarCurrentYear++;
+      }
+      renderCalendarGrid();
+    }
+
+    function renderCalendarGrid() {
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      document.getElementById('calendar-month-display').textContent = `${monthNames[calendarCurrentMonth]} ${calendarCurrentYear}`;
+
+      const gridEl = document.getElementById('calendar-month-grid');
+      if (!gridEl) return;
+
+      const state = loadState();
+      const weddings = state.weddings || [];
+
+      // Find first day of month and total days
+      const firstDayIndex = new Date(calendarCurrentYear, calendarCurrentMonth, 1).getDay(); // 0 = Sun
+      const totalDays = new Date(calendarCurrentYear, calendarCurrentMonth + 1, 0).getDate();
+
+      let cellsHtml = '';
+
+      // Blank padding days
+      for (let i = 0; i < firstDayIndex; i++) {
+        cellsHtml += `<div class="calendar-day-cell" style="background:#faf8f5;border-color:#f1ebd8;opacity:0.35;"></div>`;
+      }
+
+      // Calendar month days
+      for (let day = 1; day <= totalDays; day++) {
+        const isSelected = (day === selectedCalendarDay && calendarCurrentMonth === 10 && calendarCurrentYear === 2026);
+        const isDay2 = (day === 2 && calendarCurrentMonth === 10 && calendarCurrentYear === 2026);
+
+        // Check for booked wedding on this day
+        const monthStr = (calendarCurrentMonth + 1 < 10 ? '0' : '') + (calendarCurrentMonth + 1);
+        const dayStr = (day < 10 ? '0' : '') + day;
+        const targetDate = `${calendarCurrentYear}-${monthStr}-${dayStr}`;
+
+        const bookedWedding = weddings.find(w => w.date && w.date.startsWith(targetDate));
+
+        cellsHtml += `
+          <div class="calendar-day-cell ${isSelected || isDay2 ? 'active-selected' : ''}" onclick="selectCalendarDate(${day}, '\${targetDate}')">
+            <span class="calendar-day-num">${day}</span>
+            ${bookedWedding ? `
+              <div class="calendar-event-pill" title="${escapeHtml(bookedWedding.couple)}" onclick="event.stopPropagation();openWeddingConsole('${bookedWedding.id}')">
+                💍 ${escapeHtml(bookedWedding.couple.split('&')[0].trim())}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      gridEl.innerHTML = cellsHtml;
+      updateCalendarDayDetails();
+    }
+
+    function selectCalendarDate(day, dateStr) {
+      selectedCalendarDay = day;
+      renderCalendarGrid();
+    }
+
+    function updateCalendarDayDetails() {
+      const state = loadState();
+      const weddings = state.weddings || [];
+      const monthStr = (calendarCurrentMonth + 1 < 10 ? '0' : '') + (calendarCurrentMonth + 1);
+      const dayStr = (selectedCalendarDay < 10 ? '0' : '') + selectedCalendarDay;
+      const targetDate = `${calendarCurrentYear}-${monthStr}-${dayStr}`;
+
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      document.getElementById('cal-selected-date-title').textContent = `${selectedCalendarDay} ${monthNames[calendarCurrentMonth]} ${calendarCurrentYear}`;
+
+      const bookedWedding = weddings.find(w => w.date && w.date.startsWith(targetDate));
+      const detailsEl = document.getElementById('cal-selected-events-list');
+      const statusPill = document.getElementById('cal-selected-status');
+
+      if (bookedWedding) {
+        statusPill.textContent = 'Live MC Booking';
+        statusPill.className = 'pill pill-green';
+        detailsEl.innerHTML = `
+          <div style="background:#fcf8f2;padding:8px 10px;border-radius:6px;border:1px solid #ebd3a8;">
+            <strong style="font-size:13px;display:block;">💍 ${escapeHtml(bookedWedding.couple)}</strong>
+            <span style="color:var(--muted);">${escapeHtml(bookedWedding.venue)}</span>
+            <div style="margin-top:6px;">
+              <button type="button" class="btn btn-gold btn-sm" onclick="openWeddingConsole('${bookedWedding.id}')">
+                Open Wedding Console &rarr;
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
+        statusPill.textContent = 'Available';
+        statusPill.className = 'pill pill-gold';
+        detailsEl.innerHTML = `<span style="color:var(--muted);font-style:italic;">No booked weddings on this date. Available for new client inquiries.</span>`;
+      }
+    }
+
     /* Render Wedding Level Panes */
     function renderWeddingPanes() {
       renderRunSheet();
@@ -1929,7 +2394,7 @@
         time: rs.time || '16:00',
         activity: rs.note ? rs.note.split(';')[0] : 'Wedding Cue Item',
         notes: rs.note || 'Public schedule timing',
-        privateNotes: 'MC technical cue: check wireless microphone level and audio cue.',
+        privateNotes: 'MC Cue Notes: check wireless mic and audio cue.',
         done: !!rs.done
       }));
       saveState(state);
@@ -2324,7 +2789,7 @@
       }
     }
 
-    /* --- JOEY MC CHATBOT LOGIC (Requirement 5) --- */
+    /* --- JOEY MC CHATBOT LOGIC --- */
     function toggleChatPanel() {
       const panel = document.getElementById('mc-chat-panel');
       const isVisible = panel.style.display === 'flex';

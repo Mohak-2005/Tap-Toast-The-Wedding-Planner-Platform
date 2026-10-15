@@ -80,7 +80,7 @@ function test(name, fn) {
 
 // 1. Files exist and have 0 alerts, 0 empty links
 test("All 7 HTML demo files exist in /tap-toast-demo", () => {
-  const files = ['login.html', 'register.html', 'guest-mobile.html', 'guest-web.html', 'couple.html', 'mc.html', 'superadmin.html'];
+  const files = ['login.html', 'register.html', 'guest-mobile.html', 'mc-mobile.html', 'couple.html', 'mc.html', 'superadmin.html'];
   files.forEach(f => {
     const full = path.join(demoDir, f);
     if (!fs.existsSync(full)) throw new Error(`Missing ${f}`);
@@ -263,8 +263,8 @@ test("Couple Digital Thank-You Cards: updates thank-you status from Due to Sent"
 
 // 12. Demobar links: all 7 files have all 7 navigation links + reset
 test("Demobar consistency: all 7 HTML files contain links to all other demo pages", () => {
-  const files = ['login.html', 'register.html', 'guest-mobile.html', 'guest-web.html', 'couple.html', 'mc.html', 'superadmin.html'];
-  const expectedLinks = ['login.html', 'register.html', 'guest-mobile.html', 'guest-web.html', 'couple.html', 'mc.html', 'superadmin.html'];
+  const files = ['login.html', 'register.html', 'guest-mobile.html', 'mc-mobile.html', 'couple.html', 'mc.html', 'superadmin.html'];
+  const expectedLinks = ['login.html', 'register.html', 'guest-mobile.html', 'mc-mobile.html', 'couple.html', 'mc.html', 'superadmin.html'];
 
   files.forEach(f => {
     const content = fs.readFileSync(path.join(demoDir, f), 'utf-8');

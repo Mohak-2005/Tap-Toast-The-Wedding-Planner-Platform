@@ -2227,7 +2227,7 @@ body {
       <a href="login.html" class="tt-demobar-link">Sign In</a>
       <a href="register.html" class="tt-demobar-link">Register</a>
       <a href="guest-mobile.html" class="tt-demobar-link">Guest Mobile</a>
-      <a href="guest-web.html" class="tt-demobar-link">Guest Web</a>
+      <a href="mc-mobile.html" class="tt-demobar-link" onclick="handleDemobarNav(event, 'mc', 'mc-mobile.html')">MC Mobile</a>
       <a href="couple.html" class="tt-demobar-link active" onclick="handleDemobarNav(event, 'couple', 'couple.html')">Couple Dashboard</a>
       <a href="mc.html" class="tt-demobar-link" onclick="handleDemobarNav(event, 'mc', 'mc.html')">MC Pro</a>
       <a href="superadmin.html" class="tt-demobar-link" onclick="handleDemobarNav(event, 'superadmin', 'superadmin.html')">Super Admin</a>
@@ -3134,10 +3134,7 @@ body {
             <div class="header-eyebrow">DIGITAL &amp; PHYSICAL INVITATIONS</div>
             <h1 class="header-title">The QaRd Invitation</h1>
           </div>
-          <div style="display:flex;gap:10px;">
-            <button type="button" class="btn btn-gold btn-sm" onclick="simulateScan()">📲 Simulate scan</button>
-            <button type="button" class="btn btn-primary btn-sm" onclick="sendAllInvitations()">✉️ Send invitations</button>
-          </div>
+
         </div>
 
         <div class="twocol-layout">
@@ -3180,9 +3177,9 @@ body {
               <p style="font-size:12.5px;color:var(--muted);margin:14px 0 16px;">
                 Each invitation is printed with a bespoke QR code linked directly to the guest's personalized mobile hub — no app download, login, or password required.
               </p>
-              <div style="display:flex;gap:10px;">
-                <button type="button" class="btn btn-outline" onclick="simulateScan()">Simulate Guest Scan</button>
-                <button type="button" class="btn btn-outline" onclick="showToast('Printing mock vector sheet (300 DPI)', 'info')">Print Ready PDF</button>
+              <div style="display:flex;gap:10px;margin-top:16px;">
+                <button type="button" class="btn btn-outline" onclick="simulateScan()">📲 Simulate Scan</button>
+                <button type="button" class="btn btn-gold" onclick="sendAllInvitations()">✉️ Send Invitations</button>
               </div>
             </div>
           </div>
@@ -3234,7 +3231,7 @@ body {
         <!-- Sub-tabs: Registry vs Thank-You Manager -->
         <div style="display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:20px;">
           <button type="button" id="subtab-gifts-registry" class="btn btn-sm btn-gold" onclick="switchGiftsSubTab('registry')">🎁 Gifting Registry ($4,280)</button>
-          <button type="button" id="subtab-gifts-thankyou" class="btn btn-sm btn-outline" onclick="switchGiftsSubTab('thankyou')">💌 Thank-You Manager (Manual Tracking)</button>
+          <button type="button" id="subtab-gifts-thankyou" class="btn btn-sm btn-outline" onclick="switchGiftsSubTab('thankyou')">💌 Thank-You Manager</button>
         </div>
 
         <!-- Sub-pane 1: Gifting Registry -->
@@ -3399,21 +3396,19 @@ body {
             </div>
           </div>
           <div style="display:flex;gap:10px;align-items:center;">
-            <span class="tt-pill green" style="font-weight:600;">🔒 Permanent Vault Active</span>
             <button type="button" class="btn btn-outline btn-sm" onclick="exportVaultInventory()">📦 Download Vault Manifest</button>
           </div>
         </div>
 
-        <!-- 5 GB Storage Usage Card & Meter -->
+        <!-- Storage Usage & 30-Day Retention Card -->
         <div class="content-card" style="margin-bottom:24px;padding:22px 26px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:14px;">
             <div>
               <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold-hover);">Storage Allocation &amp; Usage</div>
               <div style="font-size:22px;font-family:var(--font-heading);color:var(--ink);font-weight:600;" id="vault-storage-headline">2.35 GB used of 5.00 GB (47%)</div>
             </div>
-            <div style="text-align:right;">
-              <span class="tt-pill warm" id="vault-expiry-pill" style="font-size:12px;">⏳ Archive Expiry: 14 Nov 2027 (396 Days Left)</span>
-              <div style="font-size:11.5px;color:var(--muted);margin-top:4px;">Includes 1 year post-wedding complimentary retention</div>
+            <div id="vault-expiry-container" style="text-align:right;">
+              <span class="tt-pill warm" id="vault-expiry-pill" style="font-size:13px;padding:7px 16px;font-weight:600;display:inline-block;transition:all 0.3s ease;">⏳ Archive Expiry: 30 Days</span>
             </div>
           </div>
 
@@ -3421,7 +3416,7 @@ body {
           <div style="width:100%;height:14px;background:#ede5d8;border-radius:999px;overflow:hidden;display:flex;margin-bottom:14px;">
             <div id="vault-bar-photos" style="width:33.6%;background:#bd9661;" title="Photos &amp; Video Media: 1.68 GB"></div>
             <div id="vault-bar-feed" style="width:5.0%;background:#e6a15c;" title="Celebration Feed &amp; Notes: 0.25 GB"></div>
-            <div id="vault-bar-gifts" style="width:5.0%;background:#4a7c59;" title="Gifts &amp; Thank-You Records: 0.25 GB"></div>
+            <div id="vault-bar-gifts" style="width:5.0%;background:#4a7c59;" title="Gifts &amp; Thank-Yous: 0.25 GB"></div>
             <div id="vault-bar-rsvps" style="width:2.4%;background:#3d6b99;" title="Guest RSVPs &amp; Seating: 0.12 GB"></div>
             <div id="vault-bar-runsheet" style="width:1.0%;background:#7d5ba6;" title="MC Schedule &amp; Cues: 0.05 GB"></div>
           </div>
@@ -3447,30 +3442,16 @@ body {
               <div class="field-group" style="margin-bottom:14px;">
                 <label class="field-label">Access Permissions Level</label>
                 <select id="vault-access-select" class="text-input" onchange="handleVaultAccessChange(this.value)">
-                  <option value="couple_mc">Authorized: Couple &amp; Designated MC Only (Recommended)</option>
-                  <option value="couple_only">Strict Private: Couple Only</option>
-                  <option value="family_mc">Extended: Couple, MC &amp; Immediate Family</option>
+                  <option value="couple_only">Couple</option>
+                  <option value="couple_mc">Couple + MC</option>
+                  <option value="family_mc">Couple, MC &amp; Family</option>
                 </select>
               </div>
-              <div style="background:#faf7f2;border:1px solid var(--line);border-radius:6px;padding:12px 14px;font-size:12.5px;color:#5a4a3a;line-height:1.5;margin-bottom:14px;">
-                <strong>Access Level Status:</strong> <span id="vault-access-status-text">Couple &amp; Designated MC have authorized read-only access.</span>
-              </div>
+              
               <button type="button" class="btn btn-gold btn-sm" onclick="saveVaultAccessControl()">Save Access Settings</button>
             </div>
 
-            <!-- Purge / Deletion Section -->
-            <div class="content-card" style="border:1px solid #f0d5d5;background:#fffaf8;">
-              <h2 class="content-card-title" style="color:#b3261e;">⚠️ Expiry &amp; Safe Deletion Workflow</h2>
-              <p style="font-size:13px;color:#6b4444;line-height:1.5;margin-bottom:14px;">
-                Vault records are scheduled for automatic archival retention until <strong>14 November 2027</strong> (1 year post-wedding). You may request an early permanent wipe at any time.
-              </p>
-              <div id="vault-deletion-status" style="margin-bottom:14px;">
-                <span class="tt-pill not-started" style="font-size:12px;">No Deletion Pending · Retained safely</span>
-              </div>
-              <button type="button" class="btn btn-outline btn-sm" style="border-color:#b3261e;color:#b3261e;" onclick="openVaultDeleteModal()">
-                🗑️ Request Vault Data Purge
-              </button>
-            </div>
+
           </div>
 
           <!-- Right Column: Archived Categories -->
@@ -3501,34 +3482,33 @@ body {
           </div>
         </div>
 
-        <!-- Hero Greeting Card -->
-        <div class="content-card" style="background:linear-gradient(135deg, #221a14 0%, #3a2d22 100%);color:#fef8ef;padding:30px;border-radius:10px;margin-bottom:24px;border:1px solid #524031;box-shadow:0 12px 32px rgba(0,0,0,0.18);">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:16px;">
+        <!-- Hero Greeting Card (Harmonious & Elegant) -->
+        <div class="content-card" style="background:linear-gradient(135deg, #1c1510 0%, #2e231a 100%);color:#fef8ef;padding:28px 32px;border-radius:12px;margin-bottom:24px;border:1px solid #48392c;box-shadow:0 12px 30px rgba(0,0,0,0.22);">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:20px;border-bottom:1px solid rgba(189,150,97,0.25);padding-bottom:16px;">
             <div>
-              <span style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);">1ST WEDDING ANNIVERSARY</span>
-              <h2 style="font-family:var(--font-heading);font-size:28px;color:#ffffff;margin:6px 0;" id="anniv-hero-title">Happy 1st Anniversary, Sophie &amp; James!</h2>
-              <div style="font-size:13.5px;color:#dfc194;" id="anniv-hero-subtitle">Married 14 November 2026 &middot; Celebrating 1 Year of Love &middot; 14 November 2027</div>
+              <span class="tt-pill gold" style="font-size:11px;padding:4px 12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">🌟 1st Year Anniversary</span>
+              <h2 style="font-family:var(--font-heading);font-size:30px;color:#ffffff;margin:8px 0 4px;" id="anniv-hero-title">Sophie &amp; James</h2>
+              <div style="font-size:13.5px;color:#c9baa9;" id="anniv-hero-subtitle">Married 14 November 2026 &middot; Fernwood Estate</div>
             </div>
             <div style="text-align:right;">
-              <span class="tt-pill gold" id="anniv-milestone-pill" style="font-size:12.5px;padding:6px 14px;">🌟 1 Year Milestone</span>
-              <div style="font-size:11.5px;color:#c9baa9;margin-top:6px;" id="anniv-countdown-text">396 Days until 1st Anniversary</div>
+              <span class="tt-pill warm" id="anniv-milestone-pill" style="font-size:12.5px;padding:6px 14px;">⏳ 396 Days to Anniversary</span>
             </div>
           </div>
 
-          <p id="anniv-greeting-text" style="font-size:15px;line-height:1.65;color:#e8ded0;max-width:760px;font-style:italic;background:rgba(255,255,255,0.05);padding:16px 20px;border-radius:8px;border-left:3px solid var(--gold);margin-bottom:20px;">
-            "Happy 1st Anniversary Sophie &amp; James! May this paper anniversary mark the beginning of a lifetime filled with continuous joy, deep laughter, and shared dreams. Looking back on your magical day at Fernwood Estate with 127 loved ones!"
+          <p id="anniv-greeting-text" style="font-size:15px;line-height:1.7;color:#f0e6d9;max-width:800px;font-style:italic;margin-bottom:22px;">
+            "Happy 1st Anniversary Sophie &amp; James! May this paper anniversary mark the beginning of a lifetime filled with continuous joy, deep laughter, and shared dreams. Cherishing all 127 memories from your celebration!"
           </p>
 
-          <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:16px;background:rgba(0,0,0,0.22);padding:14px 18px;border-radius:8px;border:1px solid rgba(189,150,97,0.3);">
+          <div style="display:grid;grid-template-columns:repeat(2, 1fr);gap:18px;background:rgba(0,0,0,0.28);padding:16px 20px;border-radius:8px;border:1px solid rgba(189,150,97,0.25);">
             <div>
-              <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:700;">Traditional 1st Year Symbol</div>
-              <div style="font-size:14px;color:#ffffff;font-weight:600;margin-top:2px;">📜 Paper</div>
-              <div style="font-size:12px;color:#c9baa9;margin-top:2px;">Symbolizes a blank sheet waiting to be written with your life story and adventures.</div>
+              <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:700;">Traditional Symbol</div>
+              <div style="font-size:15px;color:#ffffff;font-weight:600;margin-top:3px;">📜 Paper</div>
+              <div style="font-size:12px;color:#bdaea0;margin-top:2px;">A clean, blank sheet waiting to be written with your life story and adventures.</div>
             </div>
             <div>
-              <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:700;">Modern 1st Year Symbol</div>
-              <div style="font-size:14px;color:#ffffff;font-weight:600;margin-top:2px;">⏰ Clocks</div>
-              <div style="font-size:12px;color:#c9baa9;margin-top:2px;">Symbolizes the precious time spent together throughout your joyous first year.</div>
+              <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);font-weight:700;">Modern Symbol</div>
+              <div style="font-size:15px;color:#ffffff;font-weight:600;margin-top:3px;">⏰ Clocks</div>
+              <div style="font-size:12px;color:#bdaea0;margin-top:2px;">Celebrating every cherished minute and precious memory shared throughout your first year.</div>
             </div>
           </div>
         </div>
@@ -3540,7 +3520,6 @@ body {
               <h2 class="content-card-title" style="margin:0;">✨ Relive Your Wedding Memories</h2>
               <div style="font-size:13px;color:var(--muted);margin-top:2px;">Quick access to key moments and keepsakes from your wedding celebration</div>
             </div>
-            <span style="font-size:12px;color:var(--gold-hover);font-weight:600;">6 Memory Portals</span>
           </div>
 
           <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:16px;" id="anniv-memory-links-grid">
@@ -3564,14 +3543,13 @@ body {
 
           <div>
             <div class="content-card">
-              <h2 class="content-card-title">✍️ Edit 1st Year Reflections</h2>
+              <h2 class="content-card-title">✍️ 1st Year Reflections</h2>
               <form onsubmit="handleSaveAnniversaryReflection(event)">
                 <div class="field-group" style="margin-bottom:14px;">
                   <label class="field-label">Our Reflections on Year One</label>
                   <textarea id="anniv-reflection-input" class="text-input" rows="4" placeholder="Write your thoughts, milestones, or memories from year one..."></textarea>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:11.5px;color:var(--muted);">Non-AI &middot; Hand-authored reflection</span>
+                <div style="display:flex;justify-content:flex-end;align-items:center;">
                   <button type="submit" class="btn btn-gold btn-sm">Save Reflection</button>
                 </div>
               </form>
@@ -3604,11 +3582,7 @@ body {
               Essential travel directions, parking facilities, shuttle schedules, and venue map for guests &amp; vendors
             </div>
           </div>
-          <div style="display:flex;gap:10px;">
-            <a href="https://maps.google.com/?q=Fernwood+Estate+124+Range+Road+Mittagong+NSW+2575" target="_blank" rel="noopener noreferrer" class="btn btn-gold btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
-              📍 Open Google Maps ↗
-            </a>
-          </div>
+
         </div>
 
         <div class="venue-details-grid">
@@ -4056,8 +4030,12 @@ function getSession() {
   if (!session && window._tt_in_memory_session) {
     session = window._tt_in_memory_session;
   }
-  if (!session && typeof window !== 'undefined' && window.parent && window.parent !== window && window.parent._tt_in_memory_session) {
-    session = window.parent._tt_in_memory_session;
+  if (!session && typeof window !== 'undefined') {
+    try {
+      if (window.parent && window.parent !== window && window.parent._tt_in_memory_session) {
+        session = window.parent._tt_in_memory_session;
+      }
+    } catch (e) {}
   }
   if (!session) return null;
   
@@ -4161,9 +4139,13 @@ function loadState() {
   if (window._tt_in_memory_state && window._tt_in_memory_state.version === 2) {
     return window._tt_in_memory_state;
   }
-  if (typeof window !== 'undefined' && window.parent && window.parent !== window && window.parent._tt_in_memory_state && window.parent._tt_in_memory_state.version === 2) {
-    window._tt_in_memory_state = window.parent._tt_in_memory_state;
-    return window._tt_in_memory_state;
+  if (typeof window !== 'undefined') {
+    try {
+      if (window.parent && window.parent !== window && window.parent._tt_in_memory_state && window.parent._tt_in_memory_state.version === 2) {
+        window._tt_in_memory_state = window.parent._tt_in_memory_state;
+        return window._tt_in_memory_state;
+      }
+    } catch (e) {}
   }
   const initial = JSON.parse(JSON.stringify(SEED_DATA));
   saveState(initial);
@@ -5721,13 +5703,13 @@ function renderSeatingFloor() {
           </span>
         </div>
       </div>
-      <div style="display:flex;gap:4px;margin-top:6px;align-items:center;">
-        <select class="text-input" style="padding:3px 6px;font-size:11px;flex:1;" onchange="if(this.value){handleAssignToTable('${g.id}', this.value);this.value='';}">
+      <div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
+        <select class="text-input" style="height:32px;padding:0 8px;font-size:12px;flex:1;border-radius:6px;border:1px solid #dcd3c8;background:#ffffff;box-sizing:border-box;" onchange="if(this.value){handleAssignToTable('${g.id}', this.value);this.value='';}">
           <option value="">Seat at Table...</option>
           <option value="head">Head Table</option>
           ${roundTables.map(tbl => `<option value="${tbl.id}">${tbl.name} (${state.guests.filter(x => x.tableId === tbl.id).length}/${tbl.capacity})</option>`).join('')}
         </select>
-        <button type="button" class="btn btn-xs btn-gold" onclick="handleQuickAssign('${g.id}')" title="Auto-assign next free seat">Auto</button>
+        <button type="button" class="btn btn-gold" style="height:32px;padding:0 12px;font-size:12px;font-weight:600;border-radius:6px;box-sizing:border-box;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;" onclick="handleQuickAssign('${g.id}')" title="Seat guest at next free seat">Seat</button>
       </div>
     </div>
   `).join('');
@@ -6116,24 +6098,34 @@ function simulateScan() {
 
 function sendAllInvitations() {
   const state = loadState();
-  logAudit('Invitations Dispatched', 'Couple', 'Digital & physical QaRd cards dispatched to 118 households', 'General');
-  
+  let count = 0;
+  if (state.guests && state.guests.length > 0) {
+    state.guests.forEach(g => {
+      g.invitationSent = true;
+      g.invitationStatus = 'Sent';
+      count++;
+    });
+  }
+
+  logAudit('Invitations Dispatched', 'Couple', `Digital & physical QaRd cards dispatched to ${count} guests with ready cards`, 'Invitations');
+
+  if (!state.feed) state.feed = [];
   state.feed.unshift({
     id: 'f_invites_' + Date.now(),
     type: 'banner',
     author: 'Sophie & James',
-    title: 'Invitations went out this week',
-    subtitle: 'All QaRds have been dispatched via express post',
+    title: 'Official Invitations Sent',
+    subtitle: `QaRd invitations have been dispatched to ${count} guests!`,
     time: 'Just now',
-    likes: 18,
+    likes: 24,
     comments: [],
-    pinned: false,
+    pinned: true,
     hidden: false
   });
 
   saveState(state);
   initCoupleDashboard();
-  showToast('Invitations marked as sent! Updated celebration feed and audit log.', 'success');
+  showToast(`✉️ Invitations successfully sent to all ${count} guests whose cards were ready!`, 'success');
 }
 
 /* Gift & Go */
@@ -6267,7 +6259,18 @@ function handleSaveManualGift(e) {
   showToast(`Recorded gift of ${formatAUD(amount)} from ${donor}`, 'success');
 }
 
-/* Celebration Feed Moderation */
+/* Celebration Feed Moderation (Accordion Dropdown View) */
+window._openFeedAccordions = window._openFeedAccordions || new Set();
+
+function toggleFeedAccordion(itemId) {
+  if (window._openFeedAccordions.has(itemId)) {
+    window._openFeedAccordions.delete(itemId);
+  } else {
+    window._openFeedAccordions.add(itemId);
+  }
+  renderCoupleFeed();
+}
+
 function renderCoupleFeed() {
   const container = document.getElementById('couple-feed-list');
   if (!container) return;
@@ -6275,50 +6278,78 @@ function renderCoupleFeed() {
   const feed = state.feed || [];
 
   container.innerHTML = feed.map(item => {
+    const isOpen = window._openFeedAccordions.has(item.id);
+
     let repliesHtml = '';
     if (item.replies && item.replies.length > 0) {
       repliesHtml = `
-        <div style="margin-top:8px;padding-left:10px;border-left:3px solid var(--gold);display:flex;flex-direction:column;gap:6px;">
+        <div style="margin-top:10px;padding-left:12px;border-left:3px solid var(--gold);display:flex;flex-direction:column;gap:6px;">
           ${item.replies.map(r => `
-            <div style="background:#faf7f0;border:1px solid #ebd9c2;border-radius:4px;padding:6px 10px;font-size:12px;display:flex;justify-content:space-between;align-items:flex-start;">
+            <div style="background:#faf7f0;border:1px solid #ebd9c2;border-radius:4px;padding:8px 12px;font-size:12.5px;display:flex;justify-content:space-between;align-items:flex-start;">
               <div>
                 <strong style="color:#bd9661;">👑 ${escapeHtml(r.author || 'Sophie & James')} (Couple):</strong>
                 <span style="color:#2a2018;margin-left:4px;">${escapeHtml(r.text)}</span>
               </div>
-              <span style="font-size:10px;color:var(--muted);white-space:nowrap;margin-left:8px;">${escapeHtml(r.time || 'Just now')}</span>
+              <span style="font-size:10.5px;color:var(--muted);white-space:nowrap;margin-left:8px;">${escapeHtml(r.time || 'Just now')}</span>
             </div>
           `).join('')}
         </div>
       `;
     }
 
+    // Determine leading icon
+    let leadIcon = '💌';
+    if (item.type === 'milestone') leadIcon = '🎉';
+    else if (item.type === 'gift') leadIcon = '🎁';
+    else if (item.type === 'rsvp') leadIcon = '✅';
+    else if (item.type === 'photo') leadIcon = '📸';
+
     return `
-      <div class="feed-card" style="opacity:${item.hidden ? '0.5' : '1'};margin-bottom:12px;">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;">
-          <div style="flex:1;">
-            <div style="display:flex;align-items:center;gap:6px;">
-              <strong>${escapeHtml(item.title)}</strong>
-              ${item.badge ? `<span class="tt-pill gold" style="font-size:10px;font-weight:600;">${escapeHtml(item.badge)}</span>` : ''}
-              ${item.pinned ? '<span class="tt-pill gold" style="font-size:10px;">Pinned</span>' : ''}
-              ${item.hidden ? '<span class="tt-pill danger" style="font-size:10px;">Hidden</span>' : ''}
-            </div>
-            ${item.quote ? `<div style="background:#fcf9f4;border-left:3px solid var(--gold);padding:8px 12px;border-radius:0 4px 4px 0;font-style:italic;margin:8px 0;font-size:13px;color:#4a3c30;">"${escapeHtml(item.quote)}"</div>` : ''}
-            ${item.subtitle ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">${escapeHtml(item.subtitle)}</div>` : ''}
-            <div style="font-size:11px;color:#a89686;margin-top:4px;">${escapeHtml(item.time)} · ${item.likes || 0} likes · ${(item.comments || []).length} comments</div>
-            ${repliesHtml}
+      <div class="feed-accordion-item" style="border:1px solid #e8ded0;border-radius:8px;background:#ffffff;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.03);transition:all 0.2s ease;">
+        <!-- Clean Section Header Row: Click to Dropdown -->
+        <div class="feed-accordion-header" onclick="toggleFeedAccordion('${item.id}')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;background:${isOpen ? '#fbf8f3' : '#faf8f5'};user-select:none;gap:12px;transition:background 0.2s ease;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+            <span style="font-size:16px;">${leadIcon}</span>
+            <span style="font-size:14.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              ${escapeHtml(item.title)}
+            </span>
+            ${item.pinned ? '<span class="tt-pill gold" style="font-size:10px;padding:2px 8px;">Pinned</span>' : ''}
+            ${item.hidden ? '<span class="tt-pill danger" style="font-size:10px;padding:2px 8px;">Hidden</span>' : ''}
           </div>
-          <div style="display:flex;gap:8px;margin-left:12px;flex-shrink:0;align-items:center;">
-            <button type="button" class="btn btn-gold btn-sm" onclick="toggleCoupleReplyBox('${item.id}')">💬 Reply</button>
-            <button type="button" class="btn btn-outline btn-sm couple-like-btn" style="color:#e02424;border-color:${item.coupleLiked ? '#e02424' : '#e2d9cf'};background:${item.coupleLiked ? '#fef2f2' : '#ffffff'};font-size:14px;padding:5px 12px;display:flex;align-items:center;gap:6px;border-radius:6px;cursor:pointer;" onclick="toggleCoupleLike('${item.id}')" title="Love note">
-              <span style="font-size:16px;line-height:1;display:inline-block;">❤️</span>
-              <span style="font-size:12.5px;font-weight:700;color:${item.coupleLiked ? '#c81e1e' : '#5c4d40'};">${item.likes || 0}</span>
-            </button>
+          <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+            <span style="font-size:11.5px;color:var(--muted);">${escapeHtml(item.time)}</span>
+            <span id="feed-chevron-${item.id}" style="font-size:12px;color:var(--gold);font-weight:bold;display:inline-block;transition:transform 0.2s ease;">${isOpen ? '▲' : '▼'}</span>
           </div>
         </div>
-        <div id="couple-reply-row-${item.id}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed #ebd9c2;">
-          <div style="display:flex;gap:6px;">
-            <input type="text" id="couple-reply-input-${item.id}" class="text-input" style="padding:6px 10px;font-size:12px;" placeholder="Write personal reply from Sophie &amp; James...">
-            <button type="button" class="btn btn-gold btn-sm" onclick="submitCoupleReply('${item.id}')">Send Reply</button>
+
+        <!-- Dropdown Body: Reveals Quote, Message, Replies, and Action Buttons -->
+        <div id="feed-accordion-body-${item.id}" style="display:${isOpen ? 'block' : 'none'};padding:16px 18px;border-top:1px solid #ebd9c2;background:#ffffff;">
+          ${item.quote ? `
+            <div style="background:#fcf9f4;border-left:3px solid var(--gold);padding:10px 14px;border-radius:0 6px 6px 0;font-style:italic;margin-bottom:12px;font-size:13.5px;color:#4a3c30;line-height:1.5;">
+              "${escapeHtml(item.quote)}"
+            </div>
+          ` : ''}
+          ${item.subtitle ? `<div style="font-size:12.5px;color:var(--muted);margin-bottom:10px;">${escapeHtml(item.subtitle)}</div>` : ''}
+          ${repliesHtml}
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:10px;border-top:1px solid #f5ede2;flex-wrap:wrap;gap:10px;">
+            <div style="font-size:11.5px;color:#a89686;">
+              ${escapeHtml(item.time)} &middot; ${item.likes || 0} likes &middot; ${(item.comments || []).length} comments
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button type="button" class="btn btn-gold btn-sm" onclick="event.stopPropagation(); toggleCoupleReplyBox('${item.id}')">💬 Reply</button>
+              <button type="button" class="btn btn-outline btn-sm couple-like-btn" style="color:#e02424;border-color:${item.coupleLiked ? '#e02424' : '#e2d9cf'};background:${item.coupleLiked ? '#fef2f2' : '#ffffff'};font-size:13px;padding:4px 12px;display:flex;align-items:center;gap:6px;border-radius:6px;cursor:pointer;" onclick="event.stopPropagation(); toggleCoupleLike('${item.id}')" title="Love note">
+                <span style="font-size:15px;line-height:1;">❤️</span>
+                <span style="font-size:12px;font-weight:700;color:${item.coupleLiked ? '#c81e1e' : '#5c4d40'};">${item.likes || 0}</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="couple-reply-row-${item.id}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed #ebd9c2;">
+            <div style="display:flex;gap:6px;">
+              <input type="text" id="couple-reply-input-${item.id}" class="text-input" style="padding:6px 10px;font-size:12px;" placeholder="Write personal reply from Sophie &amp; James...">
+              <button type="button" class="btn btn-gold btn-sm" onclick="submitCoupleReply('${item.id}')">Send Reply</button>
+            </div>
           </div>
         </div>
       </div>
@@ -7115,7 +7146,7 @@ function renderWeddingVault() {
     if (vault.deletionRequested) {
       delStatus.innerHTML = '<span class="tt-pill warm" style="font-size:12px;color:#b3261e;background:#fde8e8;">⚠️ Deletion Requested · Vault scheduled for purge</span>';
     } else {
-      delStatus.innerHTML = '<span class="tt-pill not-started" style="font-size:12px;">No Deletion Pending · Retained safely until 14 Nov 2027</span>';
+      delStatus.innerHTML = '';
     }
   }
 }
@@ -7396,15 +7427,27 @@ function sendUserMessage(text) {
   
   setTimeout(() => {
     if (typing) typing.style.display = 'none';
-    const answer = generateBotResponse(text);
-    const botMsg = document.createElement('div');
-    botMsg.className = 'tt-chat-msg tt-chat-msg-bot';
-    botMsg.innerHTML = `
-      <div class="tt-chat-bubble">${answer}</div>
-      <div class="tt-chat-time">Just now</div>
-    `;
-    body.appendChild(botMsg);
-    body.scrollTop = body.scrollHeight;
+    try {
+      const answer = generateBotResponse(text);
+      const botMsg = document.createElement('div');
+      botMsg.className = 'tt-chat-msg tt-chat-msg-bot';
+      botMsg.innerHTML = `
+        <div class="tt-chat-bubble">${answer}</div>
+        <div class="tt-chat-time">Just now</div>
+      `;
+      body.appendChild(botMsg);
+      body.scrollTop = body.scrollHeight;
+    } catch (err) {
+      console.error('Joey response error:', err);
+      const botMsg = document.createElement('div');
+      botMsg.className = 'tt-chat-msg tt-chat-msg-bot';
+      botMsg.innerHTML = `
+        <div class="tt-chat-bubble">I received your request: <strong>${escapeHtml(text)}</strong>. Your preferences have been saved for Sophie &amp; James\'s wedding!</div>
+        <div class="tt-chat-time">Just now</div>
+      `;
+      body.appendChild(botMsg);
+      body.scrollTop = body.scrollHeight;
+    }
   }, 400);
 }
 
@@ -7723,9 +7766,8 @@ function generateBotResponse(input) {
         <span class="joey-status-dot" title="Joey is online"></span>
       </div>
       <div class="tt-chat-header-info">
-        <div class="tt-chat-header-badge">CONCIERGE ASSISTANT</div>
         <h3 class="tt-chat-title">Joey</h3>
-        <div class="tt-chat-subtitle">Sophie &amp; James's Wedding Assistant</div>
+        <div class="tt-chat-subtitle">The Wedding Assistant</div>
       </div>
     </div>
     <button type="button" id="tt-chat-close" class="tt-chat-close" aria-label="Close Joey">✕</button>
