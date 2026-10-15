@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function App() {
   const [screen, setScreen] = useState('guest-mobile.html');
+  const [iframeKey, setIframeKey] = useState(0);
 
   const screens = [
     { id: 'guest-mobile.html', label: '📱 Guest Mobile (402×874)' },
@@ -9,11 +10,41 @@ export default function App() {
     { id: 'couple.html', label: '💍 Couple Portal & CMS' },
     { id: 'mc.html', label: '🎧 MC / DJ Portal' },
     { id: 'superadmin.html', label: '👑 Super Admin' },
-    { id: 'index.html', label: '✨ Full Showcase Hub' },
+    { id: 'showcase.html', label: '✨ Full Showcase Hub' },
   ];
 
+  // Listen for navigation messages dispatched from within the iframe demobar
+  useEffect(() => {
+    const handleMsg = (event: MessageEvent) => {
+      if (event.data?.type === 'NAVIGATE' && event.data?.url) {
+        const target = event.data.url;
+        setScreen(target === 'index.html' ? 'showcase.html' : target);
+      }
+    };
+    window.addEventListener('message', handleMsg);
+    return () => window.removeEventListener('message', handleMsg);
+  }, []);
+
+  const handleResetData = () => {
+    try {
+      localStorage.removeItem('tt_demo_v1');
+      localStorage.removeItem('tt_session');
+      setIframeKey(prev => prev + 1);
+    } catch (err) {
+      console.warn('Reset error', err);
+    }
+  };
+
   return (
-    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#1c1713', fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+    <div style={{ 
+      width: '100vw', 
+      height: '100vh', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      background: '#1c1713', 
+      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      overflow: 'hidden'
+    }}>
       {/* Top Portal Switcher Bar */}
       <header style={{ 
         display: 'flex', 
@@ -25,13 +56,15 @@ export default function App() {
         alignItems: 'center',
         flexShrink: 0
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '14px' }}>
+        {/* Brand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '12px' }}>
           <span style={{ fontSize: '18px' }}>🥂</span>
           <span style={{ color: '#bd9661', fontWeight: 'bold', fontSize: '15px', whiteSpace: 'nowrap', letterSpacing: '0.5px' }}>
-            Tap & Toast
+            Tap &amp; Toast
           </span>
         </div>
 
+        {/* Portal Pills */}
         <div style={{ display: 'flex', gap: '8px', flex: 1, overflowX: 'auto' }}>
           {screens.map(s => (
             <button
@@ -58,32 +91,59 @@ export default function App() {
           ))}
         </div>
 
-        {/* Quick Open In Full Tab */}
-        <a
-          href={`/${screen}`}
-          target="_blank"
-          rel="noreferrer"
-          style={{
-            color: '#a89078',
-            fontSize: '12px',
-            textDecoration: 'none',
-            padding: '6px 12px',
-            borderRadius: '6px',
-            border: '1px solid #332a22',
-            whiteSpace: 'nowrap',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '4px'
-          }}
-          title="Open currently selected screen in full tab"
-        >
-          ↗ Open Tab
-        </a>
+        {/* Action Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          {/* Reset Demo Data Button */}
+          <button
+            type="button"
+            onClick={handleResetData}
+            style={{
+              color: '#dfc194',
+              background: '#261e18',
+              fontSize: '12px',
+              fontWeight: 600,
+              padding: '6px 12px',
+              borderRadius: '6px',
+              border: '1px solid #4a3a2d',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+            title="Reset localStorage demo database to seed state"
+          >
+            ↻ Reset Demo
+          </button>
+
+          {/* Quick Open In Full Tab */}
+          <a
+            href={`/${screen}`}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              color: '#a89078',
+              fontSize: '12px',
+              textDecoration: 'none',
+              padding: '6px 12px',
+              borderRadius: '6px',
+              border: '1px solid #332a22',
+              whiteSpace: 'nowrap',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              background: '#1c1612'
+            }}
+            title="Open currently selected screen in full tab"
+          >
+            ↗ Open Tab
+          </a>
+        </div>
       </header>
 
       {/* Live Interactive Prototype */}
       <iframe
-        key={screen}
+        key={`${screen}-${iframeKey}`}
         src={`/${screen}`}
         style={{ 
           flex: 1, 
@@ -92,6 +152,7 @@ export default function App() {
           border: 'none', 
           background: '#f8f6f2' 
         }}
+        allow="camera; microphone; clipboard-write; fullscreen"
         title="Tap & Toast Interactive Prototype"
       />
     </div>
