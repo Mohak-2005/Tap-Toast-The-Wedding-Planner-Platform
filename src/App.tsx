@@ -1,160 +1,112 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import DemoBar from './components/DemoBar';
+import ShowcaseView from './components/ShowcaseView';
+import GuestMobileView from './components/GuestMobileView';
+import CoupleView from './components/CoupleView';
+import McView from './components/McView';
+import McMobileView from './components/McMobileView';
+import SuperAdminView from './components/SuperAdminView';
+import GuestWebView from './components/GuestWebView';
+import LoginView from './components/LoginView';
+import RegisterView from './components/RegisterView';
+
+interface ToastItem {
+  id: string;
+  message: string;
+  type: 'info' | 'success' | 'error';
+}
 
 export default function App() {
-  const [screen, setScreen] = useState('guest-mobile.html');
-  const [iframeKey, setIframeKey] = useState(0);
+  const [currentView, setCurrentView] = useState<string>('guest-mobile');
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
 
-  const screens = [
-    { id: 'guest-mobile.html', label: '📱 Guest Mobile (402×874)' },
-    { id: 'mc-mobile.html', label: '🎧 MC Mobile (402×874)' },
-    { id: 'couple.html', label: '💍 Couple Portal & CMS' },
-    { id: 'mc.html', label: '🎧 MC / DJ Portal' },
-    { id: 'superadmin.html', label: '👑 Super Admin' },
-    { id: 'showcase.html', label: '✨ Full Showcase Hub' },
-  ];
+  // Listen for toast notifications dispatched from anywhere
+  useEffect(() => {
+    const handleToast = (e: any) => {
+      if (e.detail) {
+        const newToast: ToastItem = {
+          id: 'toast_' + Date.now() + '_' + Math.random(),
+          message: e.detail.message,
+          type: e.detail.type || 'info',
+        };
+        setToasts(prev => [...prev, newToast]);
 
-  // Listen for navigation messages dispatched from within the iframe demobar
+        setTimeout(() => {
+          setToasts(prev => prev.filter(t => t.id !== newToast.id));
+        }, 3200);
+      }
+    };
+
+    window.addEventListener('tt_show_toast', handleToast);
+    return () => window.removeEventListener('tt_show_toast', handleToast);
+  }, []);
+
+  // Listen for navigation messages from child components or postMessage
   useEffect(() => {
     const handleMsg = (event: MessageEvent) => {
       if (event.data?.type === 'NAVIGATE' && event.data?.url) {
-        const target = event.data.url;
-        setScreen(target === 'index.html' ? 'showcase.html' : target);
+        const target = event.data.url.replace('.html', '');
+        setCurrentView(target === 'index' ? 'showcase' : target);
       }
     };
     window.addEventListener('message', handleMsg);
     return () => window.removeEventListener('message', handleMsg);
   }, []);
 
-  const handleResetData = () => {
-    try {
-      localStorage.removeItem('tt_demo_v1');
-      localStorage.removeItem('tt_session');
-      setIframeKey(prev => prev + 1);
-    } catch (err) {
-      console.warn('Reset error', err);
+  const renderActiveView = () => {
+    switch (currentView) {
+      case 'guest-mobile':
+        return <GuestMobileView />;
+      case 'couple':
+        return <CoupleView onSelectView={setCurrentView} />;
+      case 'mc':
+        return <McView onSelectView={setCurrentView} />;
+      case 'mc-mobile':
+        return <McMobileView />;
+      case 'superadmin':
+        return <SuperAdminView onSelectView={setCurrentView} />;
+      case 'guest-web':
+        return <GuestWebView />;
+      case 'login':
+        return <LoginView onSelectView={setCurrentView} />;
+      case 'register':
+        return <RegisterView onSelectView={setCurrentView} />;
+      case 'showcase':
+      default:
+        return <ShowcaseView onSelectView={setCurrentView} />;
     }
   };
 
   return (
-    <div style={{ 
-      width: '100vw', 
-      height: '100vh', 
-      display: 'flex', 
-      flexDirection: 'column', 
-      background: '#1c1713', 
-      fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      overflow: 'hidden'
-    }}>
-      {/* Top Portal Switcher Bar */}
-      <header style={{ 
-        display: 'flex', 
-        gap: '10px', 
-        padding: '10px 18px', 
-        background: '#15110e', 
-        borderBottom: '1px solid #332a22', 
-        overflowX: 'auto', 
-        alignItems: 'center',
-        flexShrink: 0
-      }}>
-        {/* Brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginRight: '12px' }}>
-          <span style={{ fontSize: '18px' }}>🥂</span>
-          <span style={{ color: '#bd9661', fontWeight: 'bold', fontSize: '15px', whiteSpace: 'nowrap', letterSpacing: '0.5px' }}>
-            Tap &amp; Toast
-          </span>
-        </div>
+    <div className="w-screen h-screen flex flex-col bg-[#1c1713] overflow-hidden font-sans">
+      {/* Top Demo Bar */}
+      <DemoBar currentView={currentView} onSelectView={setCurrentView} />
 
-        {/* Portal Pills */}
-        <div style={{ display: 'flex', gap: '8px', flex: 1, overflowX: 'auto' }}>
-          {screens.map(s => (
-            <button
-              key={s.id}
-              onClick={() => setScreen(s.id)}
-              style={{
-                padding: '7px 16px',
-                borderRadius: '20px',
-                fontSize: '13px',
-                cursor: 'pointer',
-                border: screen === s.id ? '1px solid #bd9661' : '1px solid #3d332a',
-                background: screen === s.id ? '#bd9661' : '#231c17',
-                color: screen === s.id ? '#15110e' : '#e6cda6',
-                fontWeight: screen === s.id ? '700' : '500',
-                transition: 'all 0.2s ease',
-                whiteSpace: 'nowrap',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
+      {/* Primary Application Viewport */}
+      <div className="flex-1 overflow-y-auto relative flex flex-col">
+        {renderActiveView()}
+      </div>
 
-        {/* Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          {/* Reset Demo Data Button */}
-          <button
-            type="button"
-            onClick={handleResetData}
-            style={{
-              color: '#dfc194',
-              background: '#261e18',
-              fontSize: '12px',
-              fontWeight: 600,
-              padding: '6px 12px',
-              borderRadius: '6px',
-              border: '1px solid #4a3a2d',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-            title="Reset localStorage demo database to seed state"
+      {/* Global Toast Container */}
+      <div className="fixed bottom-6 right-6 z-[99999] flex flex-col gap-2 pointer-events-none">
+        {toasts.map(t => (
+          <div
+            key={t.id}
+            className={`pointer-events-auto px-4 py-2.5 rounded-lg text-xs font-semibold text-white shadow-xl flex items-center gap-2 border transition-all animate-bounce-in ${
+              t.type === 'success'
+                ? 'bg-[#181310] border-emerald-500 border-l-4'
+                : t.type === 'error'
+                ? 'bg-[#181310] border-red-500 border-l-4'
+                : 'bg-[#181310] border-[#bd9661] border-l-4'
+            }`}
           >
-            ↻ Reset Demo
-          </button>
-
-          {/* Quick Open In Full Tab */}
-          <a
-            href={`/${screen}`}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              color: '#a89078',
-              fontSize: '12px',
-              textDecoration: 'none',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              border: '1px solid #332a22',
-              whiteSpace: 'nowrap',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              background: '#1c1612'
-            }}
-            title="Open currently selected screen in full tab"
-          >
-            ↗ Open Tab
-          </a>
-        </div>
-      </header>
-
-      {/* Live Interactive Prototype */}
-      <iframe
-        key={`${screen}-${iframeKey}`}
-        src={`/${screen}`}
-        style={{ 
-          flex: 1, 
-          width: '100%', 
-          height: '100%', 
-          border: 'none', 
-          background: '#f8f6f2' 
-        }}
-        allow="camera; microphone; clipboard-write; fullscreen"
-        title="Tap & Toast Interactive Prototype"
-      />
+            <span className={t.type === 'success' ? 'text-emerald-400' : t.type === 'error' ? 'text-red-400' : 'text-[#bd9661]'}>
+              {t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ'}
+            </span>
+            <span>{t.message}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
