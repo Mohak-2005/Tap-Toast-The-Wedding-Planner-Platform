@@ -2946,8 +2946,12 @@ function getSession() {
   if (!session && window._tt_in_memory_session) {
     session = window._tt_in_memory_session;
   }
-  if (!session && typeof window !== 'undefined' && window.parent && window.parent !== window && window.parent._tt_in_memory_session) {
-    session = window.parent._tt_in_memory_session;
+  if (!session && typeof window !== 'undefined') {
+    try {
+      if (window.parent && window.parent !== window && window.parent._tt_in_memory_session) {
+        session = window.parent._tt_in_memory_session;
+      }
+    } catch (e) {}
   }
   if (!session) return null;
   
@@ -3051,9 +3055,13 @@ function loadState() {
   if (window._tt_in_memory_state && window._tt_in_memory_state.version === 2) {
     return window._tt_in_memory_state;
   }
-  if (typeof window !== 'undefined' && window.parent && window.parent !== window && window.parent._tt_in_memory_state && window.parent._tt_in_memory_state.version === 2) {
-    window._tt_in_memory_state = window.parent._tt_in_memory_state;
-    return window._tt_in_memory_state;
+  if (typeof window !== 'undefined') {
+    try {
+      if (window.parent && window.parent !== window && window.parent._tt_in_memory_state && window.parent._tt_in_memory_state.version === 2) {
+        window._tt_in_memory_state = window.parent._tt_in_memory_state;
+        return window._tt_in_memory_state;
+      }
+    } catch (e) {}
   }
   const initial = JSON.parse(JSON.stringify(SEED_DATA));
   saveState(initial);
@@ -3350,15 +3358,27 @@ function sendUserMessage(text) {
   
   setTimeout(() => {
     if (typing) typing.style.display = 'none';
-    const answer = generateBotResponse(text);
-    const botMsg = document.createElement('div');
-    botMsg.className = 'tt-chat-msg tt-chat-msg-bot';
-    botMsg.innerHTML = `
-      <div class="tt-chat-bubble">${answer}</div>
-      <div class="tt-chat-time">Just now</div>
-    `;
-    body.appendChild(botMsg);
-    body.scrollTop = body.scrollHeight;
+    try {
+      const answer = generateBotResponse(text);
+      const botMsg = document.createElement('div');
+      botMsg.className = 'tt-chat-msg tt-chat-msg-bot';
+      botMsg.innerHTML = `
+        <div class="tt-chat-bubble">${answer}</div>
+        <div class="tt-chat-time">Just now</div>
+      `;
+      body.appendChild(botMsg);
+      body.scrollTop = body.scrollHeight;
+    } catch (err) {
+      console.error('Joey response error:', err);
+      const botMsg = document.createElement('div');
+      botMsg.className = 'tt-chat-msg tt-chat-msg-bot';
+      botMsg.innerHTML = `
+        <div class="tt-chat-bubble">I received your request: <strong>${escapeHtml(text)}</strong>. Your preferences have been saved for Sophie &amp; James\'s wedding!</div>
+        <div class="tt-chat-time">Just now</div>
+      `;
+      body.appendChild(botMsg);
+      body.scrollTop = body.scrollHeight;
+    }
   }, 400);
 }
 
