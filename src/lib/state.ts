@@ -13,7 +13,26 @@ export function getStoredState(): DemoState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          ...SEED_DATA,
+          ...parsed,
+          tenants: Array.isArray(parsed.tenants) && parsed.tenants.length > 0 ? parsed.tenants : SEED_DATA.tenants,
+          auditLog: Array.isArray(parsed.auditLog) && parsed.auditLog.length > 0 ? parsed.auditLog : SEED_DATA.auditLog,
+          plans: Array.isArray(parsed.plans) && parsed.plans.length > 0 ? parsed.plans : SEED_DATA.plans,
+          supportTickets: Array.isArray(parsed.supportTickets) && parsed.supportTickets.length > 0 ? parsed.supportTickets : (SEED_DATA.supportTickets || []),
+          featureFlags: parsed.featureFlags && typeof parsed.featureFlags === 'object' ? { ...SEED_DATA.featureFlags, ...parsed.featureFlags } : SEED_DATA.featureFlags,
+          weddings: Array.isArray(parsed.weddings) && parsed.weddings.length > 0 ? parsed.weddings : SEED_DATA.weddings,
+          guests: Array.isArray(parsed.guests) ? parsed.guests : SEED_DATA.guests,
+          tables: Array.isArray(parsed.tables) ? parsed.tables : SEED_DATA.tables,
+          gifts: Array.isArray(parsed.gifts) ? parsed.gifts : SEED_DATA.gifts,
+          users: Array.isArray(parsed.users) ? parsed.users : SEED_DATA.users,
+          clients: Array.isArray(parsed.clients) ? parsed.clients : (SEED_DATA.clients || []),
+          invoices: Array.isArray(parsed.invoices) ? parsed.invoices : (SEED_DATA.invoices || []),
+          team: Array.isArray(parsed.team) ? parsed.team : (SEED_DATA.team || []),
+        };
+      }
     }
   } catch (err) {
     console.warn('localStorage state read error', err);

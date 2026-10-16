@@ -13,11 +13,13 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
   const [activeTab, setActiveTab] = useState<'platform' | 'tenants' | 'plans' | 'flags' | 'audit' | 'support' | 'settings'>('platform');
 
   // Dynamic SaaS Plans
-  const plans: SaaSPlan[] = state.plans && state.plans.length > 0 ? state.plans : initialPlans;
+  const plans: SaaSPlan[] = Array.isArray(state?.plans) && state.plans.length > 0 ? state.plans : initialPlans;
+  const tenants: Tenant[] = Array.isArray(state?.tenants) ? state.tenants : [];
+  const auditLog: any[] = Array.isArray(state?.auditLog) ? state.auditLog : [];
 
   // Helper to extract clean plan key matching available plans
-  const getTenantPlanKey = (planStr: string): string => {
-    if (!planStr) return plans[0]?.key || 'Starter';
+  const getTenantPlanKey = (planStr: string | any): string => {
+    if (!planStr || typeof planStr !== 'string') return plans[0]?.key || 'Starter';
     const clean = planStr.trim();
     const direct = plans.find(p => p.key.toLowerCase() === clean.toLowerCase());
     if (direct) return direct.key;
@@ -287,25 +289,27 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
     if (onSelectView) onSelectView('login');
   };
 
-  const filteredTenants = state.tenants.filter(t => {
-    const matchSearch = t.businessName.toLowerCase().includes(tenantSearch.toLowerCase()) ||
-      t.contactName.toLowerCase().includes(tenantSearch.toLowerCase());
+  const filteredTenants = tenants.filter(t => {
+    if (!t) return false;
+    const matchSearch = (t.businessName || '').toLowerCase().includes(tenantSearch.toLowerCase()) ||
+      (t.contactName || '').toLowerCase().includes(tenantSearch.toLowerCase());
     const tenantKey = getTenantPlanKey(t.plan).toLowerCase();
     const matchPlan = planFilter === 'all' ||
       tenantKey === planFilter.toLowerCase() ||
-      t.plan.toLowerCase().includes(planFilter.toLowerCase());
+      (t.plan || '').toLowerCase().includes(planFilter.toLowerCase());
     return matchSearch && matchPlan;
   });
 
-  const filteredAudit = state.auditLog.filter(a => {
-    const matchSearch = a.action.toLowerCase().includes(auditSearch.toLowerCase()) ||
-      a.user.toLowerCase().includes(auditSearch.toLowerCase()) ||
-      a.details.toLowerCase().includes(auditSearch.toLowerCase());
-    const matchCat = auditCategory === 'all' || a.category.toLowerCase() === auditCategory.toLowerCase();
+  const filteredAudit = auditLog.filter(a => {
+    if (!a) return false;
+    const matchSearch = (a.action || '').toLowerCase().includes(auditSearch.toLowerCase()) ||
+      (a.user || '').toLowerCase().includes(auditSearch.toLowerCase()) ||
+      (a.details || '').toLowerCase().includes(auditSearch.toLowerCase());
+    const matchCat = auditCategory === 'all' || (a.category || '').toLowerCase() === auditCategory.toLowerCase();
     return matchSearch && matchCat;
   });
 
-  const activeTenantsCount = state.tenants.filter(t => t.status === 'Active').length;
+  const activeTenantsCount = tenants.filter(t => t?.status === 'Active').length;
 
   return (
     <div className="flex-1 flex flex-col md:flex-row min-h-[calc(100vh-45px)] bg-[#f8f6f2] font-sans select-none">
@@ -340,7 +344,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
               {
                 id: 'tenants',
                 label: 'MC Tenants',
-                badge: state.tenants.length,
+                badge: tenants.length,
                 icon: (
                   <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -373,7 +377,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
               {
                 id: 'audit',
                 label: 'Audit Logs',
-                badge: state.auditLog.length,
+                badge: auditLog.length,
                 icon: (
                   <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -581,7 +585,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    {state.tenants.map(t => (
+                    {tenants.map(t => (
                       <tr key={t.id}>
                         <td>
                           <strong className="text-sm font-semibold text-[#15110e] block">{t.businessName}</strong>
@@ -778,7 +782,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
 
             <div className="plan-cards-grid">
               {plans.map(p => {
-                const subCount = state.tenants.filter(t => getTenantPlanKey(t.plan).toLowerCase() === p.key.toLowerCase()).length;
+                const subCount = tenants.filter(t => getTenantPlanKey(t?.plan).toLowerCase() === p.key.toLowerCase()).length;
                 return (
                   <div
                     key={p.id}
@@ -798,7 +802,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                         ${p.price} <small className="text-sm text-[#8b7b6b] font-normal">{p.billingCycle || 'AUD / mo'}</small>
                       </div>
                       <ul className="text-xs text-[#5a4b3d] space-y-2 list-none p-0 mt-4">
-                        {p.features.map((feat, fIdx) => (
+                        {(p.features || []).map((feat, fIdx) => (
                           <li key={fIdx}>✓ {feat}</li>
                         ))}
                       </ul>

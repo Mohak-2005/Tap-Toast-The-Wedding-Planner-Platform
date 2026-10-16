@@ -103,6 +103,74 @@ export default function App() {
     }
   };
 
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('Captured rendering exception:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#f8f6f2] text-center min-h-[60vh]">
+          <div className="w-16 h-16 rounded-full bg-amber-100 border border-amber-300 text-[#bd9661] flex items-center justify-center text-2xl font-bold mb-4 shadow-sm">
+            !
+          </div>
+          <h2 className="font-serif text-2xl font-bold text-[#15110e] mb-2">
+            View Initialization Notice
+          </h2>
+          <p className="text-sm text-[#8b7b6b] max-w-md mb-6 leading-relaxed">
+            A mismatch occurred with older saved demo data in this browser session. Clicking below will synchronize the latest platform schema.
+          </p>
+          <div className="flex gap-3 flex-wrap justify-center">
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  localStorage.removeItem('tt_demo_v1');
+                  localStorage.removeItem('tt_session');
+                } catch (e) {}
+                window.location.reload();
+              }}
+              className="px-5 py-2.5 bg-[#bd9661] hover:bg-[#a8824f] text-white font-semibold rounded-lg text-xs transition-colors cursor-pointer shadow-md"
+            >
+              Sync &amp; Reset Demo Data
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                window.location.hash = '#showcase';
+                window.location.reload();
+              }}
+              className="px-5 py-2.5 border border-[#d4c5b3] text-[#15110e] hover:bg-[#eae3d8] font-semibold rounded-lg text-xs transition-colors cursor-pointer"
+            >
+              Return to Showcase
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
   return (
     <div className="w-screen h-screen flex flex-col bg-[#1c1713] overflow-hidden font-sans">
       {/* Top Demo Bar */}
@@ -110,7 +178,9 @@ export default function App() {
 
       {/* Primary Application Viewport */}
       <div className="flex-1 overflow-y-auto relative flex flex-col bg-[#f8f6f2]">
-        {renderActiveView()}
+        <ErrorBoundary key={currentView}>
+          {renderActiveView()}
+        </ErrorBoundary>
       </div>
 
       {/* Global Toast Container */}
