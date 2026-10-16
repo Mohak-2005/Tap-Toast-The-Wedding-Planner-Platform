@@ -3,7 +3,8 @@ import { useAppState, showToast } from '../lib/state';
 
 export default function GuestMobileView() {
   const { state, setState } = useAppState();
-  const [activeTab, setActiveTab] = useState<'splash' | 'hub' | 'rsvp' | 'feed' | 'events' | 'table' | 'photos' | 'gifts'>('hub');
+  const [activeTab, setActiveTab] = useState<'splash' | 'hub' | 'rsvp' | 'feed' | 'events' | 'table' | 'photos' | 'gifts' | 'story'>('hub');
+  const [storyFilter, setStoryFilter] = useState<'all' | 'story' | 'menu' | 'memoriam' | 'party' | 'honeymoon'>('all');
   const [showJoey, setShowJoey] = useState(false);
   
   // RSVP State
@@ -421,9 +422,10 @@ export default function GuestMobileView() {
               </div>
 
               {/* Wide Banner: Our Story & Details */}
-              <div
-                onClick={() => showToast('Opening Story & Details guide', 'info')}
-                className="bg-white border border-[#e8ded0] rounded-xl p-3.5 shadow-sm flex items-center justify-between cursor-pointer hover:border-[#bd9661] transition-colors"
+              <button
+                type="button"
+                onClick={() => setActiveTab('story')}
+                className="w-full bg-white border border-[#e8ded0] rounded-xl p-3.5 shadow-sm flex items-center justify-between cursor-pointer hover:border-[#bd9661] hover:shadow-md transition-all active:scale-[0.99] text-left"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">📖</span>
@@ -433,7 +435,7 @@ export default function GuestMobileView() {
                   </div>
                 </div>
                 <div className="text-xs text-[#bd9661] font-semibold">&rarr;</div>
-              </div>
+              </button>
 
               {/* Celebration Feed Section Preview */}
               <div className="pt-1">
@@ -1114,6 +1116,230 @@ export default function GuestMobileView() {
                   ${customGiftAmount || selectedGiftPreset} AUD
                 </span>
                 <span>via Card / Apple Pay</span>
+              </button>
+            </div>
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB: OUR STORY & DETAILS                                       */}
+          {/* ============================================================== */}
+          {activeTab === 'story' && (
+            <div className="p-4 space-y-4 animate-in fade-in duration-200">
+              {/* Top Navigation Bar */}
+              <div className="flex items-center justify-between pt-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('hub')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#e8ded0] text-xs font-bold text-[#bd9661] hover:bg-[#faf8f5] shadow-xs cursor-pointer transition-colors"
+                >
+                  <span>&larr;</span> Back to Hub
+                </button>
+                <span className="text-[10px] font-bold tracking-widest uppercase text-[#bd9661]">
+                  Sophie &amp; James
+                </span>
+              </div>
+
+              {/* Title Section */}
+              <div className="px-1">
+                <div className="text-[10px] font-bold tracking-widest uppercase text-[#bd9661] mb-0.5">
+                  The Wedding Companion
+                </div>
+                <h1 className="font-serif text-2xl font-bold text-[#15110e] leading-tight mb-1">
+                  Our Story &amp; Details
+                </h1>
+                <div className="text-xs text-[#8b7b6b]">
+                  Saturday, 14 November 2026 &bull; Fernwood Estate
+                </div>
+              </div>
+
+              {/* Category Pills Filter */}
+              <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+                {[
+                  { id: 'all', label: 'All Details' },
+                  { id: 'story', label: '💍 Love Story' },
+                  { id: 'menu', label: '🍽️ Feast & Menu' },
+                  { id: 'memoriam', label: '🕊️ In Memoriam' },
+                  { id: 'party', label: '👥 Bridal Party' },
+                  { id: 'honeymoon', label: '✈️ Honeymoon' },
+                ].map((chip) => (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    onClick={() => setStoryFilter(chip.id as any)}
+                    className={`px-3 py-1.5 rounded-full whitespace-nowrap font-medium text-[11px] transition-all cursor-pointer ${
+                      storyFilter === chip.id
+                        ? 'bg-[#15110e] text-white shadow-xs'
+                        : 'bg-white border border-[#e8ded0] text-[#5a4b3d] hover:bg-[#faf8f5]'
+                    }`}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* 1. LOVE STORY */}
+              {(storyFilter === 'all' || storyFilter === 'story') && (
+                <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-xs space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">💍</span>
+                    <div>
+                      <h3 className="font-serif text-lg font-bold text-[#15110e]">Our Love Story</h3>
+                      <p className="text-[11px] text-[#bd9661] font-medium">Bowral to the Southern Highlands</p>
+                    </div>
+                  </div>
+                  <div className="bg-[#fbf9f5] rounded-xl p-3 border border-[#f0e6d8] text-xs text-[#5a4b3d] leading-relaxed italic">
+                    "We met on a rainy autumn afternoon in Bowral at a small corner bookstore. Five years, countless road trips, and one unforgettable sunset in Queenstown later, here we are celebrating our wedding with all the people who mean the most to us."
+                  </div>
+                  <div className="space-y-2 pt-1">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b]">Milestones</div>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-[11px] font-bold text-[#bd9661] mt-0.5 whitespace-nowrap">2021</span>
+                        <span className="text-[#3a2f26]">First met over vintage literature at the Bowral Corner Bookstore.</span>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-[11px] font-bold text-[#bd9661] mt-0.5 whitespace-nowrap">2023</span>
+                        <span className="text-[#3a2f26]">First international adventure campervanning around New Zealand.</span>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-[11px] font-bold text-[#bd9661] mt-0.5 whitespace-nowrap">2025</span>
+                        <span className="text-[#3a2f26]">Golden hour proposal overlooking Lake Wakatipu &amp; The Remarkables.</span>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <span className="text-[11px] font-bold text-[#bd9661] mt-0.5 whitespace-nowrap">Today</span>
+                        <span className="text-[#3a2f26] font-semibold">Tying the knot surrounded by our cherished family &amp; friends!</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. WEDDING FEAST & MENU */}
+              {(storyFilter === 'all' || storyFilter === 'menu') && (
+                <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-xs space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🍽️</span>
+                    <div>
+                      <h3 className="font-serif text-lg font-bold text-[#15110e]">Wedding Feast &amp; Menu</h3>
+                      <p className="text-[11px] text-[#bd9661] font-medium">Curated by Estate Chef Marco Rossi</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3 text-xs">
+                    <div className="bg-[#fcfaf7] border border-[#f0e6d8] rounded-xl p-3">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661] mb-1">Entr&eacute;e Selection</div>
+                      <div className="space-y-1.5 text-[#3a2f26]">
+                        <p><strong>&bull; Seared Southern Highlands Scallops</strong> &mdash; with cauliflower velvet, crisp prosciutto crumb &amp; lemon herb oil</p>
+                        <p><strong>&bull; Heirloom Burrata (V)</strong> &mdash; with sun-ripened heritage tomatoes, aged balsamic reduction &amp; micro basil</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-[#fcfaf7] border border-[#f0e6d8] rounded-xl p-3">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661] mb-1">Main Course</div>
+                      <div className="space-y-1.5 text-[#3a2f26]">
+                        <p><strong>&bull; Slow-Roasted Grass-Fed Beef Tenderloin</strong> &mdash; potato mousseline, Dutch carrots, charred shallots &amp; pinot noir jus</p>
+                        <p><strong>&bull; Wild Forest Mushroom Risotto (V, GF)</strong> &mdash; arborio rice, black truffle essence, aged pecorino &amp; crisp sage</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-[#fcfaf7] border border-[#f0e6d8] rounded-xl p-3">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661] mb-1">Dessert &amp; Sweets</div>
+                      <div className="space-y-1.5 text-[#3a2f26]">
+                        <p><strong>&bull; Dark Chocolate Flourless Ganache</strong> &mdash; raspberry coulis, gold leaf &amp; clotted double cream</p>
+                        <p><strong>&bull; Native Lemon Myrtle Panna Cotta</strong> &mdash; macadamia honeycomb brittle &amp; passionfruit pearls</p>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 bg-[#faf8f5] rounded-lg border border-[#e8ded0] text-[11px] text-[#8b7b6b]">
+                      🍷 <strong>Wines &amp; Drinks:</strong> Fernwood Estate Pinot Noir, Hunter Valley Chardonnay, Craft Beers &amp; <em>"The Newlywed Spritz"</em> signature cocktail.
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. IN MEMORIAM */}
+              {(storyFilter === 'all' || storyFilter === 'memoriam') && (
+                <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-xs space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🕊️</span>
+                    <div>
+                      <h3 className="font-serif text-lg font-bold text-[#15110e]">In Loving Memory</h3>
+                      <p className="text-[11px] text-[#bd9661] font-medium">Always present in our hearts</p>
+                    </div>
+                  </div>
+                  <div className="bg-[#fbf9f5] border border-[#e8ded0] rounded-xl p-3.5 space-y-2 text-xs text-[#5a4b3d] leading-relaxed">
+                    <p className="italic">
+                      "Though you cannot sit with us today, your love, guidance, and warmth surround every celebration, speech, and smile in this room."
+                    </p>
+                    <p className="font-semibold text-[#15110e] pt-1 border-t border-[#e8ded0]">
+                      Dedicated in loving memory to Grandma Helen &amp; Uncle Robert.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. THE BRIDAL PARTY */}
+              {(storyFilter === 'all' || storyFilter === 'party') && (
+                <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-xs space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">👥</span>
+                    <div>
+                      <h3 className="font-serif text-lg font-bold text-[#15110e]">The Bridal Party</h3>
+                      <p className="text-[11px] text-[#bd9661] font-medium">Lifelong friends &amp; partners in crime</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2.5 bg-[#fbf9f5] border border-[#e8ded0] rounded-xl space-y-0.5">
+                      <div className="font-bold text-[#15110e]">Hannah Martin</div>
+                      <div className="text-[10px] font-semibold text-[#bd9661]">Maid of Honor</div>
+                      <div className="text-[11px] text-[#8b7b6b]">Sophie's best friend since kindergarten</div>
+                    </div>
+                    <div className="p-2.5 bg-[#fbf9f5] border border-[#e8ded0] rounded-xl space-y-0.5">
+                      <div className="font-bold text-[#15110e]">Oliver Vance</div>
+                      <div className="text-[10px] font-semibold text-[#bd9661]">Best Man</div>
+                      <div className="text-[11px] text-[#8b7b6b]">James's brother &amp; lifelong companion</div>
+                    </div>
+                    <div className="p-2.5 bg-[#fbf9f5] border border-[#e8ded0] rounded-xl space-y-0.5">
+                      <div className="font-bold text-[#15110e]">Charlotte &amp; Grace</div>
+                      <div className="text-[10px] font-semibold text-[#bd9661]">Bridesmaids</div>
+                      <div className="text-[11px] text-[#8b7b6b]">University squad &amp; travel partners</div>
+                    </div>
+                    <div className="p-2.5 bg-[#fbf9f5] border border-[#e8ded0] rounded-xl space-y-0.5">
+                      <div className="font-bold text-[#15110e]">Liam &amp; Benjamin</div>
+                      <div className="text-[10px] font-semibold text-[#bd9661]">Groomsmen</div>
+                      <div className="text-[11px] text-[#8b7b6b]">High school crew &amp; golf buddies</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 5. HONEYMOON ADVENTURE */}
+              {(storyFilter === 'all' || storyFilter === 'honeymoon') && (
+                <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-xs space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">✈️</span>
+                    <div>
+                      <h3 className="font-serif text-lg font-bold text-[#15110e]">Honeymoon Adventure</h3>
+                      <p className="text-[11px] text-[#bd9661] font-medium">Queenstown, New Zealand</p>
+                    </div>
+                  </div>
+                  <div className="bg-[#fbf9f5] border border-[#e8ded0] rounded-xl p-3 text-xs text-[#5a4b3d] leading-relaxed space-y-1.5">
+                    <p>
+                      Following our wedding weekend, we are heading to Lake Wakatipu, Milford Sound, and Central Otago wineries for two weeks of crisp mountain air, hiking, and celebrating our new chapter!
+                    </p>
+                    <p className="text-[11px] text-[#8b7b6b]">
+                      Thank you for all your well wishes and contributions towards our trip!
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Bottom Back Button */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('hub')}
+                className="w-full bg-[#15110e] hover:bg-[#231c17] text-white font-bold py-3 rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
+              >
+                <span>&larr;</span> Back to Wedding Hub
               </button>
             </div>
           )}
