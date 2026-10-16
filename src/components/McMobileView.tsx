@@ -40,6 +40,20 @@ export default function McMobileView() {
   });
   const [openInvoiceDropdown, setOpenInvoiceDropdown] = useState<string | null>(null);
 
+  // Dynamic Calendar State
+  const [calendarDate, setCalendarDate] = useState<Date>(new Date(2026, 10, 1)); // November 2026
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState<number | null>(14);
+
+  const handlePrevMonth = () => {
+    setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1));
+    setSelectedCalendarDay(null);
+  };
+
+  const handleNextMonth = () => {
+    setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1));
+    setSelectedCalendarDay(null);
+  };
+
   // MC Profile settings form
   const [profileForm, setProfileForm] = useState({
     name: 'Robert Galati',
@@ -358,52 +372,166 @@ export default function McMobileView() {
           {/* ------------------------------------------------------------ */}
           {/* HOME MODE: TAB 2 - CALENDAR (Screenshot 18: 172813.png)     */}
           {/* ------------------------------------------------------------ */}
-          {!selectedWeddingId && homeTab === 'calendar' && (
-            <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-3">
-              <div className="flex items-center justify-between px-1">
-                <button type="button" className="w-8 h-8 rounded-lg border border-[#e8ded0] flex items-center justify-center text-xs hover:bg-[#faf8f5]">
-                  &larr;
-                </button>
-                <h2 className="font-serif text-base font-bold text-[#15110e]">
-                  November 2026
-                </h2>
-                <button type="button" className="w-8 h-8 rounded-lg border border-[#e8ded0] flex items-center justify-center text-xs hover:bg-[#faf8f5]">
-                  &rarr;
-                </button>
-              </div>
+          {!selectedWeddingId && homeTab === 'calendar' && (() => {
+            const currentYear = calendarDate.getFullYear();
+            const currentMonth = calendarDate.getMonth();
+            const monthName = calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay(); // 0 = Sun
+            const totalDaysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-              {/* Month Grid */}
-              <div className="grid grid-cols-7 gap-1 text-center text-xs">
-                {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((d) => (
-                  <div key={d} className="text-[10px] font-bold text-[#8b7b6b] py-1">
-                    {d}
-                  </div>
-                ))}
+            const getWeddingsForDay = (day: number) => {
+              return state.weddings.filter(w => {
+                if (!w.date) return false;
+                const d = new Date(w.date);
+                return d.getFullYear() === currentYear && d.getMonth() === currentMonth && d.getDate() === day;
+              });
+            };
 
-                {/* Days 1 to 30 */}
-                {Array.from({ length: 30 }, (_, i) => i + 1).map((day) => {
-                  const isSophieWedding = day === 14;
-                  return (
-                    <div
-                      key={day}
-                      className={`min-h-[46px] rounded-xl border p-1 text-left flex flex-col justify-between transition-colors ${
-                        isSophieWedding
-                          ? 'border-[#bd9661] bg-[#faf8f5]'
-                          : 'border-[#f0ede4] bg-white'
-                      }`}
+            const selectedDayWeddings = selectedCalendarDay ? getWeddingsForDay(selectedCalendarDay) : [];
+
+            return (
+              <div className="space-y-4 animate-in fade-in duration-150">
+                <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between px-1">
+                    <button
+                      type="button"
+                      onClick={handlePrevMonth}
+                      className="w-8 h-8 rounded-lg border border-[#e8ded0] flex items-center justify-center text-xs hover:bg-[#faf8f5] cursor-pointer transition-colors"
+                      title="Previous Month"
                     >
-                      <span className="text-[11px] font-medium text-[#15110e]">{day}</span>
-                      {isSophieWedding && (
-                        <div className="bg-[#15110e] text-[#dfc194] text-[9px] font-bold px-1 py-0.5 rounded truncate flex items-center gap-0.5">
-                          <span>💍</span> Sophie
+                      &larr;
+                    </button>
+                    <div className="text-center">
+                      <h2 className="font-serif text-base font-bold text-[#15110e]">
+                        {monthName}
+                      </h2>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleNextMonth}
+                      className="w-8 h-8 rounded-lg border border-[#e8ded0] flex items-center justify-center text-xs hover:bg-[#faf8f5] cursor-pointer transition-colors"
+                      title="Next Month"
+                    >
+                      &rarr;
+                    </button>
+                  </div>
+
+                  {/* Month Grid */}
+                  <div className="grid grid-cols-7 gap-1 text-center text-xs">
+                    {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((d) => (
+                      <div key={d} className="text-[10px] font-bold text-[#8b7b6b] py-1">
+                        {d}
+                      </div>
+                    ))}
+
+                    {/* Leading Blank Cells */}
+                    {Array.from({ length: firstDayOfWeek }).map((_, idx) => (
+                      <div key={`blank-${idx}`} className="min-h-[46px] rounded-xl border border-transparent p-1 pointer-events-none" />
+                    ))}
+
+                    {/* Days of the Month */}
+                    {Array.from({ length: totalDaysInMonth }, (_, i) => i + 1).map((day) => {
+                      const dayWeddings = getWeddingsForDay(day);
+                      const hasWedding = dayWeddings.length > 0;
+                      const isSelected = selectedCalendarDay === day;
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => setSelectedCalendarDay(day)}
+                          className={`min-h-[46px] rounded-xl border p-1 text-left flex flex-col justify-between transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-[#bd9661] bg-[#faf6f0] ring-2 ring-[#bd9661]/50 shadow-xs'
+                              : hasWedding
+                              ? 'border-[#bd9661] bg-[#faf8f5] hover:bg-[#faf6f0]'
+                              : 'border-[#f0ede4] bg-white hover:border-[#bd9661]/40'
+                          }`}
+                        >
+                          <span className={`text-[11px] ${isSelected ? 'font-bold text-[#bd9661]' : 'font-medium text-[#15110e]'}`}>
+                            {day}
+                          </span>
+                          {hasWedding && (
+                            <div className="bg-[#15110e] text-[#dfc194] text-[9px] font-bold px-1 py-0.5 rounded truncate flex items-center gap-0.5 w-full">
+                              <span>💍</span> {dayWeddings[0].partner1 || dayWeddings[0].couple.split(' ')[0]}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Selected Day Schedule Details */}
+                {selectedCalendarDay !== null && (
+                  <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-3 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between pb-2 border-b border-[#f0ede4]">
+                      <div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661]">
+                          Selected Date
                         </div>
+                        <h3 className="font-serif text-sm font-bold text-[#15110e]">
+                          {new Date(currentYear, currentMonth, selectedCalendarDay).toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          })}
+                        </h3>
+                      </div>
+                      {selectedDayWeddings.length > 0 && (
+                        <span className="bg-[#faf6f0] border border-[#ebd3a8] text-[#916c3d] text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          {selectedDayWeddings.length} Event{selectedDayWeddings.length > 1 ? 's' : ''}
+                        </span>
                       )}
                     </div>
-                  );
-                })}
+
+                    {selectedDayWeddings.length > 0 ? (
+                      <div className="space-y-2.5">
+                        {selectedDayWeddings.map((w) => (
+                          <div
+                            key={w.id}
+                            className="p-3 bg-[#faf8f5] border border-[#ebd3a8] rounded-xl space-y-2"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h4 className="font-bold text-sm text-[#15110e] flex items-center gap-1.5">
+                                  <span>💍</span> {w.couple}
+                                </h4>
+                                <p className="text-[11px] text-[#8b7b6b] mt-0.5">
+                                  📍 {w.venue}
+                                </p>
+                              </div>
+                              <span className="text-[10px] font-bold text-[#bd9661] bg-white px-2 py-0.5 rounded border border-[#e8ded0]">
+                                {w.timeDisplay || '2:00 PM'}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between pt-1">
+                              <span className="text-[11px] text-[#5a4b3d]">
+                                👥 {w.invited || 120} Guests &bull; {w.status || 'Finalising'}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenConsole(w.id)}
+                                className="bg-[#15110e] hover:bg-[#231c17] text-[#dfc194] px-2.5 py-1 rounded text-[11px] font-bold cursor-pointer transition-colors shadow-xs"
+                              >
+                                Open Console &rarr;
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-4 text-center space-y-1.5">
+                        <div className="text-xl">📅</div>
+                        <p className="text-xs text-[#8b7b6b]">No weddings scheduled on this date.</p>
+                        <p className="text-[11px] text-emerald-700 font-semibold">Available for new client bookings</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* ------------------------------------------------------------ */}
           {/* HOME MODE: TAB 3 - INVOICE (Screenshot 19: 172822.png)      */}
