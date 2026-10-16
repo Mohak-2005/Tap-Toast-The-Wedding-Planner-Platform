@@ -390,3 +390,64 @@ input:checked + .slider:before {
   flex: 1;
 }
 
+/* Modal Pop-up System */
+.tt-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 14, 11, 0.65);
+  backdrop-filter: blur(3px);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.tt-modal {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+.tt-modal-header {
+  padding: 18px 24px;
+  background: #15110e;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tt-modal-title {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+}
+.tt-modal-close {
+  background: transparent;
+  border: none;
+  color: #d9c9b8;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.15s ease;
+}
+.tt-modal-close:hover {
+  color: var(--gold);
+}
+.tt-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+}
+.tt-modal-footer {
+  padding: 16px 24px;
+  background: #fbf9f5;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+

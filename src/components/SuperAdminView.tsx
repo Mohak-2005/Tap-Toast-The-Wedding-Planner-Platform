@@ -102,16 +102,6 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
     if (onSelectView) onSelectView('mc');
   };
 
-  const handleOpenAsMcDefault = () => {
-    const firstTenant = state.tenants[0] || {
-      id: 'ten1',
-      businessName: 'Galati MC & Entertainment',
-      contactName: 'Robert Galati',
-      email: 'robert@galati.demo',
-    };
-    handleImpersonate(firstTenant as Tenant);
-  };
-
   const handleToggleTenantStatus = (tenantId: string) => {
     const updatedTenants = state.tenants.map(t => {
       if (t.id === tenantId) {
@@ -476,15 +466,6 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                   Platform Operations
                 </h1>
               </div>
-              <div>
-                <button
-                  type="button"
-                  onClick={handleOpenAsMcDefault}
-                  className="btn btn-outline btn-sm cursor-pointer"
-                >
-                  Open as MC &rarr;
-                </button>
-              </div>
             </div>
 
             {/* 4 Metric Cards matching Screenshot 7 */}
@@ -643,13 +624,6 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                               className="btn btn-outline btn-xs"
                             >
                               Details
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleImpersonate(t)}
-                              className="bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] px-2 py-1 rounded text-[11px] font-bold"
-                            >
-                              Open &rarr;
                             </button>
                           </div>
                         </td>
@@ -1549,23 +1523,36 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
       )}
 
       {/* ================================================================== */}
-      {/* INVITE MC MODAL (Matches superadmin.html)                          */}
+      {/* INVITE MC MODAL                                                    */}
       {/* ================================================================== */}
       {showInviteModal && (
-        <div className="tt-modal-backdrop">
-          <div className="tt-modal max-w-md w-full">
-            <div className="tt-modal-header">
-              <div className="tt-modal-title">Invite New MC Tenant</div>
+        <div
+          className="fixed inset-0 bg-black/65 z-50 flex items-center justify-center p-4 backdrop-blur-xs"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowInviteModal(false);
+          }}
+        >
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-[#e8ded0] overflow-hidden max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 bg-[#15110e] text-white flex justify-between items-center border-b border-[#29211a]">
+              <div>
+                <div className="text-[10px] tracking-[2px] text-[#bd9661] uppercase font-bold">
+                  TENANT ONBOARDING
+                </div>
+                <h3 className="font-serif text-xl font-bold text-white">
+                  Invite New MC Tenant
+                </h3>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowInviteModal(false)}
-                className="tt-modal-close"
+                className="text-white/70 hover:text-[#bd9661] text-xl font-bold cursor-pointer transition-colors p-1"
+                aria-label="Close dialog"
               >
                 ✕
               </button>
             </div>
-            <form onSubmit={handleInviteSubmit}>
-              <div className="tt-modal-body space-y-3">
+            <form onSubmit={handleInviteSubmit} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-6 overflow-y-auto space-y-4 flex-1">
                 <div className="field-group">
                   <label className="field-label">MC Business Name</label>
                   <input
@@ -1614,15 +1601,15 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                   </div>
                 </div>
               </div>
-              <div className="tt-modal-footer">
+              <div className="px-6 py-4 bg-[#faf8f5] border-t border-[#e8ded0] flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowInviteModal(false)}
-                  className="btn btn-outline btn-sm"
+                  className="btn btn-outline btn-sm cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-gold btn-sm">
+                <button type="submit" className="btn btn-gold btn-sm cursor-pointer">
                   Send Invitation &amp; Create Tenant &rarr;
                 </button>
               </div>
@@ -1635,25 +1622,33 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
       {/* ADD NEW SAAS PLAN MODAL                                            */}
       {/* ================================================================== */}
       {showAddPlanModal && (
-        <div className="tt-modal-backdrop">
-          <div className="tt-modal max-w-lg w-full">
-            <div className="tt-modal-header">
+        <div
+          className="fixed inset-0 bg-black/65 z-50 flex items-center justify-center p-4 backdrop-blur-xs"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowAddPlanModal(false);
+          }}
+        >
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-[#e8ded0] overflow-hidden max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 bg-[#15110e] text-white flex justify-between items-center border-b border-[#29211a]">
               <div>
                 <div className="text-[10px] tracking-[2px] text-[#bd9661] uppercase font-bold">
-                  SaaS Tier Configuration
+                  SAAS TIER CONFIGURATION
                 </div>
-                <div className="tt-modal-title">Create New SaaS Plan</div>
+                <h3 className="font-serif text-xl font-bold text-white">
+                  Create New SaaS Plan
+                </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAddPlanModal(false)}
-                className="tt-modal-close"
+                className="text-white/70 hover:text-[#bd9661] text-xl font-bold cursor-pointer transition-colors p-1"
+                aria-label="Close dialog"
               >
                 ✕
               </button>
             </div>
-            <form onSubmit={handleCreatePlan}>
-              <div className="tt-modal-body space-y-4">
+            <form onSubmit={handleCreatePlan} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-6 overflow-y-auto space-y-4 flex-1">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="field-group">
                     <label className="field-label">Plan Name / Tier Key *</label>
@@ -1748,15 +1743,15 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                 </div>
               </div>
 
-              <div className="tt-modal-footer">
+              <div className="px-6 py-4 bg-[#faf8f5] border-t border-[#e8ded0] flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowAddPlanModal(false)}
-                  className="btn btn-outline btn-sm"
+                  className="btn btn-outline btn-sm cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-gold btn-sm">
+                <button type="submit" className="btn btn-gold btn-sm cursor-pointer">
                   + Create SaaS Plan
                 </button>
               </div>
