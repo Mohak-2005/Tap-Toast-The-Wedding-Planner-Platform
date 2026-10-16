@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Determine project root directory (two levels up from .figma/make)
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$ROOT_DIR"
+
+echo "=========================================="
+echo "🚀 Figma Make Deployment: Tap & Toast"
+echo "📂 Working directory: $(pwd)"
+echo "=========================================="
+
+# Ensure dependencies are available
+if [ ! -d "node_modules" ]; then
+  echo "📦 Installing project dependencies..."
+  if command -v pnpm >/dev/null 2>&1; then
+    pnpm install
+  elif command -v npm >/dev/null 2>&1; then
+    npm install
+  else
+    echo "⚠️ Neither pnpm nor npm found; proceeding with existing environment..."
+  fi
+fi
+
+# Build production bundle (tsc check + vite build)
+echo "⚙️ Compiling and bundling application..."
+if command -v pnpm >/dev/null 2>&1; then
+  pnpm run build
+elif command -v npm >/dev/null 2>&1; then
+  npm run build
+else
+  npx tsc -b && npx vite build
+fi
+
+# Confirm build output exists
+if [ -d "dist" ] && [ -f "dist/index.html" ]; then
+  echo "=========================================="
+  echo "✅ Application built successfully!"
+  echo "📁 Output ready at: dist/"
+  echo "=========================================="
+  exit 0
+else
+  echo "=========================================="
+  echo "❌ Build failed: dist/index.html not found."
+  echo "=========================================="
+  exit 1
+fi
