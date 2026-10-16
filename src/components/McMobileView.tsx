@@ -1167,20 +1167,28 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
               <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-2.5">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="font-serif text-base font-bold text-[#15110e]">Fernwood Estate</h3>
-                    <div className="text-xs text-[#8b7b6b] mt-0.5">Fernwood Estate, Southern Highlands</div>
+                    <h3 className="font-serif text-base font-bold text-[#15110e]">
+                      {activeWedding?.venue ? activeWedding.venue.split(',')[0] : 'Fernwood Estate'}
+                    </h3>
+                    <div className="text-xs text-[#8b7b6b] mt-0.5">
+                      {activeWedding?.venueAddress || activeWedding?.venue || 'Fernwood Estate, Southern Highlands'}
+                    </div>
                   </div>
                   <span className="bg-[#e8eee4] text-[#3c6a42] text-[11px] font-bold px-2 py-0.5 rounded-full">
                     Verified
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => showToast('Opening Navigation Directions', 'info')}
-                  className="w-full bg-white border border-[#d5c7b5] hover:bg-[#faf8f5] text-[#15110e] font-semibold py-2 rounded-xl text-xs transition-colors cursor-pointer"
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+                    `${activeWedding?.venue ? activeWedding.venue.split(',')[0] + ', ' : ''}${activeWedding?.venueAddress || activeWedding?.venue || 'Fernwood Estate, Southern Highlands NSW'}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => showToast('✓ Opened Navigation Directions in Google Maps', 'success')}
+                  className="w-full bg-white border border-[#d5c7b5] hover:bg-[#faf8f5] text-[#15110e] font-semibold py-2 rounded-xl text-xs transition-colors cursor-pointer block text-center shadow-xs"
                 >
                   Open Navigation Directions
-                </button>
+                </a>
               </div>
 
               {/* Key Vendor Contacts */}

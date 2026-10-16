@@ -2831,10 +2831,10 @@ export default function CoupleView({ onSelectView }: CoupleViewProps) {
                   <a
                     href="https://maps.google.com/?q=Fernwood+Estate+124+Range+Road+Mittagong+NSW+2575"
                     target="_blank"
-                    rel="noreferrer"
-                    className="bg-[#bd9661] text-[#15110e] font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer shadow-xs"
+                    rel="noopener noreferrer"
+                    className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer shadow-xs transition-colors inline-flex items-center gap-1"
                   >
-                    Open in Google Maps &nearr;
+                    Open in Google Maps ↗
                   </a>
                 </div>
 
