@@ -1663,8 +1663,8 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                   </div>
                   <div className="field-group">
                     <label className="field-label">Monthly Price (AUD) *</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-xs text-[#8b7b6b] font-semibold">$</span>
+                    <div className="relative flex items-center">
+                      <span className="absolute left-3 text-xs text-[#8b7b6b] font-bold pointer-events-none select-none">$</span>
                       <input
                         type="number"
                         required
@@ -1673,7 +1673,8 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                         placeholder="249"
                         value={newPlanPrice}
                         onChange={(e) => setNewPlanPrice(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="text-input pl-7"
+                        className="text-input input-with-currency"
+                        style={{ paddingLeft: '28px' }}
                       />
                     </div>
                   </div>
