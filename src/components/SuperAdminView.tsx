@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppState, useSession, showToast, formatAUD } from '../lib/state';
-import { Tenant, SupportTicket } from '../lib/types';
+import { Tenant, SupportTicket, SaaSPlan } from '../lib/types';
+import { initialPlans } from '../lib/seedData';
 
 interface SuperAdminViewProps {
   onSelectView?: (view: string) => void;
@@ -10,6 +11,22 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
   const { state, setState } = useAppState();
   const { clearSession, setSession } = useSession();
   const [activeTab, setActiveTab] = useState<'platform' | 'tenants' | 'plans' | 'flags' | 'audit' | 'support' | 'settings'>('platform');
+
+  // Dynamic SaaS Plans
+  const plans: SaaSPlan[] = state.plans && state.plans.length > 0 ? state.plans : initialPlans;
+
+  // Helper to extract clean plan key matching available plans
+  const getTenantPlanKey = (planStr: string): string => {
+    if (!planStr) return plans[0]?.key || 'Starter';
+    const clean = planStr.trim();
+    const direct = plans.find(p => p.key.toLowerCase() === clean.toLowerCase());
+    if (direct) return direct.key;
+    const prefixMatch = plans.find(p => clean.toLowerCase().startsWith(p.key.toLowerCase()));
+    if (prefixMatch) return prefixMatch.key;
+    const subMatch = plans.find(p => clean.toLowerCase().includes(p.key.toLowerCase()));
+    if (subMatch) return subMatch.key;
+    return clean.split(' ')[0] || clean;
+  };
 
   // Super Admin Platform Settings State
   const [saSettings, setSaSettings] = useState({
@@ -41,9 +58,19 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
 
   // Modals & Drawers
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showAddPlanModal, setShowAddPlanModal] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [ticketReplyText, setTicketReplyText] = useState('');
+
+  // Add Plan Form State
+  const [newPlanKey, setNewPlanKey] = useState('');
+  const [newPlanTagline, setNewPlanTagline] = useState('');
+  const [newPlanPrice, setNewPlanPrice] = useState<number | ''>(199);
+  const [newPlanBilling, setNewPlanBilling] = useState('AUD / mo');
+  const [newPlanBadge, setNewPlanBadge] = useState('');
+  const [newPlanFeatured, setNewPlanFeatured] = useState(false);
+  const [newPlanFeatures, setNewPlanFeatures] = useState('');
 
   // Invite Form
   const [invBiz, setInvBiz] = useState('');
@@ -97,16 +124,75 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
     showToast('Tenant status updated', 'success');
   };
 
-  const handleChangeTenantPlan = (tenantId: string, newPlan: string) => {
-    const mrr = newPlan === 'Starter' ? 149 : newPlan === 'Standard' ? 199 : 299;
+  const handleChangeTenantPlan = (tenantId: string, newPlanKey: string) => {
+    const selectedPlan = plans.find(p => p.key.toLowerCase() === newPlanKey.toLowerCase());
+    const mrr = selectedPlan ? selectedPlan.price : 199;
+    const planDisplay = selectedPlan ? `${selectedPlan.key} ($${selectedPlan.price}/mo)` : newPlanKey;
     const updatedTenants = state.tenants.map(t => {
       if (t.id === tenantId) {
-        return { ...t, plan: newPlan, mrr };
+        return { ...t, plan: planDisplay, mrr };
       }
       return t;
     });
     setState({ ...state, tenants: updatedTenants });
-    showToast(`Tenant plan changed to ${newPlan} ($${mrr}/mo)`, 'success');
+    showToast(`Tenant plan changed to ${selectedPlan?.key || newPlanKey} ($${mrr}/mo)`, 'success');
+  };
+
+  const handleCreatePlan = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPlanKey.trim()) {
+      showToast('Please enter a plan name / tier key', 'error');
+      return;
+    }
+    const numPrice = typeof newPlanPrice === 'number' ? newPlanPrice : parseFloat(String(newPlanPrice)) || 0;
+    const featureLines = newPlanFeatures
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
+    const newPlan: SaaSPlan = {
+      id: 'plan_' + Date.now(),
+      key: newPlanKey.trim(),
+      tagline: newPlanTagline.trim() || `${newPlanKey.trim()} Membership`,
+      price: numPrice,
+      billingCycle: newPlanBilling.trim() || 'AUD / mo',
+      features: featureLines.length > 0 ? featureLines : [
+        'Unlimited active weddings',
+        'Interactive live run sheets & cues',
+        'Digital RSVPs & seating arrangements',
+        'Standard platform support',
+      ],
+      badge: newPlanBadge.trim() || undefined,
+      featured: newPlanFeatured,
+    };
+
+    const newAudit = {
+      id: 'aud_' + Date.now(),
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      action: 'SaaS Plan Created',
+      user: 'Platform Super Admin',
+      role: 'superadmin',
+      details: `Created new subscription tier: ${newPlan.key} ($${newPlan.price}/mo)`,
+      category: 'Billing',
+    };
+
+    const currentPlans = state.plans && state.plans.length > 0 ? state.plans : initialPlans;
+    const updatedPlans = [...currentPlans, newPlan];
+
+    setState({
+      ...state,
+      plans: updatedPlans,
+      auditLog: [newAudit, ...state.auditLog],
+    });
+
+    setShowAddPlanModal(false);
+    setNewPlanKey('');
+    setNewPlanTagline('');
+    setNewPlanPrice(199);
+    setNewPlanBadge('');
+    setNewPlanFeatured(false);
+    setNewPlanFeatures('');
+    showToast(`Successfully created new plan: "${newPlan.key}"!`, 'success');
   };
 
   const handleToggleFlag = (key: keyof typeof featureFlags) => {
@@ -137,13 +223,15 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
   const handleInviteSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!invBiz || !invLead || !invEmail) return;
-    const mrr = invPlan === 'Starter' ? 149 : invPlan === 'Standard' ? 199 : 299;
+    const selectedPlan = plans.find(p => p.key.toLowerCase() === invPlan.toLowerCase()) || plans[0];
+    const mrr = selectedPlan ? selectedPlan.price : 199;
+    const planDisplay = selectedPlan ? `${selectedPlan.key} ($${selectedPlan.price}/mo)` : invPlan;
     const newTenant: Tenant = {
       id: 'ten_' + Date.now(),
       businessName: invBiz,
       contactName: invLead,
       email: invEmail,
-      plan: invPlan,
+      plan: planDisplay,
       weddingsCount: 0,
       mrr,
       status: 'Active',
@@ -155,7 +243,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
       action: 'MC Tenant Invited',
       user: 'Super Admin',
       role: 'superadmin',
-      details: `Onboarded ${invBiz} (${invPlan} plan)`,
+      details: `Onboarded ${invBiz} (${planDisplay} plan)`,
       category: 'Tenants',
     };
     setState({
@@ -212,7 +300,10 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
   const filteredTenants = state.tenants.filter(t => {
     const matchSearch = t.businessName.toLowerCase().includes(tenantSearch.toLowerCase()) ||
       t.contactName.toLowerCase().includes(tenantSearch.toLowerCase());
-    const matchPlan = planFilter === 'all' || t.plan.toLowerCase().includes(planFilter.toLowerCase());
+    const tenantKey = getTenantPlanKey(t.plan).toLowerCase();
+    const matchPlan = planFilter === 'all' ||
+      tenantKey === planFilter.toLowerCase() ||
+      t.plan.toLowerCase().includes(planFilter.toLowerCase());
     return matchSearch && matchPlan;
   });
 
@@ -517,13 +608,13 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                         </td>
                         <td>
                           <select
-                            value={t.plan.includes('Pro') ? 'Pro' : t.plan.includes('Standard') ? 'Standard' : 'Starter'}
+                            value={getTenantPlanKey(t.plan)}
                             onChange={(e) => handleChangeTenantPlan(t.id, e.target.value)}
-                            className="text-input py-1 px-2 text-xs max-w-[110px]"
+                            className="text-input py-1 px-2 text-xs max-w-[130px] font-medium"
                           >
-                            <option value="Starter">Starter</option>
-                            <option value="Standard">Standard</option>
-                            <option value="Pro">Pro</option>
+                            {plans.map(p => (
+                              <option key={p.id} value={p.key}>{p.key} (${p.price}/mo)</option>
+                            ))}
                           </select>
                         </td>
                         <td className="font-semibold">{t.weddingsCount} weddings</td>
@@ -609,9 +700,9 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                   className="text-input max-w-[160px]"
                 >
                   <option value="all">All Plans</option>
-                  <option value="Pro">Pro</option>
-                  <option value="Standard">Standard</option>
-                  <option value="Starter">Starter</option>
+                  {plans.map(p => (
+                    <option key={p.id} value={p.key}>{p.key}</option>
+                  ))}
                 </select>
               </div>
 
@@ -636,13 +727,13 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                         </td>
                         <td>
                           <select
-                            value={t.plan.includes('Pro') ? 'Pro' : t.plan.includes('Standard') ? 'Standard' : 'Starter'}
+                            value={getTenantPlanKey(t.plan)}
                             onChange={(e) => handleChangeTenantPlan(t.id, e.target.value)}
-                            className="text-input py-1 px-2 text-xs max-w-[110px]"
+                            className="text-input py-1 px-2 text-xs max-w-[130px] font-medium"
                           >
-                            <option value="Starter">Starter</option>
-                            <option value="Standard">Standard</option>
-                            <option value="Pro">Pro</option>
+                            {plans.map(p => (
+                              <option key={p.id} value={p.key}>{p.key} (${p.price}/mo)</option>
+                            ))}
                           </select>
                         </td>
                         <td className="font-semibold">{t.weddingsCount} weddings</td>
@@ -684,7 +775,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
         {/* ================================================================ */}
         {activeTab === 'plans' && (
           <section className="space-y-6">
-            <div className="page-header">
+            <div className="page-header flex justify-between items-center">
               <div>
                 <div className="header-eyebrow text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1">
                   SUBSCRIPTIONS
@@ -693,64 +784,62 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                   Plans &amp; Billing
                 </h1>
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setNewPlanKey('');
+                  setNewPlanTagline('');
+                  setNewPlanPrice(249);
+                  setNewPlanBilling('AUD / mo');
+                  setNewPlanBadge('');
+                  setNewPlanFeatured(false);
+                  setNewPlanFeatures('Up to 5 active weddings at a time\nQaRd physical QR code printing\nAI Seating Optimization Assistant\nFull client messaging suite');
+                  setShowAddPlanModal(true);
+                }}
+                className="btn btn-gold btn-sm"
+              >
+                + Add Plan
+              </button>
             </div>
 
             <div className="plan-cards-grid">
-              {/* Starter */}
-              <div className="plan-card">
-                <div>
-                  <div className="text-xs tracking-wider font-bold text-[#8b7b6b] uppercase">STARTER</div>
-                  <h3 className="font-serif text-2xl font-bold text-[#15110e] mt-1">Independent Host</h3>
-                  <div className="plan-price">$149 <small className="text-sm text-[#8b7b6b] font-normal">AUD / mo</small></div>
-                  <ul className="text-xs text-[#5a4b3d] space-y-2 list-none p-0">
-                    <li>✓ 1 active wedding at a time</li>
-                    <li>✓ Digital RSVPs &amp; basic seating</li>
-                    <li>✓ Digital wishing well</li>
-                    <li>✓ Standard community support</li>
-                  </ul>
-                </div>
-                <div className="mt-6 border-t border-[#e8ded0] pt-4 text-xs text-[#8b7b6b]">
-                  Active Subscribers: <strong className="text-[#15110e]">1</strong>
-                </div>
-              </div>
-
-              {/* Pro (Featured) */}
-              <div className="plan-card featured">
-                <div className="plan-featured-badge">MOST POPULAR</div>
-                <div>
-                  <div className="text-xs tracking-wider font-bold text-[#bd9661] uppercase">PRO</div>
-                  <h3 className="font-serif text-2xl font-bold text-[#15110e] mt-1">Master of Ceremonies</h3>
-                  <div className="plan-price">$299 <small className="text-sm text-[#8b7b6b] font-normal">AUD / mo</small></div>
-                  <ul className="text-xs text-[#5a4b3d] space-y-2 list-none p-0">
-                    <li>✓ Unlimited active weddings</li>
-                    <li>✓ QaRd physical QR generation</li>
-                    <li>✓ AI Seating Optimization Assistant</li>
-                    <li>✓ Live interactive run sheets &amp; cues</li>
-                    <li>✓ Collaborative coordinator logins</li>
-                  </ul>
-                </div>
-                <div className="mt-6 border-t border-[#e8ded0] pt-4 text-xs text-[#8b7b6b]">
-                  Active Subscribers: <strong className="text-[#15110e]">2</strong>
-                </div>
-              </div>
-
-              {/* Enterprise */}
-              <div className="plan-card">
-                <div>
-                  <div className="text-xs tracking-wider font-bold text-[#8b7b6b] uppercase">ENTERPRISE</div>
-                  <h3 className="font-serif text-2xl font-bold text-[#15110e] mt-1">Multi-Host Agency</h3>
-                  <div className="plan-price">$599 <small className="text-sm text-[#8b7b6b] font-normal">AUD / mo</small></div>
-                  <ul className="text-xs text-[#5a4b3d] space-y-2 list-none p-0">
-                    <li>✓ Up to 10 MC performers</li>
-                    <li>✓ Custom domain &amp; white-label branding</li>
-                    <li>✓ Priority 24/7 Australian telephone concierge</li>
-                    <li>✓ Dedicated account manager</li>
-                  </ul>
-                </div>
-                <div className="mt-6 border-t border-[#e8ded0] pt-4 text-xs text-[#8b7b6b]">
-                  Active Subscribers: <strong className="text-[#15110e]">1</strong>
-                </div>
-              </div>
+              {plans.map(p => {
+                const subCount = state.tenants.filter(t => getTenantPlanKey(t.plan).toLowerCase() === p.key.toLowerCase()).length;
+                return (
+                  <div
+                    key={p.id}
+                    className={`plan-card ${p.featured ? 'featured' : ''} relative flex flex-col justify-between`}
+                  >
+                    {p.badge && (
+                      <div className="plan-featured-badge">{p.badge}</div>
+                    )}
+                    <div>
+                      <div className={`text-xs tracking-wider font-bold uppercase ${p.featured ? 'text-[#bd9661]' : 'text-[#8b7b6b]'}`}>
+                        {p.key}
+                      </div>
+                      <h3 className="font-serif text-2xl font-bold text-[#15110e] mt-1">
+                        {p.tagline}
+                      </h3>
+                      <div className="plan-price mt-3">
+                        ${p.price} <small className="text-sm text-[#8b7b6b] font-normal">{p.billingCycle || 'AUD / mo'}</small>
+                      </div>
+                      <ul className="text-xs text-[#5a4b3d] space-y-2 list-none p-0 mt-4">
+                        {p.features.map((feat, fIdx) => (
+                          <li key={fIdx}>✓ {feat}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="mt-6 border-t border-[#e8ded0] pt-4 text-xs text-[#8b7b6b] flex justify-between items-center">
+                      <span>
+                        Active Subscribers: <strong className="text-[#15110e]">{subCount}</strong>
+                      </span>
+                      <span className="text-[11px] text-[#bd9661] font-semibold">
+                        ${p.price * subCount}/mo MRR
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
         )}
@@ -1317,7 +1406,25 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
               </div>
               <div>
                 <label className="field-label">Current Subscription</label>
-                <div className="text-xs text-[#15110e]">{selectedTenant.plan} Plan ({formatAUD(selectedTenant.mrr)} / month)</div>
+                <div className="flex items-center gap-2 mt-1">
+                  <select
+                    value={getTenantPlanKey(selectedTenant.plan)}
+                    onChange={(e) => {
+                      const newKey = e.target.value;
+                      const selectedPlan = plans.find(p => p.key.toLowerCase() === newKey.toLowerCase());
+                      const mrr = selectedPlan ? selectedPlan.price : 199;
+                      const planDisplay = selectedPlan ? `${selectedPlan.key} ($${selectedPlan.price}/mo)` : newKey;
+                      const updated = { ...selectedTenant, plan: planDisplay, mrr };
+                      setSelectedTenant(updated);
+                      handleChangeTenantPlan(selectedTenant.id, newKey);
+                    }}
+                    className="text-input py-1.5 px-2 text-xs flex-1 font-semibold"
+                  >
+                    {plans.map(p => (
+                      <option key={p.id} value={p.key}>{p.key} (${p.price}/mo)</option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div>
                 <label className="field-label">Managed Weddings Volume</label>
@@ -1500,9 +1607,9 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                       onChange={(e) => setInvPlan(e.target.value)}
                       className="text-input"
                     >
-                      <option value="Pro">Pro ($299/mo)</option>
-                      <option value="Standard">Standard ($199/mo)</option>
-                      <option value="Starter">Starter ($149/mo)</option>
+                      {plans.map(p => (
+                        <option key={p.id} value={p.key}>{p.key} (${p.price}/mo)</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -1517,6 +1624,140 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                 </button>
                 <button type="submit" className="btn btn-gold btn-sm">
                   Send Invitation &amp; Create Tenant &rarr;
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================== */}
+      {/* ADD NEW SAAS PLAN MODAL                                            */}
+      {/* ================================================================== */}
+      {showAddPlanModal && (
+        <div className="tt-modal-backdrop">
+          <div className="tt-modal max-w-lg w-full">
+            <div className="tt-modal-header">
+              <div>
+                <div className="text-[10px] tracking-[2px] text-[#bd9661] uppercase font-bold">
+                  SaaS Tier Configuration
+                </div>
+                <div className="tt-modal-title">Create New SaaS Plan</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddPlanModal(false)}
+                className="tt-modal-close"
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleCreatePlan}>
+              <div className="tt-modal-body space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="field-group">
+                    <label className="field-label">Plan Name / Tier Key *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. VIP Host, Elite, Diamond"
+                      value={newPlanKey}
+                      onChange={(e) => setNewPlanKey(e.target.value)}
+                      className="text-input"
+                    />
+                  </div>
+                  <div className="field-group">
+                    <label className="field-label">Monthly Price (AUD) *</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-xs text-[#8b7b6b] font-semibold">$</span>
+                      <input
+                        type="number"
+                        required
+                        min="0"
+                        step="1"
+                        placeholder="249"
+                        value={newPlanPrice}
+                        onChange={(e) => setNewPlanPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                        className="text-input pl-7"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="field-group">
+                  <label className="field-label">Tagline / Target Audience *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Boutique Agencies & Luxury Celebrants"
+                    value={newPlanTagline}
+                    onChange={(e) => setNewPlanTagline(e.target.value)}
+                    className="text-input"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="field-group">
+                    <label className="field-label">Badge Label (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. MOST POPULAR, NEW, EXCLUSIVE"
+                      value={newPlanBadge}
+                      onChange={(e) => setNewPlanBadge(e.target.value)}
+                      className="text-input"
+                    />
+                  </div>
+                  <div className="field-group">
+                    <label className="field-label">Billing Cycle Text</label>
+                    <input
+                      type="text"
+                      placeholder="AUD / mo"
+                      value={newPlanBilling}
+                      onChange={(e) => setNewPlanBilling(e.target.value)}
+                      className="text-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="field-group">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={newPlanFeatured}
+                      onChange={(e) => setNewPlanFeatured(e.target.checked)}
+                      className="w-4 h-4 text-[#bd9661] rounded border-[#d4c5b3] focus:ring-[#bd9661]"
+                    />
+                    <span className="text-xs font-semibold text-[#15110e]">
+                      Highlight as Featured / Most Popular Card
+                    </span>
+                  </label>
+                </div>
+
+                <div className="field-group">
+                  <label className="field-label">Plan Features (1 per line)</label>
+                  <textarea
+                    rows={4}
+                    placeholder="Enter features, each on a new line:&#10;Up to 5 active weddings&#10;QaRd physical QR code printing&#10;AI Seating Optimization Assistant"
+                    value={newPlanFeatures}
+                    onChange={(e) => setNewPlanFeatures(e.target.value)}
+                    className="text-input text-xs resize-none"
+                  />
+                  <span className="text-[11px] text-[#8b7b6b] mt-1 block">
+                    Each line becomes a bullet point with a checkmark on the plan card.
+                  </span>
+                </div>
+              </div>
+
+              <div className="tt-modal-footer">
+                <button
+                  type="button"
+                  onClick={() => setShowAddPlanModal(false)}
+                  className="btn btn-outline btn-sm"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-gold btn-sm">
+                  + Create SaaS Plan
                 </button>
               </div>
             </form>

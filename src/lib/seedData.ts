@@ -1,7 +1,66 @@
-import { DemoState } from './types';
+import { DemoState, SaaSPlan } from './types';
+
+export const initialPlans: SaaSPlan[] = [
+  {
+    id: "plan_starter",
+    key: "Starter",
+    tagline: "Independent Host",
+    price: 149,
+    billingCycle: "AUD / mo",
+    features: [
+      "1 active wedding at a time",
+      "Digital RSVPs & basic seating",
+      "Digital wishing well",
+      "Standard community support",
+    ],
+  },
+  {
+    id: "plan_standard",
+    key: "Standard",
+    tagline: "Boutique Host",
+    price: 199,
+    billingCycle: "AUD / mo",
+    features: [
+      "Up to 3 active weddings",
+      "Custom guest QR links",
+      "Drag-and-drop seating studio",
+      "Standard email & chat support",
+    ],
+  },
+  {
+    id: "plan_pro",
+    key: "Pro",
+    tagline: "Master of Ceremonies",
+    price: 299,
+    billingCycle: "AUD / mo",
+    features: [
+      "Unlimited active weddings",
+      "QaRd physical QR generation",
+      "AI Seating Optimization Assistant",
+      "Live interactive run sheets & cues",
+      "Collaborative coordinator logins",
+    ],
+    badge: "MOST POPULAR",
+    featured: true,
+  },
+  {
+    id: "plan_enterprise",
+    key: "Enterprise",
+    tagline: "Multi-Host Agency",
+    price: 599,
+    billingCycle: "AUD / mo",
+    features: [
+      "Up to 10 MC performers",
+      "Custom domain & white-label branding",
+      "Priority 24/7 Australian telephone concierge",
+      "Dedicated account manager",
+    ],
+  },
+];
 
 export const SEED_DATA: DemoState = {
   version: 2,
+  plans: initialPlans,
   currentWeddingId: "w1",
   weddings: [
     {

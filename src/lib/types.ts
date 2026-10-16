@@ -188,6 +188,18 @@ export interface TeamMember {
   status: string;
 }
 
+export interface SaaSPlan {
+  id: string;
+  key: string;
+  tagline: string;
+  price: number;
+  billingCycle?: string;
+  features: string[];
+  activeSubscribers?: number;
+  badge?: string;
+  featured?: boolean;
+}
+
 export interface DemoState {
   version: number;
   currentWeddingId: string;
@@ -198,6 +210,7 @@ export interface DemoState {
   tenants: Tenant[];
   auditLog: AuditLogEntry[];
   users: User[];
+  plans?: SaaSPlan[];
   usedInvites?: string[];
   supportTickets?: SupportTicket[];
   featureFlags?: FeatureFlags;
