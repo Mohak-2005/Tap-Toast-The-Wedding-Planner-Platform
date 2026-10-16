@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAppState, showToast } from '../lib/state';
 
-export default function McMobileView() {
+interface McMobileViewProps {
+  onSelectView?: (view: string) => void;
+}
+
+export default function McMobileView({ onSelectView }: McMobileViewProps) {
   const { state, setState } = useAppState();
+  const viewportRef = useRef<HTMLDivElement>(null);
   
   // Selected wedding ID for Live Console mode (null = home mode)
   const [selectedWeddingId, setSelectedWeddingId] = useState<string | null>(null);
@@ -152,10 +157,39 @@ export default function McMobileView() {
     showToast('Cue removed', 'info');
   };
 
+  const normalizedId = selectedWeddingId === 'w_sophie_james' ? 'w1'
+    : selectedWeddingId === 'w_aisha_marcus' ? 'w2'
+    : selectedWeddingId === 'w_emma_tom' ? 'w3'
+    : selectedWeddingId;
+  const activeWedding = (state.weddings || []).find(w => w.id === normalizedId) || (state.weddings || [])[0];
+
   const handleOpenConsole = (weddingId: string) => {
+    const targetId = weddingId === 'w_sophie_james' ? 'w1'
+      : weddingId === 'w_aisha_marcus' ? 'w2'
+      : weddingId === 'w_emma_tom' ? 'w3'
+      : weddingId;
     setSelectedWeddingId(weddingId);
     setConsoleTab('runsheet');
-    showToast('✓ Opened Sophie & James Wedding Console', 'success');
+    setState({ ...state, currentWeddingId: targetId });
+    if (viewportRef.current) {
+      viewportRef.current.scrollTop = 0;
+    }
+    const wed = (state.weddings || []).find(w => w.id === targetId);
+    showToast(`✓ Opened ${wed?.couple || 'Sophie & James'} Wedding Console`, 'success');
+  };
+
+  const handleOpenDesktopConsole = (weddingId: string) => {
+    const targetId = weddingId === 'w_sophie_james' ? 'w1'
+      : weddingId === 'w_aisha_marcus' ? 'w2'
+      : weddingId === 'w_emma_tom' ? 'w3'
+      : weddingId;
+    setState({ ...state, currentWeddingId: targetId });
+    if (onSelectView) {
+      onSelectView('mc');
+    } else {
+      window.location.hash = '#mc';
+    }
+    showToast('✓ Switched to full MC Pro Desktop Console', 'info');
   };
 
   const handleSeatGuest = (guestId: string) => {
@@ -234,18 +268,20 @@ export default function McMobileView() {
             <button
               type="button"
               onClick={() => setSelectedWeddingId(null)}
-              className="text-xs text-[#dfc194] hover:text-white flex items-center gap-1 font-semibold cursor-pointer"
+              className="text-xs text-[#dfc194] bg-[#2a2119] border border-[#3d3126] px-2.5 py-1 rounded-md hover:text-white flex items-center gap-1 font-semibold cursor-pointer"
             >
               &larr; All Weddings
             </button>
             <div className="text-center">
-              <div className="font-serif text-sm font-bold text-white">Sophie &amp; James</div>
+              <div className="font-serif text-sm font-bold text-white truncate max-w-[150px]">
+                {activeWedding?.couple || 'Sophie & James'}
+              </div>
               <div className="text-[10px] font-bold tracking-wider uppercase text-[#48bb78]">
                 LIVE CONSOLE
               </div>
             </div>
             <span className="text-[10px] bg-white text-[#15110e] font-bold px-2 py-0.5 rounded-full">
-              14 Nov
+              {activeWedding?.dateDisplay ? activeWedding.dateDisplay.substring(0, 6) : '14 Nov'}
             </span>
           </header>
         )}
@@ -253,7 +289,7 @@ export default function McMobileView() {
         {/* ============================================================== */}
         {/* SCROLLABLE VIEWPORT                                            */}
         {/* ============================================================== */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar relative flex flex-col">
+        <div ref={viewportRef} className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar relative flex flex-col">
           
           {/* ------------------------------------------------------------ */}
           {/* HOME MODE: TAB 1 - ALL WEDDINGS (Screenshot 10: 172659.png) */}
