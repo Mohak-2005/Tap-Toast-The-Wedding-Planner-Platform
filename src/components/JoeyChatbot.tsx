@@ -3,6 +3,9 @@ import { useAppState, showToast } from '../lib/state';
 
 interface JoeyChatbotProps {
   embeddedInPhone?: boolean;
+  context?: string;
+  role?: string;
+  weddingId?: string;
 }
 
 interface MessageItem {
@@ -259,24 +262,11 @@ export default function JoeyChatbot({ embeddedInPhone = false }: JoeyChatbotProp
         title="Chat with Joey"
         className={
           embeddedInPhone
-            ? "absolute bottom-[74px] right-[14px] w-12 h-12 rounded-full bg-[#bd9661] text-[#15110e] flex items-center justify-center shadow-lg hover:scale-105 transition-transform z-[120]"
-            : "fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#bd9661] text-[#15110e] flex items-center justify-center shadow-2xl hover:scale-105 transition-transform z-[990]"
+            ? "absolute bottom-[74px] right-[14px] w-12 h-12 rounded-full bg-[#dfc194] border-2 border-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform z-[120] overflow-hidden p-0"
+            : "fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#dfc194] border-2 border-white flex items-center justify-center shadow-2xl hover:scale-105 transition-transform z-[990] overflow-hidden p-0"
         }
       >
-        <span className="relative">
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-            <circle cx="14" cy="14" r="13" fill="#1c1612" stroke="#bd9661" strokeWidth="1.6"/>
-            <rect x="7" y="7" width="14" height="10" rx="3.5" fill="#bd9661"/>
-            <circle cx="10.5" cy="11.5" r="1.3" fill="#1c1612"/>
-            <circle cx="17.5" cy="11.5" r="1.3" fill="#1c1612"/>
-            <path d="M14 3.5V7" stroke="#dfc194" strokeWidth="1.6" strokeLinecap="round"/>
-            <polygon points="14,1.8 15.2,3.8 12.8,3.8" fill="#dfc194"/>
-            <path d="M12 14.2C12.8 15 15.2 15 16 14.2" stroke="#1c1612" strokeWidth="1.2" strokeLinecap="round"/>
-            <path d="M10 20L14 21.2L18 20L15.8 22.8L14 21.2L12.2 22.8Z" fill="#dfc194"/>
-            <circle cx="14" cy="21.2" r="1" fill="#1c1612"/>
-          </svg>
-          <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#1c1612]" />
-        </span>
+        <img src="/chatbot-avatar.png" alt="Joey AI" className="w-full h-full object-cover" />
       </button>
 
       {/* Chat Panel */}
@@ -292,8 +282,8 @@ export default function JoeyChatbot({ embeddedInPhone = false }: JoeyChatbotProp
           <div className="bg-[#181310] text-white p-3.5 flex items-center justify-between border-b border-[#382c20]">
             <div className="flex items-center gap-2.5">
               <div className="relative">
-                <div className="w-8 h-8 rounded-full bg-[#2a221b] border border-[#bd9661] flex items-center justify-center">
-                  <span className="text-sm">🤖</span>
+                <div className="w-8 h-8 rounded-full overflow-hidden border border-[#bd9661] flex items-center justify-center">
+                  <img src="/chatbot-avatar.png" alt="Joey AI" className="w-full h-full object-cover" />
                 </div>
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-[#181310]" />
               </div>

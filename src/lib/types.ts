@@ -28,19 +28,25 @@ export interface Wedding {
   partner1: string;
   partner2: string;
   date: string;
-  dateDisplay: string;
-  timeDisplay: string;
+  dateDisplay?: string;
+  timeDisplay?: string;
   venue: string;
-  venueAddress: string;
-  parking: string;
-  dressCode: string;
-  registry: string;
+  venueAddress?: string;
+  parking?: string;
+  dressCode?: string;
+  registry?: string;
   invited: number;
   confirmed?: number;
-  status: 'Finalising' | 'On track' | 'Planning' | string;
+  declined?: number;
+  region?: string;
+  daysRemaining?: number;
+  status?: 'Finalising' | 'On track' | 'Planning' | string;
   tasks: Task[];
-  runSheet: RunSheetItem[];
+  runSheet?: RunSheetItem[];
   privateRunSheet?: PrivateRunSheetItem[];
+  tenantId?: string;
+  tablesTotal?: number;
+  giftsTotal?: number;
 }
 
 export interface Table {
@@ -53,18 +59,19 @@ export interface Table {
 export interface Guest {
   id: string;
   name: string;
-  initials: string;
+  initials?: string;
   household: string;
   email: string;
   phone: string;
   rsvpStatus: 'confirmed' | 'declined' | 'awaiting';
-  guestCount: number;
+  guestCount?: number;
+  partySize?: number;
   dietary: string;
   song?: string;
   plusOne?: boolean;
-  reminderSent: boolean;
-  tableId: string | null;
-  seatIndex: number | null;
+  reminderSent?: boolean;
+  tableId?: string | null;
+  seatIndex?: number | null;
 }
 
 export interface Gift {
@@ -75,7 +82,7 @@ export interface Gift {
   date: string;
   message: string;
   thankYouSent: boolean;
-  thankYouStatus?: 'Not Started' | 'Drafted' | 'Sent' | 'Completed';
+  thankYouStatus?: 'Not Started' | 'Drafted' | 'Sent' | 'Completed' | 'Due';
 }
 
 export interface Tenant {
@@ -105,10 +112,10 @@ export interface User {
   email: string;
   role: 'mc' | 'couple' | 'superadmin';
   name: string;
-  passwordHash: string;
+  passwordHash?: string;
   businessName?: string;
   tenantId?: string;
-  weddingId?: string;
+  weddingId?: string | null;
   partner1?: string;
   partner2?: string;
 }
@@ -128,6 +135,59 @@ export interface Session {
   expired?: boolean;
 }
 
+export interface SupportTicket {
+  id: string;
+  tenant: string;
+  subject: string;
+  priority: 'High' | 'Medium' | 'Low';
+  status: 'Open' | 'In Progress' | 'Resolved';
+  date: string;
+  messages: Array<{
+    sender: string;
+    time: string;
+    text: string;
+    isAdmin?: boolean;
+  }>;
+}
+
+export interface FeatureFlags {
+  digitalGifting: boolean;
+  aiSeating: boolean;
+  qardPrinting: boolean;
+  photoModeration: boolean;
+  smsReminders: boolean;
+}
+
+export interface Client {
+  id: string;
+  couple: string;
+  weddingDate: string;
+  venue: string;
+  tier: string;
+  deposit: string;
+  phone: string;
+  email: string;
+  notes: string;
+}
+
+export interface Invoice {
+  id: string;
+  couple: string;
+  date: string;
+  venue: string;
+  amount: number;
+  status: 'Paid' | 'Pending' | 'Draft';
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  email: string;
+  phone: string;
+  status: string;
+}
+
 export interface DemoState {
   version: number;
   currentWeddingId: string;
@@ -139,4 +199,10 @@ export interface DemoState {
   auditLog: AuditLogEntry[];
   users: User[];
   usedInvites?: string[];
+  supportTickets?: SupportTicket[];
+  featureFlags?: FeatureFlags;
+  clients?: Client[];
+  invoices?: Invoice[];
+  team?: TeamMember[];
 }
+

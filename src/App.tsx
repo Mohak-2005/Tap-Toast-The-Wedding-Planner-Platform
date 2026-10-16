@@ -17,8 +17,34 @@ interface ToastItem {
 }
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<string>('guest-mobile');
+  const getInitialView = () => {
+    const hash = window.location.hash.replace('#', '');
+    const validViews = ['showcase', 'login', 'register', 'guest-mobile', 'mc-mobile', 'couple', 'mc', 'superadmin', 'guest-web'];
+    if (validViews.includes(hash)) {
+      return hash;
+    }
+    return 'login';
+  };
+
+  const [currentView, setCurrentView] = useState<string>(getInitialView);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  const handleSelectView = (view: string) => {
+    window.location.hash = view;
+    setCurrentView(view);
+  };
+
+  // Sync with browser hash changes
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && hash !== currentView) {
+        setCurrentView(hash);
+      }
+    };
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, [currentView]);
 
   // Listen for toast notifications dispatched from anywhere
   useEffect(() => {
@@ -41,12 +67,12 @@ export default function App() {
     return () => window.removeEventListener('tt_show_toast', handleToast);
   }, []);
 
-  // Listen for navigation messages from child components or postMessage
+  // Listen for navigation messages
   useEffect(() => {
     const handleMsg = (event: MessageEvent) => {
       if (event.data?.type === 'NAVIGATE' && event.data?.url) {
         const target = event.data.url.replace('.html', '');
-        setCurrentView(target === 'index' ? 'showcase' : target);
+        handleSelectView(target === 'index' ? 'showcase' : target);
       }
     };
     window.addEventListener('message', handleMsg);
@@ -58,32 +84,32 @@ export default function App() {
       case 'guest-mobile':
         return <GuestMobileView />;
       case 'couple':
-        return <CoupleView onSelectView={setCurrentView} />;
+        return <CoupleView onSelectView={handleSelectView} />;
       case 'mc':
-        return <McView onSelectView={setCurrentView} />;
+        return <McView onSelectView={handleSelectView} />;
       case 'mc-mobile':
         return <McMobileView />;
       case 'superadmin':
-        return <SuperAdminView onSelectView={setCurrentView} />;
+        return <SuperAdminView onSelectView={handleSelectView} />;
       case 'guest-web':
         return <GuestWebView />;
       case 'login':
-        return <LoginView onSelectView={setCurrentView} />;
+        return <LoginView onSelectView={handleSelectView} />;
       case 'register':
-        return <RegisterView onSelectView={setCurrentView} />;
+        return <RegisterView onSelectView={handleSelectView} />;
       case 'showcase':
       default:
-        return <ShowcaseView onSelectView={setCurrentView} />;
+        return <ShowcaseView onSelectView={handleSelectView} />;
     }
   };
 
   return (
     <div className="w-screen h-screen flex flex-col bg-[#1c1713] overflow-hidden font-sans">
       {/* Top Demo Bar */}
-      <DemoBar currentView={currentView} onSelectView={setCurrentView} />
+      <DemoBar currentView={currentView} onSelectView={handleSelectView} />
 
       {/* Primary Application Viewport */}
-      <div className="flex-1 overflow-y-auto relative flex flex-col">
+      <div className="flex-1 overflow-y-auto relative flex flex-col bg-[#f8f6f2]">
         {renderActiveView()}
       </div>
 

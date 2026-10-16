@@ -1,548 +1,1403 @@
 import React, { useState, useEffect } from 'react';
-import { useAppState, getWeddingCountdown, showToast, generateQrSvg } from '../lib/state';
-import JoeyChatbot from './JoeyChatbot';
+import { useAppState, showToast } from '../lib/state';
 
 export default function GuestMobileView() {
   const { state, setState } = useAppState();
-  const [inApp, setInApp] = useState(false);
-  const [activeTab, setActiveTab] = useState<'rsvp' | 'seating' | 'schedule' | 'gifts'>('rsvp');
-  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
-  const [dietaryInput, setDietaryInput] = useState('1x Vegetarian, 1x Gluten-Free');
-  const [isEditingDietary, setIsEditingDietary] = useState(false);
-  const [wishInput, setWishInput] = useState('');
-  const [countdown, setCountdown] = useState(getWeddingCountdown('2026-11-14T14:00:00'));
+  const [activeTab, setActiveTab] = useState<'splash' | 'hub' | 'rsvp' | 'feed' | 'events' | 'table' | 'photos' | 'gifts'>('hub');
+  const [showJoey, setShowJoey] = useState(false);
+  
+  // RSVP State
+  const [rsvpAttending, setRsvpAttending] = useState<boolean>(true);
+  const [guestCount, setGuestCount] = useState<number>(2);
+  const [dietaryInput, setDietaryInput] = useState<string>('Vegetarian');
+  const [songInput, setSongInput] = useState<string>('September — Earth, Wind & Fire');
 
-  const wedding = state.weddings[0];
-  const table4 = state.tables.find(t => t.id === 'table_4') || state.tables[4];
-  const table4Guests = state.guests.filter(g => g.tableId === 'table_4');
+  // Feed State
+  const [feedPhase, setFeedPhase] = useState<'pre' | 'married'>('pre');
+  const [feedNoteType, setFeedNoteType] = useState<'love' | 'thankyou'>('love');
+  const [feedText, setFeedText] = useState<string>('');
+  const [feedPosts, setFeedPosts] = useState([
+    {
+      id: 'f1',
+      type: 'thankyou',
+      title: 'Thank You, The Whitfield family!',
+      time: 'Just now',
+      badge: 'Digital Thank-You Card sent for $250 wishing well gift',
+      quote: 'Dear The Whitfield family, thank you so much for your wonderful and generous gift of $250! It means the world to have your love and support as we begin our new chapter together. Love, Sophie & James.',
+      likes: 3,
+      comments: 0,
+      userLiked: false,
+    },
+    {
+      id: 'f2',
+      type: 'milestone',
+      title: '50 guests confirmed',
+      time: 'Just now',
+      badge: "You've hit the halfway mark on RSVPs",
+      likes: 24,
+      comments: 0,
+      userLiked: false,
+    },
+    {
+      id: 'f3',
+      type: 'note',
+      title: 'Aunty Carol left a note',
+      time: '2 minutes ago',
+      quote: "So excited for you both — can't wait to celebrate! 💕",
+      likes: 5,
+      comments: 1,
+      userLiked: false,
+    },
+  ]);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown(getWeddingCountdown('2026-11-14T14:00:00'));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  // Gifts State
+  const [selectedGiftPreset, setSelectedGiftPreset] = useState<number>(100);
+  const [customGiftAmount, setCustomGiftAmount] = useState<string>('');
+  const [giftWish, setGiftWish] = useState<string>('Wishing you both a lifetime of happiness...');
 
-  const handleUpdateDietary = (e: React.FormEvent) => {
-    e.preventDefault();
-    const updated = state.guests.map(g => {
-      if (g.id === 'johnson_fam') {
-        return { ...g, dietary: dietaryInput };
-      }
-      return g;
-    });
-    setState({ ...state, guests: updated });
-    setIsEditingDietary(false);
-    showToast('Dietary preferences updated for Mark & Sarah', 'success');
-  };
+  // Photos State
+  const [photosList, setPhotosList] = useState([
+    {
+      id: 'ph1',
+      title: 'Southern Highlands winery ceremony lawn',
+      preview: 'Southern Highlands wine...',
+      bg: '#e2dad1',
+    },
+    {
+      id: 'ph2',
+      title: 'Tasting session at Fernwood Estate',
+      preview: 'Tasting session at Fernw...',
+      bg: '#dad2c7',
+    },
+    {
+      id: 'ph3',
+      title: 'Floral arch preview in natural gum foliage',
+      preview: 'Floral arch preview in nat...',
+      bg: '#d6cfc4',
+    },
+    {
+      id: 'ph4',
+      title: 'Golden hour over the Mittagong ranges',
+      preview: 'Golden hour over the Mit...',
+      bg: '#dfd7cc',
+    },
+  ]);
 
-  const handleSendWish = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!wishInput.trim()) return;
+  // Joey Chatbot inside Mobile
+  const [chatMessages, setChatMessages] = useState<Array<{
+    id: string;
+    sender: 'joey' | 'user';
+    text?: string;
+    isActionCard?: boolean;
+    actionDetails?: {
+      title: string;
+      description: string;
+    };
+    time: string;
+  }>>([
+    {
+      id: 'm1',
+      sender: 'joey',
+      text: 'Hello, I am Joey, your wedding assistant.',
+      time: 'Just now',
+    },
+    {
+      id: 'm2',
+      sender: 'joey',
+      text: 'How may I help you?',
+      time: 'Just now',
+    },
+  ]);
+  const [chatInput, setChatInput] = useState('');
+
+  // Handle Send Gift
+  const handleSendGift = () => {
+    const amount = customGiftAmount ? parseFloat(customGiftAmount) : selectedGiftPreset;
+    if (!amount || isNaN(amount) || amount <= 0) {
+      showToast('Please enter a valid gift amount', 'error');
+      return;
+    }
     const newGift = {
       id: 'gf_' + Date.now(),
-      guestName: 'Mark & Sarah Johnson',
-      amount: 200,
+      guestName: 'Priya Sharma',
+      amount,
       type: 'wishing-well',
-      date: 'Just now',
-      message: wishInput,
+      date: 'Today',
+      message: giftWish || 'Wishing you both a lifetime of happiness!',
       thankYouSent: false,
-      thankYouStatus: 'Not Started' as const
+      thankYouStatus: 'Due' as const,
     };
     setState({
       ...state,
-      gifts: [newGift, ...(state.gifts || [])]
+      gifts: [newGift, ...(state.gifts || [])],
     });
-    setWishInput('');
-    showToast('Your loving note and blessing has been sent to Sophie & James!', 'success');
+    showToast(`Payment of $${amount} AUD processed! Sophie & James thank you warmly.`, 'success');
+    setCustomGiftAmount('');
   };
 
-  const handleDownloadCalendar = () => {
-    const icsContent = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Tap and Toast//Wedding Calendar//EN
-BEGIN:VEVENT
-UID:sophie-james-2026
-DTSTAMP:20261015T120000Z
-DTSTART:20261114T030000Z
-DTEND:20261114T120000Z
-SUMMARY:Sophie & James Wedding
-DESCRIPTION:Southern Highlands wedding celebration at Fernwood Estate. Table 4.
-LOCATION:Fernwood Estate, 124 Range Road, Mittagong NSW 2575
-END:VEVENT
-END:VCALENDAR`;
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'sophie-and-james-wedding.ics');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('Wedding event added to your calendar!', 'success');
+  // Handle Post Feed Note
+  const handlePostNote = () => {
+    if (!feedText.trim()) return;
+    const newPost = {
+      id: 'f_' + Date.now(),
+      type: 'note',
+      title: 'Priya Sharma left a note',
+      time: 'Just now',
+      quote: feedText,
+      likes: 1,
+      comments: 0,
+      userLiked: true,
+    };
+    setFeedPosts([newPost, ...feedPosts]);
+    setFeedText('');
+    showToast('Love note posted to celebration feed!', 'success');
+  };
+
+  // Toggle Like on feed post
+  const toggleLike = (postId: string) => {
+    setFeedPosts(feedPosts.map(p => {
+      if (p.id === postId) {
+        return {
+          ...p,
+          likes: p.userLiked ? p.likes - 1 : p.likes + 1,
+          userLiked: !p.userLiked,
+        };
+      }
+      return p;
+    }));
+  };
+
+  // Joey Interaction Helper
+  const handleJoeyPrompt = (prompt: string) => {
+    const userMsgId = 'u_' + Date.now();
+    const newMsgs = [...chatMessages, {
+      id: userMsgId,
+      sender: 'user' as const,
+      text: prompt,
+      time: 'Just now',
+    }];
+
+    if (prompt.toLowerCase().includes('diet') || prompt.toLowerCase().includes('vegetarian')) {
+      newMsgs.push({
+        id: 'j_' + (Date.now() + 1),
+        sender: 'joey' as const,
+        text: "I've prepared that change for you:",
+        isActionCard: true,
+        actionDetails: {
+          title: 'Changing diet to vegetarian',
+          description: 'Update guest dietary requirement to Vegetarian for Priya Sharma?',
+        },
+        time: 'Just now',
+      });
+    } else if (prompt.toLowerCase().includes('accept')) {
+      setRsvpAttending(true);
+      newMsgs.push({
+        id: 'j_' + (Date.now() + 1),
+        sender: 'joey' as const,
+        text: 'Your RSVP has been updated to Joyfully Accepted (2 guests). Looking forward to seeing you at Fernwood Estate!',
+        time: 'Just now',
+      });
+    } else if (prompt.toLowerCase().includes('decline')) {
+      setRsvpAttending(false);
+      newMsgs.push({
+        id: 'j_' + (Date.now() + 1),
+        sender: 'joey' as const,
+        text: 'We are sorry you cannot make it. Your RSVP has been recorded as Regretfully Declined.',
+        time: 'Just now',
+      });
+    } else {
+      newMsgs.push({
+        id: 'j_' + (Date.now() + 1),
+        sender: 'joey' as const,
+        text: `I've noted: "${prompt}". Feel free to check the Schedule or Table tabs anytime.`,
+        time: 'Just now',
+      });
+    }
+    setChatMessages(newMsgs);
+  };
+
+  const handleConfirmJoeyDietAction = (accepted: boolean) => {
+    if (accepted) {
+      setDietaryInput('Vegetarian');
+      showToast('Dietary updated to Vegetarian for Priya Sharma', 'success');
+      setChatMessages(prev => [...prev, {
+        id: 'j_conf_' + Date.now(),
+        sender: 'joey',
+        text: '✓ Dietary requirement successfully updated to Vegetarian.',
+        time: 'Just now',
+      }]);
+    } else {
+      showToast('Action cancelled', 'info');
+      setChatMessages(prev => [...prev, {
+        id: 'j_conf_' + Date.now(),
+        sender: 'joey',
+        text: 'Change cancelled.',
+        time: 'Just now',
+      }]);
+    }
   };
 
   return (
-    <div className="w-full flex-1 flex flex-col items-center justify-center p-2 sm:p-4 bg-[radial-gradient(circle_at_50%_25%,_#f6f3ed_0%,_#e5e0d6_100%)] min-h-[calc(100vh-54px)] overflow-hidden font-sans">
-      {/* 402x874 Phone Chassis */}
-      <div
-        className={`w-[402px] max-w-[402px] h-[874px] max-h-[calc(100vh-70px)] rounded-[46px] border-[4px] border-[#1c1511] shadow-[0_20px_60px_rgba(21,17,14,0.22),_0_4px_14px_rgba(21,17,14,0.08)] overflow-hidden relative flex flex-col transition-colors ${
-          !inApp ? 'bg-[#15110e] border-[#2b221a]' : 'bg-[#f8f6f2]'
-        }`}
-      >
+    <div className="w-full flex-1 flex flex-col items-center justify-center p-2 sm:p-4 bg-[radial-gradient(circle_at_50%_25%,_#f6f3ed_0%,_#e5e0d6_100%)] min-h-[calc(100vh-45px)] overflow-hidden font-sans select-none">
+      {/* 402x874 Phone Chassis matching Screenshot 1-9 & guest-mobile.html */}
+      <div className="w-[402px] max-w-[402px] h-[874px] max-h-[calc(100vh-60px)] rounded-[46px] border-[4px] border-[#1c1511] bg-[#f8f6f2] shadow-[0_20px_60px_rgba(21,17,14,0.22),_0_4px_14px_rgba(21,17,14,0.08)] overflow-hidden relative flex flex-col">
+        
         {/* Phone Status Bar */}
-        <div
-          className={`flex justify-between items-center px-5 pt-3 pb-2 text-[13.5px] font-bold select-none z-10 flex-shrink-0 ${
-            !inApp ? 'bg-[#15110e] text-[#f8f3eb] border-b border-white/5' : 'bg-[#f8f6f2] text-[#15110e] border-b border-black/5'
-          }`}
-        >
+        <div className={`flex justify-between items-center px-6 pt-3 pb-2 text-[13px] font-bold z-20 flex-shrink-0 transition-colors ${activeTab === 'splash' ? 'bg-[#15110e] text-white' : 'bg-[#f8f6f2] text-[#15110e]'}`}>
           <span>9:41</span>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] tracking-wider text-[#bd9661]">5G</span>
-            <div className="w-5 h-2.5 border-[1.5px] border-current rounded-xs p-0.5 flex items-center relative">
+            <span className="text-[10px] tracking-wider text-[#bd9661] font-bold">5G</span>
+            <div className={`w-5 h-2.5 border-[1.5px] rounded-xs p-0.5 flex items-center relative ${activeTab === 'splash' ? 'border-white' : 'border-[#15110e]'}`}>
               <div className="w-[85%] h-full bg-[#bd9661] rounded-[1px]" />
-              <div className="absolute -right-1 top-0.5 w-[2px] h-1 bg-current rounded-r-xs" />
+              <div className={`absolute -right-1 top-0.5 w-[2px] h-1 rounded-r-xs ${activeTab === 'splash' ? 'bg-white' : 'bg-[#15110e]'}`} />
             </div>
           </div>
         </div>
 
-        {/* ============================================================== */}
-        {/* MODE 1: LUXURY QARD SCAN SPLASH SCREEN (TAP TO ENTER)           */}
-        {/* ============================================================== */}
-        {!inApp ? (
-          <div className="flex-1 flex flex-col justify-between p-6 text-center text-[#f8f6f2] overflow-y-auto no-scrollbar relative">
-            <div className="mt-4">
-              <div className="inline-flex items-center gap-1.5 border border-[#bd9661]/40 bg-[#211a14] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-[#dfc194] mb-4">
-                <span>✨</span> Luxury QaRd™ Invitation
+        {/* Scrollable Screen Content */}
+        <div className="flex-1 overflow-y-auto no-scrollbar relative flex flex-col">
+          
+          {/* ============================================================== */}
+          {/* SCREEN: INVITATION SPLASH / QR (Screenshot 1: 172526.png)       */}
+          {/* ============================================================== */}
+          {activeTab === 'splash' && (
+            <div className="flex-1 flex flex-col items-center justify-between p-6 bg-[#15110e] text-white text-center min-h-[750px]">
+              {/* Brand Header */}
+              <div className="flex items-center gap-2 mt-4">
+                <div className="w-8 h-8 rounded border border-[#bd9661] flex items-center justify-center font-serif text-[#bd9661] text-base font-bold">
+                  T
+                </div>
+                <span className="font-serif text-lg tracking-wide text-white">Tap &amp; Toast</span>
               </div>
-              <h1 className="font-serif text-3xl font-bold tracking-tight text-white mb-1">
-                Sophie <span className="text-[#bd9661] italic font-normal">&amp;</span> James
-              </h1>
-              <p className="text-xs text-[#dfc194] font-medium tracking-wide">
-                Southern Highlands · 14 Nov 2026
-              </p>
+
+              {/* Arch Motif & Invitation Text */}
+              <div className="flex flex-col items-center my-auto w-full px-4">
+                {/* Dotted Arch SVG */}
+                <div className="w-24 h-14 mb-4 flex items-center justify-center text-[#bd9661]">
+                  <svg viewBox="0 0 100 60" width="90" height="54" fill="none" stroke="currentColor" strokeWidth="2.5" strokeDasharray="4 4">
+                    <path d="M 10 55 A 40 40 0 0 1 90 55" />
+                  </svg>
+                </div>
+
+                <div className="text-[11px] uppercase tracking-[0.25em] text-[#dfc194] font-bold mb-2">
+                  You're Invited
+                </div>
+                <h1 className="font-serif text-3xl font-bold text-white mb-2 leading-tight">
+                  Sophie <span className="text-[#dfc194] italic font-normal">&amp;</span> James
+                </h1>
+                <p className="text-xs text-[#c9bbae] mb-6">
+                  Saturday, 14 Nov 2026 &bull; Fernwood Estate
+                </p>
+
+                {/* White QR Card */}
+                <div className="bg-white p-4 rounded-2xl shadow-xl flex flex-col items-center justify-center mb-6 w-[200px] h-[200px]">
+                  <img
+                    src="https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=https://taptoast.demo/wedding/sophie-james?guest=priya"
+                    alt="Wedding QR Code"
+                    className="w-[170px] h-[170px] object-contain"
+                  />
+                </div>
+
+                <div className="text-[11px] uppercase tracking-wider text-[#dfc194] font-bold mb-1">
+                  Scan to Open Your Invitation
+                </div>
+                <div className="text-xs text-[#c9bbae]">
+                  For the Whitfield family
+                </div>
+              </div>
+
+              {/* Enter Button */}
+              <div className="w-full pb-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('hub')}
+                  className="w-full bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-serif font-bold text-base py-3.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  Tap to Enter &rarr;
+                </button>
+              </div>
             </div>
+          )}
 
-            {/* Luxury QaRd Graphic */}
-            <div className="my-6 mx-auto w-full max-w-[280px] bg-gradient-to-b from-[#241c16] to-[#17120e] border border-[#bd9661]/60 rounded-2xl p-6 shadow-2xl relative flex flex-col items-center">
-              <div className="absolute top-3 left-4 text-[10px] uppercase tracking-widest text-[#bd9661] font-bold font-serif">
-                Tap &amp; Toast
-              </div>
-              <div className="absolute top-3 right-4 text-sm text-[#bd9661]">
-                NFC ⚡
+          {/* ============================================================== */}
+          {/* TAB: HUB (Screenshot 2: 172534.png)                             */}
+          {/* ============================================================== */}
+          {activeTab === 'hub' && (
+            <div className="p-4 space-y-3.5">
+              {/* Welcome Header */}
+              <div className="mt-2 text-left px-1">
+                <h1 className="font-serif text-[28px] font-bold text-[#15110e] leading-tight mb-1">
+                  Welcome, Priya
+                </h1>
+                <div className="text-base text-[#15110e] font-serif font-medium">
+                  Sophie <span className="text-[#bd9661] italic font-normal">&amp;</span> James's Wedding
+                </div>
+                <div className="text-xs text-[#8b7b6b] mt-0.5">
+                  Fernwood Estate &bull; 14 Nov 2026
+                </div>
               </div>
 
-              <div className="my-5 p-2 bg-white rounded-xl shadow-inner">
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: generateQrSvg('https://tapandtoast.demo/guest?g=johnson_fam', 130)
+              {/* 2x2 Hub Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Tile 1: Today's Schedule */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('events')}
+                  className="bg-[#1c1612] text-white border border-[#2e231a] rounded-xl p-3.5 text-left shadow-sm hover:scale-[1.01] transition-transform flex flex-col justify-between h-[116px] cursor-pointer"
+                >
+                  <div className="w-7 h-7 flex items-center justify-center text-[#dfc194]">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-[#dfc194]">Today's Schedule</div>
+                    <div className="text-xs text-[#e8ded0]">Ceremony at 2:00 PM</div>
+                  </div>
+                </button>
+
+                {/* Tile 2: My Table */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('table')}
+                  className="bg-white border border-[#e8ded0] rounded-xl p-3.5 text-left shadow-sm hover:scale-[1.01] transition-transform flex flex-col justify-between h-[116px] cursor-pointer"
+                >
+                  <div className="w-7 h-7 flex items-center justify-center text-[#bd9661]">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="5" />
+                      <circle cx="12" cy="3" r="2" />
+                      <circle cx="12" cy="21" r="2" />
+                      <circle cx="3" cy="12" r="2" />
+                      <circle cx="21" cy="12" r="2" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-[#15110e]">My Table</div>
+                    <div className="text-xs text-[#8b7b6b]">Table 4, Seat 4</div>
+                  </div>
+                </button>
+
+                {/* Tile 3: Photo Wall */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('photos')}
+                  className="bg-white border border-[#e8ded0] rounded-xl p-3.5 text-left shadow-sm hover:scale-[1.01] transition-transform flex flex-col justify-between h-[116px] cursor-pointer"
+                >
+                  <div className="w-7 h-7 flex items-center justify-center text-[#bd9661]">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                      <circle cx="12" cy="13" r="4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-[#15110e]">Photo Wall</div>
+                    <div className="text-xs text-[#8b7b6b]">Add &amp; browse photos</div>
+                  </div>
+                </button>
+
+                {/* Tile 4: Gift & Go */}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('gifts')}
+                  className="bg-white border border-[#e8ded0] rounded-xl p-3.5 text-left shadow-sm hover:scale-[1.01] transition-transform flex flex-col justify-between h-[116px] cursor-pointer"
+                >
+                  <div className="w-7 h-7 flex items-center justify-center text-[#bd9661]">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 12 20 22 4 22 4 12" />
+                      <rect x="2" y="7" width="20" height="5" />
+                      <line x1="12" y1="22" x2="12" y2="7" />
+                      <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                      <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-[#15110e]">Gift &amp; Go</div>
+                    <div className="text-xs text-[#8b7b6b]">Send a gift</div>
+                  </div>
+                </button>
+              </div>
+
+              {/* Wide Banner: Our Story & Details */}
+              <div
+                onClick={() => showToast('Opening Story & Details guide', 'info')}
+                className="bg-white border border-[#e8ded0] rounded-xl p-3.5 shadow-sm flex items-center justify-between cursor-pointer hover:border-[#bd9661] transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📖</span>
+                  <div>
+                    <div className="font-bold text-sm text-[#15110e]">Our Story &amp; Details</div>
+                    <div className="text-[11px] text-[#8b7b6b]">Story, memoriam, dinner menu &amp; updates</div>
+                  </div>
+                </div>
+                <div className="text-xs text-[#bd9661] font-semibold">&rarr;</div>
+              </div>
+
+              {/* Celebration Feed Section Preview */}
+              <div className="pt-1">
+                <div className="flex justify-between items-center mb-2 px-1">
+                  <h2 className="font-serif text-[18px] font-bold text-[#15110e]">
+                    Celebration Feed
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('feed')}
+                    className="text-xs text-[#bd9661] font-semibold hover:underline cursor-pointer"
+                  >
+                    View all &rarr;
+                  </button>
+                </div>
+
+                {/* Feed Card */}
+                <div className="bg-white border border-[#e8ded0] rounded-xl p-3.5 shadow-sm space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-[#faf6f0] border border-[#ebd3a8] flex items-center justify-center text-lg">
+                        🎁
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-[#15110e]">Thank You, The Whitfield family!</div>
+                        <div className="text-[10px] text-[#8b7b6b]">Just now</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-[#6b5849] italic bg-[#faf8f5] p-2.5 rounded-lg border-l-2 border-[#bd9661] leading-relaxed">
+                    "Dear The Whitfield family, thank you so much for your wonderful and generous gift of $250! It means the world to have your love and support as we begin our new chapter together. Love, Sophie &amp; James."
+                  </p>
+
+                  <div className="pt-1 flex items-center gap-4 text-[11px] text-[#8b7b6b]">
+                    <span>❤️ 3 Likes</span>
+                    <span>💬 0 Comments</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB: RSVP (Screenshot 3: 172542.png)                             */}
+          {/* ============================================================== */}
+          {activeTab === 'rsvp' && (
+            <div className="p-4 space-y-4">
+              {/* Arched Card */}
+              <div className="bg-[#15110e] text-white p-5 rounded-3xl text-center shadow-md relative overflow-hidden">
+                <div className="w-20 h-10 mx-auto mb-2 text-[#bd9661] opacity-70">
+                  <svg viewBox="0 0 100 50" width="80" height="40" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3">
+                    <path d="M 10 45 A 40 40 0 0 1 90 45" />
+                  </svg>
+                </div>
+                <div className="text-[10px] tracking-widest uppercase font-bold text-[#bd9661] mb-1">
+                  You're Invited
+                </div>
+                <h2 className="font-serif text-2xl font-bold text-white mb-1">
+                  Sophie <span className="text-[#bd9661] italic font-normal">&amp;</span> James
+                </h2>
+                <div className="text-xs text-[#c9bbae]">
+                  Saturday, 14 Nov 2026 &bull; 2:00 PM
+                </div>
+                <div className="text-[11px] text-[#a69888] mt-0.5">
+                  Fernwood Estate, Southern Highlands
+                </div>
+                <div className="w-12 h-[1px] bg-[#bd9661] mx-auto mt-3 opacity-60" />
+              </div>
+
+              {/* Greeting */}
+              <div className="text-center px-2">
+                <p className="text-xs text-[#15110e] font-medium leading-relaxed">
+                  Hi <strong>Priya</strong> &mdash; we'd love for you to celebrate with us. Let us know if you can make it.
+                </p>
+              </div>
+
+              {/* Decision Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRsvpAttending(true);
+                    showToast('RSVP: Joyfully Accepted selected', 'success');
                   }}
+                  className={`py-3 px-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                    rsvpAttending
+                      ? 'bg-[#15110e] text-white shadow-sm'
+                      : 'bg-white text-[#15110e] border border-[#e8ded0] hover:bg-[#faf8f5]'
+                  }`}
+                >
+                  Joyfully Accepts
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRsvpAttending(false);
+                    showToast('RSVP: Regretfully Declines selected', 'info');
+                  }}
+                  className={`py-3 px-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                    !rsvpAttending
+                      ? 'bg-[#15110e] text-white shadow-sm'
+                      : 'bg-white text-[#15110e] border border-[#e8ded0] hover:bg-[#faf8f5]'
+                  }`}
+                >
+                  Regretfully Declines
+                </button>
+              </div>
+
+              {/* Guests Attending Counter */}
+              <div>
+                <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
+                  Guests Attending
+                </label>
+                <div className="bg-white border border-[#e8ded0] rounded-xl p-2.5 flex items-center justify-between shadow-xs">
+                  <button
+                    type="button"
+                    onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
+                    className="w-9 h-9 rounded-full bg-[#f8f6f2] hover:bg-[#e8ded0] text-[#15110e] font-bold text-lg flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    &minus;
+                  </button>
+                  <span className="font-bold text-sm text-[#15110e]">
+                    {guestCount} guests
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setGuestCount(guestCount + 1)}
+                    className="w-9 h-9 rounded-full bg-[#f8f6f2] hover:bg-[#e8ded0] text-[#15110e] font-bold text-lg flex items-center justify-center transition-colors cursor-pointer"
+                  >
+                    &#43;
+                  </button>
+                </div>
+              </div>
+
+              {/* Dietary Requirements */}
+              <div>
+                <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
+                  Dietary Requirements
+                </label>
+                <input
+                  type="text"
+                  value={dietaryInput}
+                  onChange={(e) => setDietaryInput(e.target.value)}
+                  placeholder="e.g. Vegetarian, Gluten-Free, Nut allergy"
+                  className="w-full bg-white border border-[#e8ded0] rounded-xl p-3 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs"
                 />
               </div>
 
-              <div className="font-serif text-base font-bold text-white mb-0.5">
-                Mark &amp; Sarah Johnson
+              {/* Song Request */}
+              <div>
+                <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
+                  Song That'll Get You on the Dance Floor
+                </label>
+                <input
+                  type="text"
+                  value={songInput}
+                  onChange={(e) => setSongInput(e.target.value)}
+                  placeholder="e.g. September by Earth Wind & Fire"
+                  className="w-full bg-white border border-[#e8ded0] rounded-xl p-3 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs"
+                />
               </div>
-              <div className="text-[11px] text-[#bd9661] font-semibold">
-                Table 4 · Seats 1 &amp; 2
-              </div>
-              <div className="text-[10px] text-[#a69888] mt-2">
-                Fernwood Estate · Grand Pavilion
-              </div>
-            </div>
 
-            {/* Splash Actions */}
-            <div className="space-y-3 mb-4">
-              <p className="text-xs text-[#c9bbae] leading-relaxed px-4">
-                You are warmly invited to celebrate with us. Tap below to access your guest schedule and table seating.
-              </p>
+              {/* Save RSVP Button */}
               <button
                 type="button"
-                onClick={() => setInApp(true)}
-                className="w-full bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold py-3.5 px-6 rounded-xl text-sm transition-all shadow-lg active:scale-98 flex items-center justify-center gap-2"
+                onClick={() => showToast('RSVP preferences confirmed and saved!', 'success')}
+                className="w-full bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold py-3 rounded-xl text-xs shadow-sm transition-all cursor-pointer"
               >
-                <span>✨</span> TAP TO ENTER WEDDING PORTAL &rarr;
+                Update &amp; Confirm RSVP
+              </button>
+            </div>
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB: FEED (Screenshots 4 & 5: 172551.png & 172557.png)         */}
+          {/* ============================================================== */}
+          {activeTab === 'feed' && (
+            <div className="p-4 space-y-3.5">
+              {/* Header Countdown Banner */}
+              <div className="bg-[#15110e] text-white p-4 rounded-2xl text-center shadow-md">
+                <h2 className="font-serif text-xl font-bold text-white mb-2">
+                  Sophie <span className="text-[#bd9661] italic font-normal">&amp;</span> James
+                </h2>
+                <div className="inline-block bg-[#231c17] border border-[#3d2e24] text-[#dfc194] text-[11px] font-bold px-3 py-1 rounded-full">
+                  29 days : 20 hrs : 34 mins : 12 secs remaining
+                </div>
+              </div>
+
+              {/* Halfway Milestone Banner */}
+              <div className="bg-[#15110e] text-white p-3.5 rounded-xl border-l-4 border-l-[#bd9661] flex items-center gap-3">
+                <span className="text-xl text-[#bd9661]">⭐</span>
+                <div>
+                  <div className="text-xs font-bold text-white">50 guests confirmed</div>
+                  <div className="text-[11px] text-[#c9bbae]">You've hit the halfway mark on RSVPs</div>
+                </div>
+              </div>
+
+              {/* Post a Love Note Card */}
+              <div className="bg-white border border-[#e8ded0] rounded-xl p-3.5 shadow-sm space-y-3">
+                <div className="text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b]">
+                  Post a Love Note
+                </div>
+
+                {/* Sub-tabs: Love Note vs Wedding Thank-You */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFeedNoteType('love')}
+                    className={`py-2 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${
+                      feedNoteType === 'love'
+                        ? 'bg-[#bd9661] text-[#15110e]'
+                        : 'bg-white border border-[#e8ded0] text-[#15110e]'
+                    }`}
+                  >
+                    <span>💌</span> Love Note
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFeedNoteType('thankyou')}
+                    className={`py-2 px-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${
+                      feedNoteType === 'thankyou'
+                        ? 'bg-[#bd9661] text-[#15110e]'
+                        : 'bg-white border border-[#e8ded0] text-[#15110e]'
+                    }`}
+                  >
+                    <span>🥂</span> Wedding Thank-You
+                  </button>
+                </div>
+
+                {/* Prompt Carousel Pills */}
+                <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
+                  <button
+                    type="button"
+                    onClick={() => setFeedText('So excited to celebrate with you both!')}
+                    className="bg-[#faf8f5] hover:bg-[#f0ede4] border border-[#ebd3a8] rounded-full px-2.5 py-1 text-[11px] text-[#15110e] whitespace-nowrap cursor-pointer transition-colors"
+                  >
+                    ✨ So excited to celebrate!
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFeedText('Wishing you a lifetime of endless happiness and love!')}
+                    className="bg-[#faf8f5] hover:bg-[#f0ede4] border border-[#ebd3a8] rounded-full px-2.5 py-1 text-[11px] text-[#15110e] whitespace-nowrap cursor-pointer transition-colors"
+                  >
+                    🥂 Lifetime of happiness
+                  </button>
+                </div>
+
+                {/* Textarea */}
+                <textarea
+                  value={feedText}
+                  onChange={(e) => setFeedText(e.target.value)}
+                  placeholder="Send Sophie &amp; James a lovely message..."
+                  rows={3}
+                  className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs resize-none"
+                />
+
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handlePostNote}
+                    className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-4 py-2 rounded-lg text-xs shadow-xs cursor-pointer transition-all"
+                  >
+                    Post Note
+                  </button>
+                </div>
+              </div>
+
+              {/* Celebration Phase Toggle */}
+              <div className="flex items-center justify-between text-xs pt-1">
+                <span className="text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b]">
+                  Celebration Phase:
+                </span>
+                <div className="flex bg-[#faf8f5] border border-[#ebd3a8] rounded-full p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setFeedPhase('pre')}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
+                      feedPhase === 'pre'
+                        ? 'bg-[#bd9661] text-[#15110e]'
+                        : 'text-[#8b7b6b]'
+                    }`}
+                  >
+                    ⏳ Pre-Wedding
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFeedPhase('married')}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
+                      feedPhase === 'married'
+                        ? 'bg-[#bd9661] text-[#15110e]'
+                        : 'text-[#8b7b6b]'
+                    }`}
+                  >
+                    💍 Married &amp; Honeymoon
+                  </button>
+                </div>
+              </div>
+
+              {/* Feed Items List */}
+              <div className="space-y-3 pt-1">
+                {feedPosts.map((post) => (
+                  <div key={post.id} className="bg-white border border-[#e8ded0] rounded-xl p-3.5 shadow-sm space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-[#faf8f5] border border-[#ebd3a8] flex items-center justify-center text-base">
+                          {post.type === 'thankyou' ? '🎁' : post.type === 'milestone' ? '⭐' : '✉️'}
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-[#15110e]">{post.title}</div>
+                          <div className="text-[10px] text-[#8b7b6b]">{post.time}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {post.badge && (
+                      <div className="text-[11px] text-[#8b7b6b] font-medium">
+                        {post.badge}
+                      </div>
+                    )}
+
+                    {post.quote && (
+                      <div className="text-xs text-[#6b5849] italic bg-[#faf8f5] p-2.5 rounded-lg border-l-2 border-[#bd9661] leading-relaxed">
+                        "{post.quote}"
+                      </div>
+                    )}
+
+                    <div className="pt-1 flex items-center gap-4 text-[11px] text-[#8b7b6b]">
+                      <button
+                        type="button"
+                        onClick={() => toggleLike(post.id)}
+                        className={`flex items-center gap-1 cursor-pointer hover:text-[#bd9661] ${post.userLiked ? 'text-[#c54b38] font-bold' : ''}`}
+                      >
+                        ❤️ {post.likes} Likes
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => showToast('Comments drawer', 'info')}
+                        className="flex items-center gap-1 cursor-pointer hover:text-[#bd9661]"
+                      >
+                        💬 {post.comments} Comments
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB: EVENTS / SCHEDULE (Screenshot 6: 172606.png)              */}
+          {/* ============================================================== */}
+          {activeTab === 'events' && (
+            <div className="p-4 space-y-4">
+              <div className="mt-1 px-1">
+                <div className="text-[10px] font-bold tracking-widest uppercase text-[#bd9661] mb-0.5">
+                  Order of Events
+                </div>
+                <h1 className="font-serif text-2xl font-bold text-[#15110e] leading-tight mb-1">
+                  Today's Schedule
+                </h1>
+                <div className="text-xs text-[#8b7b6b]">
+                  Saturday, 14 November 2026 &bull; Fernwood Estate
+                </div>
+              </div>
+
+              {/* Timeline Container */}
+              <div className="relative pl-6 space-y-6 pt-2">
+                {/* Continuous Vertical Timeline Line */}
+                <div className="absolute left-[11px] top-3 bottom-3 w-[2px] bg-[#bd9661]" />
+
+                {/* Event 1 */}
+                <div className="relative">
+                  <div className="absolute -left-[19px] top-1.5 w-3 h-3 rounded-full bg-[#bd9661] border-2 border-white ring-2 ring-[#bd9661]/40" />
+                  <div className="text-xs font-bold text-[#bd9661] mb-0.5">2:00 PM</div>
+                  <h3 className="font-bold text-sm text-[#15110e]">Wedding Ceremony</h3>
+                  <p className="text-xs text-[#8b7b6b] mt-0.5 leading-relaxed">
+                    The Meadow Lawn. Please be seated 15 minutes prior.
+                  </p>
+                </div>
+
+                {/* Event 2 */}
+                <div className="relative">
+                  <div className="absolute -left-[19px] top-1.5 w-3 h-3 rounded-full bg-[#bd9661] border-2 border-white ring-2 ring-[#bd9661]/40" />
+                  <div className="text-xs font-bold text-[#bd9661] mb-0.5">2:45 PM</div>
+                  <h3 className="font-bold text-sm text-[#15110e]">Cocktails &amp; Canap&eacute;s</h3>
+                  <p className="text-xs text-[#8b7b6b] mt-0.5 leading-relaxed">
+                    The Verandah &amp; Estate Gardens.
+                  </p>
+                </div>
+
+                {/* Event 3 */}
+                <div className="relative">
+                  <div className="absolute -left-[19px] top-1.5 w-3 h-3 rounded-full bg-[#bd9661] border-2 border-white ring-2 ring-[#bd9661]/40" />
+                  <div className="text-xs font-bold text-[#bd9661] mb-0.5">4:00 PM</div>
+                  <h3 className="font-bold text-sm text-[#15110e]">Grand Reception Seating</h3>
+                  <p className="text-xs text-[#8b7b6b] mt-0.5 leading-relaxed">
+                    The Grand Pavilion. Welcome toasts and entrance.
+                  </p>
+                </div>
+
+                {/* Event 4 */}
+                <div className="relative">
+                  <div className="absolute -left-[19px] top-1.5 w-3 h-3 rounded-full bg-[#bd9661] border-2 border-white ring-2 ring-[#bd9661]/40" />
+                  <div className="text-xs font-bold text-[#bd9661] mb-0.5">5:30 PM</div>
+                  <h3 className="font-bold text-sm text-[#15110e]">Dinner &amp; Speeches</h3>
+                  <p className="text-xs text-[#8b7b6b] mt-0.5 leading-relaxed">
+                    Main dining hall. Three-course seasonal dining.
+                  </p>
+                </div>
+
+                {/* Event 5 */}
+                <div className="relative">
+                  <div className="absolute -left-[19px] top-1.5 w-3 h-3 rounded-full bg-[#bd9661] border-2 border-white ring-2 ring-[#bd9661]/40" />
+                  <div className="text-xs font-bold text-[#bd9661] mb-0.5">7:15 PM</div>
+                  <h3 className="font-bold text-sm text-[#15110e]">Cake Cutting &amp; First Dance</h3>
+                  <p className="text-xs text-[#8b7b6b] mt-0.5 leading-relaxed">
+                    Dance floor opens with live band.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB: TABLE (Screenshot 7: 172617.png)                           */}
+          {/* ============================================================== */}
+          {activeTab === 'table' && (
+            <div className="p-4 space-y-4">
+              <div className="mt-1 px-1">
+                <div className="text-[10px] font-bold tracking-widest uppercase text-[#bd9661] mb-0.5">
+                  Your Seating
+                </div>
+                <h1 className="font-serif text-2xl font-bold text-[#15110e] leading-tight mb-1">
+                  My Table
+                </h1>
+                <div className="text-xs text-[#8b7b6b]">
+                  Confirmed Seating &bull; View Only
+                </div>
+              </div>
+
+              {/* Circular Table Graphic with Dotted Grid Background */}
+              <div className="bg-[#fbf9f5] border border-[#e8ded0] rounded-2xl p-6 relative flex flex-col items-center justify-center shadow-xs overflow-hidden min-h-[300px]">
+                {/* Dotted Grid Background */}
+                <div
+                  className="absolute inset-0 opacity-25"
+                  style={{
+                    backgroundImage: 'radial-gradient(#8b7b6b 1px, transparent 1px)',
+                    backgroundSize: '16px 16px',
+                  }}
+                />
+
+                {/* Circular arrangement container */}
+                <div className="relative w-[210px] h-[210px] flex items-center justify-center z-10">
+                  {/* Outer circle line */}
+                  <div className="absolute inset-0 rounded-full border border-[#bd9661]/60" />
+
+                  {/* Center Table Circle */}
+                  <div className="w-[110px] h-[110px] rounded-full bg-white border border-[#bd9661] flex flex-col items-center justify-center shadow-sm z-10">
+                    <span className="font-serif text-base font-bold text-[#15110e]">Table 4</span>
+                    <span className="text-xs text-[#8b7b6b] font-medium">8 / 8</span>
+                  </div>
+
+                  {/* 8 Outer Seat Badges */}
+                  {[
+                    { code: 'BR', angle: 0, label: 'Benjamin Ross' },
+                    { code: 'IF', angle: 45, label: 'Isabella Foster' },
+                    { code: 'OT', angle: 90, label: 'Oliver Taylor' },
+                    { code: 'PS', angle: 135, label: 'Priya Sharma (You)', isMe: true },
+                    { code: 'YR', angle: 180, label: 'Yusuf Rahman' },
+                    { code: 'NP', angle: 225, label: 'Nadia Patel' },
+                    { code: 'JT', angle: 270, label: 'Jack Thompson' },
+                    { code: 'AD', angle: 315, label: 'Amelia Davis' },
+                  ].map((seat) => {
+                    const radius = 86;
+                    const rad = ((seat.angle - 90) * Math.PI) / 180;
+                    const x = radius * Math.cos(rad);
+                    const y = radius * Math.sin(rad);
+
+                    return (
+                      <div
+                        key={seat.code}
+                        style={{
+                          transform: `translate(${x}px, ${y}px)`,
+                        }}
+                        className={`absolute w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shadow-xs cursor-pointer ${
+                          seat.isMe
+                            ? 'bg-[#dfc194] text-[#15110e] border-2 border-[#15110e] ring-2 ring-[#bd9661] z-20'
+                            : 'bg-[#15110e] text-[#dfc194] border border-[#3d2e24]'
+                        }`}
+                        title={seat.label}
+                      >
+                        {seat.code}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-4 text-xs font-bold text-[#bd9661] z-10">
+                  Seat 4 &bull; Priya Sharma
+                </div>
+              </div>
+
+              {/* Tablemates List */}
+              <div className="space-y-2 pt-1">
+                <h3 className="font-serif text-base font-bold text-[#15110e] px-1">
+                  Your Tablemates
+                </h3>
+
+                {[
+                  { name: 'Benjamin Ross', seat: 'Seat 1', initials: 'BR' },
+                  { name: 'Isabella Foster', seat: 'Seat 2', initials: 'IF' },
+                  { name: 'Oliver Taylor', seat: 'Seat 3', initials: 'OT' },
+                  { name: 'Priya Sharma (You)', seat: 'Seat 4', initials: 'PS', isMe: true },
+                  { name: 'Yusuf Rahman', seat: 'Seat 5', initials: 'YR' },
+                  { name: 'Nadia Patel', seat: 'Seat 6', initials: 'NP' },
+                ].map((guest, idx) => (
+                  <div
+                    key={idx}
+                    className={`bg-white border rounded-xl p-3 flex items-center gap-3 shadow-xs ${
+                      guest.isMe ? 'border-[#bd9661] bg-[#faf8f5]' : 'border-[#e8ded0]'
+                    }`}
+                  >
+                    <div
+                      className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${
+                        guest.isMe ? 'bg-[#bd9661] text-[#15110e]' : 'bg-[#15110e] text-[#dfc194]'
+                      }`}
+                    >
+                      {guest.initials}
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-[#15110e]">{guest.name}</div>
+                      <div className="text-[10px] text-[#8b7b6b]">{guest.seat}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB: PHOTOS (Screenshot 8: 172628.png)                          */}
+          {/* ============================================================== */}
+          {activeTab === 'photos' && (
+            <div className="p-4 space-y-4">
+              <div className="mt-1 px-1">
+                <div className="text-[10px] font-bold tracking-widest uppercase text-[#bd9661] mb-0.5">
+                  Shared Memories
+                </div>
+                <h1 className="font-serif text-2xl font-bold text-[#15110e] leading-tight mb-1">
+                  Photo Wall
+                </h1>
+                <div className="text-xs text-[#8b7b6b]">
+                  Capture the moments! Snap a photo today and share it with the room.
+                </div>
+              </div>
+
+              {/* Upload a Photo Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  const newPhoto = {
+                    id: 'ph_' + Date.now(),
+                    title: 'New guest snapshot',
+                    preview: 'Uploaded just now...',
+                    bg: '#ded6cc',
+                  };
+                  setPhotosList([newPhoto, ...photosList]);
+                  showToast('Photo uploaded to wedding gallery!', 'success');
+                }}
+                className="w-full bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold py-3 rounded-xl text-xs shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-all"
+              >
+                <span>📷</span> Upload a Photo
+              </button>
+
+              {/* 2x2 Photo Cards Grid */}
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                {photosList.map((photo) => (
+                  <div
+                    key={photo.id}
+                    className="rounded-xl overflow-hidden border border-[#d5c7b5] shadow-xs flex flex-col h-[180px]"
+                    style={{ backgroundColor: photo.bg }}
+                  >
+                    <div className="flex-1 flex flex-col items-center justify-center p-3 text-center">
+                      <span className="text-xl mb-1 opacity-70">📷</span>
+                      <p className="font-serif italic text-xs text-[#4a3b2c] leading-tight line-clamp-3">
+                        {photo.title}
+                      </p>
+                    </div>
+                    <div className="bg-[#15110e] text-white p-2 text-[10px] truncate text-center font-medium">
+                      {photo.preview}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================== */}
+          {/* TAB: GIFTS (Screenshot 9: 172633.png)                           */}
+          {/* ============================================================== */}
+          {activeTab === 'gifts' && (
+            <div className="p-4 space-y-4">
+              <div className="mt-1 px-1">
+                <div className="text-[10px] font-bold tracking-widest uppercase text-[#bd9661] mb-0.5">
+                  Digital Wishing Well
+                </div>
+                <h1 className="font-serif text-2xl font-bold text-[#15110e] leading-tight mb-1">
+                  Gift &amp; Go
+                </h1>
+                <div className="text-xs text-[#8b7b6b] leading-relaxed">
+                  Your presence is our present. If you would like to contribute towards our honeymoon in Queenstown, you can gift securely below.
+                </div>
+              </div>
+
+              {/* 4 Preset Amount Cards */}
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                {[50, 100, 150, 250].map((amt) => {
+                  const isSelected = selectedGiftPreset === amt && !customGiftAmount;
+                  return (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => {
+                        setSelectedGiftPreset(amt);
+                        setCustomGiftAmount('');
+                      }}
+                      className={`py-4 rounded-xl font-bold text-sm shadow-xs transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#faf8f5] text-[#bd9661] border-2 border-[#bd9661]'
+                          : 'bg-white text-[#15110e] border border-[#e8ded0] hover:bg-[#faf8f5]'
+                      }`}
+                    >
+                      ${amt} AUD
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Custom Amount Input */}
+              <div>
+                <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
+                  Custom Amount (AUD)
+                </label>
+                <input
+                  type="number"
+                  value={customGiftAmount}
+                  onChange={(e) => {
+                    setCustomGiftAmount(e.target.value);
+                  }}
+                  placeholder="e.g. 300"
+                  className="w-full bg-white border border-[#e8ded0] rounded-xl p-3 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs"
+                />
+              </div>
+
+              {/* Personalised Wish */}
+              <div>
+                <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
+                  Personalised Wish
+                </label>
+                <textarea
+                  value={giftWish}
+                  onChange={(e) => setGiftWish(e.target.value)}
+                  placeholder="Wishing you both a lifetime of happiness..."
+                  rows={3}
+                  className="w-full bg-white border border-[#e8ded0] rounded-xl p-3 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs resize-none"
+                />
+              </div>
+
+              {/* Payment Submit Button */}
+              <button
+                type="button"
+                onClick={handleSendGift}
+                className="w-full bg-[#15110e] hover:bg-[#231c17] text-white font-bold py-3.5 rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>Send</span>
+                <span className="text-[#dfc194]">
+                  ${customGiftAmount || selectedGiftPreset} AUD
+                </span>
+                <span>via Card / Apple Pay</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* ============================================================== */}
+        {/* JOEY CHATBOT FLOATING ACTION BUTTON                            */}
+        {/* ============================================================== */}
+        {activeTab !== 'splash' && (
+          <button
+            type="button"
+            onClick={() => setShowJoey(!showJoey)}
+            className="absolute bottom-18 right-4 w-12 h-12 rounded-full bg-[#dfc194] border-2 border-white shadow-lg flex items-center justify-center cursor-pointer hover:scale-105 transition-transform z-30 overflow-hidden p-0"
+            title="Chat with Joey Assistant"
+          >
+            <img src="/chatbot-avatar.png" alt="Joey AI Assistant" className="w-full h-full object-cover" />
+          </button>
+        )}
+
+        {/* ============================================================== */}
+        {/* JOEY MODAL (Screenshots 11 & 12: 172705.png & 172723.png)       */}
+        {/* ============================================================== */}
+        {showJoey && (
+          <div className="absolute inset-x-3 bottom-16 top-16 bg-white rounded-3xl border border-[#d5c7b5] shadow-2xl flex flex-col overflow-hidden z-40 animate-in fade-in zoom-in-95">
+            {/* Dark Joey Header */}
+            <div className="bg-[#15110e] text-white p-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full overflow-hidden border border-[#bd9661] flex items-center justify-center flex-shrink-0">
+                  <img src="/chatbot-avatar.png" alt="Joey AI Assistant" className="w-full h-full object-cover" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    Joey <span className="w-1.5 h-1.5 rounded-full bg-[#48bb78]" />
+                  </div>
+                  <div className="text-[10px] text-[#bd9661]">The Wedding Assistant</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowJoey(false)}
+                className="text-white hover:text-[#bd9661] text-lg font-bold cursor-pointer p-1"
+              >
+                &times;
               </button>
             </div>
 
-            <div className="w-32 h-1 bg-[#2b221a] rounded-full mx-auto opacity-60" />
-          </div>
-        ) : (
-          /* ============================================================== */
-          /* MODE 2: IN-APP SMARTPHONE EXPERIENCES                          */
-          /* ============================================================== */
-          <div className="flex-1 flex flex-col min-h-0 bg-[#f8f6f2] relative">
-            {/* App Header */}
-            <header className="bg-[#15110e] text-white px-4 py-2.5 flex items-center justify-between border-b-2 border-[#bd9661] flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="w-6 h-6 border border-[#bd9661] text-[#bd9661] font-serif font-bold text-xs rounded-xs flex items-center justify-center">
-                  T
-                </span>
-                <span className="font-serif text-sm font-semibold tracking-wide text-white">
-                  Tap &amp; Toast
-                </span>
-              </div>
-              <span className="text-[10px] font-semibold bg-[#2a2119] text-[#e6cda6] px-2 py-0.5 rounded border border-[#3d3126]">
-                Mark &amp; Sarah
-              </span>
-            </header>
-
-            {/* In-App Tab Pills */}
-            <nav className="bg-[#241c16] px-2 flex items-center gap-1 border-b border-[#382c22] overflow-x-auto no-scrollbar flex-shrink-0">
-              {[
-                { id: 'rsvp', label: '💌 RSVP & Diet' },
-                { id: 'seating', label: '🪑 Your Table' },
-                { id: 'schedule', label: '📅 Schedule' },
-                { id: 'gifts', label: '🎁 Wishing Well' },
-              ].map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setActiveTab(t.id as any)}
-                  className={`px-3 py-2 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
-                    activeTab === t.id
-                      ? 'border-[#bd9661] text-[#e6cda6] bg-[#bd9661]/10'
-                      : 'border-transparent text-[#bfaea0] hover:text-white'
-                  }`}
+            {/* Chat Body */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-[#faf8f5] text-xs">
+              {chatMessages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
                 >
-                  {t.label}
-                </button>
-              ))}
-            </nav>
-
-            {/* Scrollable Content Viewport */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 text-sm no-scrollbar">
-              {/* Auto-dismissable Welcome Greeting */}
-              {!welcomeDismissed && (
-                <div className="bg-[#fff8ee] border border-[#ebd4b8] border-l-4 border-l-[#bd9661] rounded-lg p-3 text-xs flex items-center justify-between gap-2 shadow-xs">
-                  <div>
-                    <strong className="text-[#6a4f2b]">Welcome, Mark &amp; Sarah!</strong>
-                    <p className="text-[#8c6b43] mt-0.5">Your Table 4 seats are confirmed in the Grand Pavilion.</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setWelcomeDismissed(true)}
-                    className="text-[#bd9661] hover:text-[#15110e] font-bold text-sm px-1.5"
-                    title="Dismiss greeting"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
-
-              {/* TAB 1: RSVP & DIETARY */}
-              {activeTab === 'rsvp' && (
-                <div className="space-y-4">
-                  {/* Hero Arch */}
-                  <div className="bg-[#15110e] text-white p-5 rounded-2xl text-center relative overflow-hidden shadow-md">
-                    <div className="text-[10px] tracking-widest uppercase font-bold text-[#bd9661] mb-1">
-                      Sophie &amp; James
-                    </div>
-                    <h2 className="font-serif text-2xl font-bold text-white mb-2">
-                      Wedding Celebration
-                    </h2>
-                    <p className="text-xs text-[#c9bbae] mb-4">
-                      Fernwood Estate · Southern Highlands
-                    </p>
-                    <div className="bg-[#241c16] border border-[#3d2f23] rounded-lg py-2 px-3 text-xs text-[#dfc194] font-semibold tracking-wider font-mono">
-                      {countdown.formatted}
-                    </div>
-                  </div>
-
-                  {/* RSVP Status Card */}
-                  <div className="bg-white border border-[#e8ded0] border-t-4 border-t-[#bd9661] rounded-xl p-4 shadow-sm">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b]">
-                        RSVP Status
-                      </span>
-                      <span className="bg-[#e8eee4] text-[#3c6a42] border border-[#d1dfcb] text-[11px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                        ✓ Attending (2 Confirmed)
-                      </span>
-                    </div>
-
-                    <div className="space-y-2 text-xs border-y border-dashed border-[#e8ded0] py-3 mb-3">
-                      <div className="flex justify-between">
-                        <span className="text-[#8b7b6b]">Guests:</span>
-                        <strong className="text-[#15110e]">Mark Johnson &amp; Sarah Johnson</strong>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[#8b7b6b]">Assigned Table:</span>
-                        <strong className="text-[#bd9661]">Table 4 (Seats 1 &amp; 2)</strong>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[#8b7b6b]">Dietary:</span>
-                        <span className="text-[#15110e] font-medium">{dietaryInput}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[#8b7b6b]">Song Request:</span>
-                        <span className="text-[#6b5847] italic">Signed, Sealed, Delivered</span>
-                      </div>
-                    </div>
-
-                    {!isEditingDietary ? (
-                      <button
-                        type="button"
-                        onClick={() => setIsEditingDietary(true)}
-                        className="w-full bg-[#fbf9f6] hover:bg-[#f0ede4] text-[#15110e] border border-[#d5c7b5] font-semibold py-2 rounded text-xs transition-colors flex items-center justify-center gap-1.5"
-                      >
-                        ✎ Update Dietary Preferences
-                      </button>
-                    ) : (
-                      <form onSubmit={handleUpdateDietary} className="space-y-2 pt-1">
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b]">
-                          Specify Dietary Requirements:
-                        </label>
-                        <input
-                          type="text"
-                          value={dietaryInput}
-                          onChange={(e) => setDietaryInput(e.target.value)}
-                          className="w-full bg-white border border-[#bd9661] rounded p-2 text-xs text-[#15110e] outline-none"
-                          placeholder="e.g. 1x Vegetarian, 1x Gluten-Free"
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            type="submit"
-                            className="flex-1 bg-[#15110e] hover:bg-[#231c17] text-white font-bold py-1.5 rounded text-xs"
-                          >
-                            Save Updates
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setIsEditingDietary(false)}
-                            className="px-3 bg-white border border-[#d5c7b5] text-[#8b7b6b] rounded text-xs"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </form>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 2: SEATING CHART */}
-              {activeTab === 'seating' && (
-                <div className="space-y-4">
-                  <div className="bg-white border border-[#e8ded0] rounded-xl p-4 shadow-sm text-center">
-                    <span className="text-[10px] font-bold tracking-wider uppercase text-[#bd9661]">
-                      Grand Pavilion Seating
-                    </span>
-                    <h3 className="font-serif text-xl font-bold text-[#15110e] mt-1 mb-1">
-                      Table 4 · Round Table
-                    </h3>
-                    <p className="text-xs text-[#8b7b6b] mb-4">
-                      Mark &amp; Sarah, you are seated at Dots 1 &amp; 2
-                    </p>
-
-                    {/* Circular Diagram */}
-                    <div className="relative w-44 h-44 mx-auto my-6 flex items-center justify-center">
-                      {/* Table Hub */}
-                      <div className="w-24 h-24 rounded-full border-2 border-[#bd9661] bg-[#faf8f5] shadow-md flex flex-col items-center justify-center z-10">
-                        <span className="font-serif font-bold text-sm text-[#15110e]">Table 4</span>
-                        <span className="text-[10px] text-[#bd9661] font-semibold">8 Guests</span>
-                      </div>
-
-                      {/* 8 Circular Seat Dots */}
-                      {[
-                        { num: 1, name: 'MJ', isUser: true, title: 'Mark Johnson' },
-                        { num: 2, name: 'SJ', isUser: true, title: 'Sarah Johnson' },
-                        { num: 3, name: 'PS', isUser: false, title: 'Priya Sharma' },
-                        { num: 4, name: 'BR', isUser: false, title: 'Benjamin Ross' },
-                        { num: 5, name: 'IF', isUser: false, title: 'Isabella Foster' },
-                        { num: 6, name: 'OT', isUser: false, title: 'Oliver Thomas' },
-                        { num: 7, name: 'YR', isUser: false, title: 'Yuvraj Rao' },
-                        { num: 8, name: 'NP', isUser: false, title: 'Natasha Price' },
-                      ].map((seat, idx) => {
-                        const angle = (idx * (360 / 8) - 90) * (Math.PI / 180);
-                        const radius = 70;
-                        const x = Math.round(radius * Math.cos(angle));
-                        const y = Math.round(radius * Math.sin(angle));
-                        return (
-                          <div
-                            key={seat.num}
-                            style={{ transform: `translate(${x}px, ${y}px)` }}
-                            title={`${seat.num}: ${seat.title}`}
-                            className={`absolute w-7 h-7 rounded-full text-[10px] font-bold flex items-center justify-center shadow-xs transition-transform hover:scale-125 cursor-pointer ${
-                              seat.isUser
-                                ? 'bg-[#bd9661] text-[#15110e] border-2 border-[#15110e] ring-2 ring-[#bd9661]/50'
-                                : 'bg-[#201a16] text-[#dfc194] border border-[#4a3a2d]'
-                            }`}
-                          >
-                            {seat.name}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <div className="bg-[#fbf9f6] border border-[#e8ded0] rounded-lg p-3 text-left space-y-1.5 text-xs text-[#4a3e35]">
-                      <div className="font-bold text-[#15110e] mb-1">Your Table Companions:</div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[#bd9661]" />
-                        <span><strong>Mark &amp; Sarah Johnson</strong> (You)</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[#201a16]" />
-                        <span>Priya Sharma (The Sharma Family)</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[#201a16]" />
-                        <span>Benjamin Ross &amp; Isabella Foster</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[#201a16]" />
-                        <span>Oliver Thomas, Yuvraj Rao &amp; Natasha Price</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 3: SCHEDULE */}
-              {activeTab === 'schedule' && (
-                <div className="space-y-4">
-                  <div className="bg-white border border-[#e8ded0] rounded-xl p-4 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <span className="text-[10px] font-bold tracking-wider uppercase text-[#bd9661]">
-                          Wedding Timeline
-                        </span>
-                        <h3 className="font-serif text-lg font-bold text-[#15110e]">
-                          Saturday, 14 Nov 2026
-                        </h3>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleDownloadCalendar}
-                        className="bg-[#15110e] hover:bg-[#231c17] text-white text-[11px] font-bold px-3 py-1.5 rounded flex items-center gap-1"
-                      >
-                        📅 Add to Calendar
-                      </button>
-                    </div>
-
-                    <div className="space-y-3 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#ebdcc9]">
-                      {[
-                        { time: '1:30 PM', title: 'Guest Arrival & Prelude', desc: 'Main lawn seating, acoustic strings' },
-                        { time: '2:00 PM', title: 'Ceremony Commences', desc: 'Processional, vows & ring exchange' },
-                        { time: '2:45 PM', title: 'Cocktail Hour & Lawn Canapés', desc: 'Verandah champagne & bridal photos' },
-                        { time: '4:00 PM', title: 'Grand Reception Entrance', desc: 'Grand Pavilion banqueting hall' },
-                        { time: '5:30 PM', title: 'Toasts & Speeches', desc: 'Parents & bridal party speeches' },
-                        { time: '7:15 PM', title: 'Cake Cutting & First Dance', desc: 'Dance floor open to all guests' },
-                        { time: '10:15 PM', title: 'Sparkler Courtyard Send-Off', desc: 'Farewell Sophie & James!' },
-                      ].map((item, idx) => (
-                        <div key={idx} className="flex items-start gap-3 pl-1 relative">
-                          <div className="w-5 h-5 rounded-full bg-[#bd9661] text-[#15110e] text-[10px] font-bold flex items-center justify-center z-10 flex-shrink-0 mt-0.5">
-                            •
-                          </div>
-                          <div className="bg-[#fbf9f6] border border-[#e8ded0] rounded-lg p-2.5 flex-1 text-xs">
-                            <div className="font-bold text-[#bd9661] text-[11px]">{item.time}</div>
-                            <div className="font-bold text-[#15110e]">{item.title}</div>
-                            <div className="text-[#8b7b6b] text-[11px] mt-0.5">{item.desc}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Venue Location Card */}
-                  <div className="bg-[#15110e] text-white p-4 rounded-xl text-xs space-y-2">
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-[#bd9661]">
-                      Venue &amp; Parking
-                    </div>
-                    <div className="font-bold text-sm text-[#dfc194]">Fernwood Estate</div>
-                    <p className="text-[#c9bbae] leading-relaxed">
-                      124 Range Road, Mittagong NSW 2575. Follow on-site attendant directions to the Main Lawn car park.
-                    </p>
-                    <a
-                      href="https://maps.google.com/?q=Mittagong+NSW"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-[#dfc194] hover:underline font-semibold mt-1"
+                  {msg.text && (
+                    <div
+                      className={`max-w-[85%] p-2.5 rounded-xl shadow-xs leading-relaxed ${
+                        msg.sender === 'user'
+                          ? 'bg-[#bd9661] text-[#15110e] font-medium'
+                          : 'bg-white text-[#15110e] border border-[#e8ded0]'
+                      }`}
                     >
-                      📍 Open in Google Maps &rarr;
-                    </a>
-                  </div>
-                </div>
-              )}
+                      {msg.text}
+                    </div>
+                  )}
 
-              {/* TAB 4: WISHING WELL */}
-              {activeTab === 'gifts' && (
-                <div className="space-y-4">
-                  <div className="bg-white border border-[#e8ded0] rounded-xl p-4 shadow-sm">
-                    <span className="text-[10px] font-bold tracking-wider uppercase text-[#bd9661]">
-                      Gift &amp; Go™
-                    </span>
-                    <h3 className="font-serif text-xl font-bold text-[#15110e] mt-1 mb-1">
-                      Digital Wishing Well
-                    </h3>
-                    <p className="text-xs text-[#8b7b6b] mb-4 leading-relaxed">
-                      Your presence at our celebration is the greatest gift of all. If you wish to contribute to our honeymoon through Italy and the Swiss Alps, you may leave a blessing below.
-                    </p>
-
-                    <form onSubmit={handleSendWish} className="space-y-3">
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
-                          From:
-                        </label>
-                        <input
-                          type="text"
-                          value="Mark & Sarah Johnson"
-                          disabled
-                          className="w-full bg-[#fbf9f6] border border-[#d5c7b5] rounded p-2 text-xs text-[#6b5847] cursor-not-allowed"
-                        />
+                  {/* Joey Action Confirmation Card (Screenshot 12: 172723.png) */}
+                  {msg.isActionCard && msg.actionDetails && (
+                    <div className="mt-2 bg-white border border-[#bd9661] rounded-xl p-3 shadow-sm max-w-[95%] space-y-2">
+                      <div className="text-[10px] font-bold tracking-wider uppercase text-[#bd9661]">
+                        Action Confirmation
                       </div>
-                      <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
-                          Your Blessing / Loving Note:
-                        </label>
-                        <textarea
-                          rows={3}
-                          value={wishInput}
-                          onChange={(e) => setWishInput(e.target.value)}
-                          placeholder="Wishing you a lifetime of laughter, adventures and love..."
-                          className="w-full bg-white border border-[#bd9661] rounded p-2 text-xs text-[#15110e] outline-none"
-                        />
+                      <h4 className="font-serif text-sm font-bold text-[#15110e]">
+                        {msg.actionDetails.title}
+                      </h4>
+                      <p className="text-[11px] text-[#6b5849]">
+                        {msg.actionDetails.description}
+                      </p>
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => handleConfirmJoeyDietAction(true)}
+                          className="flex-1 bg-[#2f6f4e] hover:bg-[#25573d] text-white font-bold py-1.5 px-2 rounded-lg text-[11px] flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          ✓ Accept
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleConfirmJoeyDietAction(false)}
+                          className="flex-1 bg-white hover:bg-[#fbf9f6] text-[#c54b38] border border-[#f2a89f] font-bold py-1.5 px-2 rounded-lg text-[11px] flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          ✕ Reject
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            showToast('Edit preference', 'info');
+                          }}
+                          className="bg-[#faf8f5] hover:bg-[#f0ede4] text-[#15110e] border border-[#d5c7b5] font-semibold py-1.5 px-2 rounded-lg text-[11px] flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          ✎ Correct
+                        </button>
                       </div>
-                      <button
-                        type="submit"
-                        className="w-full bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold py-2.5 rounded text-xs transition-colors flex items-center justify-center gap-1.5"
-                      >
-                        💌 Send Wedding Blessing
-                      </button>
-                    </form>
-                  </div>
+                    </div>
+                  )}
+                  <span className="text-[9px] text-[#8b7b6b] mt-0.5 px-1">{msg.time}</span>
                 </div>
-              )}
-            </div>
-
-            {/* In-App Bottom Navigation Dock */}
-            <div className="bg-white border-t border-[#e8ded0] flex items-center justify-around py-2 px-1 flex-shrink-0 shadow-xs">
-              {[
-                { id: 'rsvp', label: 'RSVP', icon: '💌' },
-                { id: 'seating', label: 'Table', icon: '🪑' },
-                { id: 'schedule', label: 'Timeline', icon: '📅' },
-                { id: 'gifts', label: 'Registry', icon: '🎁' },
-              ].map((dock) => (
-                <button
-                  key={dock.id}
-                  type="button"
-                  onClick={() => setActiveTab(dock.id as any)}
-                  className={`flex flex-col items-center gap-0.5 text-[10px] font-semibold transition-colors flex-1 ${
-                    activeTab === dock.id ? 'text-[#bd9661]' : 'text-[#8b7b6b] hover:text-[#15110e]'
-                  }`}
-                >
-                  <span className="text-base leading-none">{dock.icon}</span>
-                  <span>{dock.label}</span>
-                </button>
               ))}
             </div>
 
-            {/* Phone Home Indicator */}
-            <div className="w-32 h-1 bg-[#15110e] rounded-full mx-auto my-1.5 opacity-30 flex-shrink-0" />
+            {/* Quick Suggestion Pills */}
+            <div className="p-2 bg-white border-t border-[#e8ded0] flex gap-1.5 overflow-x-auto no-scrollbar">
+              <button
+                type="button"
+                onClick={() => handleJoeyPrompt('Change my diet to vegetarian')}
+                className="bg-[#faf8f5] hover:bg-[#f0ede4] border border-[#ebd3a8] rounded-full px-2.5 py-1 text-[11px] text-[#15110e] whitespace-nowrap cursor-pointer transition-colors"
+              >
+                Change diet to vegetarian
+              </button>
+              <button
+                type="button"
+                onClick={() => handleJoeyPrompt('Accept RSVP')}
+                className="bg-[#faf8f5] hover:bg-[#f0ede4] border border-[#ebd3a8] rounded-full px-2.5 py-1 text-[11px] text-[#15110e] whitespace-nowrap cursor-pointer transition-colors"
+              >
+                Accept RSVP
+              </button>
+              <button
+                type="button"
+                onClick={() => handleJoeyPrompt('Decline RSVP')}
+                className="bg-[#faf8f5] hover:bg-[#f0ede4] border border-[#ebd3a8] rounded-full px-2.5 py-1 text-[11px] text-[#15110e] whitespace-nowrap cursor-pointer transition-colors"
+              >
+                Decline RSVP
+              </button>
+            </div>
 
-            {/* Embedded Joey Chatbot */}
-            <JoeyChatbot embeddedInPhone={true} />
+            {/* Input Bar */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!chatInput.trim()) return;
+                handleJoeyPrompt(chatInput);
+                setChatInput('');
+              }}
+              className="p-2.5 bg-white border-t border-[#e8ded0] flex gap-2"
+            >
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Ask Joey anything or request a change..."
+                className="flex-1 bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+              />
+              <button
+                type="submit"
+                className="w-8 h-8 rounded-xl bg-[#bd9661] text-[#15110e] flex items-center justify-center font-bold text-sm cursor-pointer hover:bg-[#a8824f]"
+              >
+                ➤
+              </button>
+            </form>
           </div>
         )}
+
+        {/* ============================================================== */}
+        {/* BOTTOM PHONE DOCK (7 Tabs matching Screenshots 2-9)             */}
+        {/* ============================================================== */}
+        {activeTab !== 'splash' && (
+          <div className="h-[64px] bg-white border-t border-[#e8ded0] flex items-center justify-around px-1 z-20 flex-shrink-0">
+            {/* 1. Hub */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('hub')}
+              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
+                activeTab === 'hub' ? 'text-[#bd9661] font-bold' : 'text-[#8b7b6b] hover:text-[#15110e]'
+              }`}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+              <span className="text-[10px] mt-0.5">Hub</span>
+            </button>
+
+            {/* 2. RSVP */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('rsvp')}
+              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
+                activeTab === 'rsvp' ? 'text-[#bd9661] font-bold' : 'text-[#8b7b6b] hover:text-[#15110e]'
+              }`}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                <polyline points="22 6 12 13 2 6" />
+              </svg>
+              <span className="text-[10px] mt-0.5">RSVP</span>
+            </button>
+
+            {/* 3. Feed */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('feed')}
+              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
+                activeTab === 'feed' ? 'text-[#bd9661] font-bold' : 'text-[#8b7b6b] hover:text-[#15110e]'
+              }`}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              <span className="text-[10px] mt-0.5">Feed</span>
+            </button>
+
+            {/* 4. Events */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('events')}
+              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
+                activeTab === 'events' ? 'text-[#bd9661] font-bold' : 'text-[#8b7b6b] hover:text-[#15110e]'
+              }`}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+              <span className="text-[10px] mt-0.5">Events</span>
+            </button>
+
+            {/* 5. Table */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('table')}
+              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
+                activeTab === 'table' ? 'text-[#bd9661] font-bold' : 'text-[#8b7b6b] hover:text-[#15110e]'
+              }`}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5" />
+                <circle cx="12" cy="3" r="2" />
+                <circle cx="12" cy="21" r="2" />
+                <circle cx="3" cy="12" r="2" />
+                <circle cx="21" cy="12" r="2" />
+              </svg>
+              <span className="text-[10px] mt-0.5">Table</span>
+            </button>
+
+            {/* 6. Photos */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('photos')}
+              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
+                activeTab === 'photos' ? 'text-[#bd9661] font-bold' : 'text-[#8b7b6b] hover:text-[#15110e]'
+              }`}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+              <span className="text-[10px] mt-0.5">Photos</span>
+            </button>
+
+            {/* 7. Gifts */}
+            <button
+              type="button"
+              onClick={() => setActiveTab('gifts')}
+              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
+                activeTab === 'gifts' ? 'text-[#bd9661] font-bold' : 'text-[#8b7b6b] hover:text-[#15110e]'
+              }`}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 12 20 22 4 22 4 12" />
+                <rect x="2" y="7" width="20" height="5" />
+                <line x1="12" y1="22" x2="12" y2="7" />
+                <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+              </svg>
+              <span className="text-[10px] mt-0.5">Gifts</span>
+            </button>
+          </div>
+        )}
+
+        {/* Bottom Home Indicator Bar */}
+        <div className="h-4 bg-white flex items-center justify-center pb-1">
+          <div className="w-28 h-1 bg-[#15110e]/25 rounded-full" />
+        </div>
       </div>
     </div>
   );

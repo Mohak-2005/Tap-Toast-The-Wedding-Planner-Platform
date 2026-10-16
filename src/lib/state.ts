@@ -262,3 +262,29 @@ export function generateQrSvg(dataStr: string, size = 180): string {
 
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="display:block;background:#ffffff;border-radius:6px;padding:8px;box-sizing:border-box;">${rects}</svg>`;
 }
+
+export function logAudit(
+  state: DemoState,
+  setState: (s: DemoState) => void,
+  action: string,
+  user: string,
+  role: string,
+  details: string,
+  category: string
+) {
+  const now = new Date();
+  const dateStr = now.toISOString().replace('T', ' ').substring(0, 16);
+  const newEntry: AuditLogEntry = {
+    id: 'aud_' + Date.now(),
+    timestamp: dateStr,
+    action,
+    user,
+    role,
+    details,
+    category
+  };
+  setState({
+    ...state,
+    auditLog: [newEntry, ...(state.auditLog || [])]
+  });
+}

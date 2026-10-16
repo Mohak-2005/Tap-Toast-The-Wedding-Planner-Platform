@@ -183,7 +183,7 @@ export const SEED_DATA: DemoState = {
     { id: "g_t5_2", name: "Kian Thorne", initials: "KT", household: "Kian Thorne", email: "kian.t@example.com", phone: "0415 667 002", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Wake Me Up", reminderSent: false, tableId: "table_5", seatIndex: 1 },
     { id: "g_t5_3", name: "Chloe Lin", initials: "CL", household: "Chloe Lin", email: "chloe.l@example.com", phone: "0415 667 003", rsvpStatus: "confirmed", guestCount: 1, dietary: "Gluten-free", song: "Roar", reminderSent: false, tableId: "table_5", seatIndex: 2 },
 
-    // Unassigned guests
+    // Unassigned guests (32 confirmed guests matching Screenshot 24)
     { id: "g_rchen", name: "Robert Chen", initials: "RC", household: "The Chen Family", email: "robert.c@example.com", phone: "0421 991 223", rsvpStatus: "confirmed", guestCount: 2, dietary: "Vegetarian", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_slee", name: "Sarah Lee", initials: "SL", household: "Sarah Lee", email: "sarah.lee@example.com", phone: "0433 112 445", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_dwhitfield", name: "David Whitfield", initials: "DW", household: "The Whitfield family", email: "david.w@example.com", phone: "0414 556 778", rsvpStatus: "confirmed", guestCount: 2, dietary: "None", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
@@ -191,7 +191,31 @@ export const SEED_DATA: DemoState = {
     { id: "g_toneill", name: "Thomas O'Neill", initials: "TO", household: "Thomas O'Neill", email: "thomas.o@example.com", phone: "0418 776 554", rsvpStatus: "confirmed", guestCount: 2, dietary: "None", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_jbrown", name: "Jessica Brown", initials: "JB", household: "Jessica Brown", email: "jessica.b@example.com", phone: "0422 998 112", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_lscott", name: "Liam Scott", initials: "LS", household: "Liam Scott", email: "liam.s@example.com", phone: "0411 223 344", rsvpStatus: "confirmed", guestCount: 2, dietary: "None", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
-    { id: "g_ctaylor", name: "Chloe Taylor", initials: "CT", household: "Chloe Taylor", email: "chloe.t@example.com", phone: "0422 334 455", rsvpStatus: "confirmed", guestCount: 1, dietary: "Vegan", plusOne: false, reminderSent: false, tableId: null, seatIndex: null }
+    { id: "g_ctaylor", name: "Chloe Taylor", initials: "CT", household: "Chloe Taylor", email: "chloe.t@example.com", phone: "0422 334 455", rsvpStatus: "confirmed", guestCount: 1, dietary: "Vegan", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u9", name: "Daniel Miller", initials: "DM", household: "Daniel Miller", email: "daniel.m@example.com", phone: "0411 001 009", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u10", name: "Emily Davis", initials: "ED", household: "Emily Davis", email: "emily.d@example.com", phone: "0411 001 010", rsvpStatus: "confirmed", guestCount: 1, dietary: "Gluten-free", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u11", name: "Lucas Wilson", initials: "LW", household: "Lucas Wilson", email: "lucas.w@example.com", phone: "0411 001 011", rsvpStatus: "confirmed", guestCount: 2, dietary: "None", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u12", name: "Sophia Martinez", initials: "SM", household: "Sophia Martinez", email: "sophia.m@example.com", phone: "0411 001 012", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u13", name: "Noah Anderson", initials: "NA", household: "Noah Anderson", email: "noah.a@example.com", phone: "0411 001 013", rsvpStatus: "confirmed", guestCount: 2, dietary: "Vegetarian", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u14", name: "Ava Thomas", initials: "AT", household: "Ava Thomas", email: "ava.t@example.com", phone: "0411 001 014", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u15", name: "Mason Taylor", initials: "MT", household: "Mason Taylor", email: "mason.t@example.com", phone: "0411 001 015", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u16", name: "Isabella Moore", initials: "IM", household: "Isabella Moore", email: "isabella.m@example.com", phone: "0411 001 016", rsvpStatus: "confirmed", guestCount: 1, dietary: "Nut allergy", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u17", name: "Ethan Jackson", initials: "EJ", household: "Ethan Jackson", email: "ethan.j@example.com", phone: "0411 001 017", rsvpStatus: "confirmed", guestCount: 2, dietary: "None", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u18", name: "Mia Martin", initials: "MM", household: "Mia Martin", email: "mia.m@example.com", phone: "0411 001 018", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u19", name: "Aiden Lee", initials: "AL", household: "Aiden Lee", email: "aiden.l@example.com", phone: "0411 001 019", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u20", name: "Harper Perez", initials: "HP", household: "Harper Perez", email: "harper.p@example.com", phone: "0411 001 020", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u21", name: "Elijah Thompson", initials: "ET", household: "Elijah Thompson", email: "elijah.t@example.com", phone: "0411 001 021", rsvpStatus: "confirmed", guestCount: 2, dietary: "Halal", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u22", name: "Evelyn White", initials: "EW", household: "Evelyn White", email: "evelyn.w@example.com", phone: "0411 001 022", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u23", name: "James Harris", initials: "JH", household: "James Harris", email: "james.h@example.com", phone: "0411 001 023", rsvpStatus: "confirmed", guestCount: 2, dietary: "None", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u24", name: "Amelia Sanchez", initials: "AS", household: "Amelia Sanchez", email: "amelia.s@example.com", phone: "0411 001 024", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u25", name: "Benjamin Clark", initials: "BC", household: "Benjamin Clark", email: "benjamin.c@example.com", phone: "0411 001 025", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u26", name: "Charlotte Ramirez", initials: "CR", household: "Charlotte Ramirez", email: "charlotte.r@example.com", phone: "0411 001 026", rsvpStatus: "confirmed", guestCount: 2, dietary: "Gluten-free", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u27", name: "Alexander Lewis", initials: "AL", household: "Alexander Lewis", email: "alexander.l@example.com", phone: "0411 001 027", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u28", name: "Abigail Robinson", initials: "AR", household: "Abigail Robinson", email: "abigail.r@example.com", phone: "0411 001 028", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u29", name: "Henry Walker", initials: "HW", household: "Henry Walker", email: "henry.w@example.com", phone: "0411 001 029", rsvpStatus: "confirmed", guestCount: 2, dietary: "None", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u30", name: "Ella Young", initials: "EY", household: "Ella Young", email: "ella.y@example.com", phone: "0411 001 030", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u31", name: "Sebastian Allen", initials: "SA", household: "Sebastian Allen", email: "sebastian.a@example.com", phone: "0411 001 031", rsvpStatus: "confirmed", guestCount: 1, dietary: "Vegetarian", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u32", name: "Aria King", initials: "AK", household: "Aria King", email: "aria.k@example.com", phone: "0411 001 032", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null }
   ],
   gifts: [
     { id: "gf1", guestName: "The Whitfield family", amount: 250, type: "wishing-well", date: "Today", message: "Wishing you both a lifetime of love and happiness!", thankYouSent: false, thankYouStatus: "Drafted" },
@@ -226,5 +250,155 @@ export const SEED_DATA: DemoState = {
     { id: "u_couple1", email: "sophie.james@demo.test", passwordHash: "dHRfc2FsdF9EZW1vMTIzNCE=", name: "Sophie & James", role: "couple", weddingId: "w1", partner1: "Sophie", partner2: "James" },
     { id: "u_admin1", email: "admin@tapandtoast.demo", passwordHash: "dHRfc2FsdF9EZW1vMTIzNCE=", name: "Platform Admin", role: "superadmin" }
   ],
-  usedInvites: []
+  usedInvites: [],
+  featureFlags: {
+    digitalGifting: true,
+    aiSeating: true,
+    qardPrinting: true,
+    photoModeration: false,
+    smsReminders: true
+  },
+  supportTickets: [
+    {
+      id: "TCK-401",
+      tenant: "Galati MC & Entertainment",
+      subject: "QaRd High-Res Export Failure for 300dpi print",
+      priority: "High",
+      status: "In Progress",
+      date: "2 hours ago",
+      messages: [
+        { sender: "Robert Galati", time: "10:15 AM", text: "When exporting the vector QaRd badge for Fernwood Estate, the bleed margin overlaps by 2mm. Can you check printer profile?" },
+        { sender: "Super Admin Support", time: "11:00 AM", text: "Investigating the PDF bleed template; we pushed a patch to vector rendering pipeline.", isAdmin: true }
+      ]
+    },
+    {
+      id: "TCK-398",
+      tenant: "Coastal Celebrations MC",
+      subject: "Stripe Payout Split on Joint Wedding Well",
+      priority: "Medium",
+      status: "Open",
+      date: "Yesterday",
+      messages: [
+        { sender: "Marcus Thorne", time: "Yesterday 4:20 PM", text: "Client wants to split registry deposit 50/50 between two Australian bank BSBs. Is split-transfer supported?" }
+      ]
+    },
+    {
+      id: "TCK-385",
+      tenant: "Sydney Vows & Beats",
+      subject: "Domain SSL DNS propagation question",
+      priority: "Low",
+      status: "Resolved",
+      date: "3 days ago",
+      messages: [
+        { sender: "Elena Rostova", time: "3 days ago", text: "CNAME records configured for portal.sydneyvows.com.au. Certificate issued successfully." },
+        { sender: "Super Admin Support", time: "3 days ago", text: "Certificate verified and active on Cloudflare Edge.", isAdmin: true }
+      ]
+    }
+  ],
+  clients: [
+    {
+      id: "cl_1",
+      couple: "Sophie & James",
+      weddingDate: "14 Nov 2026",
+      venue: "Fernwood Estate, Southern Highlands",
+      tier: "Platinum MC + Live Audio",
+      deposit: "Paid ($500)",
+      phone: "0418 223 901",
+      email: "sophie.james@demo.test",
+      notes: "Couple prefers upbeat introductions. First dance at 19:15 sharp."
+    },
+    {
+      id: "cl_2",
+      couple: "Aisha & Marcus",
+      weddingDate: "2 May 2027",
+      venue: "Doltone House, Sydney",
+      tier: "Executive Lead MC",
+      deposit: "Paid ($500)",
+      phone: "0422 998 112",
+      email: "aisha.marcus@demo.test",
+      notes: "Strict cultural run sheet timings for afternoon tea ceremony."
+    },
+    {
+      id: "cl_3",
+      couple: "Emma & Tom",
+      weddingDate: "20 Jun 2027",
+      venue: "Dunbar House, Watsons Bay",
+      tier: "Standard MC Host",
+      deposit: "Pending",
+      phone: "0431 887 234",
+      email: "emma.tom@demo.test",
+      notes: "Acoustic duo during cocktail hour, requested wireless handheld mic for vows."
+    },
+    {
+      id: "cl_4",
+      couple: "Katie & Rob",
+      weddingDate: "18 Sep 2027",
+      venue: "Bendooley Estate, Berrima",
+      tier: "Executive Lead MC",
+      deposit: "Paid ($500)",
+      phone: "0419 443 219",
+      email: "katie.rob@demo.test",
+      notes: "Book barn setting, outdoor ceremony contingent on weather."
+    }
+  ],
+  invoices: [
+    {
+      id: "INV-1081",
+      couple: "Sophie & James",
+      date: "15 Oct 2026",
+      venue: "Fernwood Estate",
+      amount: 1850,
+      status: "Pending"
+    },
+    {
+      id: "INV-1082",
+      couple: "Aisha & Marcus",
+      date: "12 Oct 2026",
+      venue: "Doltone House",
+      amount: 1650,
+      status: "Paid"
+    },
+    {
+      id: "INV-1083",
+      couple: "Emma & Tom",
+      date: "05 Oct 2026",
+      venue: "Dunbar House",
+      amount: 1950,
+      status: "Pending"
+    },
+    {
+      id: "INV-1084",
+      couple: "Katie & Rob",
+      date: "28 Sep 2026",
+      venue: "Bendooley Estate",
+      amount: 1750,
+      status: "Draft"
+    }
+  ],
+  team: [
+    {
+      id: "tm_1",
+      name: "Robert Galati",
+      role: "Lead MC & Director",
+      email: "robert@galati.demo",
+      phone: "0418 223 901",
+      status: "Active"
+    },
+    {
+      id: "tm_2",
+      name: "Sarah Jenkins",
+      role: "Associate MC & Host",
+      email: "sarah.j@galati.demo",
+      phone: "0422 110 882",
+      status: "Active"
+    },
+    {
+      id: "tm_3",
+      name: "Dave Miller",
+      role: "Sound Engineer & AV Lead",
+      email: "dave.sound@galati.demo",
+      phone: "0433 991 445",
+      status: "Active"
+    }
+  ]
 };
