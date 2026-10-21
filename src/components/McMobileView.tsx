@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useAppState, showToast } from '../lib/state';
+import { Table, TableShape } from '../lib/types';
+
 
 interface McMobileViewProps {
   onSelectView?: (view: string) => void;
@@ -41,6 +43,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
 
   // Guest search in seating
   const [guestSearch, setGuestSearch] = useState('');
+  const [shapeFilter, setShapeFilter] = useState<'all' | 'round' | 'rectangular' | 'king'>('all');
 
   // Checklist items
   const [techChecklist, setTechChecklist] = useState({
@@ -92,6 +95,165 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
     { id: 'u4', name: 'Maya Kapoor', note: 'No plus-one · Gluten-free', diet: 'Gluten-free' },
   ]);
   const [selectedAssignTable, setSelectedAssignTable] = useState<Record<string, string>>({});
+
+  // MC Mobile Seating Modal & Cheers AI States
+  const [showAddTableModal, setShowAddTableModal] = useState(false);
+  const [newTableName, setNewTableName] = useState('');
+  const [newTableShape, setNewTableShape] = useState<TableShape>('round');
+  const [newTableCapacity, setNewTableCapacity] = useState(10);
+  const [newTableCategory, setNewTableCategory] = useState('Family');
+
+  const [showCheersAiModal, setShowCheersAiModal] = useState(false);
+  const [activeAiScenario, setActiveAiScenario] = useState<'households' | 'vips' | 'fill' | 'dietary'>('households');
+  const [aiProposal, setAiProposal] = useState<{
+    title: string;
+    desc: string;
+    count: number;
+    changes: { guestId: string; tableId: string }[];
+  } | null>(null);
+
+  // Cheers AI Seating Recommendations Engine for MC Mobile
+  const handleRunCheersAiSeating = (scenario: 'households' | 'vips' | 'fill' | 'dietary') => {
+    setActiveAiScenario(scenario);
+    let title = '';
+    let desc = '';
+    const proposedChanges: { guestId: string; tableId: string }[] = [];
+
+    const availableTables = (state.tables || []).map((t) => ({
+      ...t,
+      currentCount: (state.guests || []).filter((g) => g.tableId === t.id).length,
+    }));
+
+    const unassignedGuests = (state.guests || []).filter((g) => !g.tableId && g.rsvpStatus !== 'declined');
+
+    if (scenario === 'households') {
+      title = 'Group Households & Families Together';
+      desc = 'Scanned all unassigned guests and matched families into tables with sufficient capacity so households remain seated together.';
+
+      const hhMap = new Map<string, typeof unassignedGuests>();
+      unassignedGuests.forEach((g) => {
+        const hh = g.household || 'General';
+        if (!hhMap.has(hh)) hhMap.set(hh, []);
+        hhMap.get(hh)!.push(g);
+      });
+
+      hhMap.forEach((members) => {
+        const needed = members.length;
+        const candidate = availableTables.find((t) => (t.category === 'Family' || t.name.toLowerCase().includes('family')) && t.capacity - t.currentCount >= needed) ||
+          availableTables.find((t) => t.capacity - t.currentCount >= needed);
+
+        if (candidate) {
+          members.forEach((m) => {
+            proposedChanges.push({ guestId: m.id, tableId: candidate.id });
+          });
+          candidate.currentCount += needed;
+        }
+      });
+    } else if (scenario === 'vips') {
+      title = 'Seat VIPs & Bridal Party at Head / King Tables';
+      desc = 'Recommended placement for wedding party and immediate VIPs at Head Table and King Table A.';
+
+      const bridalGuests = (state.guests || []).filter((g) => !g.tableId && ((g.household && (g.household.includes('Bell') || g.household.includes('Gordon'))) || g.name.includes('Sophie') || g.name.includes('James')));
+      const headTbl = availableTables.find((t) => t.isHead || t.name.toLowerCase().includes('head')) || availableTables[0];
+
+      if (headTbl) {
+        bridalGuests.forEach((g) => {
+          if (headTbl.currentCount < headTbl.capacity) {
+            proposedChanges.push({ guestId: g.id, tableId: headTbl.id });
+            headTbl.currentCount++;
+          }
+        });
+      }
+    } else if (scenario === 'dietary') {
+      title = 'Group Dietary Requirements for Catering';
+      desc = 'Placed guests requiring Vegetarian, Vegan, Halal, or Gluten-Free meals at dedicated tables to assist banquet catering service.';
+
+      const dietaryGuests = (state.guests || []).filter((g) => !g.tableId && g.dietary && g.dietary !== 'None' && g.dietary !== '');
+      const vegTable = availableTables.find((t) => t.name.includes('Table 2') || t.name.includes('Garden')) || availableTables[1];
+
+      if (vegTable) {
+        dietaryGuests.forEach((g) => {
+          if (vegTable.currentCount < vegTable.capacity) {
+            proposedChanges.push({ guestId: g.id, tableId: vegTable.id });
+            vegTable.currentCount++;
+          }
+        });
+      }
+    } else {
+      title = 'Fill Table Vacancies Evenly';
+      desc = 'Evenly distributed unassigned guests across tables with available vacancies to maintain balanced room density.';
+
+      unassignedGuests.forEach((g) => {
+        const candidate = availableTables.find((t) => t.currentCount < t.capacity);
+        if (candidate) {
+          proposedChanges.push({ guestId: g.id, tableId: candidate.id });
+          candidate.currentCount++;
+        }
+      });
+    }
+
+    setAiProposal({
+      title,
+      desc,
+      count: proposedChanges.length,
+      changes: proposedChanges,
+    });
+    setShowCheersAiModal(true);
+  };
+
+  const handleApplyAiProposal = () => {
+    if (!aiProposal || aiProposal.changes.length === 0) return;
+
+    const changeMap = new Map(aiProposal.changes.map((c) => [c.guestId, c.tableId]));
+    const updatedGuests = (state.guests || []).map((g) => {
+      if (changeMap.has(g.id)) {
+        return { ...g, tableId: changeMap.get(g.id)!, seatIndex: 0 };
+      }
+      return g;
+    });
+
+    setState({ ...state, guests: updatedGuests });
+    setShowCheersAiModal(false);
+    showToast(`✨ Cheers AI successfully applied ${aiProposal.changes.length} seating recommendations!`, 'success');
+  };
+
+  const handleAddTableFromMobile = () => {
+    const tableName = newTableName.trim() || `Table ${(state.tables || []).length + 1}`;
+    const newTbl: Table = {
+      id: `tbl_mob_${Date.now()}`,
+      name: tableName,
+      capacity: newTableCapacity,
+      isHead: false,
+      shape: newTableShape,
+      category: newTableCategory,
+      zone: 'Main Room',
+      x: 50,
+      y: 50,
+    };
+    setState({ ...state, tables: [...(state.tables || []), newTbl] });
+    setShowAddTableModal(false);
+    setNewTableName('');
+    showToast(`Added ${newTbl.name} (${newTableCapacity} seats, ${newTableShape})`, 'success');
+  };
+
+  const handleUnseatGuestMobile = (guestId: string, guestName: string) => {
+    const updated = (state.guests || []).map(g => g.id === guestId ? { ...g, tableId: null, seatIndex: null } : g);
+    setState({ ...state, guests: updated });
+    showToast(`Unseated ${guestName}`, 'info');
+  };
+
+  const handleSeatGuestMobile = (guestId: string, tableId: string, tableName: string) => {
+    const seatedCount = (state.guests || []).filter(g => g.tableId === tableId).length;
+    const targetTbl = (state.tables || []).find(t => t.id === tableId);
+    if (targetTbl && seatedCount >= targetTbl.capacity) {
+      showToast(`Cannot seat guest: ${targetTbl.name} is at full capacity (${targetTbl.capacity})`, 'error');
+      return;
+    }
+    const updated = (state.guests || []).map(g => g.id === guestId ? { ...g, tableId, seatIndex: seatedCount } : g);
+    setState({ ...state, guests: updated });
+    const guest = (state.guests || []).find(g => g.id === guestId);
+    showToast(`Seated ${guest?.name || 'Guest'} at ${tableName}`, 'success');
+  };
 
   // Joey Chatbot inside MC Mobile
   const [showJoey, setShowJoey] = useState(false);
@@ -1281,232 +1443,550 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
           )}
 
           {/* ------------------------------------------------------------ */}
-          {/* LIVE CONSOLE MODE: SUB-PANE 2 - SEATING (Screenshots 14-16)  */}
+          {/* LIVE CONSOLE MODE: SUB-PANE 2 - SEATING PLANNER (TWO-LEVEL)  */}
           {/* ------------------------------------------------------------ */}
-          {selectedWeddingId && consoleTab === 'seating' && (
-            <div className="space-y-3">
-              {/* 3-Way Segment Switcher */}
-              <div className="grid grid-cols-3 gap-1 bg-[#f0ede4] p-1 rounded-xl text-xs">
-                <button
-                  type="button"
-                  onClick={() => setSeatingSubTab('guestlist')}
-                  className={`py-1.5 px-1 rounded-lg font-bold text-[11px] text-center cursor-pointer transition-colors ${
-                    seatingSubTab === 'guestlist' ? 'bg-white text-[#15110e] shadow-xs' : 'text-[#8b7b6b]'
-                  }`}
-                >
-                  Guest List
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSeatingSubTab('seatingarr')}
-                  className={`py-1.5 px-1 rounded-lg font-bold text-[11px] text-center cursor-pointer transition-colors ${
-                    seatingSubTab === 'seatingarr' ? 'bg-white text-[#15110e] shadow-xs' : 'text-[#8b7b6b]'
-                  }`}
-                >
-                  Seating Arrangement
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSeatingSubTab('unseated')}
-                  className={`py-1.5 px-1 rounded-lg font-bold text-[11px] text-center cursor-pointer transition-colors ${
-                    seatingSubTab === 'unseated' ? 'bg-white text-[#15110e] shadow-xs' : 'text-[#8b7b6b]'
-                  }`}
-                >
-                  Unseated Guests
-                </button>
-              </div>
+          {selectedWeddingId && consoleTab === 'seating' && (() => {
+            const allTables = state.tables || [];
+            const allGuests = state.guests || [];
+            const confirmedCount = allGuests.filter(g => g.rsvpStatus === 'confirmed').length;
 
-              {/* SEGMENT 1: GUEST LIST (Screenshot 14: 172746.png) */}
-              {seatingSubTab === 'guestlist' && (
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    value={guestSearch}
-                    onChange={(e) => setGuestSearch(e.target.value)}
-                    placeholder="Search guests by name or dietary..."
-                    className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-                  />
-                  <div className="flex justify-between items-center text-xs text-[#8b7b6b] px-1">
-                    <span>Showing 100 Guests</span>
-                    <span className="text-[#3c6a42] font-bold">96 Confirmed RSVPs</span>
-                  </div>
+            // Filter guests by search & table shape
+            const filteredGuests = allGuests.filter((g) => {
+              const matchesSearch = !guestSearch ||
+                g.name.toLowerCase().includes(guestSearch.toLowerCase()) ||
+                (g.dietary && g.dietary.toLowerCase().includes(guestSearch.toLowerCase())) ||
+                (g.household && g.household.toLowerCase().includes(guestSearch.toLowerCase()));
+              
+              if (!matchesSearch) return false;
 
-                  <div className="space-y-2">
-                    {[
-                      { name: 'Priya Sharma', sub: 'Individual · Vegetarian', table: 'Table 4', initials: 'PS' },
-                      { name: 'Sophie Bell', sub: 'Individual', table: 'HEAD TABLE', initials: 'SB' },
-                      { name: 'James Gordon', sub: 'Individual', table: 'HEAD TABLE', initials: 'JG' },
-                      { name: 'Hannah Martin', sub: 'Individual · Vegetarian', table: 'HEAD TABLE', initials: 'HM' },
-                      { name: 'Oliver Vance', sub: 'Individual', table: 'HEAD TABLE', initials: 'OV' },
-                      { name: 'Charlotte Evans', sub: 'Individual · Gluten-free', table: 'HEAD TABLE', initials: 'CE' },
-                      { name: 'Liam Fletcher', sub: 'Individual', table: 'HEAD TABLE', initials: 'LF' },
-                    ].map((g, idx) => (
-                      <div key={idx} className="bg-white border border-[#e8ded0] rounded-xl p-3 flex items-center justify-between shadow-xs">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-[#15110e] text-[#dfc194] font-bold text-xs flex items-center justify-center">
-                            {g.initials}
-                          </div>
-                          <div>
-                            <div className="text-xs font-bold text-[#15110e]">{g.name}</div>
-                            <div className="text-[10px] text-[#8b7b6b]">{g.sub}</div>
-                          </div>
-                        </div>
-                        <span className="bg-[#15110e] text-[#dfc194] text-[10px] font-bold px-2 py-0.5 rounded-full">
-                          {g.table}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+              if (shapeFilter === 'all') return true;
+              const tbl = allTables.find(t => t.id === g.tableId);
+              if (!tbl) return false;
+              const shape = tbl.shape || (tbl.isHead || tbl.name.toLowerCase().includes('head') ? 'king' : 'round');
+              if (shapeFilter === 'king') return shape === 'king';
+              return shape === shapeFilter;
+            });
+
+            // Filter tables by shape
+            const filteredTables = allTables.map(t => ({
+              ...t,
+              shape: t.shape || (t.isHead || t.name.toLowerCase().includes('head') ? 'king' : 'round'),
+            })).filter((t) => {
+              if (shapeFilter === 'all') return true;
+              if (shapeFilter === 'king') return t.shape === 'king';
+              return t.shape === shapeFilter;
+            });
+
+            return (
+              <div className="space-y-3">
+                {/* 3-Way Segment Switcher (Image 1) */}
+                <div className="grid grid-cols-3 gap-1 bg-[#f0ede4] p-1 rounded-xl text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setSeatingSubTab('guestlist')}
+                    className={`py-2 px-1 rounded-lg font-bold text-[11px] text-center cursor-pointer transition-colors ${
+                      seatingSubTab === 'guestlist' ? 'bg-white text-[#15110e] shadow-xs' : 'text-[#8b7b6b]'
+                    }`}
+                  >
+                    Guest List
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSeatingSubTab('seatingarr')}
+                    className={`py-2 px-1 rounded-lg font-bold text-[11px] text-center cursor-pointer transition-colors ${
+                      seatingSubTab === 'seatingarr' ? 'bg-white text-[#15110e] shadow-xs' : 'text-[#8b7b6b]'
+                    }`}
+                  >
+                    Seating Arrangement
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSeatingSubTab('unseated')}
+                    className={`py-2 px-1 rounded-lg font-bold text-[11px] text-center cursor-pointer transition-colors ${
+                      seatingSubTab === 'unseated' ? 'bg-white text-[#15110e] shadow-xs' : 'text-[#8b7b6b]'
+                    }`}
+                  >
+                    Unseated Guests
+                  </button>
                 </div>
-              )}
 
-              {/* SEGMENT 2: SEATING ARRANGEMENT (Screenshot 15: 172750.png) */}
-              {seatingSubTab === 'seatingarr' && (
-                <div className="space-y-3">
-                  <div className="text-center text-xs text-[#8b7b6b]">
-                    Scroll down to inspect all tables and seated guests
+                {/* Search Bar + Shape Filter Dropdown to the right (Request 2) */}
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1 min-w-0">
+                    <input
+                      type="text"
+                      value={guestSearch}
+                      onChange={(e) => setGuestSearch(e.target.value)}
+                      placeholder="Search guests by name or dietary..."
+                      className="w-full bg-white border border-[#e8ded0] rounded-xl pl-8 pr-2.5 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-2xs"
+                    />
+                    <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8b7b6b]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
                   </div>
 
-                  {/* Head Table Card */}
-                  <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-serif text-base font-bold text-[#15110e]">HEAD TABLE</h3>
-                        <div className="text-[11px] text-[#8b7b6b]">VIP Head Table &bull; Bridal Party</div>
-                      </div>
-                      <span className="bg-[#e8eee4] text-[#3c6a42] text-xs font-bold px-2.5 py-0.5 rounded-full">
-                        8 / 8 Seated
-                      </span>
+                  <select
+                    value={shapeFilter}
+                    onChange={(e) => setShapeFilter(e.target.value as any)}
+                    className="bg-white border border-[#e8ded0] rounded-xl px-2.5 py-2 text-xs font-semibold text-[#15110e] outline-none shadow-2xs shrink-0 cursor-pointer max-w-[130px]"
+                    title="Filter tables by shape"
+                  >
+                    <option value="all">All Tables</option>
+                    <option value="round">⚪ Round</option>
+                    <option value="rectangular">▯ Rectangle</option>
+                    <option value="king">👑 King</option>
+                  </select>
+                </div>
+
+                {/* Quick Action Toolbar: Cheers AI Assist + Add Table */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleRunCheersAiSeating('households')}
+                    className="flex-1 bg-gradient-to-r from-[#15110e] to-[#2b221a] text-[#dfc194] hover:text-white border border-[#bd9661]/40 rounded-xl py-2 px-3 text-xs font-bold shadow-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <span>✨ Cheers AI Assist</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddTableModal(true)}
+                    className="bg-white hover:bg-[#faf7f2] text-[#916c3d] border border-[#ebd3a8] rounded-xl py-2 px-3 text-xs font-bold shadow-xs cursor-pointer flex items-center justify-center gap-1 transition-all shrink-0"
+                  >
+                    <span>+ Add Table</span>
+                  </button>
+                </div>
+
+                {/* ============================================================== */}
+                {/* SEGMENT 1: GUEST LIST (Matching Image 1)                        */}
+                {/* ============================================================== */}
+                {seatingSubTab === 'guestlist' && (
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center text-xs text-[#8b7b6b] px-1">
+                      <span>Showing {filteredGuests.length} Guests</span>
+                      <span className="text-[#3c6a42] font-bold">{confirmedCount} Confirmed RSVPs</span>
                     </div>
 
-                    {/* Circular diagram */}
-                    <div className="bg-[#fbf9f5] rounded-xl p-4 relative flex items-center justify-center h-[200px] border border-[#f0ede4]">
-                      <div className="relative w-[160px] h-[160px] flex items-center justify-center">
-                        <div className="absolute inset-0 rounded-full border border-[#bd9661]/60" />
-                        <div className="w-[85px] h-[85px] rounded-full bg-white border border-[#bd9661] flex flex-col items-center justify-center text-center shadow-xs">
-                          <span className="font-serif text-xs font-bold text-[#15110e]">HEAD TABLE</span>
-                          <span className="text-[10px] text-[#8b7b6b]">8 / 8</span>
+                    <div className="space-y-2">
+                      {filteredGuests.length === 0 ? (
+                        <div className="text-center py-8 text-xs text-[#8b7b6b] bg-white rounded-2xl border border-[#e8ded0] p-4">
+                          No guests match the current filters.
                         </div>
-
-                        {/* 8 Seats */}
-                        {['SB', 'JG', 'HM', 'OV', 'CE', 'LF', 'GK', 'AW'].map((code, idx) => {
-                          const angle = idx * 45;
-                          const radius = 68;
-                          const rad = ((angle - 90) * Math.PI) / 180;
-                          const x = radius * Math.cos(rad);
-                          const y = radius * Math.sin(rad);
+                      ) : (
+                        filteredGuests.map((g) => {
+                          const tbl = allTables.find((t) => t.id === g.tableId);
+                          const isHead = tbl?.isHead || tbl?.name?.toLowerCase().includes('head');
+                          const tableName = tbl ? tbl.name : (g.tableId ? g.tableId.toUpperCase() : 'Unassigned');
 
                           return (
                             <div
-                              key={code}
-                              style={{ transform: `translate(${x}px, ${y}px)` }}
-                              className="absolute w-7 h-7 rounded-full bg-[#15110e] text-[#dfc194] border border-[#3d2e24] text-[10px] font-bold flex items-center justify-center shadow-xs"
+                              key={g.id}
+                              className="bg-white border border-[#e8ded0] rounded-2xl p-3.5 flex items-center justify-between shadow-2xs hover:border-[#bd9661] transition-colors"
                             >
-                              {code}
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-full bg-[#15110e] text-[#dfc194] font-bold text-xs flex items-center justify-center shrink-0">
+                                  {g.initials || g.name.slice(0, 2).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div className="text-xs font-bold text-[#15110e]">{g.name}</div>
+                                  <div className="text-[10px] text-[#8b7b6b] mt-0.5">
+                                    Individual {g.dietary && g.dietary !== 'None' ? `· ${g.dietary}` : ''}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <span
+                                  className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                                    isHead
+                                      ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]/40'
+                                      : tbl
+                                      ? 'bg-[#15110e] text-white'
+                                      : 'bg-[#faf5ee] text-[#916c3d] border border-[#ebd3a8]'
+                                  }`}
+                                >
+                                  {tableName}
+                                </span>
+                              </div>
                             </div>
                           );
-                        })}
-                      </div>
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ============================================================== */}
+                {/* SEGMENT 2: SEATING ARRANGEMENT (Matching Image 4) */}
+                {/* ============================================================== */}
+                {seatingSubTab === 'seatingarr' && (
+                  <div className="space-y-4">
+                    <div className="text-center text-xs text-[#8b7b6b] py-0.5">
+                      Scroll down to inspect all tables and seated guests
                     </div>
 
-                    {/* Seated Guests List */}
-                    <div className="space-y-1.5 pt-1">
-                      <div className="text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider">
-                        Seated Guests at Head Table:
-                      </div>
-                      {[
-                        { num: 1, name: 'Sophie Bell', diet: '' },
-                        { num: 2, name: 'James Gordon', diet: '' },
-                        { num: 3, name: 'Hannah Martin', diet: 'Vegetarian' },
-                      ].map((item) => (
-                        <div key={item.num} className="flex items-center justify-between text-xs py-1 border-b border-[#f5f2eb]">
-                          <div>
-                            <span className="font-bold">{item.num}. {item.name}</span>
-                            {item.diet && (
-                              <span className="ml-2 bg-[#faf6f0] border border-[#ebd3a8] text-[#916c3d] text-[10px] font-bold px-1.5 py-0.2 rounded">
-                                {item.diet}
-                              </span>
+                    {filteredTables.map((tbl) => {
+                      const seatedGuests = allGuests.filter((g) => g.tableId === tbl.id);
+                      const isFull = seatedGuests.length >= tbl.capacity;
+                      const unassignedGuests = allGuests.filter((g) => !g.tableId && g.rsvpStatus !== 'declined');
+
+                      return (
+                        <div key={tbl.id} className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-3.5">
+                          {/* Table Header matching Image 4 */}
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h3 className="font-serif text-base font-bold text-[#15110e] uppercase tracking-wide">
+                                {tbl.name}
+                              </h3>
+                              <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                                {tbl.isHead ? 'VIP Head Table • Bridal Party' : `${tbl.category || 'Ballroom'} • ${tbl.capacity} max capacity`}
+                              </div>
+                            </div>
+                            <span
+                              className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                                isFull ? 'bg-[#e8eee4] text-[#3c6a42]' : 'bg-[#faf5ed] text-[#916c3d] border border-[#ebd3a8]'
+                              }`}
+                            >
+                              {seatedGuests.length} / {tbl.capacity} Seated
+                            </span>
+                          </div>
+
+                          <div className="border-t border-[#f5f2eb]" />
+
+                          {/* Visual Table Diagram matching Image 4 */}
+                          <div
+                            className="rounded-2xl border border-[#e8ded0] bg-[#fbf9f5] p-4 min-h-[220px] flex items-center justify-center relative shadow-inner overflow-hidden"
+                            style={{
+                              backgroundImage: 'radial-gradient(#d5c7b5 1.2px, transparent 1.2px)',
+                              backgroundSize: '16px 16px',
+                            }}
+                          >
+                            {/* ROUND TABLE VISUALIZATION (Image 4) */}
+                            {tbl.shape === 'round' && (
+                              <div className="relative w-[210px] h-[210px] flex items-center justify-center">
+                                {/* Perimeter guide circle */}
+                                <div className="absolute inset-2 rounded-full border border-dashed border-[#bd9661]/35 pointer-events-none" />
+
+                                {/* Center table surface with gold ring */}
+                                <div className="w-[104px] h-[104px] rounded-full bg-white border-2 border-[#bd9661] shadow-md flex flex-col items-center justify-center text-center z-10 p-2 select-none">
+                                  <span className="font-serif text-[11px] font-bold text-[#15110e] line-clamp-1 leading-tight uppercase">
+                                    {tbl.name}
+                                  </span>
+                                  <span className="text-[10px] font-bold text-[#bd9661] mt-0.5">
+                                    {seatedGuests.length} / {tbl.capacity}
+                                  </span>
+                                </div>
+
+                                {/* Circular Seat Nodes (Initial Avatars) */}
+                                {Array.from({ length: tbl.capacity }).map((_, i) => {
+                                  const angle = (i / tbl.capacity) * 2 * Math.PI - Math.PI / 2;
+                                  const radius = 78;
+                                  const x = Math.cos(angle) * radius;
+                                  const y = Math.sin(angle) * radius;
+                                  const guest = seatedGuests[i];
+
+                                  return (
+                                    <div
+                                      key={i}
+                                      className={`absolute w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold shadow-xs select-none transition-transform hover:scale-110 ${
+                                        guest
+                                          ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]'
+                                          : 'bg-white border border-dashed border-[#bd9661]/60 text-[#8b7b6b]'
+                                      }`}
+                                      style={{
+                                        left: `calc(50% + ${x}px - 14px)`,
+                                        top: `calc(50% + ${y}px - 14px)`,
+                                      }}
+                                      title={guest ? `${guest.name} (Seat #${i + 1})` : `Seat #${i + 1} (Empty)`}
+                                    >
+                                      {guest ? guest.initials || guest.name.slice(0, 2).toUpperCase() : `#${i + 1}`}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {/* RECTANGULAR TABLE VISUALIZATION */}
+                            {tbl.shape === 'rectangular' && (
+                              <div className="w-full flex flex-col items-center justify-center gap-2.5 py-1">
+                                {/* Top row seats */}
+                                <div className="flex justify-center gap-1.5 flex-wrap max-w-full">
+                                  {Array.from({ length: Math.ceil(tbl.capacity / 2) }).map((_, i) => {
+                                    const guest = seatedGuests[i];
+                                    return (
+                                      <div
+                                        key={i}
+                                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-[9px] font-bold shadow-xs select-none ${
+                                          guest
+                                            ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]'
+                                            : 'bg-white border border-dashed border-[#bd9661]/60 text-[#8b7b6b]'
+                                        }`}
+                                        title={guest ? `${guest.name} (Seat #${i + 1})` : `Seat #${i + 1} (Empty)`}
+                                      >
+                                        {guest ? guest.initials || guest.name.slice(0, 2).toUpperCase() : `#${i + 1}`}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+
+                                {/* Table Surface */}
+                                <div className="w-48 h-12 bg-white border-2 border-[#bd9661] rounded-xl shadow-xs flex flex-col items-center justify-center text-center px-2">
+                                  <span className="font-serif text-[11px] font-bold text-[#15110e] uppercase line-clamp-1 leading-tight">
+                                    {tbl.name}
+                                  </span>
+                                  <span className="text-[9.5px] font-bold text-[#bd9661]">
+                                    {seatedGuests.length} / {tbl.capacity} &bull; Rectangular
+                                  </span>
+                                </div>
+
+                                {/* Bottom row seats */}
+                                <div className="flex justify-center gap-1.5 flex-wrap max-w-full">
+                                  {Array.from({ length: Math.floor(tbl.capacity / 2) }).map((_, idx) => {
+                                    const sIdx = Math.ceil(tbl.capacity / 2) + idx;
+                                    const guest = seatedGuests[sIdx];
+                                    return (
+                                      <div
+                                        key={sIdx}
+                                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-[9px] font-bold shadow-xs select-none ${
+                                          guest
+                                            ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]'
+                                            : 'bg-white border border-dashed border-[#bd9661]/60 text-[#8b7b6b]'
+                                        }`}
+                                        title={guest ? `${guest.name} (Seat #${sIdx + 1})` : `Seat #${sIdx + 1} (Empty)`}
+                                      >
+                                        {guest ? guest.initials || guest.name.slice(0, 2).toUpperCase() : `#${sIdx + 1}`}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* KING BANQUET TABLE VISUALIZATION */}
+                            {tbl.shape === 'king' && (
+                              <div className="w-full flex flex-col items-center justify-center gap-2 py-1">
+                                {/* Top row seats */}
+                                <div className="flex justify-center gap-1 overflow-x-auto max-w-full pb-1 no-scrollbar">
+                                  {Array.from({ length: Math.ceil(tbl.capacity / 2) }).map((_, i) => {
+                                    const guest = seatedGuests[i];
+                                    return (
+                                      <div
+                                        key={i}
+                                        className={`w-6 h-6 shrink-0 rounded-lg flex items-center justify-center text-[8.5px] font-bold shadow-xs select-none ${
+                                          guest
+                                            ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]'
+                                            : 'bg-white border border-dashed border-[#bd9661]/60 text-[#8b7b6b]'
+                                        }`}
+                                        title={guest ? `${guest.name} (Seat #${i + 1})` : `Seat #${i + 1} (Empty)`}
+                                      >
+                                        {guest ? guest.initials || guest.name.slice(0, 2).toUpperCase() : `#${i + 1}`}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+
+                                {/* Royal Banquet Runner */}
+                                <div className="w-full max-w-[270px] h-10 rounded-xl bg-gradient-to-r from-[#291f17] via-[#3d2e24] to-[#291f17] border-2 border-[#bd9661] text-white flex flex-col items-center justify-center text-center shadow-md px-2">
+                                  <span className="font-serif text-[10.5px] font-bold text-[#dfc194] uppercase tracking-wider line-clamp-1">
+                                    👑 {tbl.name}
+                                  </span>
+                                  <span className="text-[9px] text-[#e8ded0]">
+                                    {seatedGuests.length} / {tbl.capacity} Places &bull; Banquet
+                                  </span>
+                                </div>
+
+                                {/* Bottom row seats */}
+                                <div className="flex justify-center gap-1 overflow-x-auto max-w-full pb-1 no-scrollbar">
+                                  {Array.from({ length: Math.floor(tbl.capacity / 2) }).map((_, idx) => {
+                                    const sIdx = Math.ceil(tbl.capacity / 2) + idx;
+                                    const guest = seatedGuests[sIdx];
+                                    return (
+                                      <div
+                                        key={sIdx}
+                                        className={`w-6 h-6 shrink-0 rounded-lg flex items-center justify-center text-[8.5px] font-bold shadow-xs select-none ${
+                                          guest
+                                            ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]'
+                                            : 'bg-white border border-dashed border-[#bd9661]/60 text-[#8b7b6b]'
+                                        }`}
+                                        title={guest ? `${guest.name} (Seat #${sIdx + 1})` : `Seat #${sIdx + 1} (Empty)`}
+                                      >
+                                        {guest ? guest.initials || guest.name.slice(0, 2).toUpperCase() : `#${sIdx + 1}`}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
                             )}
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => showToast(`Unseated ${item.name}`, 'info')}
-                            className="text-[10px] text-[#bd9661] border border-[#bd9661] px-2 py-0.5 rounded cursor-pointer hover:bg-[#faf8f5]"
-                          >
-                            Unseat
-                          </button>
+
+                          {/* Seated Guests Section matching Image 4 */}
+                          <div className="space-y-2 pt-1">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b]">
+                              Seated Guests at {tbl.name}:
+                            </div>
+
+                            {seatedGuests.length === 0 ? (
+                              <div className="text-center py-3 text-xs text-[#8b7b6b] bg-[#faf8f5] rounded-xl border border-dashed border-[#e8ded0]">
+                                No guests currently seated at this table.
+                              </div>
+                            ) : (
+                              seatedGuests.map((item, sIdx) => (
+                                <div key={item.id} className="flex items-center justify-between text-xs py-1.5 border-b border-[#f5f2eb] last:border-0">
+                                  <div className="flex items-center gap-2 min-w-0 pr-2">
+                                    <span className="font-bold text-[#15110e] truncate">
+                                      {sIdx + 1}. {item.name}
+                                    </span>
+                                    {item.dietary && item.dietary !== 'None' && (
+                                      <span className="bg-[#fff1f0] text-[#c93b2b] text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0">
+                                        {item.dietary}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUnseatGuestMobile(item.id, item.name)}
+                                    className="text-[11px] text-[#bd9661] hover:text-[#916c3d] font-semibold border border-[#ebd3a8] hover:border-[#bd9661] bg-[#faf8f5] hover:bg-[#f5ebd8] px-2.5 py-0.5 rounded-lg cursor-pointer transition-colors shrink-0"
+                                  >
+                                    Unseat
+                                  </button>
+                                </div>
+                              ))
+                            )}
+
+                            {/* Quick Seat Guest Row if capacity available and unassigned guests exist */}
+                            {!isFull && unassignedGuests.length > 0 && (
+                              <div className="pt-2 flex items-center gap-1.5">
+                                <select
+                                  id={`quick_seat_${tbl.id}`}
+                                  className="flex-1 min-w-0 bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-2.5 py-1.5 text-xs text-[#15110e] outline-none"
+                                  defaultValue=""
+                                >
+                                  <option value="" disabled>+ Seat unassigned guest...</option>
+                                  {unassignedGuests.map((g) => (
+                                    <option key={g.id} value={g.id}>
+                                      {g.name} ({g.household || 'General'}{g.dietary && g.dietary !== 'None' ? ` • ${g.dietary}` : ''})
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const sel = (document.getElementById(`quick_seat_${tbl.id}`) as HTMLSelectElement)?.value;
+                                    if (sel) handleSeatGuestMobile(sel, tbl.id, tbl.name);
+                                  }}
+                                  className="bg-[#15110e] hover:bg-[#2b221a] text-[#dfc194] text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer shrink-0 transition-colors"
+                                >
+                                  + Seat
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* SEGMENT 3: UNSEATED GUESTS (Screenshot 16: 172757.png) */}
-              {seatingSubTab === 'unseated' && (
-                <div className="space-y-3">
-                  <div className="bg-[#faf6f0] border border-[#ebd3a8] rounded-2xl p-3 flex items-center justify-between">
-                    <div>
-                      <div className="font-bold text-xs text-[#916c3d]">Remaining Guests to Seat</div>
-                      <div className="text-[11px] text-[#8b7b6b]">Assign remaining guests to free seats</div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleSeatAll}
-                      className="bg-[#bd9661] text-[#15110e] font-bold text-xs px-3 py-1.5 rounded-lg cursor-pointer hover:bg-[#a8824f]"
-                    >
-                      Seat All
-                    </button>
-                  </div>
+                {/* ============================================================== */}
+                {/* SEGMENT 3: UNSEATED GUESTS                                     */}
+                {/* ============================================================== */}
+                {seatingSubTab === 'unseated' && (() => {
+                  const unseatedList = allGuests.filter(g => !g.tableId && g.rsvpStatus !== 'declined');
 
-                  <div className="space-y-2.5">
-                    {unseatedGuests.map((g) => (
-                      <div key={g.id} className="bg-white border border-[#e8ded0] rounded-2xl p-3.5 shadow-xs space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-bold text-xs text-[#15110e]">{g.name}</h4>
-                          {g.diet && (
-                            <span className="bg-[#faf6f0] text-[#916c3d] border border-[#ebd3a8] text-[10px] font-bold px-1.5 py-0.2 rounded">
-                              {g.diet}
-                            </span>
-                          )}
+                  return (
+                    <div className="space-y-3">
+                      <div className="bg-[#faf6f0] border border-[#ebd3a8] rounded-2xl p-3 flex items-center justify-between">
+                        <div>
+                          <div className="font-bold text-xs text-[#916c3d]">Remaining Guests to Seat</div>
+                          <div className="text-[11px] text-[#8b7b6b]">
+                            {unseatedList.length} unassigned guests
+                          </div>
                         </div>
-                        <div className="text-[11px] text-[#8b7b6b]">{g.note}</div>
-
-                        <div className="flex gap-2 pt-1">
-                          <select
-                            value={selectedAssignTable[g.id] || 'Table 1'}
-                            onChange={(e) => setSelectedAssignTable({ ...selectedAssignTable, [g.id]: e.target.value })}
-                            className="flex-1 bg-white border border-[#e8ded0] rounded-lg p-1.5 text-xs text-[#15110e] outline-none"
-                          >
-                            <option value="Table 1">Seat at Table 1 (2 free)</option>
-                            <option value="Table 2">Seat at Table 2 (2 free)</option>
-                            <option value="Table 3">Seat at Table 3 (4 free)</option>
-                            <option value="Table 5">Seat at Table 5 (5 free)</option>
-                          </select>
-                          <button
-                            type="button"
-                            onClick={() => handleSeatGuest(g.id)}
-                            className="bg-[#bd9661] text-[#15110e] font-bold text-xs px-3 py-1.5 rounded-lg cursor-pointer hover:bg-[#a8824f]"
-                          >
-                            Seat
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // Assign unseated guests to available tables
+                            let tableIdx = 0;
+                            const updated = state.guests.map(g => {
+                              if (!g.tableId && g.rsvpStatus !== 'declined' && allTables.length > 0) {
+                                const target = allTables[tableIdx % allTables.length];
+                                tableIdx++;
+                                return { ...g, tableId: target.id, seatIndex: 0 };
+                              }
+                              return g;
+                            });
+                            setState({ ...state, guests: updated });
+                            showToast('All remaining guests automatically seated across available tables', 'success');
+                          }}
+                          className="bg-[#bd9661] text-[#15110e] font-bold text-xs px-3 py-1.5 rounded-lg cursor-pointer hover:bg-[#a8824f]"
+                        >
+                          Seat All
+                        </button>
                       </div>
-                    ))}
-                    {unseatedGuests.length === 0 && (
-                      <div className="text-center py-6 text-xs text-[#8b7b6b]">
-                        ✓ All guests are successfully seated!
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
-          {/* ------------------------------------------------------------ */}
-          {/* LIVE CONSOLE MODE: SUB-PANE 3 - VENUE (Screenshot 17)        */}
-          {/* ------------------------------------------------------------ */}
+                      <div className="space-y-2.5">
+                        {unseatedList.length === 0 ? (
+                          <div className="text-center py-8 text-xs text-[#3c6a42] font-semibold bg-[#f0f7f1] rounded-2xl border border-emerald-200 p-4">
+                            🎉 All guests are successfully seated!
+                          </div>
+                        ) : (
+                          unseatedList.map((g) => (
+                            <div key={g.id} className="bg-white border border-[#e8ded0] rounded-2xl p-3.5 shadow-xs space-y-2">
+                              <div className="flex items-center justify-between">
+                                <h4 className="font-bold text-xs text-[#15110e]">{g.name}</h4>
+                                {g.dietary && g.dietary !== 'None' && (
+                                  <span className="bg-[#fff1f0] text-[#c93b2b] text-[10px] font-bold px-1.5 py-0.2 rounded">
+                                    {g.dietary}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-[#8b7b6b]">
+                                {g.household || 'Individual'}
+                              </div>
+
+                              <div className="flex gap-2 pt-1">
+                                <select
+                                  id={`mc_seat_${g.id}`}
+                                  className="flex-1 bg-white border border-[#e8ded0] rounded-lg p-1.5 text-xs text-[#15110e] outline-none"
+                                  defaultValue={allTables[0]?.id || ''}
+                                >
+                                  {allTables.map((t) => {
+                                    const seated = allGuests.filter(x => x.tableId === t.id).length;
+                                    const free = Math.max(0, t.capacity - seated);
+                                    return (
+                                      <option key={t.id} value={t.id}>
+                                        {t.name} ({t.shape || 'round'} &bull; {free} free)
+                                      </option>
+                                    );
+                                  })}
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const sel = (document.getElementById(`mc_seat_${g.id}`) as HTMLSelectElement)?.value;
+                                    if (sel) {
+                                      const updated = state.guests.map(x => x.id === g.id ? { ...x, tableId: sel, seatIndex: 0 } : x);
+                                      setState({ ...state, guests: updated });
+                                      const t = allTables.find(tbl => tbl.id === sel);
+                                      showToast(`Seated ${g.name} at ${t?.name || 'table'}`, 'success');
+                                    }
+                                  }}
+                                  className="bg-[#bd9661] text-[#15110e] font-bold text-xs px-3 py-1.5 rounded-lg cursor-pointer hover:bg-[#a8824f]"
+                                >
+                                  Seat
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            );
+          })()}
+
           {selectedWeddingId && consoleTab === 'venue' && (
             <div className="space-y-3">
               {/* Venue Info Card */}
@@ -1896,6 +2376,227 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
               </svg>
               <span className="text-[10px] mt-0.5">Weddings</span>
             </button>
+          </div>
+        )}
+
+        {/* MC Mobile Add Table Modal */}
+        {showAddTableModal && (
+          <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+            <div className="bg-white rounded-3xl p-5 max-w-[340px] w-full space-y-4 shadow-2xl border border-[#e8ded0]">
+              <div className="flex items-center justify-between">
+                <h3 className="font-serif text-base font-bold text-[#15110e]">Add New Table</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowAddTableModal(false)}
+                  className="text-[#8b7b6b] hover:text-[#15110e] text-lg font-bold p-1 cursor-pointer"
+                >
+                  &times;
+                </button>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
+                    Table Name / Label
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Table 9, School Friends..."
+                    value={newTableName}
+                    onChange={(e) => setNewTableName(e.target.value)}
+                    className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2 outline-none focus:border-[#bd9661]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
+                    Table Shape
+                  </label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[
+                      { id: 'round', label: '⚪ Round' },
+                      { id: 'rectangular', label: '▯ Rect' },
+                      { id: 'king', label: '👑 King' },
+                    ].map((shp) => (
+                      <button
+                        key={shp.id}
+                        type="button"
+                        onClick={() => setNewTableShape(shp.id as TableShape)}
+                        className={`py-2 px-1 rounded-xl text-xs font-bold border transition-colors cursor-pointer text-center ${
+                          newTableShape === shp.id
+                            ? 'bg-[#15110e] text-[#dfc194] border-[#15110e]'
+                            : 'bg-[#faf8f5] border-[#e8ded0] text-[#8b7b6b]'
+                        }`}
+                      >
+                        {shp.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
+                    Seating Capacity
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNewTableCapacity(Math.max(2, newTableCapacity - 2))}
+                      className="w-9 h-9 rounded-xl bg-[#faf8f5] border border-[#e8ded0] text-[#15110e] font-bold flex items-center justify-center cursor-pointer text-sm"
+                    >
+                      &minus;
+                    </button>
+                    <span className="flex-1 text-center font-mono font-bold text-sm text-[#15110e]">
+                      {newTableCapacity} Seats
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setNewTableCapacity(Math.min(48, newTableCapacity + 2))}
+                      className="w-9 h-9 rounded-xl bg-[#faf8f5] border border-[#e8ded0] text-[#15110e] font-bold flex items-center justify-center cursor-pointer text-sm"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
+                    Category / Group
+                  </label>
+                  <select
+                    value={newTableCategory}
+                    onChange={(e) => setNewTableCategory(e.target.value)}
+                    className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2 outline-none"
+                  >
+                    <option value="Family">Family</option>
+                    <option value="Friends">Friends</option>
+                    <option value="Bridal Party">Bridal Party</option>
+                    <option value="Colleagues">Colleagues</option>
+                    <option value="VIP">VIP</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddTableModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-[#e8ded0] text-xs font-bold text-[#8b7b6b] cursor-pointer hover:bg-[#faf8f5]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddTableFromMobile}
+                  className="flex-1 py-2.5 rounded-xl bg-[#15110e] text-[#dfc194] text-xs font-bold cursor-pointer hover:bg-[#2b221a]"
+                >
+                  Add Table
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MC Mobile Cheers AI Assist Modal (Enhanced matching Image 1 & 3) */}
+        {showCheersAiModal && (
+          <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 animate-in fade-in">
+            <div className="bg-white rounded-3xl p-4 max-w-[340px] w-full space-y-3 shadow-2xl border border-[#ebd3a8] max-h-[92%] flex flex-col">
+              <div className="flex items-center justify-between border-b pb-2 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">✨</span>
+                  <div>
+                    <h3 className="font-serif text-sm font-bold text-[#15110e]">
+                      Cheers AI Seating Recommendation
+                    </h3>
+                    <div className="text-[10px] text-[#bd9661] font-semibold">{aiProposal?.title || 'Smart Seating'}</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowCheersAiModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-base font-bold p-1 cursor-pointer leading-none"
+                >
+                  &times;
+                </button>
+              </div>
+
+              {/* Strategy tabs */}
+              <div className="grid grid-cols-4 gap-1 bg-[#faf8f5] p-1 rounded-2xl border border-[#ebd3a8] flex-shrink-0">
+                {[
+                  { id: 'households', label: 'Households', icon: '🏠' },
+                  { id: 'vips', label: 'VIP & Head', icon: '👑' },
+                  { id: 'dietary', label: 'Dietary', icon: '🥗' },
+                  { id: 'fill', label: 'Auto-Fill', icon: '⚡' },
+                ].map((st) => (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => handleRunCheersAiSeating(st.id as any)}
+                    className={`py-1.5 px-0.5 rounded-xl font-bold text-[9.5px] border-0 transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                      activeAiScenario === st.id
+                        ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
+                        : 'text-[#8b7b6b] hover:text-[#15110e] hover:bg-white'
+                    }`}
+                  >
+                    <span className="text-xs">{st.icon}</span>
+                    <span className="truncate max-w-full">{st.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* AI Description & Proposed Allocations list */}
+              {aiProposal && (
+                <div className="space-y-2 flex-1 overflow-y-auto pr-0.5">
+                  <p className="text-[11px] text-[#5a4d41] leading-relaxed">
+                    {aiProposal.desc}
+                  </p>
+
+                  <div className="bg-[#faf5ee] border border-[#ebd3a8] rounded-2xl p-2.5 space-y-1.5 text-xs">
+                    <div className="font-bold text-[#15110e] flex items-center justify-between text-xs">
+                      <span>Proposed Allocations</span>
+                      <span className="bg-[#bd9661] text-[#15110e] px-2 py-0.5 rounded-full text-[10px] font-bold">
+                        {aiProposal.count} Guests
+                      </span>
+                    </div>
+                    <div className="max-h-28 overflow-y-auto space-y-1 pr-1">
+                      {aiProposal.changes.map(({ guestId, tableId }, i) => {
+                        const g = (state.guests || []).find((x) => x.id === guestId);
+                        const t = (state.tables || []).find((x) => x.id === tableId);
+                        return (
+                          <div key={i} className="bg-white border border-[#e8ded0] py-1 px-2 rounded-lg flex items-center justify-between text-[10.5px] shadow-2xs">
+                            <span className="font-semibold text-[#15110e] truncate max-w-[120px]">{g?.name || 'Guest'}</span>
+                            <span className="text-[#8b7b6b] text-[10px]">&rarr;</span>
+                            <span className="font-bold text-[#bd9661] truncate max-w-[100px]">{t?.name || 'Table'}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="text-[9.5px] text-[#8b7b6b] italic leading-tight flex-shrink-0">
+                AI recommendations are suggestions only. You can modify or override any table or seat assignment afterwards.
+              </div>
+
+              <div className="flex gap-2 pt-1 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowCheersAiModal(false)}
+                  className="flex-1 py-2 rounded-xl border border-[#e8ded0] bg-[#faf8f5] hover:bg-[#f0ede4] text-xs font-bold text-[#15110e] cursor-pointer transition-colors"
+                >
+                  Dismiss
+                </button>
+                <button
+                  type="button"
+                  disabled={!aiProposal || aiProposal.changes.length === 0}
+                  onClick={handleApplyAiProposal}
+                  className="flex-1 py-2 rounded-xl bg-gradient-to-r from-[#dfc194] to-[#bd9661] text-[#15110e] text-xs font-bold cursor-pointer hover:brightness-105 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+                >
+                  Apply Recommendations
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

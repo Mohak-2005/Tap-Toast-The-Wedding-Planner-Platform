@@ -867,118 +867,156 @@ export default function GuestMobileView() {
           {/* ============================================================== */}
           {/* TAB: TABLE (Screenshot 7: 172617.png)                           */}
           {/* ============================================================== */}
-          {activeTab === 'table' && (
-            <div className="p-4 space-y-4">
-              <div className="mt-1 px-1">
-                <div className="text-[10px] font-bold tracking-widest uppercase text-[#bd9661] mb-0.5">
-                  Your Seating
-                </div>
-                <h1 className="font-serif text-2xl font-bold text-[#15110e] leading-tight mb-1">
-                  My Table
-                </h1>
-                <div className="text-xs text-[#8b7b6b]">
-                  Confirmed Seating &bull; View Only
-                </div>
-              </div>
+          {activeTab === 'table' && (() => {
+            const priyaGuest = state.guests.find(g => g.id === 'priya' || g.name.toLowerCase().includes('priya'));
+            const myTable = priyaGuest?.tableId ? state.tables.find(t => t.id === priyaGuest.tableId) : null;
+            const tableGuests = myTable ? state.guests.filter(g => g.tableId === myTable.id) : [];
+            const capacity = myTable?.capacity || 8;
+            const mySeatIndex = priyaGuest?.seatIndex ?? 3;
 
-              {/* Circular Table Graphic with Dotted Grid Background */}
-              <div className="bg-[#fbf9f5] border border-[#e8ded0] rounded-2xl p-6 relative flex flex-col items-center justify-center shadow-xs overflow-hidden min-h-[300px]">
-                {/* Dotted Grid Background */}
-                <div
-                  className="absolute inset-0 opacity-25"
-                  style={{
-                    backgroundImage: 'radial-gradient(#8b7b6b 1px, transparent 1px)',
-                    backgroundSize: '16px 16px',
-                  }}
-                />
-
-                {/* Circular arrangement container */}
-                <div className="relative w-[210px] h-[210px] flex items-center justify-center z-10">
-                  {/* Outer circle line */}
-                  <div className="absolute inset-0 rounded-full border border-[#bd9661]/60" />
-
-                  {/* Center Table Circle */}
-                  <div className="w-[110px] h-[110px] rounded-full bg-white border border-[#bd9661] flex flex-col items-center justify-center shadow-sm z-10">
-                    <span className="font-serif text-base font-bold text-[#15110e]">Table 4</span>
-                    <span className="text-xs text-[#8b7b6b] font-medium">8 / 8</span>
+            return (
+              <div className="p-4 space-y-4">
+                <div className="mt-1 px-1">
+                  <div className="text-[10px] font-bold tracking-widest uppercase text-[#bd9661] mb-0.5">
+                    Your Seating
                   </div>
-
-                  {/* 8 Outer Seat Badges */}
-                  {[
-                    { code: 'BR', angle: 0, label: 'Benjamin Ross' },
-                    { code: 'IF', angle: 45, label: 'Isabella Foster' },
-                    { code: 'OT', angle: 90, label: 'Oliver Taylor' },
-                    { code: 'PS', angle: 135, label: 'Priya Sharma (You)', isMe: true },
-                    { code: 'YR', angle: 180, label: 'Yusuf Rahman' },
-                    { code: 'NP', angle: 225, label: 'Nadia Patel' },
-                    { code: 'JT', angle: 270, label: 'Jack Thompson' },
-                    { code: 'AD', angle: 315, label: 'Amelia Davis' },
-                  ].map((seat) => {
-                    const radius = 86;
-                    const rad = ((seat.angle - 90) * Math.PI) / 180;
-                    const x = radius * Math.cos(rad);
-                    const y = radius * Math.sin(rad);
-
-                    return (
-                      <div
-                        key={seat.code}
-                        style={{
-                          transform: `translate(${x}px, ${y}px)`,
-                        }}
-                        className={`absolute w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shadow-xs cursor-pointer ${
-                          seat.isMe
-                            ? 'bg-[#dfc194] text-[#15110e] border-2 border-[#15110e] ring-2 ring-[#bd9661] z-20'
-                            : 'bg-[#15110e] text-[#dfc194] border border-[#3d2e24]'
-                        }`}
-                        title={seat.label}
-                      >
-                        {seat.code}
-                      </div>
-                    );
-                  })}
+                  <h1 className="font-serif text-2xl font-bold text-[#15110e] leading-tight mb-1">
+                    My Table
+                  </h1>
+                  <div className="text-xs text-[#8b7b6b]">
+                    Confirmed Seating &bull; Live Guest Experience
+                  </div>
                 </div>
 
-                <div className="mt-4 text-xs font-bold text-[#bd9661] z-10">
-                  Seat 4 &bull; Priya Sharma
-                </div>
-              </div>
-
-              {/* Tablemates List */}
-              <div className="space-y-2 pt-1">
-                <h3 className="font-serif text-base font-bold text-[#15110e] px-1">
-                  Your Tablemates
-                </h3>
-
-                {[
-                  { name: 'Benjamin Ross', seat: 'Seat 1', initials: 'BR' },
-                  { name: 'Isabella Foster', seat: 'Seat 2', initials: 'IF' },
-                  { name: 'Oliver Taylor', seat: 'Seat 3', initials: 'OT' },
-                  { name: 'Priya Sharma (You)', seat: 'Seat 4', initials: 'PS', isMe: true },
-                  { name: 'Yusuf Rahman', seat: 'Seat 5', initials: 'YR' },
-                  { name: 'Nadia Patel', seat: 'Seat 6', initials: 'NP' },
-                ].map((guest, idx) => (
+                {/* Circular / Banquet Graphic */}
+                <div className="bg-[#fbf9f5] border border-[#e8ded0] rounded-2xl p-6 relative flex flex-col items-center justify-center shadow-xs overflow-hidden min-h-[300px]">
+                  {/* Dotted Grid Background */}
                   <div
-                    key={idx}
-                    className={`bg-white border rounded-xl p-3 flex items-center gap-3 shadow-xs ${
-                      guest.isMe ? 'border-[#bd9661] bg-[#faf8f5]' : 'border-[#e8ded0]'
-                    }`}
-                  >
-                    <div
-                      className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${
-                        guest.isMe ? 'bg-[#bd9661] text-[#15110e]' : 'bg-[#15110e] text-[#dfc194]'
-                      }`}
-                    >
-                      {guest.initials}
+                    className="absolute inset-0 opacity-25"
+                    style={{
+                      backgroundImage: 'radial-gradient(#8b7b6b 1px, transparent 1px)',
+                      backgroundSize: '16px 16px',
+                    }}
+                  />
+
+                  {myTable ? (
+                    <>
+                      {/* Circular arrangement container */}
+                      <div className="relative w-[210px] h-[210px] flex items-center justify-center z-10">
+                        {/* Outer circle line */}
+                        <div className="absolute inset-0 rounded-full border border-[#bd9661]/60" />
+
+                        {/* Center Table Circle */}
+                        <div className="w-[110px] h-[110px] rounded-full bg-white border border-[#bd9661] flex flex-col items-center justify-center shadow-sm z-10 text-center p-2">
+                          <span className="font-serif text-sm font-bold text-[#15110e] line-clamp-2 leading-tight">
+                            {myTable.name}
+                          </span>
+                          <span className="text-xs text-[#8b7b6b] font-medium mt-0.5">
+                            {tableGuests.length} / {capacity}
+                          </span>
+                        </div>
+
+                        {/* Dynamic Outer Seat Badges */}
+                        {Array.from({ length: Math.min(12, capacity) }).map((_, idx) => {
+                          const angle = idx * (360 / Math.min(12, capacity));
+                          const radius = 86;
+                          const rad = ((angle - 90) * Math.PI) / 180;
+                          const x = radius * Math.cos(rad);
+                          const y = radius * Math.sin(rad);
+
+                          const occupant = tableGuests.find((g) => g.seatIndex === idx) || (idx === mySeatIndex ? priyaGuest : null);
+                          const isMe = occupant?.id === priyaGuest?.id || idx === mySeatIndex;
+                          const initials = isMe ? 'PS' : occupant ? (occupant.initials || occupant.name.slice(0, 2).toUpperCase()) : `#${idx + 1}`;
+
+                          return (
+                            <div
+                              key={idx}
+                              style={{
+                                transform: `translate(${x}px, ${y}px)`,
+                              }}
+                              className={`absolute w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shadow-xs cursor-pointer ${
+                                isMe
+                                  ? 'bg-[#dfc194] text-[#15110e] border-2 border-[#15110e] ring-2 ring-[#bd9661] z-20'
+                                  : occupant
+                                  ? 'bg-[#15110e] text-[#dfc194] border border-[#3d2e24]'
+                                  : 'bg-white text-[#8b7b6b] border border-dashed border-[#d5c7b5]'
+                              }`}
+                              title={occupant ? `${occupant.name}${isMe ? ' (You)' : ''}` : `Vacant Seat ${idx + 1}`}
+                            >
+                              {initials}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="mt-4 text-xs font-bold text-[#bd9661] z-10 text-center">
+                        Seat {mySeatIndex + 1} &bull; {priyaGuest?.name || 'Priya Sharma'}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8 z-10 space-y-2">
+                      <div className="text-2xl">🥂</div>
+                      <div className="font-serif text-sm font-bold text-[#15110e]">Seating in Progress</div>
+                      <p className="text-xs text-[#8b7b6b] max-w-xs">
+                        Sophie &amp; James are finalizing the table arrangements. Your table and place setting will appear here soon!
+                      </p>
                     </div>
-                    <div>
-                      <div className="text-xs font-bold text-[#15110e]">{guest.name}</div>
-                      <div className="text-[10px] text-[#8b7b6b]">{guest.seat}</div>
+                  )}
+                </div>
+
+                {/* Tablemates List */}
+                {myTable && (
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between px-1">
+                      <h3 className="font-serif text-base font-bold text-[#15110e]">
+                        Your Tablemates
+                      </h3>
+                      <span className="text-xs text-[#8b7b6b]">
+                        {tableGuests.length} Guests
+                      </span>
                     </div>
+
+                    {tableGuests.map((guest, idx) => {
+                      const isMe = guest.id === priyaGuest?.id;
+                      return (
+                        <div
+                          key={guest.id || idx}
+                          className={`bg-white border rounded-xl p-3 flex items-center justify-between shadow-xs ${
+                            isMe ? 'border-[#bd9661] bg-[#faf8f5]' : 'border-[#e8ded0]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${
+                                isMe ? 'bg-[#bd9661] text-[#15110e]' : 'bg-[#15110e] text-[#dfc194]'
+                              }`}
+                            >
+                              {guest.initials || guest.name.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold text-[#15110e] flex items-center gap-1.5">
+                                <span>{guest.name}</span>
+                                {isMe && <span className="text-[10px] bg-[#bd9661]/20 text-[#916c3d] px-1 rounded font-bold">You</span>}
+                              </div>
+                              <div className="text-[10px] text-[#8b7b6b]">
+                                Seat {(guest.seatIndex !== undefined && guest.seatIndex !== null) ? guest.seatIndex + 1 : idx + 1}
+                                {guest.household && ` • ${guest.household}`}
+                              </div>
+                            </div>
+                          </div>
+                          {guest.dietary && guest.dietary !== 'None' && (
+                            <span className="text-[9.5px] bg-[#fff1f0] text-[#c93b2b] px-2 py-0.5 rounded-full font-semibold">
+                              {guest.dietary}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* ============================================================== */}
           {/* TAB: PHOTOS (Screenshot 8: 172628.png)                          */}

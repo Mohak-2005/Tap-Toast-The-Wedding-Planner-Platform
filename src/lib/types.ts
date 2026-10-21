@@ -49,11 +49,18 @@ export interface Wedding {
   giftsTotal?: number;
 }
 
+export type TableShape = 'round' | 'rectangular' | 'king';
+
 export interface Table {
   id: string;
   name: string;
   capacity: number;
   isHead: boolean;
+  shape?: TableShape;
+  x?: number;
+  y?: number;
+  category?: string;
+  zone?: string;
 }
 
 export interface Guest {
@@ -72,6 +79,8 @@ export interface Guest {
   reminderSent?: boolean;
   tableId?: string | null;
   seatIndex?: number | null;
+  category?: string;
+  notes?: string;
 }
 
 export interface Gift {
