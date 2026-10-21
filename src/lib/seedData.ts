@@ -459,5 +459,103 @@ export const SEED_DATA: DemoState = {
       phone: "0433 991 445",
       status: "Active"
     }
+  ],
+  referralCodes: [
+    {
+      id: "ref_1",
+      code: "ROBERT-VIP-15",
+      discountType: "percentage",
+      discountValue: 15,
+      description: "Exclusive 15% booking discount for Robert Galati couples",
+      usesCount: 12,
+      mcRewardValue: 150,
+      status: "active",
+      createdDate: "01 Jan 2026"
+    },
+    {
+      id: "ref_2",
+      code: "BRIDALEXPO2027",
+      discountType: "fixed",
+      discountValue: 100,
+      description: "$100 AUD off platform deposit for Sydney Bridal Expo couples",
+      usesCount: 4,
+      mcRewardValue: 100,
+      status: "active",
+      createdDate: "15 Feb 2026"
+    },
+    {
+      id: "ref_3",
+      code: "SUMMERLOVE",
+      discountType: "percentage",
+      discountValue: 10,
+      description: "10% off summer 2027 packages & rehearsal direction",
+      usesCount: 2,
+      mcRewardValue: 150,
+      status: "active",
+      createdDate: "01 Jun 2026"
+    },
+    {
+      id: "ref_4",
+      code: "WINTERVIP",
+      discountType: "fixed",
+      discountValue: 150,
+      description: "$150 flat off off-peak winter weddings",
+      usesCount: 0,
+      mcRewardValue: 150,
+      status: "active",
+      createdDate: "10 Jul 2026"
+    }
+  ],
+  referredCouples: [
+    {
+      id: "rc_1",
+      coupleName: "Sophie & James",
+      weddingDate: "14 Nov 2026",
+      codeUsed: "ROBERT-VIP-15",
+      discountSaved: 225,
+      mcCommission: 150,
+      commissionStatus: "Paid",
+      dateReferred: "12 Oct 2026"
+    },
+    {
+      id: "rc_2",
+      coupleName: "Aisha & Marcus",
+      weddingDate: "02 May 2027",
+      codeUsed: "BRIDALEXPO2027",
+      discountSaved: 100,
+      mcCommission: 100,
+      commissionStatus: "Paid",
+      dateReferred: "28 Sep 2026"
+    },
+    {
+      id: "rc_3",
+      coupleName: "Emma & Tom",
+      weddingDate: "20 Jun 2027",
+      codeUsed: "SUMMERLOVE",
+      discountSaved: 185,
+      mcCommission: 150,
+      commissionStatus: "Paid",
+      dateReferred: "05 Aug 2026"
+    },
+    {
+      id: "rc_4",
+      coupleName: "Liam & Chloe",
+      weddingDate: "18 Sep 2027",
+      codeUsed: "ROBERT-VIP-15",
+      discountSaved: 225,
+      mcCommission: 150,
+      commissionStatus: "Pending",
+      dateReferred: "18 Oct 2026"
+    },
+    {
+      id: "rc_5",
+      coupleName: "Harrison & Grace",
+      weddingDate: "24 Oct 2027",
+      codeUsed: "ROBERT-VIP-15",
+      discountSaved: 225,
+      mcCommission: 150,
+      commissionStatus: "Pending",
+      dateReferred: "19 Oct 2026"
+    }
   ]
 };

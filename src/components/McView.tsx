@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppState, useSession, showToast, logAudit } from '../lib/state';
 import { PrivateRunSheetItem, Client, Invoice, Wedding, Guest } from '../lib/types';
+import McReferralsSection from './McReferralsSection';
 
 interface McViewProps {
   onSelectView?: (view: string) => void;
@@ -11,7 +12,7 @@ export default function McView({ onSelectView }: McViewProps) {
   const { session, setSession, clearSession } = useSession();
 
   // Navigation state
-  const [activeTab, setActiveTab] = useState<'weddings' | 'calendar' | 'clients' | 'invoicing' | 'team' | 'settings'>('weddings');
+  const [activeTab, setActiveTab] = useState<'weddings' | 'calendar' | 'clients' | 'invoicing' | 'team' | 'referrals' | 'settings'>('weddings');
   const [selectedWeddingId, setSelectedWeddingId] = useState<string | null>(null);
   const [detailSubTab, setDetailSubTab] = useState<'runsheet' | 'seating' | 'guests' | 'venue'>('runsheet');
 
@@ -383,6 +384,16 @@ export default function McView({ onSelectView }: McViewProps) {
                 ),
               },
               {
+                id: 'referrals',
+                label: 'Referrals & Discounts',
+                icon: (
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                    <line x1="7" y1="7" x2="7.01" y2="7" />
+                  </svg>
+                ),
+              },
+              {
                 id: 'settings',
                 label: 'Settings',
                 icon: (
@@ -411,7 +422,12 @@ export default function McView({ onSelectView }: McViewProps) {
                   <span className={isActive ? 'text-[#bd9661]' : 'text-[#bfaea0]'}>
                     {item.icon}
                   </span>
-                  <span>{item.label}</span>
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {(item as any).badge && (
+                    <span className="text-[9px] font-bold bg-[#bd9661] text-[#15110e] px-1.5 py-0.5 rounded-full">
+                      {(item as any).badge}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -1330,6 +1346,30 @@ export default function McView({ onSelectView }: McViewProps) {
         {/* ==================================================================== */}
         {activeTab === 'invoicing' && !selectedWeddingId && (
           <section className="space-y-6">
+            {/* Ambassador Referral Payout Banner */}
+            <div className="bg-[#faf8f5] border border-[#ebd3a8] rounded-xl p-4 flex items-center justify-between flex-wrap gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🎁</span>
+                <div>
+                  <div className="text-xs font-bold text-[#15110e] flex items-center gap-2">
+                    <span>Ambassador Referral Earnings:</span>
+                    <span className="text-emerald-700 font-bold">$1,800 AUD</span>
+                    <span className="bg-[#241a13] text-[#dfc194] px-2 py-0.5 rounded text-[10px] font-mono">ROBERT-VIP-15</span>
+                  </div>
+                  <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                    12 couples confirmed using your 15% discount code &bull; $600 AUD currently available for payout.
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('referrals')}
+                className="bg-[#15110e] hover:bg-[#231c17] text-[#dfc194] text-xs font-bold px-3.5 py-1.5 rounded-lg cursor-pointer transition-colors shadow-xs"
+              >
+                Open Referral Hub &rarr;
+              </button>
+            </div>
+
             <div className="flex items-start justify-between flex-wrap gap-4">
               <div>
                 <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1">
@@ -1439,6 +1479,16 @@ export default function McView({ onSelectView }: McViewProps) {
               ))}
             </div>
           </section>
+        )}
+
+        {/* ==================================================================== */}
+        {/* TAB 6: SETTINGS (Screenshot 39)                                      */}
+        {/* ==================================================================== */}
+        {/* ==================================================================== */}
+        {/* TAB: REFERRALS & DISCOUNTS                                           */}
+        {/* ==================================================================== */}
+        {activeTab === 'referrals' && !selectedWeddingId && (
+          <McReferralsSection state={state} setState={setState} />
         )}
 
         {/* ==================================================================== */}

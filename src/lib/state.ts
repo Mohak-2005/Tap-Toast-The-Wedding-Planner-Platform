@@ -31,6 +31,8 @@ export function getStoredState(): DemoState {
           clients: Array.isArray(parsed.clients) ? parsed.clients : (SEED_DATA.clients || []),
           invoices: Array.isArray(parsed.invoices) ? parsed.invoices : (SEED_DATA.invoices || []),
           team: Array.isArray(parsed.team) ? parsed.team : (SEED_DATA.team || []),
+          referralCodes: Array.isArray(parsed.referralCodes) && parsed.referralCodes.length > 0 ? parsed.referralCodes : (SEED_DATA.referralCodes || []),
+          referredCouples: Array.isArray(parsed.referredCouples) && parsed.referredCouples.length > 0 ? parsed.referredCouples : (SEED_DATA.referredCouples || []),
         };
       }
     }
