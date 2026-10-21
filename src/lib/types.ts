@@ -200,6 +200,29 @@ export interface SaaSPlan {
   featured?: boolean;
 }
 
+export interface ReferralCode {
+  id: string;
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number; // e.g. 15 for 15% or 100 for $100
+  description: string;
+  usesCount: number;
+  mcRewardValue: number; // e.g. 150 for $150
+  status: 'active' | 'inactive';
+  createdDate: string;
+}
+
+export interface ReferredCouple {
+  id: string;
+  coupleName: string;
+  weddingDate: string;
+  codeUsed: string;
+  discountSaved: number;
+  mcCommission: number;
+  commissionStatus: 'Paid' | 'Pending';
+  dateReferred: string;
+}
+
 export interface DemoState {
   version: number;
   currentWeddingId: string;
@@ -217,5 +240,7 @@ export interface DemoState {
   clients?: Client[];
   invoices?: Invoice[];
   team?: TeamMember[];
+  referralCodes?: ReferralCode[];
+  referredCouples?: ReferredCouple[];
 }
 

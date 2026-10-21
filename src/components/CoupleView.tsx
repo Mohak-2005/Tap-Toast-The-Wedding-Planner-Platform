@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAppState, useSession, getWeddingCountdown, formatAUD, showToast } from '../lib/state';
 import JoeyChatbot from './JoeyChatbot';
 import { Guest } from '../lib/types';
+import { InvitationTemplatesSection } from './InvitationTemplatesSection';
+import { WeddingDayCelebrationSection } from './WeddingDayCelebrationSection';
 
 interface CoupleViewProps {
   onSelectView?: (view: string) => void;
@@ -15,6 +17,9 @@ export default function CoupleView({ onSelectView }: CoupleViewProps) {
   >('overview');
 
   const wedding = state.weddings[0];
+
+  // Wedding Day Celebration Mode (Interactive demo toggle)
+  const [isWeddingDayMode, setIsWeddingDayMode] = useState<boolean>(false);
 
   // Overview Countdown
   const [countdown, setCountdown] = useState(getWeddingCountdown('2026-11-14T14:00:00'));
@@ -703,10 +708,40 @@ export default function CoupleView({ onSelectView }: CoupleViewProps) {
                   Sophie <span className="text-[#bd9661] italic font-normal">&amp;</span> James
                 </h1>
               </div>
-              <div className="bg-[#15110e] text-[#dfc194] px-4 py-2 rounded-full font-bold text-xs tracking-wider shadow-sm">
-                {countdown.days} DAYS : {countdown.hours} HRS : {countdown.minutes} MINS : {countdown.seconds} SECS REMAINING
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextMode = !isWeddingDayMode;
+                    setIsWeddingDayMode(nextMode);
+                    showToast(
+                      nextMode ? '🎉 Wedding Day Celebration Mode Activated!' : 'Switched to Planning Countdown Mode',
+                      nextMode ? 'success' : 'info'
+                    );
+                  }}
+                  className={`px-3.5 py-2 rounded-full font-bold text-xs cursor-pointer transition-all flex items-center gap-1.5 shadow-xs ${
+                    isWeddingDayMode
+                      ? 'bg-gradient-to-r from-[#dfc194] to-[#bd9661] text-[#15110e] border border-[#bd9661]'
+                      : 'bg-[#15110e] hover:bg-[#251e19] text-[#dfc194] border border-[#bd9661]/40'
+                  }`}
+                >
+                  <span>{isWeddingDayMode ? '🎉 Wedding Day Active' : '✨ Wedding Day Mode'}</span>
+                </button>
+                <div className="bg-[#15110e] text-[#dfc194] px-4 py-2 rounded-full font-bold text-xs tracking-wider shadow-sm">
+                  {isWeddingDayMode
+                    ? 'TODAY: SATURDAY, 14 NOV 2026'
+                    : `${countdown.days} DAYS : ${countdown.hours} HRS : ${countdown.minutes} MINS : ${countdown.seconds} SECS REMAINING`}
+                </div>
               </div>
             </div>
+
+            {/* Wedding Day Celebration Experience (Active on Wedding Day) */}
+            {isWeddingDayMode && (
+              <WeddingDayCelebrationSection
+                onToggleWeddingDayMode={() => setIsWeddingDayMode(false)}
+                isWeddingDayMode={isWeddingDayMode}
+              />
+            )}
 
             {/* 4 Metric Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1589,138 +1624,13 @@ export default function CoupleView({ onSelectView }: CoupleViewProps) {
         {/* ================================================================ */}
         {activeTab === 'invitations' && (
           <section className="space-y-6">
-            <div>
-              <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1">
-                DIGITAL &amp; PHYSICAL INVITATIONS
-              </div>
-              <h1 className="font-serif text-3xl font-bold text-[#15110e]">
-                The QaRd Invitation
-              </h1>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-              {/* Configuration Card */}
-              <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-5">
-                <h2 className="font-serif text-lg font-bold text-[#15110e]">QaRd Configuration</h2>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-1.5">
-                    PREVIEW FOR GUEST HOUSEHOLD
-                  </label>
-                  <select
-                    value={selectedQaRdHousehold}
-                    onChange={(e) => setSelectedQaRdHousehold(e.target.value)}
-                    className="w-full bg-white border border-[#e8ded0] rounded-xl p-3 text-xs text-[#15110e] outline-none"
-                  >
-                    <option value="Priya Sharma (The Sharma Family)">Priya Sharma (The Sharma Family)</option>
-                    <option value="Hannah Martin">Hannah Martin</option>
-                    <option value="The Whitfield family">The Whitfield family</option>
-                    <option value="Michael & Sarah Chen">Michael &amp; Sarah Chen</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-2">
-                    CARD DESIGN &amp; COLOUR PALETTE
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { id: 'obsidian', title: 'Obsidian Noir', sub: 'Near-black & Gold', bg: '#15110e', text: '#ffffff' },
-                      { id: 'champagne', title: 'Champagne Ivory', sub: 'Warm Cream & Gold', bg: '#faf6f0', text: '#15110e' },
-                      { id: 'merlot', title: 'Burgundy Merlot', sub: 'Rich Wine & Gold', bg: '#351319', text: '#ffffff' },
-                      { id: 'sage', title: 'Botanical Sage', sub: 'Forest Olive & Gold', bg: '#1b2a20', text: '#ffffff' },
-                    ].map((pal) => (
-                      <button
-                        key={pal.id}
-                        type="button"
-                        onClick={() => setSelectedQaRdPalette(pal.id as any)}
-                        className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
-                          selectedQaRdPalette === pal.id ? 'border-2 border-[#bd9661] shadow-xs' : 'border-[#e8ded0]'
-                        }`}
-                        style={{ backgroundColor: pal.bg, color: pal.text }}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="w-3.5 h-3.5 rounded-full border border-[#bd9661]" style={{ backgroundColor: pal.bg }} />
-                          <strong className="text-xs">{pal.title}</strong>
-                        </div>
-                        <div className="text-[10px] opacity-75 mt-0.5">{pal.sub}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (onSelectView) onSelectView('guest-mobile');
-                      showToast('Simulating guest scanning QaRd...', 'info');
-                    }}
-                    className="bg-white border border-[#d5c7b5] hover:bg-[#faf8f5] text-[#15110e] font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
-                  >
-                    <span>📲</span> Simulate Scan
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => showToast('Invitations dispatched via email & SMS', 'success')}
-                    className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
-                  >
-                    <span>✉</span> Send Invitations
-                  </button>
-                </div>
-              </div>
-
-              {/* Physical Card Rendering matching Screenshot 26 */}
-              <div
-                className="rounded-3xl p-8 border-4 border-[#3d2e24] shadow-2xl text-center max-w-md mx-auto transition-colors"
-                style={{
-                  backgroundColor:
-                    selectedQaRdPalette === 'obsidian' ? '#15110e' :
-                    selectedQaRdPalette === 'champagne' ? '#fbf8f2' :
-                    selectedQaRdPalette === 'merlot' ? '#2e1015' : '#142118',
-                  color: selectedQaRdPalette === 'champagne' ? '#15110e' : '#ffffff',
-                }}
-              >
-                <div className="border border-[#bd9661]/40 rounded-2xl p-6 space-y-3">
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="w-5 h-5 rounded border border-[#bd9661] text-[10px] text-[#bd9661] font-bold flex items-center justify-center">T</span>
-                    <span className="font-serif text-xs font-bold tracking-wider">Tap &amp; Toast</span>
-                  </div>
-
-                  <div className="text-[10px] tracking-widest uppercase text-[#dfc194] font-bold">
-                    YOU'RE INVITED
-                  </div>
-
-                  <h2 className="font-serif text-3xl font-bold leading-tight">
-                    Sophie <span className="text-[#dfc194] italic font-normal">&amp;</span> James
-                  </h2>
-                  <div className="text-xs text-[#dfc194]">
-                    Saturday, 14 November 2026 &bull; 2:00 PM
-                  </div>
-                  <div className="text-[11px] opacity-75">
-                    Fernwood Estate, Southern Highlands
-                  </div>
-
-                  <div className="w-10 h-[1px] bg-[#bd9661] mx-auto my-3" />
-
-                  {/* QR Card */}
-                  <div className="bg-white p-3 rounded-xl w-[150px] h-[150px] mx-auto flex items-center justify-center shadow-lg">
-                    <img
-                      src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=https://taptoast.demo/wedding/sophie-james?guest=priya"
-                      alt="QR Code"
-                      className="w-[130px] h-[130px] object-contain"
-                    />
-                  </div>
-
-                  <div className="text-[10px] tracking-widest uppercase text-[#dfc194] font-bold pt-2">
-                    SCAN TO OPEN YOUR INVITATION
-                  </div>
-                  <div className="text-xs italic opacity-85">
-                    For {selectedQaRdHousehold.split(' (')[0]}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <InvitationTemplatesSection
+              selectedQaRdHousehold={selectedQaRdHousehold}
+              setSelectedQaRdHousehold={setSelectedQaRdHousehold}
+              selectedQaRdPalette={selectedQaRdPalette}
+              setSelectedQaRdPalette={setSelectedQaRdPalette}
+              onSelectView={onSelectView}
+            />
           </section>
         )}
 

@@ -12,8 +12,22 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
   // Selected wedding ID for Live Console mode (null = home mode)
   const [selectedWeddingId, setSelectedWeddingId] = useState<string | null>(null);
 
+  // Settings Sub-tab ('profile' | 'referrals')
+  const [settingsSubTab, setSettingsSubTab] = useState<'profile' | 'referrals'>('profile');
+
   // Home Bottom Navigation ('weddings' | 'calendar' | 'invoice' | 'team' | 'settings')
-  const [homeTab, setHomeTab] = useState<'weddings' | 'calendar' | 'invoice' | 'team' | 'settings'>('weddings');
+  // Referral code modal & list states
+  const [isCreateReferralOpen, setIsCreateReferralOpen] = useState(false);
+  const [newReferralCode, setNewReferralCode] = useState('');
+  const [newReferralDiscount, setNewReferralDiscount] = useState('15% OFF');
+  const [newReferralDesc, setNewReferralDesc] = useState('');
+  const [mobileReferralCodes, setMobileReferralCodes] = useState([
+    { code: 'ROBERT-VIP-15', discount: '15% OFF', desc: 'Standard couple referral', uses: 12, status: 'Active' },
+    { code: 'BRIDALEXPO2027', discount: '$100 OFF', desc: 'Sydney Bridal Expo promo', uses: 4, status: 'Active' },
+    { code: 'SUMMERLOVE', discount: '10% OFF', desc: 'Summer 2027 packages', uses: 2, status: 'Active' },
+  ]);
+
+  const [homeTab, setHomeTab] = useState<'weddings' | 'calendar' | 'referrals' | 'invoice' | 'team' | 'settings'>('weddings');
 
   // Live Console Navigation ('runsheet' | 'seating' | 'venue' | 'profile' | 'weddings')
   const [consoleTab, setConsoleTab] = useState<'runsheet' | 'seating' | 'venue' | 'profile'>('runsheet');
@@ -308,6 +322,32 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 <span className="bg-[#faf6f0] border border-[#ebd3a8] text-[#916c3d] font-bold text-[11px] px-2.5 py-0.5 rounded-full">
                   4 Active
                 </span>
+              </div>
+
+              {/* Ambassador Referral Code Banner */}
+              <div className="bg-[#15110e] border border-[#bd9661]/40 rounded-xl p-3 text-white flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-lg">🎁</span>
+                  <div>
+                    <div className="text-xs font-bold text-[#dfc194] flex items-center gap-1.5">
+                      <span>Referral Code:</span>
+                      <span className="font-mono bg-[#2a1f16] border border-[#bd9661]/60 px-1.5 py-0.5 rounded text-[11px] text-white">ROBERT-VIP-15</span>
+                    </div>
+                    <div className="text-[10px] text-[#bdafa0]">
+                      15% off for couples &bull; Earn $150 AUD per wedding
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHomeTab('settings');
+                    setSettingsSubTab('referrals');
+                  }}
+                  className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold text-[10px] px-2.5 py-1.5 rounded-lg cursor-pointer whitespace-nowrap shadow-xs"
+                >
+                  Share &rarr;
+                </button>
               </div>
 
               {/* 4 Assigned Wedding Cards */}
@@ -685,6 +725,338 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                     </span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* ------------------------------------------------------------ */}
+          {/* HOME MODE: TAB 5 - SETTINGS (Screenshot 21: 172832.png)     */}
+          {/* ------------------------------------------------------------ */}
+          {/* ------------------------------------------------------------ */}
+          {/* HOME MODE: TAB - REFERRALS & DISCOUNTS                      */}
+          {/* ------------------------------------------------------------ */}
+          {!selectedWeddingId && homeTab === 'referrals' && (
+            <div className="space-y-3.5 pb-2">
+              {/* Referrals Header */}
+              <div className="flex items-center justify-between pt-1 px-1">
+                <div>
+                  <div className="text-[10px] font-bold tracking-widest uppercase text-[#bd9661]">
+                    MC Partner Ambassador Hub
+                  </div>
+                  <h1 className="font-serif text-xl font-bold text-[#15110e]">
+                    Referrals &amp; Discounts
+                  </h1>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateReferralOpen(true)}
+                  className="bg-[#15110e] hover:bg-[#251e18] text-[#dfc194] border border-[#bd9661] text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer shadow-xs flex items-center gap-1 transition-colors"
+                >
+                  <span>+</span> New Code
+                </button>
+              </div>
+
+              {/* Primary Ambassador Code Card */}
+              <div className="bg-[#15110e] text-white border border-[#bd9661]/50 rounded-2xl p-4 shadow-md space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="bg-[#2a1f16] border border-[#bd9661] text-[#dfc194] text-[9.5px] font-bold px-2 py-0.5 rounded-full uppercase">
+                    Primary Partner Code
+                  </span>
+                  <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Active &bull; Verified MC
+                  </span>
+                </div>
+
+                <div>
+                  <div className="text-[10px] text-[#8b7b6b] uppercase tracking-wider font-bold">
+                    Your Referral Promo Code
+                  </div>
+                  <div className="font-mono text-2xl font-bold text-[#dfc194] tracking-wider mt-0.5">
+                    ROBERT-VIP-15
+                  </div>
+                </div>
+
+                <div className="bg-[#241a13] border border-[#3d2e23] p-2.5 rounded-xl text-xs text-[#d9c9b8] leading-relaxed">
+                  Couples receive <strong className="text-[#dfc194]">15% OFF</strong> platform fee. You earn <strong className="text-emerald-400">$150 AUD</strong> payout per confirmed wedding.
+                </div>
+
+                {/* Quick Copy Action Buttons */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard?.writeText('ROBERT-VIP-15');
+                      showToast('✓ Code ROBERT-VIP-15 copied!', 'success');
+                    }}
+                    className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold py-2 px-3 rounded-xl text-xs cursor-pointer shadow-xs transition-colors flex items-center justify-center gap-1"
+                  >
+                    Copy Code
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard?.writeText('https://tapandtoast.demo/signup?ref=ROBERT-VIP-15');
+                      showToast('✓ Signup link copied!', 'success');
+                    }}
+                    className="bg-[#2a2119] hover:bg-[#3d3126] text-[#dfc194] border border-[#4a3a2d] font-bold py-2 px-3 rounded-xl text-xs cursor-pointer transition-colors flex items-center justify-center gap-1"
+                  >
+                    Copy Link
+                  </button>
+                </div>
+
+                {/* Direct Share Options */}
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const text = 'Hey! Use my exclusive MC promo code ROBERT-VIP-15 for 15% off your wedding platform on Tap & Toast: https://tapandtoast.demo/signup?ref=ROBERT-VIP-15';
+                      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+                      showToast('Opening WhatsApp to share', 'info');
+                    }}
+                    className="flex-1 bg-[#25D366] hover:bg-[#20b858] text-white font-bold py-2 rounded-xl text-xs cursor-pointer transition-colors flex items-center justify-center gap-1 shadow-xs"
+                  >
+                    WhatsApp
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const body = encodeURIComponent('Hi! Here is my 15% discount code for Tap & Toast: ROBERT-VIP-15. Link: https://tapandtoast.demo/signup?ref=ROBERT-VIP-15');
+                      window.open(`sms:?&body=${body}`, '_blank');
+                      showToast('Opening SMS to share', 'info');
+                    }}
+                    className="flex-1 bg-white text-[#15110e] font-bold py-2 rounded-xl text-xs cursor-pointer transition-colors flex items-center justify-center gap-1 shadow-xs"
+                  >
+                    SMS Text
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const subject = encodeURIComponent('15% Discount on Tap & Toast Wedding Platform');
+                      const body = encodeURIComponent('Hi,\n\nUse my exclusive MC code ROBERT-VIP-15 at checkout to receive 15% off:\nhttps://tapandtoast.demo/signup?ref=ROBERT-VIP-15\n\nCheers,\nRobert Galati');
+                      window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+                      showToast('Opening Email to share', 'info');
+                    }}
+                    className="flex-1 bg-[#2a2119] border border-[#bd9661]/40 text-[#dfc194] font-bold py-2 rounded-xl text-xs cursor-pointer transition-colors flex items-center justify-center gap-1 shadow-xs"
+                  >
+                    Email
+                  </button>
+                </div>
+              </div>
+
+              {/* QR Code Scan Card */}
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm flex items-center gap-4">
+                <div className="bg-white p-2 rounded-xl border border-[#e8ded0] shadow-xs flex-shrink-0">
+                  <img
+                    src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://tapandtoast.demo/signup?ref=ROBERT-VIP-15"
+                    alt="Referral QR Code"
+                    className="w-20 h-20 object-contain"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661]">Instant QR Redemption</div>
+                  <h3 className="font-serif text-sm font-bold text-[#15110e]">Couple Scan &amp; Save</h3>
+                  <p className="text-[10px] text-[#8b7b6b] leading-tight">Couples scan with smartphone camera to apply ROBERT-VIP-15 automatically at sign up.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard?.writeText('https://tapandtoast.demo/signup?ref=ROBERT-VIP-15');
+                      showToast('✓ QR signup link copied to clipboard!', 'success');
+                    }}
+                    className="text-[10px] font-bold text-[#bd9661] hover:underline pt-1 cursor-pointer block"
+                  >
+                    Share QR Link &rarr;
+                  </button>
+                </div>
+              </div>
+
+              {/* Mobile Referral Stats Grid */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-white border border-[#e8ded0] p-3 rounded-xl">
+                  <div className="text-[10px] text-[#8b7b6b] uppercase font-bold">Couples Referred</div>
+                  <div className="font-serif text-lg font-bold text-[#15110e] mt-1">18 Couples</div>
+                  <div className="text-[10px] text-emerald-700 font-semibold">+4 this month</div>
+                </div>
+                <div className="bg-white border border-[#e8ded0] p-3 rounded-xl">
+                  <div className="text-[10px] text-[#8b7b6b] uppercase font-bold">Booked Weddings</div>
+                  <div className="font-serif text-lg font-bold text-[#15110e] mt-1">12 Booked</div>
+                  <div className="text-[10px] text-[#bd9661] font-semibold">66.7% converted</div>
+                </div>
+                <div className="bg-white border border-[#e8ded0] p-3 rounded-xl">
+                  <div className="text-[10px] text-[#8b7b6b] uppercase font-bold">Couples Saved</div>
+                  <div className="font-serif text-lg font-bold text-[#15110e] mt-1">$2,700 AUD</div>
+                  <div className="text-[10px] text-[#8b7b6b]">15% avg discount</div>
+                </div>
+                <div className="bg-white border border-[#e8ded0] p-3 rounded-xl flex flex-col justify-between">
+                  <div>
+                    <div className="text-[10px] text-[#8b7b6b] uppercase font-bold">Total Commission</div>
+                    <div className="font-serif text-lg font-bold text-emerald-700 mt-1">$1,800 AUD</div>
+                  </div>
+                  <span className="text-[9.5px] text-[#8b7b6b]">$600 available</span>
+                </div>
+              </div>
+
+              {/* Payout Request Button */}
+              <button
+                type="button"
+                onClick={() => showToast('✓ Payout request of $600 AUD submitted to St George Bank (Acc: ****4182)', 'success')}
+                className="w-full bg-[#15110e] hover:bg-[#231c17] text-[#dfc194] font-bold py-2.5 rounded-xl text-xs transition-colors cursor-pointer shadow-xs text-center"
+              >
+                Request Payout ($600 AUD Available) &rarr;
+              </button>
+
+              {/* Active Promo Codes List */}
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-serif text-sm font-bold text-[#15110e]">Active Promo Codes</h3>
+                  <span className="text-[10px] text-[#8b7b6b]">{mobileReferralCodes.length} Codes Active</span>
+                </div>
+                <div className="space-y-2 text-xs">
+                  {mobileReferralCodes.map((item, idx) => (
+                    <div key={idx} className="bg-[#faf8f5] border border-[#ebd3a8] rounded-xl p-2.5 flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono font-bold text-[#15110e]">{item.code}</span>
+                          <span className="text-[10px] bg-[#bd9661] text-[#15110e] font-bold px-1.5 rounded">{item.discount}</span>
+                        </div>
+                        <div className="text-[10px] text-[#8b7b6b] mt-0.5">{item.desc} &bull; {item.uses} uses</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard?.writeText(item.code);
+                          showToast(`✓ Code ${item.code} copied!`, 'success');
+                        }}
+                        className="text-[10px] bg-white border border-[#d5c7b5] px-2 py-1 rounded text-[#15110e] font-bold cursor-pointer hover:bg-[#f0ede4]"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Referred Couples Ledger */}
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-3">
+                <h3 className="font-serif text-sm font-bold text-[#15110e]">Referred Couples Ledger</h3>
+                <div className="space-y-2 text-xs">
+                  {[
+                    { couple: 'Sophie & James', date: 'Nov 2026', code: 'ROBERT-VIP-15', status: 'Booked', payout: '$150 Paid' },
+                    { couple: 'Aisha & Marcus', date: 'May 2027', code: 'ROBERT-VIP-15', status: 'Booked', payout: '$150 Paid' },
+                    { couple: 'Emma & Tom', date: 'Sep 2027', code: 'BRIDALEXPO2027', status: 'Deposit Paid', payout: '$150 Pending' },
+                    { couple: 'Liam & Chloe', date: 'Dec 2027', code: 'ROBERT-VIP-15', status: 'Booked', payout: '$150 Paid' },
+                    { couple: 'Harrison & Grace', date: 'Feb 2028', code: 'SUMMERLOVE', status: 'Inquiry', payout: 'Pending' },
+                  ].map((r, i) => (
+                    <div key={i} className="border border-[#e8ded0] rounded-xl p-2.5 flex items-center justify-between">
+                      <div>
+                        <div className="font-bold text-[#15110e]">{r.couple}</div>
+                        <div className="text-[10px] text-[#8b7b6b]">{r.date} &bull; Code: <span className="font-mono">{r.code}</span></div>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                          r.status === 'Booked' ? 'bg-[#e8eee4] text-[#3c6a42]' : 'bg-[#faf5ed] text-[#bd9661]'
+                        }`}>
+                          {r.status}
+                        </span>
+                        <div className="text-[10px] text-[#8b7b6b] mt-0.5">{r.payout}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Create Referral Code Modal */}
+          {isCreateReferralOpen && (
+            <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-5 w-full max-w-sm shadow-xl space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-[#f0ede4]">
+                  <h3 className="font-serif text-base font-bold text-[#15110e]">Create Promo Code</h3>
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateReferralOpen(false)}
+                    className="text-gray-400 hover:text-black font-bold text-sm cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-[#8b7b6b] mb-1">Promo Code</label>
+                  <input
+                    type="text"
+                    value={newReferralCode}
+                    onChange={(e) => setNewReferralCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. SPRINGLOVE"
+                    className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 text-xs font-mono font-bold text-[#15110e] outline-none focus:border-[#bd9661]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-[#8b7b6b] mb-1">Discount Value</label>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {['15% OFF', '$100 OFF', '10% OFF', '20% OFF'].map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setNewReferralDiscount(d)}
+                        className={`py-1.5 rounded-lg text-[10px] font-bold cursor-pointer border transition-colors ${
+                          newReferralDiscount === d ? 'bg-[#15110e] text-[#dfc194] border-[#bd9661]' : 'border-[#e8ded0] hover:bg-[#faf8f5]' 
+                        }`}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-[#8b7b6b] mb-1">Campaign Description</label>
+                  <input
+                    type="text"
+                    value={newReferralDesc}
+                    onChange={(e) => setNewReferralDesc(e.target.value)}
+                    placeholder="e.g. Spring 2027 VIP couples promotion"
+                    className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!newReferralCode.trim()) {
+                        showToast('Please enter a valid code name', 'error');
+                        return;
+                      }
+                      setMobileReferralCodes([
+                        {
+                          code: newReferralCode.trim(),
+                          discount: newReferralDiscount,
+                          desc: newReferralDesc.trim() || 'Custom promo campaign',
+                          uses: 0,
+                          status: 'Active',
+                        },
+                        ...mobileReferralCodes,
+                      ]);
+                      showToast(`✓ Promo code ${newReferralCode} created and activated!`, 'success');
+                      setNewReferralCode('');
+                      setNewReferralDesc('');
+                      setIsCreateReferralOpen(false);
+                    }}
+                    className="flex-1 bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold py-2.5 rounded-xl text-xs cursor-pointer shadow-xs transition-colors"
+                  >
+                    Create &amp; Activate Code
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateReferralOpen(false)}
+                    className="bg-[#f0ede4] hover:bg-[#e4dfd5] text-[#15110e] font-bold px-3 py-2.5 rounded-xl text-xs cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -1415,6 +1787,22 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
 
             <button
               type="button"
+              onClick={() => setHomeTab('team')}
+              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
+                homeTab === 'team' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
+              }`}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              <span className="text-[10px] mt-0.5">Team</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setHomeTab('invoice')}
               className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
                 homeTab === 'invoice' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
@@ -1431,20 +1819,17 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
 
             <button
               type="button"
-              onClick={() => setHomeTab('team')}
+              onClick={() => setHomeTab('referrals')}
               className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
-                homeTab === 'team' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
+                homeTab === 'referrals' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
               }`}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                <line x1="7" y1="7" x2="7.01" y2="7" />
               </svg>
-              <span className="text-[10px] mt-0.5">Team</span>
+              <span className="text-[10px] mt-0.5">Referrals</span>
             </button>
-
             <button
               type="button"
               onClick={() => setHomeTab('settings')}

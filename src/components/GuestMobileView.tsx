@@ -55,6 +55,10 @@ export default function GuestMobileView() {
   const [selectedGiftPreset, setSelectedGiftPreset] = useState<number>(100);
   const [customGiftAmount, setCustomGiftAmount] = useState<string>('');
   const [giftWish, setGiftWish] = useState<string>('Wishing you both a lifetime of happiness...');
+  // Customizable Default Gifting Values & Drawer
+  const [giftingPresets, setGiftingPresets] = useState<number[]>([50, 100, 150, 250]);
+  const [isCustomizePresetsOpen, setIsCustomizePresetsOpen] = useState<boolean>(false);
+  const [editPresets, setEditPresets] = useState<string[]>(['50', '100', '150', '250']);
 
   // Photos State
   const [photosList, setPhotosList] = useState([
@@ -1051,9 +1055,122 @@ export default function GuestMobileView() {
                 </div>
               </div>
 
-              {/* 4 Preset Amount Cards */}
-              <div className="grid grid-cols-2 gap-3 pt-1">
-                {[50, 100, 150, 250].map((amt) => {
+              {/* Customizable Presets Header */}
+              <div className="flex items-center justify-between pt-1 px-0.5">
+                <span className="text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b]">
+                  Select Amount
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditPresets(giftingPresets.map(String));
+                    setIsCustomizePresetsOpen(!isCustomizePresetsOpen);
+                  }}
+                  className="text-[11px] font-bold text-[#bd9661] hover:underline cursor-pointer"
+                >
+                  {isCustomizePresetsOpen ? 'Hide Customizer' : 'Customize Values'}
+                </button>
+              </div>
+
+              {/* Inline Customizer Drawer */}
+              {isCustomizePresetsOpen && (
+                <div className="bg-[#faf8f5] border border-[#bd9661]/40 rounded-2xl p-3.5 space-y-3 animate-in fade-in duration-200 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#15110e]">Customize Default Presets</span>
+                    <span className="text-[10px] text-[#8b7b6b]">4 preset values</span>
+                  </div>
+
+                  {/* Preset Packs Quick Select */}
+                  <div>
+                    <label className="block text-[9.5px] uppercase font-bold text-[#8b7b6b] mb-1.5">
+                      Quick Preset Packs
+                    </label>
+                    <div className="grid grid-cols-4 gap-1.5 text-xs">
+                      {[
+                        { name: 'Standard', vals: [50, 100, 150, 250] },
+                        { name: 'Generous', vals: [100, 200, 350, 500] },
+                        { name: 'Intimate', vals: [30, 60, 90, 120] },
+                        { name: 'Luxury', vals: [150, 300, 500, 1000] },
+                      ].map((pack) => (
+                        <button
+                          key={pack.name}
+                          type="button"
+                          onClick={() => {
+                            setGiftingPresets(pack.vals);
+                            setEditPresets(pack.vals.map(String));
+                            setSelectedGiftPreset(pack.vals[1]);
+                            showToast(`Applied ${pack.name} preset pack`, 'info');
+                          }}
+                          className="bg-white border border-[#e8ded0] hover:border-[#bd9661] p-1.5 rounded-lg text-center cursor-pointer transition-colors"
+                        >
+                          <div className="font-bold text-[10px] text-[#15110e]">{pack.name}</div>
+                          <div className="text-[8.5px] text-[#8b7b6b] mt-0.5">${pack.vals[0]}-${pack.vals[3]}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 4 Editable Value Inputs */}
+                  <div>
+                    <label className="block text-[9.5px] uppercase font-bold text-[#8b7b6b] mb-1.5">
+                      Or Enter Custom Dollar Amounts (AUD)
+                    </label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {editPresets.map((val, idx) => (
+                        <div key={idx} className="relative">
+                          <span className="absolute left-2.5 top-2 text-xs text-[#8b7b6b]">$</span>
+                          <input
+                            type="number"
+                            value={val}
+                            onChange={(e) => {
+                              const next = [...editPresets];
+                              next[idx] = e.target.value;
+                              setEditPresets(next);
+                            }}
+                            className="w-full bg-white border border-[#e8ded0] rounded-xl py-1.5 pl-6 pr-2 text-xs text-center font-bold text-[#15110e] outline-none focus:border-[#bd9661]"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const parsed = editPresets.map((v) => parseInt(v, 10)).filter((n) => !isNaN(n) && n > 0);
+                        if (parsed.length === 4) {
+                          setGiftingPresets(parsed);
+                          setSelectedGiftPreset(parsed[1] || parsed[0]);
+                          setIsCustomizePresetsOpen(false);
+                          showToast('Custom default presets saved!', 'success');
+                        } else {
+                          showToast('Please enter 4 valid positive numbers', 'error');
+                        }
+                      }}
+                      className="flex-1 bg-[#15110e] hover:bg-[#251e18] text-[#dfc194] font-bold py-2 rounded-xl text-xs cursor-pointer shadow-xs transition-colors"
+                    >
+                      Save &amp; Apply
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGiftingPresets([50, 100, 150, 250]);
+                        setEditPresets(['50', '100', '150', '250']);
+                        setSelectedGiftPreset(100);
+                        showToast('Reset to default presets: $50, $100, $150, $250', 'info');
+                      }}
+                      className="bg-white border border-[#d5c7b5] text-[#8b7b6b] hover:text-[#15110e] font-bold px-3 py-2 rounded-xl text-xs cursor-pointer transition-colors"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Dynamic Preset Amount Cards */}
+              <div className="grid grid-cols-2 gap-3 pt-0.5">
+                {giftingPresets.map((amt) => {
                   const isSelected = selectedGiftPreset === amt && !customGiftAmount;
                   return (
                     <button
@@ -1063,16 +1180,59 @@ export default function GuestMobileView() {
                         setSelectedGiftPreset(amt);
                         setCustomGiftAmount('');
                       }}
-                      className={`py-4 rounded-xl font-bold text-sm shadow-xs transition-all cursor-pointer ${
+                      className={`py-4 rounded-xl font-bold text-sm shadow-xs transition-all cursor-pointer flex flex-col items-center justify-center ${
                         isSelected
-                          ? 'bg-[#faf8f5] text-[#bd9661] border-2 border-[#bd9661]'
+                          ? 'bg-[#faf8f5] text-[#bd9661] border-2 border-[#bd9661] shadow-xs'
                           : 'bg-white text-[#15110e] border border-[#e8ded0] hover:bg-[#faf8f5]'
                       }`}
                     >
-                      ${amt} AUD
+                      <span>${amt} AUD</span>
                     </button>
                   );
                 })}
+              </div>
+
+              {/* Quick Increment Chips */}
+              <div>
+                <label className="block text-[9.5px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
+                  Quick Adjust Amount
+                </label>
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+                  {[25, 50, 100].map((inc) => (
+                    <button
+                      key={inc}
+                      type="button"
+                      onClick={() => {
+                        const currentVal = customGiftAmount ? parseFloat(customGiftAmount) : selectedGiftPreset;
+                        const newVal = (currentVal || 0) + inc;
+                        setCustomGiftAmount(newVal.toString());
+                      }}
+                      className="bg-white border border-[#e8ded0] hover:border-[#bd9661] text-[#15110e] font-bold text-xs px-3 py-1.5 rounded-lg cursor-pointer transition-colors whitespace-nowrap shadow-2xs"
+                    >
+                      +${inc}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentVal = customGiftAmount ? parseFloat(customGiftAmount) : selectedGiftPreset;
+                      const rounded = Math.ceil((currentVal || 100) / 100) * 100;
+                      setCustomGiftAmount(rounded.toString());
+                    }}
+                    className="bg-white border border-[#e8ded0] hover:border-[#bd9661] text-[#15110e] font-bold text-xs px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors whitespace-nowrap shadow-2xs"
+                  >
+                    Round to $100
+                  </button>
+                  {customGiftAmount && (
+                    <button
+                      type="button"
+                      onClick={() => setCustomGiftAmount('')}
+                      className="text-[11px] text-[#a8382c] font-bold px-2 py-1.5 cursor-pointer hover:underline whitespace-nowrap"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Custom Amount Input */}
@@ -1080,22 +1240,34 @@ export default function GuestMobileView() {
                 <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
                   Custom Amount (AUD)
                 </label>
-                <input
-                  type="number"
-                  value={customGiftAmount}
-                  onChange={(e) => {
-                    setCustomGiftAmount(e.target.value);
-                  }}
-                  placeholder="e.g. 300"
-                  className="w-full bg-white border border-[#e8ded0] rounded-xl p-3 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs"
-                />
+                <div className="relative">
+                  <span className="absolute left-3.5 top-3 text-xs font-bold text-[#8b7b6b]">$</span>
+                  <input
+                    type="number"
+                    value={customGiftAmount}
+                    onChange={(e) => {
+                      setCustomGiftAmount(e.target.value);
+                    }}
+                    placeholder="e.g. 300"
+                    className="w-full bg-white border border-[#e8ded0] rounded-xl p-3 pl-7 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs font-semibold"
+                  />
+                </div>
               </div>
 
               {/* Personalised Wish */}
               <div>
-                <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
-                  Personalised Wish
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b]">
+                    Personalised Wish
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setGiftWish('May your love grow stronger with each passing year! Wishing you a lifetime of joy and adventures together. 💕')}
+                    className="text-[10px] text-[#bd9661] font-bold hover:underline cursor-pointer"
+                  >
+                    Insert sample wish
+                  </button>
+                </div>
                 <textarea
                   value={giftWish}
                   onChange={(e) => setGiftWish(e.target.value)}
