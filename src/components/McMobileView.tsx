@@ -324,32 +324,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 </span>
               </div>
 
-              {/* Ambassador Referral Code Banner */}
-              <div className="bg-[#15110e] border border-[#bd9661]/40 rounded-xl p-3 text-white flex items-center justify-between shadow-xs">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-lg">🎁</span>
-                  <div>
-                    <div className="text-xs font-bold text-[#dfc194] flex items-center gap-1.5">
-                      <span>Referral Code:</span>
-                      <span className="font-mono bg-[#2a1f16] border border-[#bd9661]/60 px-1.5 py-0.5 rounded text-[11px] text-white">ROBERT-VIP-15</span>
-                    </div>
-                    <div className="text-[10px] text-[#bdafa0]">
-                      15% off for couples &bull; Earn $150 AUD per wedding
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setHomeTab('settings');
-                    setSettingsSubTab('referrals');
-                  }}
-                  className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold text-[10px] px-2.5 py-1.5 rounded-lg cursor-pointer whitespace-nowrap shadow-xs"
-                >
-                  Share &rarr;
-                </button>
-              </div>
-
               {/* 4 Assigned Wedding Cards */}
               <div className="space-y-3 pt-1">
                 {/* Wedding 1: Sophie & James */}
