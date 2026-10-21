@@ -13,6 +13,12 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
   
   // Selected wedding ID for Live Console mode (null = home mode)
   const [selectedWeddingId, setSelectedWeddingId] = useState<string | null>(null);
+  const normalizedId = selectedWeddingId === 'w_sophie_james' ? 'w1'
+    : selectedWeddingId === 'w_aisha_marcus' ? 'w2'
+    : selectedWeddingId === 'w_emma_tom' ? 'w3'
+    : selectedWeddingId;
+  const activeWedding = (state.weddings || []).find(w => w.id === normalizedId) || (state.weddings || [])[0];
+  const currentWeddingId = activeWedding.id;
 
   // Settings Sub-tab ('profile' | 'referrals')
   const [settingsSubTab, setSettingsSubTab] = useState<'profile' | 'referrals'>('profile');
@@ -119,12 +125,15 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
     let desc = '';
     const proposedChanges: { guestId: string; tableId: string }[] = [];
 
-    const availableTables = (state.tables || []).map((t) => ({
+    const weddingTables = (state.tables || []).filter(t => (t.weddingId || 'w1') === currentWeddingId);
+    const weddingGuests = (state.guests || []).filter(g => (g.weddingId || 'w1') === currentWeddingId);
+
+    const availableTables = weddingTables.map((t) => ({
       ...t,
-      currentCount: (state.guests || []).filter((g) => g.tableId === t.id).length,
+      currentCount: weddingGuests.filter((g) => g.tableId === t.id).length,
     }));
 
-    const unassignedGuests = (state.guests || []).filter((g) => !g.tableId && g.rsvpStatus !== 'declined');
+    const unassignedGuests = weddingGuests.filter((g) => !g.tableId && g.rsvpStatus !== 'declined');
 
     if (scenario === 'households') {
       title = 'Group Households & Families Together';
@@ -218,22 +227,24 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
   };
 
   const handleAddTableFromMobile = () => {
-    const tableName = newTableName.trim() || `Table ${(state.tables || []).length + 1}`;
+    const currentWeddingTables = (state.tables || []).filter(t => (t.weddingId || 'w1') === currentWeddingId);
+    const tableName = newTableName.trim() || `Table ${currentWeddingTables.length + 1}`;
     const newTbl: Table = {
-      id: `tbl_mob_${Date.now()}`,
+      id: `tbl_${currentWeddingId}_${Date.now()}`,
+      weddingId: currentWeddingId,
       name: tableName,
       capacity: newTableCapacity,
       isHead: false,
       shape: newTableShape,
       category: newTableCategory,
       zone: 'Main Room',
-      x: 50,
-      y: 50,
+      x: 20 + (currentWeddingTables.length % 4) * 20,
+      y: 35 + Math.floor(currentWeddingTables.length / 4) * 16,
     };
     setState({ ...state, tables: [...(state.tables || []), newTbl] });
     setShowAddTableModal(false);
     setNewTableName('');
-    showToast(`Added ${newTbl.name} (${newTableCapacity} seats, ${newTableShape})`, 'success');
+    showToast(`Added ${newTbl.name} (${newTableCapacity} seats, ${newTableShape}) to ${activeWedding.couple}'s wedding`, 'success');
   };
 
   const handleUnseatGuestMobile = (guestId: string, guestName: string) => {
@@ -243,7 +254,8 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
   };
 
   const handleSeatGuestMobile = (guestId: string, tableId: string, tableName: string) => {
-    const seatedCount = (state.guests || []).filter(g => g.tableId === tableId).length;
+    const weddingGuests = (state.guests || []).filter(g => (g.weddingId || 'w1') === currentWeddingId);
+    const seatedCount = weddingGuests.filter(g => g.tableId === tableId).length;
     const targetTbl = (state.tables || []).find(t => t.id === tableId);
     if (targetTbl && seatedCount >= targetTbl.capacity) {
       showToast(`Cannot seat guest: ${targetTbl.name} is at full capacity (${targetTbl.capacity})`, 'error');
@@ -333,11 +345,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
     showToast('Cue removed', 'info');
   };
 
-  const normalizedId = selectedWeddingId === 'w_sophie_james' ? 'w1'
-    : selectedWeddingId === 'w_aisha_marcus' ? 'w2'
-    : selectedWeddingId === 'w_emma_tom' ? 'w3'
-    : selectedWeddingId;
-  const activeWedding = (state.weddings || []).find(w => w.id === normalizedId) || (state.weddings || [])[0];
+  // activeWedding & normalizedId defined at component root
 
   const handleOpenConsole = (weddingId: string) => {
     const targetId = weddingId === 'w_sophie_james' ? 'w1'
@@ -1446,8 +1454,8 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
           {/* LIVE CONSOLE MODE: SUB-PANE 2 - SEATING PLANNER (TWO-LEVEL)  */}
           {/* ------------------------------------------------------------ */}
           {selectedWeddingId && consoleTab === 'seating' && (() => {
-            const allTables = state.tables || [];
-            const allGuests = state.guests || [];
+            const allTables = (state.tables || []).filter(t => (t.weddingId || 'w1') === currentWeddingId);
+            const allGuests = (state.guests || []).filter(g => (g.weddingId || 'w1') === currentWeddingId);
             const confirmedCount = allGuests.filter(g => g.rsvpStatus === 'confirmed').length;
 
             // Filter guests by search & table shape

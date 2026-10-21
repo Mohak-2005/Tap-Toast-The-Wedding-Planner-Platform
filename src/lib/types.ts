@@ -53,6 +53,7 @@ export type TableShape = 'round' | 'rectangular' | 'king';
 
 export interface Table {
   id: string;
+  weddingId?: string;
   name: string;
   capacity: number;
   isHead: boolean;
@@ -65,6 +66,7 @@ export interface Table {
 
 export interface Guest {
   id: string;
+  weddingId?: string;
   name: string;
   initials?: string;
   household: string;

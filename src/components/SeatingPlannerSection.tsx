@@ -5,12 +5,20 @@ import { Table, TableShape, Guest } from '../lib/types';
 interface SeatingPlannerSectionProps {
   onSelectView?: (view: string) => void;
   isMobileCompact?: boolean;
+  weddingId?: string;
 }
 
 export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
+  onSelectView,
   isMobileCompact = false,
+  weddingId,
 }) => {
   const { state, setState } = useAppState();
+
+  const currentWeddingId = weddingId || state.currentWeddingId || 'w1';
+  const currentWedding = useMemo(() => {
+    return (state.weddings || []).find((w) => w.id === currentWeddingId) || (state.weddings || [])[0];
+  }, [state.weddings, currentWeddingId]);
 
   // Navigation: Level 1 (Overall Room) vs Level 2 (Individual Table View)
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
@@ -52,17 +60,24 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
   const [draggingTableId, setDraggingTableId] = useState<string | null>(null);
 
   // Ensure tables have initial shape and coordinates if missing
+  // Filter guests for this specific wedding
+  const weddingGuests = useMemo(() => {
+    return (state.guests || []).filter((g) => (g.weddingId || 'w1') === currentWeddingId);
+  }, [state.guests, currentWeddingId]);
+
+  // Ensure tables have initial shape and coordinates if missing, filtered by current wedding
   const tables: Table[] = useMemo(() => {
-    return state.tables.map((tbl, idx) => {
+    const rawTables = (state.tables || []).filter((t) => (t.weddingId || 'w1') === currentWeddingId);
+    return rawTables.map((tbl, idx) => {
       let shape: TableShape = tbl.shape || (tbl.isHead ? 'king' : idx % 3 === 0 ? 'rectangular' : 'round');
       let capacity = tbl.capacity || (tbl.isHead ? 8 : shape === 'king' ? 32 : 10);
-      let x = tbl.x !== undefined ? tbl.x : 15 + (idx % 5) * 18;
-      let y = tbl.y !== undefined ? tbl.y : 25 + Math.floor(idx / 5) * 16;
+      let x = tbl.x !== undefined ? tbl.x : 15 + (idx % 4) * 20;
+      let y = tbl.y !== undefined ? tbl.y : 25 + Math.floor(idx / 4) * 16;
       let category = tbl.category || (tbl.isHead ? 'Bridal Party' : idx % 2 === 0 ? 'Family' : 'Friends');
       let zone = tbl.zone || 'Main Ballroom';
-      return { ...tbl, shape, capacity, x, y, category, zone };
+      return { ...tbl, weddingId: currentWeddingId, shape, capacity, x, y, category, zone };
     });
-  }, [state.tables]);
+  }, [state.tables, currentWeddingId]);
 
   // Active table in Level 2
   const activeTable = useMemo(() => {
@@ -73,23 +88,23 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
   // Guests at active table
   const guestsAtActiveTable = useMemo(() => {
     if (!selectedTableId) return [];
-    return state.guests.filter((g) => g.tableId === selectedTableId);
-  }, [selectedTableId, state.guests]);
+    return weddingGuests.filter((g) => g.tableId === selectedTableId);
+  }, [selectedTableId, weddingGuests]);
 
   // All confirmed guests
   const confirmedGuests = useMemo(() => {
-    return state.guests.filter((g) => g.rsvpStatus === 'confirmed');
-  }, [state.guests]);
+    return weddingGuests.filter((g) => g.rsvpStatus === 'confirmed');
+  }, [weddingGuests]);
 
   // Unassigned guests list
   const unassignedGuests = useMemo(() => {
-    return state.guests.filter((g) => {
+    return weddingGuests.filter((g) => {
       const isUnseated = !g.tableId || g.tableId === null;
       const matchesSearch = unassignedSearch === '' || g.name.toLowerCase().includes(unassignedSearch.toLowerCase()) || (g.household && g.household.toLowerCase().includes(unassignedSearch.toLowerCase()));
       const matchesCat = guestCategoryFilter === 'all' || (g.category && g.category === guestCategoryFilter);
       return isUnseated && matchesSearch && matchesCat;
     });
-  }, [state.guests, unassignedSearch, guestCategoryFilter]);
+  }, [weddingGuests, unassignedSearch, guestCategoryFilter]);
 
   // Households grouping for unassigned guests
   const unassignedHouseholds = useMemo(() => {
@@ -110,7 +125,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
     return tables.filter((tbl) => {
       const matchesSearch = tableSearch === '' || tbl.name.toLowerCase().includes(tableSearch.toLowerCase()) || (tbl.category && tbl.category.toLowerCase().includes(tableSearch.toLowerCase()));
       const matchesShape = filterShape === 'all' || tbl.shape === filterShape;
-      const seatedCount = state.guests.filter((g) => g.tableId === tbl.id).length;
+      const seatedCount = weddingGuests.filter((g) => g.tableId === tbl.id).length;
       let matchesOcc = true;
       if (filterOccupancy === 'full') matchesOcc = seatedCount >= tbl.capacity;
       if (filterOccupancy === 'vacancies') matchesOcc = seatedCount < tbl.capacity && seatedCount > 0;
@@ -122,9 +137,9 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
 
   // Statistics
   const totalSeats = useMemo(() => tables.reduce((acc, t) => acc + (t.capacity || 8), 0), [tables]);
-  const totalSeated = useMemo(() => state.guests.filter((g) => !!g.tableId).length, [state.guests]);
+  const totalSeated = useMemo(() => weddingGuests.filter((g) => !!g.tableId).length, [weddingGuests]);
   const totalAvailable = Math.max(0, totalSeats - totalSeated);
-  const totalUnassigned = useMemo(() => state.guests.filter((g) => !g.tableId && g.rsvpStatus !== 'declined').length, [state.guests]);
+  const totalUnassigned = useMemo(() => weddingGuests.filter((g) => !g.tableId && g.rsvpStatus !== 'declined').length, [weddingGuests]);
 
   // --- Handlers ---
 
@@ -247,7 +262,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
     const clampedX = Math.max(5, Math.min(90, relX));
     const clampedY = Math.max(10, Math.min(85, relY));
 
-    const updatedTables = tables.map((t) => (t.id === draggingTableId ? { ...t, x: clampedX, y: clampedY } : t));
+    const updatedTables = (state.tables || []).map((t) => (t.id === draggingTableId ? { ...t, x: clampedX, y: clampedY } : t));
     setState({ ...state, tables: updatedTables });
     setDraggingTableId(null);
     showToast('Table position saved', 'info');
@@ -257,23 +272,24 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
   const handleCreateNewTable = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = newTableName.trim() || `Table ${tables.length + 1}`;
-    const newId = 'table_' + Date.now();
+    const newId = `tbl_${currentWeddingId}_${Date.now()}`;
     const newTable: Table = {
       id: newId,
+      weddingId: currentWeddingId,
       name: trimmed,
       capacity: newTableCapacity,
       shape: newTableShape,
       isHead: false,
       category: newTableCategory,
       zone: newTableZone,
-      x: 30 + (tables.length % 4) * 15,
-      y: 35 + Math.floor(tables.length / 4) * 15,
+      x: 20 + (tables.length % 4) * 20,
+      y: 35 + Math.floor(tables.length / 4) * 16,
     };
 
-    setState({ ...state, tables: [...tables, newTable] });
+    setState({ ...state, tables: [...(state.tables || []), newTable] });
     setShowAddTableModal(false);
     setNewTableName('');
-    showToast(`Added ${newTable.name} (${newTableCapacity} seats, ${newTableShape})`, 'success');
+    showToast(`Added ${newTable.name} (${newTableCapacity} seats, ${newTableShape}) to ${currentWedding.couple}'s wedding`, 'success');
   };
 
   // Remove table
@@ -281,8 +297,8 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
     const tbl = tables.find((t) => t.id === tableId);
     if (!window.confirm(`Delete ${tbl?.name}? Any seated guests will be moved to the unassigned list.`)) return;
 
-    const updatedGuests = state.guests.map((g) => (g.tableId === tableId ? { ...g, tableId: null, seatIndex: null } : g));
-    const updatedTables = tables.filter((t) => t.id !== tableId);
+    const updatedGuests = (state.guests || []).map((g) => (g.tableId === tableId ? { ...g, tableId: null, seatIndex: null } : g));
+    const updatedTables = (state.tables || []).filter((t) => t.id !== tableId);
 
     setState({ ...state, tables: updatedTables, guests: updatedGuests });
     if (selectedTableId === tableId) setSelectedTableId(null);
@@ -291,7 +307,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
 
   // Update existing table capacity or name
   const handleUpdateTableDetails = (tableId: string, updates: Partial<Table>) => {
-    const updatedTables = tables.map((t) => (t.id === tableId ? { ...t, ...updates } : t));
+    const updatedTables = (state.tables || []).map((t) => (t.id === tableId ? { ...t, ...updates } : t));
     setState({ ...state, tables: updatedTables });
     showToast('Table details updated', 'success');
   };
@@ -333,7 +349,9 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
     }
 
     // Keep existing seated guests where possible, or assign intelligently
-    setState({ ...state, tables: new40Tables });
+    const otherWeddingTables = (state.tables || []).filter((t) => (t.weddingId || 'w1') !== currentWeddingId);
+    const wedding40Tables = new40Tables.map(t => ({ ...t, weddingId: currentWeddingId }));
+    setState({ ...state, tables: [...otherWeddingTables, ...wedding40Tables] });
     showToast('✨ 40-Table Grand Reception Room Layout Loaded Successfully!', 'success');
   };
 
@@ -346,7 +364,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
 
     const availableTables = tables.map((t) => ({
       ...t,
-      currentCount: state.guests.filter((g) => g.tableId === t.id).length,
+      currentCount: weddingGuests.filter((g) => g.tableId === t.id).length,
     }));
 
     if (scenario === 'households') {
@@ -385,7 +403,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
       title = 'Group Dietary Requirements for Catering';
       desc = 'Placed guests requiring Vegetarian, Vegan, Halal, or Gluten-Free meals at dedicated tables to assist banquet catering service.';
 
-      const dietaryGuests = state.guests.filter((g) => !g.tableId && g.dietary && g.dietary !== 'None' && g.dietary !== '');
+      const dietaryGuests = weddingGuests.filter((g) => !g.tableId && g.dietary && g.dietary !== 'None' && g.dietary !== '');
       const vegTable = availableTables.find((t) => t.name.includes('Table 2') || t.name.includes('Garden')) || availableTables[1];
 
       if (vegTable) {
@@ -478,7 +496,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs tracking-[2px] uppercase text-[#dfc194] font-bold">
-              TAP &amp; TOAST &bull; SEATING STUDIO
+              TAP &amp; TOAST &bull; SEATING STUDIO &bull; {currentWedding?.couple?.toUpperCase() || 'WEDDING'}
             </span>
             <span className="bg-[#2a1e14] border border-[#bd9661]/60 text-[#dfc194] text-[10px] font-bold px-2 py-0.5 rounded-full">
               {tables.length} Tables Available

@@ -12,12 +12,12 @@ interface CoupleViewProps {
 
 export default function CoupleView({ onSelectView }: CoupleViewProps) {
   const { state, setState } = useAppState();
-  const { clearSession } = useSession();
+  const { session, clearSession } = useSession();
   const [activeTab, setActiveTab] = useState<
     'overview' | 'guests' | 'seating' | 'pages' | 'invitations' | 'gifts' | 'feed' | 'vault' | 'anniversary' | 'venue' | 'settings'
   >('overview');
 
-  const wedding = state.weddings[0];
+  const wedding = (state.weddings || []).find(w => w.id === session?.weddingId) || (state.weddings || [])[0];
 
   // Wedding Day Celebration Mode (Interactive demo toggle)
   const [isWeddingDayMode, setIsWeddingDayMode] = useState<boolean>(false);
@@ -1032,7 +1032,7 @@ export default function CoupleView({ onSelectView }: CoupleViewProps) {
         {/* ================================================================ */}
         {activeTab === 'seating' && (
           <section className="space-y-4">
-            <SeatingPlannerSection onSelectView={onSelectView} />
+            <SeatingPlannerSection weddingId={wedding.id} onSelectView={onSelectView} />
           </section>
         )}
 

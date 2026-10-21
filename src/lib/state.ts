@@ -24,8 +24,30 @@ export function getStoredState(): DemoState {
           supportTickets: Array.isArray(parsed.supportTickets) && parsed.supportTickets.length > 0 ? parsed.supportTickets : (SEED_DATA.supportTickets || []),
           featureFlags: parsed.featureFlags && typeof parsed.featureFlags === 'object' ? { ...SEED_DATA.featureFlags, ...parsed.featureFlags } : SEED_DATA.featureFlags,
           weddings: Array.isArray(parsed.weddings) && parsed.weddings.length > 0 ? parsed.weddings : SEED_DATA.weddings,
-          guests: Array.isArray(parsed.guests) ? parsed.guests : SEED_DATA.guests,
-          tables: Array.isArray(parsed.tables) ? parsed.tables : SEED_DATA.tables,
+          guests: Array.isArray(parsed.guests) ? (() => {
+            const list = parsed.guests.map((g: Guest) => ({
+              ...g,
+              weddingId: g.weddingId || 'w1'
+            }));
+            const hasW2 = list.some((g: Guest) => g.weddingId === 'w2');
+            const hasW3 = list.some((g: Guest) => g.weddingId === 'w3');
+            const missingSeed = (SEED_DATA.guests || []).filter((g: Guest) =>
+              (!hasW2 && g.weddingId === 'w2') || (!hasW3 && g.weddingId === 'w3')
+            );
+            return [...list, ...missingSeed];
+          })() : SEED_DATA.guests,
+          tables: Array.isArray(parsed.tables) ? (() => {
+            const list = parsed.tables.map((t: Table) => ({
+              ...t,
+              weddingId: t.weddingId || 'w1'
+            }));
+            const hasW2 = list.some((t: Table) => t.weddingId === 'w2');
+            const hasW3 = list.some((t: Table) => t.weddingId === 'w3');
+            const missingSeed = (SEED_DATA.tables || []).filter((t: Table) =>
+              (!hasW2 && t.weddingId === 'w2') || (!hasW3 && t.weddingId === 'w3')
+            );
+            return [...list, ...missingSeed];
+          })() : SEED_DATA.tables,
           gifts: Array.isArray(parsed.gifts) ? parsed.gifts : SEED_DATA.gifts,
           users: Array.isArray(parsed.users) ? parsed.users : SEED_DATA.users,
           clients: Array.isArray(parsed.clients) ? parsed.clients : (SEED_DATA.clients || []),

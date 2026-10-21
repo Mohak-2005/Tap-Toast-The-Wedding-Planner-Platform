@@ -181,14 +181,26 @@ export const SEED_DATA: DemoState = {
     }
   ],
   tables: [
-    { id: "head", name: "HEAD TABLE", capacity: 8, isHead: true, shape: 'king', category: 'Bridal Party', zone: 'Stage & VIP Wing', x: 50, y: 15 },
-    { id: "table_1", name: "Table 1", capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Center Ballroom', x: 25, y: 35 },
-    { id: "table_2", name: "Table 2", capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'Left Terrace', x: 40, y: 35 },
-    { id: "table_3", name: "Table 3", capacity: 8, isHead: false, shape: 'rectangular', category: 'Friends', zone: 'Right Garden', x: 60, y: 35 },
-    { id: "table_4", name: "Table 4", capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'Right Garden', x: 75, y: 35 },
-    { id: "table_5", name: "Table 5", capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Left Terrace', x: 25, y: 65 },
-    { id: "table_6", name: "Table 6", capacity: 8, isHead: false, shape: 'rectangular', category: 'Family', zone: 'Center Ballroom', x: 40, y: 65 },
-    { id: "table_7", name: "Table 7", capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Center Ballroom', x: 60, y: 65 }
+    // Wedding 1: Sophie & James (w1)
+    { id: "head", weddingId: "w1", name: "HEAD TABLE", capacity: 8, isHead: true, shape: 'king', category: 'Bridal Party', zone: 'Stage & VIP Wing', x: 50, y: 15 },
+    { id: "table_1", weddingId: "w1", name: "Table 1", capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Center Ballroom', x: 25, y: 35 },
+    { id: "table_2", weddingId: "w1", name: "Table 2", capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'Left Terrace', x: 40, y: 35 },
+    { id: "table_3", weddingId: "w1", name: "Table 3", capacity: 8, isHead: false, shape: 'rectangular', category: 'Friends', zone: 'Right Garden', x: 60, y: 35 },
+    { id: "table_4", weddingId: "w1", name: "Table 4", capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'Right Garden', x: 75, y: 35 },
+    { id: "table_5", weddingId: "w1", name: "Table 5", capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Left Terrace', x: 25, y: 65 },
+    { id: "table_6", weddingId: "w1", name: "Table 6", capacity: 8, isHead: false, shape: 'rectangular', category: 'Family', zone: 'Center Ballroom', x: 40, y: 65 },
+    { id: "table_7", weddingId: "w1", name: "Table 7", capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Center Ballroom', x: 60, y: 65 },
+
+    // Wedding 2: Aisha & Marcus (w2)
+    { id: "w2_head", weddingId: "w2", name: "HEAD TABLE", capacity: 8, isHead: true, shape: 'king', category: 'Bridal Party', zone: 'Harbour Stage', x: 50, y: 15 },
+    { id: "w2_t1", weddingId: "w2", name: "Table 1 (Family)", capacity: 10, isHead: false, shape: 'round', category: 'Family', zone: 'Harbour Terrace', x: 25, y: 35 },
+    { id: "w2_t2", weddingId: "w2", name: "Table 2 (Friends)", capacity: 10, isHead: false, shape: 'round', category: 'Friends', zone: 'Harbour Terrace', x: 75, y: 35 },
+    { id: "w2_t3", weddingId: "w2", name: "Table 3 (Colleagues)", capacity: 10, isHead: false, shape: 'rectangular', category: 'Colleagues', zone: 'Harbour Terrace', x: 50, y: 75 },
+
+    // Wedding 3: Emma & Tom (w3)
+    { id: "w3_head", weddingId: "w3", name: "HEAD TABLE", capacity: 8, isHead: true, shape: 'king', category: 'Bridal Party', zone: 'Lawn Pavilion', x: 50, y: 15 },
+    { id: "w3_t1", weddingId: "w3", name: "Table 1 (Banqueting)", capacity: 12, isHead: false, shape: 'rectangular', category: 'Family', zone: 'Lawn Pavilion', x: 30, y: 35 },
+    { id: "w3_t2", weddingId: "w3", name: "Table 2 (Garden)", capacity: 10, isHead: false, shape: 'round', category: 'Friends', zone: 'Lawn Pavilion', x: 70, y: 35 }
   ],
   guests: [
     // Mark & Sarah Johnson (Guest Mobile persona at Table 4, seats 1 & 2)
@@ -275,7 +287,24 @@ export const SEED_DATA: DemoState = {
     { id: "g_u29", name: "Henry Walker", initials: "HW", household: "Henry Walker", email: "henry.w@example.com", phone: "0411 001 029", rsvpStatus: "confirmed", guestCount: 2, dietary: "None", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_u30", name: "Ella Young", initials: "EY", household: "Ella Young", email: "ella.y@example.com", phone: "0411 001 030", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_u31", name: "Sebastian Allen", initials: "SA", household: "Sebastian Allen", email: "sebastian.a@example.com", phone: "0411 001 031", rsvpStatus: "confirmed", guestCount: 1, dietary: "Vegetarian", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
-    { id: "g_u32", name: "Aria King", initials: "AK", household: "Aria King", email: "aria.k@example.com", phone: "0411 001 032", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null }
+    { id: "g_u32", name: "Aria King", initials: "AK", household: "Aria King", email: "aria.k@example.com", phone: "0411 001 032", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
+    // Wedding 2: Aisha & Marcus (w2)
+    { id: "g_w2_1", weddingId: "w2", name: "Aisha Al-Mansoor", initials: "AA", household: "Aisha & Marcus", email: "aisha.m@example.com", phone: "0422 111 001", rsvpStatus: "confirmed", guestCount: 1, dietary: "Halal", reminderSent: false, tableId: "w2_head", seatIndex: 0 },
+    { id: "g_w2_2", weddingId: "w2", name: "Marcus Vance", initials: "MV", household: "Aisha & Marcus", email: "marcus.v@example.com", phone: "0422 111 002", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", reminderSent: false, tableId: "w2_head", seatIndex: 1 },
+    { id: "g_w2_3", weddingId: "w2", name: "Tariq Al-Mansoor", initials: "TM", household: "The Al-Mansoor Family", email: "tariq.m@example.com", phone: "0422 111 003", rsvpStatus: "confirmed", guestCount: 2, dietary: "Halal", reminderSent: false, tableId: "w2_t1", seatIndex: 0 },
+    { id: "g_w2_4", weddingId: "w2", name: "Fatima Al-Mansoor", initials: "FM", household: "The Al-Mansoor Family", email: "fatima.m@example.com", phone: "0422 111 004", rsvpStatus: "confirmed", guestCount: 1, dietary: "Halal", reminderSent: false, tableId: "w2_t1", seatIndex: 1 },
+    { id: "g_w2_5", weddingId: "w2", name: "Olivia Vance", initials: "OV", household: "The Vance Family", email: "olivia.v@example.com", phone: "0422 111 005", rsvpStatus: "confirmed", guestCount: 1, dietary: "Vegetarian", reminderSent: false, tableId: "w2_t2", seatIndex: 0 },
+    { id: "g_w2_6", weddingId: "w2", name: "Lucas Vance", initials: "LV", household: "The Vance Family", email: "lucas.v@example.com", phone: "0422 111 006", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", reminderSent: false, tableId: "w2_t2", seatIndex: 1 },
+    { id: "g_w2_7", weddingId: "w2", name: "Zayn Malik", initials: "ZM", household: "Zayn Malik", email: "zayn.m@example.com", phone: "0422 111 007", rsvpStatus: "confirmed", guestCount: 1, dietary: "Halal", reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_w2_8", weddingId: "w2", name: "Layla Hassan", initials: "LH", household: "Layla Hassan", email: "layla.h@example.com", phone: "0422 111 008", rsvpStatus: "confirmed", guestCount: 1, dietary: "Gluten-free", reminderSent: false, tableId: null, seatIndex: null },
+
+    // Wedding 3: Emma & Tom (w3)
+    { id: "g_w3_1", weddingId: "w3", name: "Emma Wilson", initials: "EW", household: "Emma & Tom", email: "emma.w@example.com", phone: "0433 222 001", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", reminderSent: false, tableId: "w3_head", seatIndex: 0 },
+    { id: "g_w3_2", weddingId: "w3", name: "Tom Davies", initials: "TD", household: "Emma & Tom", email: "tom.d@example.com", phone: "0433 222 002", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", reminderSent: false, tableId: "w3_head", seatIndex: 1 },
+    { id: "g_w3_3", weddingId: "w3", name: "David Wilson", initials: "DW", household: "The Wilson Family", email: "david.w@example.com", phone: "0433 222 003", rsvpStatus: "confirmed", guestCount: 2, dietary: "None", reminderSent: false, tableId: "w3_t1", seatIndex: 0 },
+    { id: "g_w3_4", weddingId: "w3", name: "Sarah Wilson", initials: "SW", household: "The Wilson Family", email: "sarah.w@example.com", phone: "0433 222 004", rsvpStatus: "confirmed", guestCount: 1, dietary: "Vegetarian", reminderSent: false, tableId: "w3_t1", seatIndex: 1 },
+    { id: "g_w3_5", weddingId: "w3", name: "Harry Davies", initials: "HD", household: "Harry Davies", email: "harry.d@example.com", phone: "0433 222 005", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_w3_6", weddingId: "w3", name: "Chloe Taylor", initials: "CT", household: "Chloe Taylor", email: "chloe.t@example.com", phone: "0433 222 006", rsvpStatus: "confirmed", guestCount: 1, dietary: "Gluten-free", reminderSent: false, tableId: null, seatIndex: null }
   ],
   gifts: [
     { id: "gf1", guestName: "The Whitfield family", amount: 250, type: "wishing-well", date: "Today", message: "Wishing you both a lifetime of love and happiness!", thankYouSent: false, thankYouStatus: "Drafted" },

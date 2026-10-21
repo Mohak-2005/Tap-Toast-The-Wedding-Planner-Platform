@@ -783,7 +783,7 @@ export default function McView({ onSelectView }: McViewProps) {
 
             {/* Sub-pane 2: Seating Floor Plan */}
             {detailSubTab === 'seating' && (
-              <SeatingPlannerSection onSelectView={onSelectView} />
+              <SeatingPlannerSection weddingId={activeWedding.id} onSelectView={onSelectView} />
             )}
 
             {/* Sub-pane 3: Catering & Dietaries */}
