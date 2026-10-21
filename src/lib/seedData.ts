@@ -181,13 +181,14 @@ export const SEED_DATA: DemoState = {
     }
   ],
   tables: [
-    { id: "head", name: "HEAD TABLE", capacity: 8, isHead: true },
-    { id: "table_1", name: "Table 1", capacity: 8, isHead: false },
-    { id: "table_2", name: "Table 2", capacity: 8, isHead: false },
-    { id: "table_3", name: "Table 3", capacity: 8, isHead: false },
-    { id: "table_4", name: "Table 4", capacity: 8, isHead: false },
-    { id: "table_5", name: "Table 5", capacity: 8, isHead: false },
-    { id: "table_6", name: "Table 6", capacity: 8, isHead: false }
+    { id: "head", name: "HEAD TABLE", capacity: 8, isHead: true, shape: 'king', category: 'Bridal Party', zone: 'Stage & VIP Wing', x: 50, y: 15 },
+    { id: "table_1", name: "Table 1", capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Center Ballroom', x: 25, y: 35 },
+    { id: "table_2", name: "Table 2", capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'Left Terrace', x: 40, y: 35 },
+    { id: "table_3", name: "Table 3", capacity: 8, isHead: false, shape: 'rectangular', category: 'Friends', zone: 'Right Garden', x: 60, y: 35 },
+    { id: "table_4", name: "Table 4", capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'Right Garden', x: 75, y: 35 },
+    { id: "table_5", name: "Table 5", capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Left Terrace', x: 25, y: 65 },
+    { id: "table_6", name: "Table 6", capacity: 8, isHead: false, shape: 'rectangular', category: 'Family', zone: 'Center Ballroom', x: 40, y: 65 },
+    { id: "table_7", name: "Table 7", capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Center Ballroom', x: 60, y: 65 }
   ],
   guests: [
     // Mark & Sarah Johnson (Guest Mobile persona at Table 4, seats 1 & 2)
