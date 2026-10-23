@@ -27,6 +27,11 @@ export interface Wedding {
   couple: string;
   partner1: string;
   partner2: string;
+  weddingName?: string;
+  brideName?: string;
+  groomName?: string;
+  brideEmail?: string;
+  groomEmail?: string;
   date: string;
   dateDisplay?: string;
   timeDisplay?: string;

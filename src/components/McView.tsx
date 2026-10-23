@@ -43,11 +43,13 @@ export default function McView({ onSelectView }: McViewProps) {
 
   // New Wedding Modal State
   const [showNewWeddingModal, setShowNewWeddingModal] = useState(false);
-  const [nwP1, setNwP1] = useState('');
-  const [nwP2, setNwP2] = useState('');
-  const [nwDate, setNwDate] = useState('2027-09-18');
-  const [nwGuests, setNwGuests] = useState(110);
+  const [nwWeddingName, setNwWeddingName] = useState('');
+  const [nwBrideName, setNwBrideName] = useState('');
+  const [nwGroomName, setNwGroomName] = useState('');
+  const [nwBrideEmail, setNwBrideEmail] = useState('');
+  const [nwGroomEmail, setNwGroomEmail] = useState('');
   const [nwVenue, setNwVenue] = useState('');
+  const [nwDate, setNwDate] = useState('2027-09-18');
 
   // New Invoice Modal State
   const [showNewInvoiceModal, setShowNewInvoiceModal] = useState(false);
@@ -306,16 +308,25 @@ export default function McView({ onSelectView }: McViewProps) {
   // New Wedding Handler
   const handleCreateWedding = (e: React.FormEvent) => {
     e.preventDefault();
-    const d = new Date(nwDate);
+    const bName = nwBrideName.trim() || 'Bride';
+    const gName = nwGroomName.trim() || 'Groom';
+    const coupleDisplay = `${bName} & ${gName}`;
+    const finalWeddingName = nwWeddingName.trim() || `${coupleDisplay}'s Wedding`;
+    const d = new Date(nwDate || '2027-09-18');
     const mNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const dateDisplay = `${d.getDate()} ${mNames[d.getMonth()]} ${d.getFullYear()}`;
 
     const newW: Wedding = {
       id: 'w_' + Date.now(),
-      couple: `${nwP1} & ${nwP2}`,
-      partner1: nwP1,
-      partner2: nwP2,
-      date: nwDate + 'T15:00:00',
+      couple: coupleDisplay,
+      partner1: bName,
+      partner2: gName,
+      weddingName: finalWeddingName,
+      brideName: bName,
+      groomName: gName,
+      brideEmail: nwBrideEmail.trim(),
+      groomEmail: nwGroomEmail.trim(),
+      date: (nwDate || '2027-09-18') + 'T15:00:00',
       dateDisplay,
       timeDisplay: '3:00 PM',
       venue: nwVenue,
@@ -323,7 +334,7 @@ export default function McView({ onSelectView }: McViewProps) {
       parking: 'Complimentary on-site guest parking available.',
       dressCode: 'Formal Elegance',
       registry: 'Gift & Go wishing well',
-      invited: Number(nwGuests),
+      invited: 110,
       confirmed: 0,
       status: 'Planning',
       tasks: [],
@@ -336,13 +347,33 @@ export default function McView({ onSelectView }: McViewProps) {
       ],
     };
 
-    setState({ ...state, weddings: [...state.weddings, newW] });
-    logAudit(state, setState, 'New Wedding Created', 'Robert Galati', 'mc', `Created booking for ${newW.couple} at ${nwVenue}`, 'General');
+    const newClient: Client = {
+      id: 'c_' + Date.now(),
+      couple: coupleDisplay,
+      weddingDate: dateDisplay,
+      venue: nwVenue,
+      tier: 'Diamond Host Package',
+      deposit: 'Paid ($500)',
+      phone: '0412 345 678',
+      email: nwBrideEmail.trim() || nwGroomEmail.trim(),
+      notes: `Booking for ${finalWeddingName}. Bride: ${bName} (${nwBrideEmail}), Groom: ${gName} (${nwGroomEmail}). Venue: ${nwVenue}.`,
+    };
+
+    setState({
+      ...state,
+      weddings: [...state.weddings, newW],
+      clients: [...(state.clients || []), newClient],
+    });
+
+    logAudit(state, setState, 'New Wedding Created', 'Robert Galati', 'mc', `Created booking for ${finalWeddingName} at ${nwVenue}`, 'General');
     setShowNewWeddingModal(false);
-    setNwP1('');
-    setNwP2('');
+    setNwWeddingName('');
+    setNwBrideName('');
+    setNwGroomName('');
+    setNwBrideEmail('');
+    setNwGroomEmail('');
     setNwVenue('');
-    showToast(`Created booking for ${newW.couple}!`, 'success');
+    showToast(`Created booking for ${finalWeddingName}!`, 'success');
   };
 
   // Settings Save Handler
@@ -1960,78 +1991,119 @@ export default function McView({ onSelectView }: McViewProps) {
       {/* MODAL 3: NEW WEDDING WIZARD MODAL                                    */}
       {/* ==================================================================== */}
       {showNewWeddingModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-          <div className="bg-white border border-[#d5c7b5] rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="font-serif text-xl font-bold text-[#15110e]">
-                New Wedding Booking
-              </h3>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-xs">
+          <div className="bg-white border border-[#d5c7b5] rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center pb-2 border-b border-[#f0ede4]">
+              <div>
+                <div className="text-[10px] tracking-[2px] text-[#bd9661] uppercase font-bold">
+                  MC PRO BOOKING
+                </div>
+                <h3 className="font-serif text-xl font-bold text-[#15110e]">
+                  New Wedding Booking
+                </h3>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowNewWeddingModal(false)}
-                className="text-[#8b7b6b] hover:text-[#15110e] text-lg font-bold"
+                className="text-[#8b7b6b] hover:text-[#15110e] text-xl font-bold cursor-pointer p-1 transition-colors"
+                aria-label="Close dialog"
               >
                 ✕
               </button>
             </div>
-            <form onSubmit={handleCreateWedding} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+
+            <form onSubmit={handleCreateWedding} className="space-y-3.5 text-xs">
+              {/* WEDDING NAME */}
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
+                  Wedding Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Liam & Olivia's Wedding"
+                  value={nwWeddingName}
+                  onChange={(e) => setNwWeddingName(e.target.value)}
+                  className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] focus:bg-white"
+                />
+              </div>
+
+              {/* BRIDE NAME & GROOM NAME */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
-                    Partner 1
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Liam"
-                    value={nwP1}
-                    onChange={(e) => setNwP1(e.target.value)}
-                    className="text-input"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
-                    Partner 2
+                    Bride Name *
                   </label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Olivia"
-                    value={nwP2}
-                    onChange={(e) => setNwP2(e.target.value)}
-                    className="text-input"
+                    value={nwBrideName}
+                    onChange={(e) => {
+                      setNwBrideName(e.target.value);
+                      if (!nwWeddingName || nwWeddingName.includes('&')) {
+                        const other = nwGroomName ? ` & ${nwGroomName}` : '';
+                        setNwWeddingName(`${e.target.value}${other}'s Wedding`);
+                      }
+                    }}
+                    className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] focus:bg-white"
                   />
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
-                    Wedding Date
+                    Groom Name *
                   </label>
                   <input
-                    type="date"
+                    type="text"
                     required
-                    value={nwDate}
-                    onChange={(e) => setNwDate(e.target.value)}
-                    className="text-input"
+                    placeholder="e.g. Liam"
+                    value={nwGroomName}
+                    onChange={(e) => {
+                      setNwGroomName(e.target.value);
+                      if (!nwWeddingName || nwWeddingName.includes('&')) {
+                        const first = nwBrideName ? `${nwBrideName} & ` : '';
+                        setNwWeddingName(`${first}${e.target.value}'s Wedding`);
+                      }
+                    }}
+                    className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* BRIDE EMAIL & GROOM EMAIL */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
+                    Bride Email *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="e.g. olivia@example.com"
+                    value={nwBrideEmail}
+                    onChange={(e) => setNwBrideEmail(e.target.value)}
+                    className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] focus:bg-white"
                   />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
-                    Estimated Guests
+                    Groom Email *
                   </label>
                   <input
-                    type="number"
-                    min={20}
-                    value={nwGuests}
-                    onChange={(e) => setNwGuests(Number(e.target.value))}
-                    className="text-input"
+                    type="email"
+                    required
+                    placeholder="e.g. liam@example.com"
+                    value={nwGroomEmail}
+                    onChange={(e) => setNwGroomEmail(e.target.value)}
+                    className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] focus:bg-white"
                   />
                 </div>
               </div>
+
+              {/* VENUE LOCATION */}
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
-                  Venue Location
+                  Venue Location *
                 </label>
                 <input
                   type="text"
@@ -2039,18 +2111,23 @@ export default function McView({ onSelectView }: McViewProps) {
                   placeholder="e.g. Bendooley Estate, Berrima"
                   value={nwVenue}
                   onChange={(e) => setNwVenue(e.target.value)}
-                  className="text-input"
+                  className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] focus:bg-white"
                 />
               </div>
-              <div className="flex justify-end gap-2 pt-2">
+
+              {/* ACTION BUTTONS */}
+              <div className="flex justify-end gap-2 pt-3 border-t border-[#f0ede4]">
                 <button
                   type="button"
                   onClick={() => setShowNewWeddingModal(false)}
-                  className="btn btn-outline btn-sm"
+                  className="px-4 py-2 rounded-xl border border-[#e8ded0] text-[#8b7b6b] hover:bg-[#faf8f5] font-bold cursor-pointer text-xs transition-colors"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-gold btn-sm">
+                <button
+                  type="submit"
+                  className="btn btn-gold btn-sm px-5 py-2 font-bold shadow-2xs cursor-pointer"
+                >
                   Create Booking
                 </button>
               </div>
