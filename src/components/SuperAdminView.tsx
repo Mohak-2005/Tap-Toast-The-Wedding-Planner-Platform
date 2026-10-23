@@ -171,7 +171,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
     selfServiceMcRegistration: true,
     stripeAccountId: 'acct_1Mpx99K109849TapToast',
     platformFeePercent: 2.5,
-    payoutSchedule: 'Rolling T+2 Business Days',
+    payoutSchedule: 'Inbound SaaS Subscriptions (No System Payouts to MCs)',
     primaryCurrency: 'AUD ($)',
     aiEngineModel: 'OpenAI GPT-4o / Claude 3.5 Sonnet',
     aiTemperature: 0.3,
@@ -1895,7 +1895,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
-                    Payout Schedule
+                    MC Subscription Billing Model
                   </label>
                   <input
                     type="text"
@@ -1903,6 +1903,9 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                     onChange={(e) => setSaSettings({ ...saSettings, payoutSchedule: e.target.value })}
                     className="text-input"
                   />
+                  <span className="text-[10px] text-[#8b7b6b] block mt-0.5">
+                    MCs pay monthly SaaS subscriptions to Tap & Toast. The platform does not disburse payouts to MCs.
+                  </span>
                 </div>
               </div>
 
@@ -2112,7 +2115,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
               </div>
               <div>
                 <label className="field-label">Stripe Connect Status</label>
-                <span className="tt-pill green">Verified &amp; Payouts Active</span>
+                <span className="tt-pill green">Inbound SaaS Subscriptions Active (No MC Payouts)</span>
               </div>
               <div>
                 <label className="field-label">Platform Onboarding Date</label>

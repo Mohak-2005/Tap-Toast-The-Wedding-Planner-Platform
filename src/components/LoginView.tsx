@@ -113,8 +113,8 @@ export default function LoginView({ onSelectView, targetRole = 'mc' }: LoginView
 
   return (
     <div className="flex-1 grid grid-cols-1 md:grid-cols-[45%_55%] min-h-[calc(100vh-45px)] bg-[#f8f6f2] font-sans">
-      {/* Left Hero Panel */}
-      <div className="bg-[#15110e] text-[#f8f6f2] p-10 md:p-14 flex flex-col justify-center items-center text-center border-r border-[#29211a] relative">
+      {/* Left Hero Panel (Desktop Only) */}
+      <div className="hidden md:flex bg-[#15110e] text-[#f8f6f2] p-10 md:p-14 flex-col justify-center items-center text-center border-r border-[#29211a] relative">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-[42px] h-[42px] border-[1.5px] border-[#bd9661] rounded-[4px] flex items-center justify-center text-[#bd9661] font-serif font-bold text-lg">
             T
@@ -158,8 +158,23 @@ export default function LoginView({ onSelectView, targetRole = 'mc' }: LoginView
       </div>
 
       {/* Right Form Container */}
-      <div className="bg-[#f8f6f2] p-8 md:p-12 flex items-center justify-center overflow-y-auto">
-        <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-lg w-full max-w-[480px] p-9 shadow-md relative">
+      <div className="bg-[#f8f6f2] px-3.5 py-6 sm:px-6 md:p-12 flex flex-col items-center justify-center overflow-y-auto w-full">
+        {/* Mobile Header Banner */}
+        <div className="md:hidden flex flex-col items-center justify-center text-center mb-5 w-full max-w-[460px] pt-1">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-8 h-8 border-[1.5px] border-[#bd9661] rounded-[4px] flex items-center justify-center text-[#bd9661] font-serif font-bold text-base bg-[#15110e]">
+              T
+            </div>
+            <div className="font-serif text-xl font-bold text-[#15110e] tracking-[0.5px]">
+              Tap &amp; Toast
+            </div>
+          </div>
+          <p className="text-[11px] text-[#8b7b6b] font-medium">
+            Every wedding, beautifully run
+          </p>
+        </div>
+
+        <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-2xl w-full max-w-[460px] p-5 sm:p-7 md:p-9 shadow-sm relative">
           {/* ALREADY SIGNED IN VIEW (Matches Screenshot 1) */}
           {isAlreadySignedIn ? (
             <div className="text-center py-2">
@@ -325,13 +340,25 @@ export default function LoginView({ onSelectView, targetRole = 'mc' }: LoginView
                   </div>
 
                   <div
-                    onClick={() => handle1ClickFill('couple', 'sophie.james@demo.test')}
+                    onClick={() => handle1ClickFill('couple', 'sophie@demo.test')}
                     className="p-2 border border-[#ebd4b7] rounded bg-white hover:border-[#bd9661] cursor-pointer transition-colors flex justify-between items-center"
                   >
                     <div>
-                      <strong className="text-[#15110e]">Sophie &amp; James</strong>{' '}
-                      <span className="text-[#bd9661] font-semibold">(Couple)</span>
-                      <div className="text-[11px] text-[#8b7b6b]">sophie.james@demo.test &bull; Demo1234!</div>
+                      <strong className="text-[#15110e]">Sophie Bell (Bride)</strong>{' '}
+                      <span className="text-[#bd9661] font-semibold">(Shared Couple Portal)</span>
+                      <div className="text-[11px] text-[#8b7b6b]">sophie@demo.test &bull; Demo1234!</div>
+                    </div>
+                    <span className="text-xs text-[#bd9661] font-bold">Use &rarr;</span>
+                  </div>
+
+                  <div
+                    onClick={() => handle1ClickFill('couple', 'james@demo.test')}
+                    className="p-2 border border-[#ebd4b7] rounded bg-white hover:border-[#bd9661] cursor-pointer transition-colors flex justify-between items-center"
+                  >
+                    <div>
+                      <strong className="text-[#15110e]">James Gordon (Groom)</strong>{' '}
+                      <span className="text-[#bd9661] font-semibold">(Shared Couple Portal)</span>
+                      <div className="text-[11px] text-[#8b7b6b]">james@demo.test &bull; Demo1234!</div>
                     </div>
                     <span className="text-xs text-[#bd9661] font-bold">Use &rarr;</span>
                   </div>

@@ -5,6 +5,7 @@ import GuestMobileView from './components/GuestMobileView';
 import CoupleView from './components/CoupleView';
 import McView from './components/McView';
 import McMobileView from './components/McMobileView';
+import SrMobileView from './components/SrMobileView';
 import SuperAdminView from './components/SuperAdminView';
 import GuestWebView from './components/GuestWebView';
 import LoginView from './components/LoginView';
@@ -87,7 +88,20 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 export default function App() {
   const getInitialView = () => {
     const hash = window.location.hash.replace('#', '');
-    const validViews = ['showcase', 'login', 'register', 'register-mc', 'register-couple', 'guest-mobile', 'mc-mobile', 'couple', 'mc', 'superadmin', 'guest-web'];
+    const validViews = [
+      'showcase',
+      'login',
+      'register',
+      'register-mc',
+      'register-couple',
+      'guest-mobile',
+      'mc-mobile',
+      'sr-mobile',
+      'couple',
+      'mc',
+      'superadmin',
+      'guest-web',
+    ];
     if (validViews.includes(hash)) {
       return hash;
     }
@@ -123,10 +137,10 @@ export default function App() {
           message: e.detail.message,
           type: e.detail.type || 'info',
         };
-        setToasts(prev => [...prev, newToast]);
+        setToasts((prev) => [...prev, newToast]);
 
         setTimeout(() => {
-          setToasts(prev => prev.filter(t => t.id !== newToast.id));
+          setToasts((prev) => prev.filter((t) => t.id !== newToast.id));
         }, 3200);
       }
     };
@@ -157,6 +171,8 @@ export default function App() {
         return <McView onSelectView={handleSelectView} />;
       case 'mc-mobile':
         return <McMobileView onSelectView={handleSelectView} />;
+      case 'sr-mobile':
+        return <SrMobileView onSelectView={handleSelectView} />;
       case 'superadmin':
         return <SuperAdminView onSelectView={handleSelectView} />;
       case 'guest-web':
@@ -180,14 +196,12 @@ export default function App() {
 
       {/* Primary Application Viewport */}
       <div className="flex-1 overflow-y-auto relative flex flex-col bg-[#f8f6f2]">
-        <ErrorBoundary key={currentView}>
-          {renderActiveView()}
-        </ErrorBoundary>
+        <ErrorBoundary key={currentView}>{renderActiveView()}</ErrorBoundary>
       </div>
 
       {/* Global Toast Container */}
       <div className="fixed bottom-6 right-6 z-[99999] flex flex-col gap-2 pointer-events-none">
-        {toasts.map(t => (
+        {toasts.map((t) => (
           <div
             key={t.id}
             className={`pointer-events-auto px-4 py-2.5 rounded-lg text-xs font-semibold text-white shadow-xl flex items-center gap-2 border transition-all animate-bounce-in ${
@@ -198,7 +212,15 @@ export default function App() {
                 : 'bg-[#181310] border-[#bd9661] border-l-4'
             }`}
           >
-            <span className={t.type === 'success' ? 'text-emerald-400' : t.type === 'error' ? 'text-red-400' : 'text-[#bd9661]'}>
+            <span
+              className={
+                t.type === 'success'
+                  ? 'text-emerald-400'
+                  : t.type === 'error'
+                  ? 'text-red-400'
+                  : 'text-[#bd9661]'
+              }
+            >
               {t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ'}
             </span>
             <span>{t.message}</span>

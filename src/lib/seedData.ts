@@ -409,8 +409,8 @@ export const SEED_DATA: DemoState = {
     { id: "priya", name: "Priya Sharma", initials: "PS", household: "The Sharma Family", email: "priya.sharma@example.com.au", phone: "0412 884 992", rsvpStatus: "confirmed", guestCount: 2, dietary: "Vegetarian", song: "September - Earth, Wind & Fire", reminderSent: false, tableId: "table_4", seatIndex: 3 },
     
     // Head Table (8 seats)
-    { id: "g_ht1", name: "Sophie Bell", initials: "SB", household: "Sophie Bell", email: "sophie.bell@example.com", phone: "0400 111 222", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "At Last - Etta James", reminderSent: false, tableId: "head", seatIndex: 0 },
-    { id: "g_ht2", name: "James Gordon", initials: "JG", household: "James Gordon", email: "james.gordon@example.com", phone: "0400 222 333", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "You Are The Best Thing", reminderSent: false, tableId: "head", seatIndex: 1 },
+    { id: "g_ht1", name: "Sophie Bell", initials: "SB", household: "Sophie Bell", email: "sophie.bell@example.com", phone: "0400 111 222", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "At Last - Etta James", reminderSent: false, tableId: "head", seatIndex: 0, category: "Bridal Party" },
+    { id: "g_ht2", name: "James Gordon", initials: "JG", household: "James Gordon", email: "james.gordon@example.com", phone: "0400 222 333", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "You Are The Best Thing", reminderSent: false, tableId: "head", seatIndex: 1, category: "Bridal Party" },
     { id: "g_ht3", name: "Hannah Martin", initials: "HM", household: "Hannah Martin", email: "hannah.m@example.com", phone: "0400 333 444", rsvpStatus: "confirmed", guestCount: 1, dietary: "Vegetarian", song: "Dancing Queen", reminderSent: false, tableId: "head", seatIndex: 2 },
     { id: "g_ht4", name: "Oliver Vance", initials: "OV", household: "Oliver Vance", email: "oliver.v@example.com", phone: "0400 444 555", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Mr. Brightside", reminderSent: false, tableId: "head", seatIndex: 3 },
     { id: "g_ht5", name: "Charlotte Evans", initials: "CE", household: "Charlotte Evans", email: "charlotte.e@example.com", phone: "0400 555 666", rsvpStatus: "confirmed", guestCount: 1, dietary: "Gluten-free", song: "Levitating", reminderSent: false, tableId: "head", seatIndex: 4 },
@@ -419,17 +419,17 @@ export const SEED_DATA: DemoState = {
     { id: "g_ht8", name: "Alexander Wright", initials: "AW", household: "Alexander Wright", email: "alex.w@example.com", phone: "0400 888 999", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Superstition", reminderSent: false, tableId: "head", seatIndex: 7 },
 
     // Table 1 (8 seated)
-    { id: "g_t1_1", name: "Michael Chen", initials: "MC", household: "Michael Chen", email: "michael.chen@example.com", phone: "0411 223 901", rsvpStatus: "confirmed", guestCount: 2, dietary: "Vegetarian", song: "Stayin' Alive", reminderSent: false, tableId: "table_1", seatIndex: 0 },
+    { id: "g_t1_1", name: "Michael Chen", initials: "MC", household: "Michael Chen", email: "michael.chen@example.com", phone: "0411 223 901", rsvpStatus: "confirmed", guestCount: 2, dietary: "Vegetarian", song: "Stayin' Alive", reminderSent: false, tableId: "table_1", seatIndex: 0, category: "Bride's Family" },
     { id: "g_t1_2", name: "David Vance", initials: "DV", household: "David Vance", email: "david.vance@example.com", phone: "0411 223 902", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Don't Stop Me Now", reminderSent: false, tableId: "table_1", seatIndex: 1 },
     { id: "g_t1_3", name: "Jessica White", initials: "JW", household: "Jessica White", email: "jessica.white@example.com", phone: "0411 223 903", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Blinding Lights", reminderSent: false, tableId: "table_1", seatIndex: 2 },
-    { id: "g_t1_4", name: "Aunty Carol Evans", initials: "AC", household: "Aunty Carol", email: "carol.evans@example.com", phone: "0411 223 904", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Sweet Caroline", reminderSent: false, tableId: "table_1", seatIndex: 3 },
+    { id: "g_t1_4", name: "Aunty Carol Evans", initials: "AC", household: "Aunty Carol", email: "carol.evans@example.com", phone: "0411 223 904", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Sweet Caroline", reminderSent: false, tableId: "table_1", seatIndex: 3, category: "Bride's Family" },
     { id: "g_t1_5", name: "Robert King", initials: "RK", household: "Robert King", email: "robert.king@example.com", phone: "0411 223 905", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Billie Jean", reminderSent: false, tableId: "table_1", seatIndex: 4 },
     { id: "g_t1_6", name: "Lucy Palmer", initials: "LP", household: "Lucy Palmer", email: "lucy.palmer@example.com", phone: "0411 223 906", rsvpStatus: "confirmed", guestCount: 1, dietary: "Nut allergy", song: "Can't Stop the Feeling!", reminderSent: false, tableId: "table_1", seatIndex: 5 },
     { id: "g_t1_7", name: "Edward Lewis", initials: "EL", household: "Edward Lewis", email: "edward.lewis@example.com", phone: "0411 223 907", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Shake It Off", reminderSent: false, tableId: "table_1", seatIndex: 6 },
     { id: "g_t1_8", name: "Chloe Jenkins", initials: "CJ", household: "Chloe Jenkins", email: "chloe.jenkins@example.com", phone: "0411 223 908", rsvpStatus: "confirmed", guestCount: 1, dietary: "Gluten-free", song: "Single Ladies", reminderSent: false, tableId: "table_1", seatIndex: 7 },
 
     // Table 2 (6 seated)
-    { id: "g_t2_1", name: "Nathan Knight", initials: "NK", household: "Nathan Knight", email: "nathan.k@example.com", phone: "0412 334 001", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Hey Ya!", reminderSent: false, tableId: "table_2", seatIndex: 0 },
+    { id: "g_t2_1", name: "Nathan Knight", initials: "NK", household: "Nathan Knight", email: "nathan.k@example.com", phone: "0412 334 001", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Hey Ya!", reminderSent: false, tableId: "table_2", seatIndex: 0, category: "Groom's Family" },
     { id: "g_t2_2", name: "Georgia Hall", initials: "GH", household: "Georgia Hall", email: "georgia.h@example.com", phone: "0412 334 002", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Shut Up and Dance", reminderSent: false, tableId: "table_2", seatIndex: 1 },
     { id: "g_t2_3", name: "William Ford", initials: "WF", household: "William Ford", email: "william.f@example.com", phone: "0412 334 003", rsvpStatus: "confirmed", guestCount: 1, dietary: "Vegetarian", song: "Wonderwall", reminderSent: false, tableId: "table_2", seatIndex: 2 },
     { id: "g_t2_4", name: "Fiona Scott", initials: "FS", household: "Fiona Scott", email: "fiona.s@example.com", phone: "0412 334 004", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Happy - Pharrell", reminderSent: false, tableId: "table_2", seatIndex: 3 },
@@ -437,13 +437,13 @@ export const SEED_DATA: DemoState = {
     { id: "g_t2_6", name: "Quinn Nelson", initials: "QN", household: "Quinn Nelson", email: "quinn.n@example.com", phone: "0412 334 006", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Crazy in Love", reminderSent: false, tableId: "table_2", seatIndex: 5 },
 
     // Table 3 (4 seated)
-    { id: "g_t3_1", name: "Ian Patel", initials: "IP", household: "Ian Patel", email: "ian.p@example.com", phone: "0413 445 001", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "24K Magic", reminderSent: false, tableId: "table_3", seatIndex: 0 },
+    { id: "g_t3_1", name: "Ian Patel", initials: "IP", household: "Ian Patel", email: "ian.p@example.com", phone: "0413 445 001", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "24K Magic", reminderSent: false, tableId: "table_3", seatIndex: 0, category: "Mutual Friends" },
     { id: "g_t3_2", name: "Grace Turner", initials: "GT", household: "Grace Turner", email: "grace.t@example.com", phone: "0413 445 002", rsvpStatus: "confirmed", guestCount: 1, dietary: "Gluten-free", song: "Treasure", reminderSent: false, tableId: "table_3", seatIndex: 1 },
     { id: "g_t3_3", name: "Yasmine Abbas", initials: "YA", household: "Yasmine Abbas", email: "yasmine.a@example.com", phone: "0413 445 003", rsvpStatus: "confirmed", guestCount: 1, dietary: "Halal", song: "Levitating", reminderSent: false, tableId: "table_3", seatIndex: 2 },
     { id: "g_t3_4", name: "Zachary Webb", initials: "ZW", household: "Zachary Webb", email: "zachary.w@example.com", phone: "0413 445 004", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Get Lucky", reminderSent: false, tableId: "table_3", seatIndex: 3 },
 
     // Table 4
-    { id: "g_t4_1", name: "Benjamin Ross", initials: "BR", household: "Benjamin Ross", email: "ben.ross@example.com", phone: "0414 556 001", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Good 4 U", reminderSent: false, tableId: "table_4", seatIndex: 0 },
+    { id: "g_t4_1", name: "Benjamin Ross", initials: "BR", household: "Benjamin Ross", email: "ben.ross@example.com", phone: "0414 556 001", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Good 4 U", reminderSent: false, tableId: "table_4", seatIndex: 0, category: "Work Colleagues" },
     { id: "g_t4_2", name: "Isabella Foster", initials: "IF", household: "Isabella Foster", email: "isabella.f@example.com", phone: "0414 556 002", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Valerie", reminderSent: false, tableId: "table_4", seatIndex: 2 },
     { id: "g_t4_3", name: "Oliver Thomas", initials: "OT", household: "Oliver Thomas", email: "oliver.t@example.com", phone: "0414 556 003", rsvpStatus: "confirmed", guestCount: 1, dietary: "Vegetarian", song: "Mamma Mia", reminderSent: false, tableId: "table_4", seatIndex: 4 },
     { id: "g_t4_5", name: "Yuvraj Rao", initials: "YR", household: "Yuvraj Rao", email: "yuvraj.r@example.com", phone: "0414 556 005", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Dynamite", reminderSent: false, tableId: "table_4", seatIndex: 5 },
@@ -536,7 +536,10 @@ export const SEED_DATA: DemoState = {
   ],
   users: [
     { id: "u_mc1", email: "robert@galati.demo", passwordHash: "dHRfc2FsdF9EZW1vMTIzNCE=", name: "Robert Galati", role: "mc", tenantId: "ten1", businessName: "Galati MC & Entertainment" },
-    { id: "u_couple1", email: "sophie.james@demo.test", passwordHash: "dHRfc2FsdF9EZW1vMTIzNCE=", name: "Sophie & James", role: "couple", weddingId: "w1", partner1: "Sophie", partner2: "James" },
+    { id: "u_couple1", email: "sophie.james@demo.test", passwordHash: "dHRfc2FsdF9EZW1vMTIzNCE=", name: "Sophie & James (Joint)", role: "couple", weddingId: "w1", partner1: "Sophie", partner2: "James" },
+    { id: "u_couple_bride", email: "sophie@demo.test", passwordHash: "dHRfc2FsdF9EZW1vMTIzNCE=", name: "Sophie Bell (Bride)", role: "couple", weddingId: "w1", partner1: "Sophie", partner2: "James" },
+    { id: "u_couple_groom", email: "james@demo.test", passwordHash: "dHRfc2FsdF9EZW1vMTIzNCE=", name: "James Gordon (Groom)", role: "couple", weddingId: "w1", partner1: "Sophie", partner2: "James" },
+    { id: "u_mc_sarah", email: "sarah.j@galati.demo", passwordHash: "dHRfc2FsdF9EZW1vMTIzNCE=", name: "Sarah Jenkins (MC Co-Pilot)", role: "mc", tenantId: "ten1", businessName: "Galati MC & Entertainment" },
     { id: "u_admin1", email: "admin@tapandtoast.demo", passwordHash: "dHRfc2FsdF9EZW1vMTIzNCE=", name: "Platform Admin", role: "superadmin" }
   ],
   usedInvites: [],
@@ -672,9 +675,9 @@ export const SEED_DATA: DemoState = {
       email: "robert@galati.demo",
       phone: "0418 223 901",
       status: "Active",
-      accessLevel: "Full Access",
+      accessLevel: "Full MC Dashboard Access",
       assignedWeddings: ["all"],
-      permissions: { canEditRunsheet: true, canEditSeating: true, canViewDietary: true, canMessageClients: true }
+      permissions: { canEditRunsheet: true, canEditSeating: true, canViewDietary: true, canMessageClients: true, canViewGiftLedger: true }
     },
     {
       id: "tm_2",
@@ -683,9 +686,9 @@ export const SEED_DATA: DemoState = {
       email: "sarah.j@galati.demo",
       phone: "0422 110 882",
       status: "Active",
-      accessLevel: "Host & Run Sheet",
-      assignedWeddings: ["wed_1", "wed_2"],
-      permissions: { canEditRunsheet: true, canEditSeating: false, canViewDietary: true, canMessageClients: true }
+      accessLevel: "Full MC Dashboard Access",
+      assignedWeddings: ["all"],
+      permissions: { canEditRunsheet: true, canEditSeating: true, canViewDietary: true, canMessageClients: true, canViewGiftLedger: true }
     },
     {
       id: "tm_3",
@@ -694,9 +697,9 @@ export const SEED_DATA: DemoState = {
       email: "dave.sound@galati.demo",
       phone: "0433 991 445",
       status: "Active",
-      accessLevel: "Audio & AV Lead",
+      accessLevel: "Full MC Dashboard Access",
       assignedWeddings: ["all"],
-      permissions: { canEditRunsheet: false, canEditSeating: false, canViewDietary: false, canMessageClients: false }
+      permissions: { canEditRunsheet: true, canEditSeating: true, canViewDietary: true, canMessageClients: true, canViewGiftLedger: true }
     }
   ],
   referralCodes: [
