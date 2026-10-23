@@ -20,6 +20,7 @@ export default function DemoBar({ currentView, onSelectView }: DemoBarProps) {
     { id: 'register', label: 'Register', role: null },
     { id: 'guest-mobile', label: 'Guest Mobile', role: null },
     { id: 'mc-mobile', label: 'MC Mobile', role: 'mc' },
+    { id: 'sr-mobile', label: 'S/R mobile', role: null },
     { id: 'couple', label: 'Couple Dashboard', role: 'couple' },
     { id: 'mc', label: 'MC Pro', role: 'mc' },
     { id: 'superadmin', label: 'Super Admin', role: 'superadmin' },

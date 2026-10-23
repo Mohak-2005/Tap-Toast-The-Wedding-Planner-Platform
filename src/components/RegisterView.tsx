@@ -45,7 +45,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
 
   // Additional Wedding Details (added per client request)
   const [weddingDate, setWeddingDate] = useState('2026-11-14');
-  const [venue, setVenue] = useState('Fernwood Estate, Hunter Valley');
+  const [venue, setVenue] = useState('');
   const [guestCount, setGuestCount] = useState<number>(110);
   const [weddingStyle, setWeddingStyle] = useState('Modern Luxury & Black Tie');
   const [preferredMc, setPreferredMc] = useState('Robert Galati (Galati MC Services)');
@@ -171,14 +171,46 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
       const primaryEmail = brideEmail.trim() || groomEmail.trim() || 'couple@example.com';
       const newWeddingId = 'wedding_' + Date.now();
 
-      const newUser = {
-        id: 'user_' + Date.now(),
-        email: primaryEmail,
-        role: 'couple' as const,
-        name: coupleName,
-        tenantId: 'tenant_galati',
-        weddingId: newWeddingId,
-      };
+      const bEmail = brideEmail.trim();
+      const gEmail = groomEmail.trim();
+      const coupleUsers: any[] = [];
+
+      if (bEmail) {
+        coupleUsers.push({
+          id: 'user_bride_' + Date.now(),
+          email: bEmail,
+          role: 'couple' as const,
+          name: `${bName} (${coupleName})`,
+          partner1: bName,
+          partner2: gName,
+          tenantId: 'ten1',
+          weddingId: newWeddingId,
+        });
+      }
+      if (gEmail && gEmail.toLowerCase() !== bEmail.toLowerCase()) {
+        coupleUsers.push({
+          id: 'user_groom_' + Date.now(),
+          email: gEmail,
+          role: 'couple' as const,
+          name: `${gName} (${coupleName})`,
+          partner1: bName,
+          partner2: gName,
+          tenantId: 'ten1',
+          weddingId: newWeddingId,
+        });
+      }
+      if (coupleUsers.length === 0) {
+        coupleUsers.push({
+          id: 'user_' + Date.now(),
+          email: 'couple@example.com',
+          role: 'couple' as const,
+          name: coupleName,
+          partner1: bName,
+          partner2: gName,
+          tenantId: 'ten1',
+          weddingId: newWeddingId,
+        });
+      }
 
       const daysCalc = Math.max(1, Math.ceil((new Date(weddingDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
 
@@ -190,7 +222,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
         partner2: gName,
         date: weddingDate,
         dateDisplay: new Date(weddingDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }),
-        venue: venue || 'Fernwood Estate, Hunter Valley',
+        venue: venue.trim() || 'Venue TBD (To be confirmed)',
         region: 'NSW',
         daysRemaining: isNaN(daysCalc) ? 22 : daysCalc,
         invited: guestCount || 110,
@@ -211,7 +243,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
 
       setState({
         ...state,
-        users: [...state.users, newUser],
+        users: [...state.users, ...coupleUsers],
         weddings: [...state.weddings, newWedding],
       });
 
@@ -232,8 +264,8 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
 
   return (
     <div className="flex-1 grid grid-cols-1 md:grid-cols-[45%_55%] min-h-[calc(100vh-45px)] bg-[#f8f6f2] font-sans">
-      {/* Left Hero Panel */}
-      <div className="bg-[#15110e] text-[#f8f6f2] p-10 md:p-14 flex flex-col justify-center items-center text-center border-r border-[#29211a] relative">
+      {/* Left Hero Panel (Desktop Only) */}
+      <div className="hidden md:flex bg-[#15110e] text-[#f8f6f2] p-10 md:p-14 flex-col justify-center items-center text-center border-r border-[#29211a] relative">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-[42px] h-[42px] border-[1.5px] border-[#bd9661] rounded-[4px] flex items-center justify-center text-[#bd9661] font-serif font-bold text-lg">
             T
@@ -277,8 +309,23 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
       </div>
 
       {/* Right Form Container */}
-      <div className="bg-[#f8f6f2] p-6 md:p-10 flex items-start justify-center overflow-y-auto">
-        <div className={`bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-lg w-full ${accountType === 'couple' ? 'max-w-[580px]' : 'max-w-[480px]'} p-8 md:p-9 shadow-md relative my-4 transition-all duration-200`}>
+      <div className="bg-[#f8f6f2] px-3.5 py-4 sm:px-6 md:p-10 flex flex-col items-center justify-start overflow-y-auto w-full">
+        {/* Mobile Header Banner */}
+        <div className="md:hidden flex flex-col items-center justify-center text-center mb-4 w-full max-w-[580px] pt-1">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-8 h-8 border-[1.5px] border-[#bd9661] rounded-[4px] flex items-center justify-center text-[#bd9661] font-serif font-bold text-base bg-[#15110e]">
+              T
+            </div>
+            <div className="font-serif text-xl font-bold text-[#15110e] tracking-[0.5px]">
+              Tap &amp; Toast
+            </div>
+          </div>
+          <p className="text-[11px] text-[#8b7b6b] font-medium">
+            Every wedding, beautifully run
+          </p>
+        </div>
+
+        <div className={`bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-2xl w-full ${accountType === 'couple' ? 'max-w-[580px]' : 'max-w-[480px]'} p-4 sm:p-7 md:p-9 shadow-sm relative my-1 sm:my-3 transition-all duration-200`}>
           <h2 className="font-serif text-[26px] font-bold text-[#15110e] leading-tight mb-1">
             Create your account
           </h2>
@@ -374,16 +421,21 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
 
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1.5">
-                  AU MOBILE NUMBER
+                  MOBILE NUMBER *
                 </label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="0412 345 678"
-                  value={mcMobile}
-                  onChange={(e) => setMcMobile(formatAuMobile(e.target.value))}
-                  className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-[4px] px-3 py-2 text-sm text-[#15110e] outline-none"
-                />
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 py-2 border border-r-0 border-[#d5c7b5] bg-[#f5ede2] text-xs font-bold text-[#6b5847] rounded-l-[4px] select-none">
+                    +61
+                  </span>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="0412 345 678"
+                    value={mcMobile}
+                    onChange={(e) => setMcMobile(formatAuMobile(e.target.value))}
+                    className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-r-[4px] rounded-l-none px-3 py-2 text-sm text-[#15110e] outline-none"
+                  />
+                </div>
               </div>
 
               <div>
@@ -541,16 +593,21 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
-                      GROOM CONTACT NO. (AU) *
+                      GROOM CONTACT NUMBER *
                     </label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="0412 345 678"
-                      value={groomMobile}
-                      onChange={(e) => setGroomMobile(formatAuMobile(e.target.value))}
-                      className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-[4px] px-3 py-2 text-sm text-[#15110e] outline-none"
-                    />
+                    <div className="flex">
+                      <span className="inline-flex items-center px-3 py-2 border border-r-0 border-[#d5c7b5] bg-[#f5ede2] text-xs font-bold text-[#6b5847] rounded-l-[4px] select-none">
+                        +61
+                      </span>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="0412 345 678"
+                        value={groomMobile}
+                        onChange={(e) => setGroomMobile(formatAuMobile(e.target.value))}
+                        className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-r-[4px] rounded-l-none px-3 py-2 text-sm text-[#15110e] outline-none"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -591,16 +648,21 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
-                      BRIDE CONTACT NO. (AU) *
+                      BRIDE CONTACT NUMBER *
                     </label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="0423 456 789"
-                      value={brideMobile}
-                      onChange={(e) => setBrideMobile(formatAuMobile(e.target.value))}
-                      className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-[4px] px-3 py-2 text-sm text-[#15110e] outline-none"
-                    />
+                    <div className="flex">
+                      <span className="inline-flex items-center px-3 py-2 border border-r-0 border-[#d5c7b5] bg-[#f5ede2] text-xs font-bold text-[#6b5847] rounded-l-[4px] select-none">
+                        +61
+                      </span>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="0423 456 789"
+                        value={brideMobile}
+                        onChange={(e) => setBrideMobile(formatAuMobile(e.target.value))}
+                        className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-r-[4px] rounded-l-none px-3 py-2 text-sm text-[#15110e] outline-none"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -641,14 +703,14 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
 
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
-                    CEREMONY &amp; RECEPTION VENUE
+                    CEREMONY &amp; RECEPTION VENUE <span className="text-[10px] text-[#8b7b6b] font-normal lowercase">(optional)</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Fernwood Estate, Hunter Valley"
+                    placeholder="e.g. Fernwood Estate, Hunter Valley (optional)"
                     value={venue}
                     onChange={(e) => setVenue(e.target.value)}
-                    className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-[4px] px-3 py-2 text-sm text-[#15110e] outline-none"
+                    className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 text-sm text-[#15110e] outline-none"
                   />
                 </div>
 

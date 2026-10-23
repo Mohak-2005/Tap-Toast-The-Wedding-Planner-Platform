@@ -89,11 +89,28 @@ export default function CoupleView({
   // Tab 2: Guest List State & Actions (Screenshot 23)
   const [guestSearch, setGuestSearch] = useState('');
   const [guestFilter, setGuestFilter] = useState<'all' | 'confirmed' | 'declined' | 'awaiting'>('all');
+  const [guestCategoryFilter, setGuestCategoryFilter] = useState<string>('all');
   const [showAddGuestModal, setShowAddGuestModal] = useState(false);
   const [newGuestName, setNewGuestName] = useState('');
   const [newGuestHousehold, setNewGuestHousehold] = useState('');
   const [newGuestPhone, setNewGuestPhone] = useState('');
   const [newGuestDiet, setNewGuestDiet] = useState('');
+  const [newGuestCategory, setNewGuestCategory] = useState<string>('Uncategorised');
+
+  const GUEST_CATEGORIES = [
+    "Bridal Party",
+    "Bride's Family",
+    "Groom's Family",
+    "Mutual Friends",
+    "Work Colleagues",
+    "VIP / Extended",
+  ];
+
+  const handleUpdateGuestCategory = (guestId: string, category: string) => {
+    const updatedGuests = state.guests.map(g => (g.id === guestId ? { ...g, category } : g));
+    setState({ ...state, guests: updatedGuests });
+    showToast(`Category updated to ${category}`, 'success');
+  };
 
   const handleRemoveGuest = (guestId: string) => {
     setState({
@@ -119,6 +136,7 @@ export default function CoupleView({
       dietary: newGuestDiet || 'None',
       tableId: null,
       seatIndex: null,
+      category: newGuestCategory || 'Uncategorised',
       reminderSent: false,
     };
     setState({
@@ -540,10 +558,24 @@ export default function CoupleView({
   const filteredGuests = weddingGuests.filter(g => {
     const matchSearch = g.name.toLowerCase().includes(guestSearch.toLowerCase()) ||
       g.household.toLowerCase().includes(guestSearch.toLowerCase()) ||
-      g.dietary.toLowerCase().includes(guestSearch.toLowerCase());
+      g.dietary.toLowerCase().includes(guestSearch.toLowerCase()) ||
+      (g.category || '').toLowerCase().includes(guestSearch.toLowerCase());
     const matchFilter = guestFilter === 'all' || g.rsvpStatus === guestFilter;
-    return matchSearch && matchFilter;
+    const matchCat =
+      guestCategoryFilter === 'all'
+        ? true
+        : guestCategoryFilter === 'needs_category'
+        ? (!g.category || g.category === 'Uncategorised')
+        : g.category === guestCategoryFilter;
+    return matchSearch && matchFilter && matchCat;
   });
+
+  const uncategorisedCount = weddingGuests.filter(g => !g.category || g.category === 'Uncategorised').length;
+  const bridalPartyCount = weddingGuests.filter(g => g.category === 'Bridal Party').length;
+  const brideFamCount = weddingGuests.filter(g => g.category === "Bride's Family").length;
+  const groomFamCount = weddingGuests.filter(g => g.category === "Groom's Family").length;
+  const friendsCount = weddingGuests.filter(g => g.category === 'Mutual Friends' || g.category === 'Friends').length;
+  const colleaguesCount = weddingGuests.filter(g => g.category === 'Work Colleagues' || g.category === 'Colleagues').length;
 
   const confirmedCount = confirmedGuests.length;
   const awaitingCount = awaitingGuests.length;
@@ -785,7 +817,7 @@ export default function CoupleView({
               },
               {
                 id: 'gifts',
-                label: 'Gift & Thank-You',
+                label: isMcView ? 'Gift & Wishing Well Ledger' : 'Gift & Thank-You',
                 icon: (
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <polyline points="20 12 20 22 4 22 4 12" />
@@ -1129,24 +1161,78 @@ export default function CoupleView({
 
             {/* Filter Bar */}
             <div className="bg-white border border-[#e8ded0] rounded-xl p-4 shadow-sm space-y-4">
-              <div className="flex gap-3 flex-wrap">
-                <input
-                  type="text"
-                  placeholder="Search guests..."
-                  value={guestSearch}
-                  onChange={(e) => setGuestSearch(e.target.value)}
-                  className="flex-1 max-w-[280px] bg-white border border-[#e8ded0] rounded-lg px-3 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-                />
-                <select
-                  value={guestFilter}
-                  onChange={(e) => setGuestFilter(e.target.value as any)}
-                  className="bg-white border border-[#e8ded0] rounded-lg px-3 py-1.5 text-xs text-[#15110e] outline-none"
-                >
-                  <option value="all">All RSVP Statuses</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="awaiting">Awaiting</option>
-                  <option value="declined">Declined</option>
-                </select>
+              <div className="flex gap-3 flex-wrap items-center justify-between">
+                <div className="flex gap-3 flex-wrap flex-1">
+                  <input
+                    type="text"
+                    placeholder="Search guests by name, household, or category..."
+                    value={guestSearch}
+                    onChange={(e) => setGuestSearch(e.target.value)}
+                    className="flex-1 min-w-[220px] max-w-[320px] bg-white border border-[#e8ded0] rounded-lg px-3 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                  />
+                  <select
+                    value={guestFilter}
+                    onChange={(e) => setGuestFilter(e.target.value as any)}
+                    className="bg-white border border-[#e8ded0] rounded-lg px-3 py-1.5 text-xs text-[#15110e] outline-none"
+                  >
+                    <option value="all">All RSVP Statuses</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="awaiting">Awaiting</option>
+                    <option value="declined">Declined</option>
+                  </select>
+                </div>
+
+                <div className="text-xs text-[#8b7b6b]">
+                  Showing <strong className="text-[#15110e]">{filteredGuests.length}</strong> of {weddingGuests.length} guests
+                </div>
+              </div>
+
+              {/* Category Filter: 2 Pills ("All" and "Needs Category") + Category Filter Dropdown */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#f2ece3] pt-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setGuestCategoryFilter('all')}
+                    className={`px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap cursor-pointer transition-colors ${
+                      guestCategoryFilter !== 'needs_category'
+                        ? 'bg-[#15110e] text-[#dfc194] shadow-2xs font-bold'
+                        : 'bg-[#faf7f2] text-[#6b5a4a] border border-[#e8ded0] hover:bg-[#ede5d8]'
+                    }`}
+                  >
+                    All ({weddingGuests.length})
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setGuestCategoryFilter('needs_category')}
+                    className={`px-3 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap cursor-pointer transition-colors ${
+                      guestCategoryFilter === 'needs_category'
+                        ? 'bg-[#15110e] text-[#dfc194] shadow-2xs font-bold'
+                        : uncategorisedCount > 0
+                        ? 'bg-amber-100 text-amber-900 border border-amber-300 font-bold hover:bg-amber-200'
+                        : 'bg-[#faf7f2] text-[#6b5a4a] border border-[#e8ded0] hover:bg-[#ede5d8]'
+                    }`}
+                  >
+                    ⚠️ Needs Category ({uncategorisedCount})
+                  </button>
+                </div>
+
+                {/* Filter dropdown that shows each individual category - ONLY shown on 'All' tab */}
+                {guestCategoryFilter !== 'needs_category' && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b]">FILTER CATEGORY:</span>
+                    <select
+                      value={guestCategoryFilter}
+                      onChange={(e) => setGuestCategoryFilter(e.target.value)}
+                      className="bg-white border border-[#e8ded0] rounded-lg px-2.5 py-1 text-xs text-[#15110e] outline-none cursor-pointer focus:border-[#bd9661]"
+                    >
+                      <option value="all">All Categories</option>
+                      {GUEST_CATEGORIES.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               {/* Table */}
@@ -1155,6 +1241,7 @@ export default function CoupleView({
                   <thead>
                     <tr className="border-b border-[#e8ded0] text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b]">
                       <th className="py-2.5 px-3">GUEST / HOUSEHOLD</th>
+                      <th className="py-2.5 px-3">CATEGORY</th>
                       <th className="py-2.5 px-3">CONTACT</th>
                       <th className="py-2.5 px-3">STATUS</th>
                       <th className="py-2.5 px-3">PARTY</th>
@@ -1169,6 +1256,47 @@ export default function CoupleView({
                         <td className="py-3 px-3">
                           <strong className="text-sm text-[#15110e] block">{g.name}</strong>
                           <span className="text-[11px] text-[#8b7b6b]">{g.household}</span>
+                        </td>
+                        <td className="py-3 px-3">
+                          {!g.category || g.category === 'Uncategorised' ? (
+                            <div className="flex items-center gap-1">
+                              <select
+                                value=""
+                                onChange={(e) => handleUpdateGuestCategory(g.id, e.target.value)}
+                                className="text-[11px] font-bold bg-[#fff8e7] hover:bg-[#ffefc9] text-[#9b681e] border border-[#f1c583] rounded-md px-2 py-1 outline-none cursor-pointer transition-colors shadow-2xs"
+                              >
+                                <option value="" disabled>+ Categorise Guest</option>
+                                {GUEST_CATEGORIES.map(c => (
+                                  <option key={c} value={c}>{c}</option>
+                                ))}
+                              </select>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <select
+                                value={g.category}
+                                onChange={(e) => handleUpdateGuestCategory(g.id, e.target.value)}
+                                className={`text-[10.5px] rounded-md px-2 py-0.5 border cursor-pointer outline-none transition-colors ${
+                                  g.category === 'Bridal Party'
+                                    ? 'bg-amber-100 text-amber-900 border-[#bd9661] font-bold'
+                                    : g.category === "Bride's Family"
+                                    ? 'bg-rose-50 text-rose-800 border-rose-200 font-semibold'
+                                    : g.category === "Groom's Family"
+                                    ? 'bg-blue-50 text-blue-800 border-blue-200 font-semibold'
+                                    : g.category === 'Mutual Friends' || g.category === 'Friends'
+                                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 font-semibold'
+                                    : g.category === 'Work Colleagues' || g.category === 'Colleagues'
+                                    ? 'bg-purple-50 text-purple-800 border-purple-200 font-semibold'
+                                    : 'bg-stone-50 text-stone-700 border-stone-200 font-semibold'
+                                }`}
+                              >
+                                {GUEST_CATEGORIES.map(c => (
+                                  <option key={c} value={c}>{c}</option>
+                                ))}
+                                <option value="Uncategorised">Uncategorised</option>
+                              </select>
+                            </div>
+                          )}
                         </td>
                         <td className="py-3 px-3">
                           <div className="text-[#15110e] font-medium">{g.phone || '0412 884 992'}</div>
@@ -1251,6 +1379,19 @@ export default function CoupleView({
                         placeholder="0412 884 992"
                         className="w-full bg-white border border-[#e8ded0] rounded-lg p-2 outline-none focus:border-[#bd9661]"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">Guest Category / Group</label>
+                      <select
+                        value={newGuestCategory}
+                        onChange={(e) => setNewGuestCategory(e.target.value)}
+                        className="w-full bg-white border border-[#e8ded0] rounded-lg p-2 outline-none focus:border-[#bd9661] text-xs"
+                      >
+                        <option value="Uncategorised">Uncategorised (Assign later)</option>
+                        {GUEST_CATEGORIES.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">Dietary Requirements</label>
@@ -1490,7 +1631,7 @@ export default function CoupleView({
                   DIGITAL WISHING WELL &amp; APPRECIATION
                 </div>
                 <h1 className="font-serif text-3xl font-bold text-[#15110e]">
-                  Gift &amp; Thank-You Manager
+                  {isMcView ? 'Gift & Wishing Well Ledger' : 'Gift & Thank-You Manager'}
                 </h1>
               </div>
               <div className="flex items-center gap-2">

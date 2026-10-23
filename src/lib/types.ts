@@ -204,13 +204,14 @@ export interface TeamMember {
   email: string;
   phone: string;
   status: string;
-  accessLevel?: 'Full Access' | 'Host & Run Sheet' | 'Seating & Guests' | 'Audio & AV Lead';
+  accessLevel?: 'Full MC Dashboard Access' | 'Full Access' | 'Host & Run Sheet' | 'Seating & Guests' | 'Audio & AV Lead';
   assignedWeddings?: string[];
   permissions?: {
     canEditRunsheet?: boolean;
     canEditSeating?: boolean;
     canViewDietary?: boolean;
     canMessageClients?: boolean;
+    canViewGiftLedger?: boolean;
   };
 }
 
