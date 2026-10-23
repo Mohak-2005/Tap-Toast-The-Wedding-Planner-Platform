@@ -23,7 +23,15 @@ export function getStoredState(): DemoState {
           plans: Array.isArray(parsed.plans) && parsed.plans.length > 0 ? parsed.plans : SEED_DATA.plans,
           supportTickets: Array.isArray(parsed.supportTickets) && parsed.supportTickets.length > 0 ? parsed.supportTickets : (SEED_DATA.supportTickets || []),
           featureFlags: parsed.featureFlags && typeof parsed.featureFlags === 'object' ? { ...SEED_DATA.featureFlags, ...parsed.featureFlags } : SEED_DATA.featureFlags,
-          weddings: Array.isArray(parsed.weddings) && parsed.weddings.length > 0 ? parsed.weddings : SEED_DATA.weddings,
+          weddings: Array.isArray(parsed.weddings) && parsed.weddings.length > 0 ? parsed.weddings.map((w: Wedding) => {
+            const seedW = (SEED_DATA.weddings || []).find((sw: Wedding) => sw.id === w.id);
+            return {
+              ...w,
+              privateRunSheet: (Array.isArray(w.privateRunSheet) && w.privateRunSheet.length > 0)
+                ? w.privateRunSheet
+                : (seedW?.privateRunSheet || [])
+            };
+          }) : SEED_DATA.weddings,
           guests: Array.isArray(parsed.guests) ? (() => {
             const list = parsed.guests.map((g: Guest) => ({
               ...g,
@@ -54,6 +62,7 @@ export function getStoredState(): DemoState {
           invoices: Array.isArray(parsed.invoices) ? parsed.invoices : (SEED_DATA.invoices || []),
           team: Array.isArray(parsed.team) ? parsed.team : (SEED_DATA.team || []),
           referralCodes: Array.isArray(parsed.referralCodes) && parsed.referralCodes.length > 0 ? parsed.referralCodes : (SEED_DATA.referralCodes || []),
+          mcTransactions: Array.isArray(parsed.mcTransactions) && parsed.mcTransactions.length > 0 ? parsed.mcTransactions : (SEED_DATA.mcTransactions || []),
           referredCouples: Array.isArray(parsed.referredCouples) && parsed.referredCouples.length > 0 ? parsed.referredCouples : (SEED_DATA.referredCouples || []),
         };
       }

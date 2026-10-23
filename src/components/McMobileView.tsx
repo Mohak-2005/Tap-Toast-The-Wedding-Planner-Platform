@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { useAppState, showToast } from '../lib/state';
-import { Table, TableShape } from '../lib/types';
-
+import { useAppState, showToast, getWeddingCountdown } from '../lib/state';
+import { Table, TableShape, PrivateRunSheetItem } from '../lib/types';
 
 interface McMobileViewProps {
   onSelectView?: (view: string) => void;
@@ -10,7 +9,7 @@ interface McMobileViewProps {
 export default function McMobileView({ onSelectView }: McMobileViewProps) {
   const { state, setState } = useAppState();
   const viewportRef = useRef<HTMLDivElement>(null);
-  
+
   // Selected wedding ID for Live Console mode (null = home mode)
   const [selectedWeddingId, setSelectedWeddingId] = useState<string | null>(null);
   const normalizedId = selectedWeddingId === 'w_sophie_james' ? 'w1'
@@ -20,10 +19,34 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
   const activeWedding = (state.weddings || []).find(w => w.id === normalizedId) || (state.weddings || [])[0];
   const currentWeddingId = activeWedding.id;
 
-  // Settings Sub-tab ('profile' | 'referrals')
-  const [settingsSubTab, setSettingsSubTab] = useState<'profile' | 'referrals'>('profile');
+  // Home Bottom Navigation ('weddings' | 'calendar' | 'referrals' | 'invoice' | 'team' | 'settings')
+  const [homeTab, setHomeTab] = useState<'weddings' | 'calendar' | 'referrals' | 'invoice' | 'team' | 'settings'>('weddings');
 
-  // Home Bottom Navigation ('weddings' | 'calendar' | 'invoice' | 'team' | 'settings')
+  // Live Console Navigation ('overview' | 'runsheet' | 'seating' | 'catering' | 'guests' | 'venue')
+  const [consoleTab, setConsoleTab] = useState<'overview' | 'runsheet' | 'seating' | 'catering' | 'guests' | 'venue'>('overview');
+
+  // Live Console Seating Sub-segment ('canvas' | 'tables' | 'unseated')
+  const [seatingSubTab, setSeatingSubTab] = useState<'canvas' | 'tables' | 'unseated'>('canvas');
+  const [selectedMobileTableId, setSelectedMobileTableId] = useState<string | null>(null);
+  const [draggingTableId, setDraggingTableId] = useState<string | null>(null);
+
+  // Filter & Search states
+  const [runSheetFilter, setRunSheetFilter] = useState<'all' | 'upcoming' | 'done'>('all');
+  const [cueSearch, setCueSearch] = useState('');
+  const [guestSearch, setGuestSearch] = useState('');
+  const [guestRsvpFilter, setGuestRsvpFilter] = useState<'all' | 'confirmed' | 'awaiting' | 'declined'>('all');
+  const [cateringSearch, setCateringSearch] = useState('');
+
+  // Add cue modal states
+  const [showAddCueModal, setShowAddCueModal] = useState(false);
+  const [newCueTime, setNewCueTime] = useState('17:00');
+  const [newCueActivity, setNewCueActivity] = useState('');
+  const [newCueNotes, setNewCueNotes] = useState('');
+  const [newCuePrivateNotes, setNewCuePrivateNotes] = useState('');
+
+  // Task input state for Overview
+  const [newTaskInput, setNewTaskInput] = useState('');
+
   // Referral code modal & list states
   const [isCreateReferralOpen, setIsCreateReferralOpen] = useState(false);
   const [newReferralCode, setNewReferralCode] = useState('');
@@ -34,22 +57,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
     { code: 'BRIDALEXPO2027', discount: '$100 OFF', desc: 'Sydney Bridal Expo promo', uses: 4, status: 'Active' },
     { code: 'SUMMERLOVE', discount: '10% OFF', desc: 'Summer 2027 packages', uses: 2, status: 'Active' },
   ]);
-
-  const [homeTab, setHomeTab] = useState<'weddings' | 'calendar' | 'referrals' | 'invoice' | 'team' | 'settings'>('weddings');
-
-  // Live Console Navigation ('runsheet' | 'seating' | 'venue' | 'profile' | 'weddings')
-  const [consoleTab, setConsoleTab] = useState<'runsheet' | 'seating' | 'venue' | 'profile'>('runsheet');
-
-  // Live Console Seating Sub-segment ('guestlist' | 'seatingarr' | 'unseated')
-  const [seatingSubTab, setSeatingSubTab] = useState<'guestlist' | 'seatingarr' | 'unseated'>('guestlist');
-
-  // Live Console Run Sheet Filter
-  const [runSheetFilter, setRunSheetFilter] = useState<'all' | 'upcoming' | 'done'>('all');
-  const [cueSearch, setCueSearch] = useState('');
-
-  // Guest search in seating
-  const [guestSearch, setGuestSearch] = useState('');
-  const [shapeFilter, setShapeFilter] = useState<'all' | 'round' | 'rectangular' | 'king'>('all');
 
   // Checklist items
   const [techChecklist, setTechChecklist] = useState({
@@ -69,7 +76,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
   const [openInvoiceDropdown, setOpenInvoiceDropdown] = useState<string | null>(null);
 
   // Dynamic Calendar State
-  const [calendarDate, setCalendarDate] = useState<Date>(new Date(2026, 10, 1)); // November 2026
+  const [calendarDate, setCalendarDate] = useState<Date>(new Date(2026, 10, 1));
   const [selectedCalendarDay, setSelectedCalendarDay] = useState<number | null>(14);
 
   const handlePrevMonth = () => {
@@ -82,27 +89,18 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
     setSelectedCalendarDay(null);
   };
 
-  // MC Profile settings form
+  // Profile settings form
   const [profileForm, setProfileForm] = useState({
     name: 'Robert Galati',
-    role: 'Executive Lead MC & Event Host',
-    agency: 'Galati MC & Entertainment',
-    bio: 'years orchestrating luxury weddings across Sydney and the Southern Highlands. Renowned for seamless run-sheet flow, magnetic crowd engagement, and bilingual announcements.',
+    role: 'Executive Lead Event Host',
+    agency: 'Galati Events & Entertainment',
+    bio: 'Years orchestrating luxury weddings across Sydney and the Southern Highlands. Renowned for seamless run-sheet flow, magnetic crowd engagement, and bilingual announcements.',
     phone: '+61 418 223 901',
     email: 'robert@galati.demo',
-    website: 'www.galatimc.com.au',
+    website: 'www.galatievents.com.au',
   });
 
-  // Unseated guests
-  const [unseatedGuests, setUnseatedGuests] = useState([
-    { id: 'u1', name: 'Robert Chen', note: '+1 guest · Vegetarian', diet: 'Vegetarian' },
-    { id: 'u2', name: 'Sarah Lee', note: 'No plus-one', diet: '' },
-    { id: 'u3', name: 'David Whitfield', note: '+1 guest', diet: '' },
-    { id: 'u4', name: 'Maya Kapoor', note: 'No plus-one · Gluten-free', diet: 'Gluten-free' },
-  ]);
-  const [selectedAssignTable, setSelectedAssignTable] = useState<Record<string, string>>({});
-
-  // MC Mobile Seating Modal & Cheers AI States
+  // Seating Modal & Cheers AI States
   const [showAddTableModal, setShowAddTableModal] = useState(false);
   const [newTableName, setNewTableName] = useState('');
   const [newTableShape, setNewTableShape] = useState<TableShape>('round');
@@ -118,29 +116,302 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
     changes: { guestId: string; tableId: string }[];
   } | null>(null);
 
-  // Cheers AI Seating Recommendations Engine for MC Mobile
+  // Joey Chatbot inside Mobile
+  const [showJoey, setShowJoey] = useState(false);
+  const [attachedFile, setAttachedFile] = useState<{ name: string; size: number; type: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAttachedFile({
+      name: file.name,
+      size: file.size,
+      type: file.type || 'document',
+    });
+    showToast(`Attached: ${file.name}`, 'info');
+  };
+
+  const [chatMessages, setChatMessages] = useState<Array<{
+    id: string;
+    sender: 'joey' | 'user';
+    text: string;
+    time: string;
+    attachment?: {
+      name: string;
+      size: number;
+      type: string;
+    };
+  }>>([
+    {
+      id: 'm1',
+      sender: 'joey',
+      text: 'Hello, I am Joey, your wedding assistant.',
+      time: 'Just now',
+    },
+    {
+      id: 'm2',
+      sender: 'joey',
+      text: 'How may I help you with the wedding schedule, seating canvas, or catering dietary summary?',
+      time: 'Just now',
+    },
+  ]);
+  const [chatInput, setChatInput] = useState('');
+
+  // -------------------------------------------------------------
+  // Derived Wedding Metrics & Guests / Tables
+  // -------------------------------------------------------------
+  const weddingGuests = (state.guests || []).filter(g => (g.weddingId || 'w1') === currentWeddingId);
+  const weddingTables = (state.tables || []).filter(t => (t.weddingId || 'w1') === currentWeddingId);
+  const confirmedGuests = weddingGuests.filter(g => g.rsvpStatus === 'confirmed');
+  const pendingGuests = weddingGuests.filter(g => g.rsvpStatus === 'awaiting');
+  const declinedGuests = weddingGuests.filter(g => g.rsvpStatus === 'declined');
+  const seatedGuestsCount = weddingGuests.filter(g => g.tableId).length;
+  const unassignedGuests = weddingGuests.filter(g => !g.tableId && g.rsvpStatus !== 'declined');
+
+  // Dietary counts
+  const vegCount = confirmedGuests.filter(g => (g.dietary || '').toLowerCase().includes('veg') && !(g.dietary || '').toLowerCase().includes('vegan')).length;
+  const veganCount = confirmedGuests.filter(g => (g.dietary || '').toLowerCase().includes('vegan')).length;
+  const gfCount = confirmedGuests.filter(g => (g.dietary || '').toLowerCase().includes('gluten') || (g.dietary || '').toLowerCase().includes('celiac')).length;
+  const nutCount = confirmedGuests.filter(g => (g.dietary || '').toLowerCase().includes('nut')).length;
+  const otherDietCount = confirmedGuests.filter(g => {
+    const d = (g.dietary || '').toLowerCase().trim();
+    return d !== '' && d !== 'none' && !d.includes('veg') && !d.includes('gluten') && !d.includes('celiac') && !d.includes('nut');
+  }).length;
+
+  const countdown = getWeddingCountdown(activeWedding.date);
+
+  // -------------------------------------------------------------
+  // Mobile Floor Plan Canvas Touch & Drag Handlers
+  // -------------------------------------------------------------
+  const handleTableCanvasDrop = (e: React.DragEvent, containerRect: DOMRect) => {
+    e.preventDefault();
+    if (!draggingTableId) return;
+
+    const relX = Math.round(((e.clientX - containerRect.left) / containerRect.width) * 100);
+    const relY = Math.round(((e.clientY - containerRect.top) / containerRect.height) * 100);
+
+    const clampedX = Math.max(14, Math.min(86, relX));
+    const clampedY = Math.max(16, Math.min(84, relY));
+
+    const updatedTables = (state.tables || []).map((t) =>
+      t.id === draggingTableId ? { ...t, mobileX: clampedX, mobileY: clampedY } : t
+    );
+    setState({ ...state, tables: updatedTables });
+    setDraggingTableId(null);
+    showToast('Table position updated on canvas', 'info');
+  };
+
+  const handleTouchMoveTable = (e: React.TouchEvent, tblId: string) => {
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const el = document.getElementById('mobile_canvas_container');
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const relX = ((touch.clientX - rect.left) / rect.width) * 100;
+    const relY = ((touch.clientY - rect.top) / rect.height) * 100;
+    const clampedX = Math.max(14, Math.min(86, Math.round(relX)));
+    const clampedY = Math.max(16, Math.min(84, Math.round(relY)));
+
+    const updatedTables = (state.tables || []).map((t) =>
+      t.id === tblId ? { ...t, mobileX: clampedX, mobileY: clampedY } : t
+    );
+    setState({ ...state, tables: updatedTables });
+  };
+
+  // Helper for responsive mobile table coordinates around the dance floor
+  const getMobileTableCoords = (tbl: Table, idx: number) => {
+    if (typeof tbl.mobileX === 'number' && typeof tbl.mobileY === 'number') {
+      return { x: tbl.mobileX, y: tbl.mobileY };
+    }
+    if (tbl.isHead || tbl.id === 'head' || tbl.name.toLowerCase().includes('head')) {
+      return { x: 50, y: 15 };
+    }
+    const presetMobileCoords: { [key: number]: { x: number; y: number } } = {
+      0: { x: 23, y: 34 },
+      1: { x: 77, y: 34 },
+      2: { x: 19, y: 55 },
+      3: { x: 81, y: 55 },
+      4: { x: 24, y: 78 },
+      5: { x: 76, y: 78 },
+      6: { x: 50, y: 88 },
+    };
+    return presetMobileCoords[idx % 7] || { x: 20 + (idx % 3) * 30, y: 35 + Math.floor(idx / 3) * 20 };
+  };
+
+  // -------------------------------------------------------------
+  // Run Sheet Sync with activeWedding.privateRunSheet
+  // -------------------------------------------------------------
+  const weddingRunSheet: PrivateRunSheetItem[] = (activeWedding.privateRunSheet && activeWedding.privateRunSheet.length > 0)
+    ? activeWedding.privateRunSheet
+    : [
+        {
+          id: 'c1',
+          time: '13:30',
+          activity: 'Arrival, audio check with AV tech & Celebrant',
+          notes: 'Audio check on Meadow Lawn sound system',
+          privateNotes: 'Check wireless handheld mic A & B battery level.',
+          done: true,
+          order: 1,
+        },
+        {
+          id: 'c2',
+          time: '14:00',
+          activity: 'Guest seating & ceremony processional commence',
+          notes: 'Ceremony processional commences',
+          privateNotes: 'Cue Celebrant Sarah with lapel mic transceiver.',
+          done: false,
+          order: 2,
+        },
+        {
+          id: 'c3',
+          time: '14:45',
+          activity: 'Announce cocktail hour, direct guests to verandah',
+          notes: 'Direct guests to garden verandah for champagne & canapes',
+          privateNotes: 'Direct bridal party to estate vineyard for photography.',
+          done: false,
+          order: 3,
+        },
+        {
+          id: 'c4',
+          time: '17:30',
+          activity: 'Grand entrance of newlyweds',
+          notes: 'Welcome newlyweds Sophie & James with bridal party applause',
+          privateNotes: 'Cue DJ track #4 (Upbeat grand entrance).',
+          done: false,
+          order: 4,
+        },
+        {
+          id: 'c5',
+          time: '18:15',
+          activity: 'Welcome speeches & Father of the Bride toast',
+          notes: 'First speeches block before entree service',
+          privateNotes: 'Roving mic to Father of the Bride (David). Have spare mic ready.',
+          done: false,
+          order: 5,
+        },
+      ];
+
+  const updateWeddingRunSheet = (newCues: PrivateRunSheetItem[]) => {
+    const updatedWeddings = (state.weddings || []).map((w) => {
+      if (w.id === currentWeddingId) {
+        return { ...w, privateRunSheet: newCues };
+      }
+      return w;
+    });
+    setState({ ...state, weddings: updatedWeddings });
+  };
+
+  const toggleCueDone = (id: string) => {
+    const updated = weddingRunSheet.map((c) => (c.id === id ? { ...c, done: !c.done } : c));
+    updateWeddingRunSheet(updated);
+  };
+
+  const moveCue = (idx: number, direction: 'up' | 'down') => {
+    if ((direction === 'up' && idx === 0) || (direction === 'down' && idx === weddingRunSheet.length - 1)) return;
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    const copy = [...weddingRunSheet];
+    const temp = copy[idx];
+    copy[idx] = copy[targetIdx];
+    copy[targetIdx] = temp;
+    updateWeddingRunSheet(copy);
+  };
+
+  const deleteCue = (id: string) => {
+    const updated = weddingRunSheet.filter((c) => c.id !== id);
+    updateWeddingRunSheet(updated);
+    showToast('Cue removed from run sheet', 'info');
+  };
+
+  const handleAddCueSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCueActivity.trim()) {
+      showToast('Please enter an activity title', 'error');
+      return;
+    }
+    const newCue: PrivateRunSheetItem = {
+      id: 'c_' + Date.now(),
+      time: newCueTime.trim() || '17:00',
+      activity: newCueActivity.trim(),
+      notes: newCueNotes.trim(),
+      privateNotes: newCuePrivateNotes.trim(),
+      done: false,
+      order: weddingRunSheet.length + 1,
+    };
+    updateWeddingRunSheet([...weddingRunSheet, newCue]);
+    setShowAddCueModal(false);
+    setNewCueActivity('');
+    setNewCueNotes('');
+    setNewCuePrivateNotes('');
+    showToast(`Added cue: ${newCue.activity}`, 'success');
+  };
+
+  // -------------------------------------------------------------
+  // Wedding Tasks for Overview
+  // -------------------------------------------------------------
+  const weddingTasks = activeWedding.tasks || [
+    { id: 't1', text: 'Confirm final guest RSVP list & dietary flags', completed: true, due: 'This week' },
+    { id: 't2', text: 'Audio check: wireless roving mics & lapel transceivers', completed: true, due: 'This week' },
+    { id: 't3', text: 'Confirm run sheet cues with DJ and Venue Manager', completed: true, due: 'This week' },
+    { id: 't4', text: 'Review head table banquet layout & VIP placements', completed: false, due: 'This week' },
+    { id: 't5', text: 'Coordinate first dance lighting & grand entrance track', completed: false, due: 'This week' },
+  ];
+
+  const handleToggleTask = (taskId: string) => {
+    const updatedWeddings = (state.weddings || []).map((w) => {
+      if (w.id === currentWeddingId) {
+        const currentTasks = w.tasks || weddingTasks;
+        const updatedTasks = currentTasks.map((t) => (t.id === taskId ? { ...t, completed: !t.completed } : t));
+        return { ...w, tasks: updatedTasks };
+      }
+      return w;
+    });
+    setState({ ...state, weddings: updatedWeddings });
+  };
+
+  const handleAddTask = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTaskInput.trim()) return;
+    const newTask = {
+      id: 't_' + Date.now(),
+      text: newTaskInput.trim(),
+      completed: false,
+      due: 'This week',
+    };
+    const updatedWeddings = (state.weddings || []).map((w) => {
+      if (w.id === currentWeddingId) {
+        const currentTasks = w.tasks || weddingTasks;
+        return { ...w, tasks: [...currentTasks, newTask] };
+      }
+      return w;
+    });
+    setState({ ...state, weddings: updatedWeddings });
+    setNewTaskInput('');
+    showToast(`Added task: ${newTask.text}`, 'success');
+  };
+
+  // -------------------------------------------------------------
+  // Cheers AI Seating Recommendations Engine
+  // -------------------------------------------------------------
   const handleRunCheersAiSeating = (scenario: 'households' | 'vips' | 'fill' | 'dietary') => {
     setActiveAiScenario(scenario);
     let title = '';
     let desc = '';
     const proposedChanges: { guestId: string; tableId: string }[] = [];
 
-    const weddingTables = (state.tables || []).filter(t => (t.weddingId || 'w1') === currentWeddingId);
-    const weddingGuests = (state.guests || []).filter(g => (g.weddingId || 'w1') === currentWeddingId);
-
     const availableTables = weddingTables.map((t) => ({
       ...t,
       currentCount: weddingGuests.filter((g) => g.tableId === t.id).length,
     }));
 
-    const unassignedGuests = weddingGuests.filter((g) => !g.tableId && g.rsvpStatus !== 'declined');
+    const unassigned = weddingGuests.filter((g) => !g.tableId && g.rsvpStatus !== 'declined');
 
     if (scenario === 'households') {
       title = 'Group Households & Families Together';
       desc = 'Scanned all unassigned guests and matched families into tables with sufficient capacity so households remain seated together.';
 
-      const hhMap = new Map<string, typeof unassignedGuests>();
-      unassignedGuests.forEach((g) => {
+      const hhMap = new Map<string, typeof unassigned>();
+      unassigned.forEach((g) => {
         const hh = g.household || 'General';
         if (!hhMap.has(hh)) hhMap.set(hh, []);
         hhMap.get(hh)!.push(g);
@@ -159,10 +430,10 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
         }
       });
     } else if (scenario === 'vips') {
-      title = 'Seat VIPs & Bridal Party at Head / King Tables';
-      desc = 'Recommended placement for wedding party and immediate VIPs at Head Table and King Table A.';
+      title = 'Seat VIPs & Bridal Party at Head Table';
+      desc = 'Recommended placement for wedding party and immediate VIPs at Head Table.';
 
-      const bridalGuests = (state.guests || []).filter((g) => !g.tableId && ((g.household && (g.household.includes('Bell') || g.household.includes('Gordon'))) || g.name.includes('Sophie') || g.name.includes('James')));
+      const bridalGuests = weddingGuests.filter((g) => !g.tableId && ((g.household && (g.household.includes('Bell') || g.household.includes('Gordon'))) || g.name.includes('Sophie') || g.name.includes('James')));
       const headTbl = availableTables.find((t) => t.isHead || t.name.toLowerCase().includes('head')) || availableTables[0];
 
       if (headTbl) {
@@ -177,7 +448,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
       title = 'Group Dietary Requirements for Catering';
       desc = 'Placed guests requiring Vegetarian, Vegan, Halal, or Gluten-Free meals at dedicated tables to assist banquet catering service.';
 
-      const dietaryGuests = (state.guests || []).filter((g) => !g.tableId && g.dietary && g.dietary !== 'None' && g.dietary !== '');
+      const dietaryGuests = weddingGuests.filter((g) => !g.tableId && g.dietary && g.dietary !== 'None' && g.dietary !== '');
       const vegTable = availableTables.find((t) => t.name.includes('Table 2') || t.name.includes('Garden')) || availableTables[1];
 
       if (vegTable) {
@@ -192,7 +463,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
       title = 'Fill Table Vacancies Evenly';
       desc = 'Evenly distributed unassigned guests across tables with available vacancies to maintain balanced room density.';
 
-      unassignedGuests.forEach((g) => {
+      unassigned.forEach((g) => {
         const candidate = availableTables.find((t) => t.currentCount < t.capacity);
         if (candidate) {
           proposedChanges.push({ guestId: g.id, tableId: candidate.id });
@@ -238,8 +509,8 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
       shape: newTableShape,
       category: newTableCategory,
       zone: 'Main Room',
-      x: 20 + (currentWeddingTables.length % 4) * 20,
-      y: 35 + Math.floor(currentWeddingTables.length / 4) * 16,
+      x: 25 + (currentWeddingTables.length % 3) * 25,
+      y: 35 + Math.floor(currentWeddingTables.length / 3) * 22,
     };
     setState({ ...state, tables: [...(state.tables || []), newTbl] });
     setShowAddTableModal(false);
@@ -254,7 +525,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
   };
 
   const handleSeatGuestMobile = (guestId: string, tableId: string, tableName: string) => {
-    const weddingGuests = (state.guests || []).filter(g => (g.weddingId || 'w1') === currentWeddingId);
     const seatedCount = weddingGuests.filter(g => g.tableId === tableId).length;
     const targetTbl = (state.tables || []).find(t => t.id === tableId);
     if (targetTbl && seatedCount >= targetTbl.capacity) {
@@ -267,93 +537,13 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
     showToast(`Seated ${guest?.name || 'Guest'} at ${tableName}`, 'success');
   };
 
-  // Joey Chatbot inside MC Mobile
-  const [showJoey, setShowJoey] = useState(false);
-  const [chatMessages, setChatMessages] = useState<Array<{
-    id: string;
-    sender: 'joey' | 'user';
-    text: string;
-    time: string;
-  }>>([
-    {
-      id: 'm1',
-      sender: 'joey',
-      text: 'Hello, I am Joey, your wedding assistant.',
-      time: 'Just now',
-    },
-    {
-      id: 'm2',
-      sender: 'joey',
-      text: 'How may I help you?',
-      time: 'Just now',
-    },
-  ]);
-  const [chatInput, setChatInput] = useState('');
-
-  // Cues state for active wedding
-  const [cues, setCues] = useState([
-    {
-      id: 'c1',
-      time: '13:30',
-      title: 'MC arrival, audio check with AV tech & Celebrant',
-      desc: 'MC arrival, audio check with AV tech & Celebrant Sarah',
-      notes: 'MC Cue Notes: check wireless mic and audio cue.',
-      done: false,
-    },
-    {
-      id: 'c2',
-      time: '14:00',
-      title: 'Guest seating & ceremony processional commence',
-      desc: 'Guest seating & ceremony processional commence',
-      notes: 'MC Cue Notes: check wireless mic and audio cue.',
-      done: false,
-    },
-    {
-      id: 'c3',
-      time: '14:45',
-      title: 'Announce cocktail hour, direct guests to verandah',
-      desc: 'Announce cocktail hour, direct guests to verandah & gardens',
-      notes: 'Direct guests to bridal party photo area.',
-      done: false,
-    },
-    {
-      id: 'c4',
-      time: '17:30',
-      title: 'Grand entrance of bride and groom',
-      desc: 'Welcome newlyweds Sophie & James with bridal party applause',
-      notes: 'Cue DJ track #4 (Upbeat entrance).',
-      done: false,
-    },
-  ]);
-
-  const toggleCueDone = (id: string) => {
-    setCues(cues.map(c => c.id === id ? { ...c, done: !c.done } : c));
-  };
-
-  const moveCue = (idx: number, direction: 'up' | 'down') => {
-    if ((direction === 'up' && idx === 0) || (direction === 'down' && idx === cues.length - 1)) return;
-    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
-    const copy = [...cues];
-    const temp = copy[idx];
-    copy[idx] = copy[targetIdx];
-    copy[targetIdx] = temp;
-    setCues(copy);
-  };
-
-  const deleteCue = (id: string) => {
-    setCues(cues.filter(c => c.id !== id));
-    showToast('Cue removed', 'info');
-  };
-
-  // activeWedding & normalizedId defined at component root
-
   const handleOpenConsole = (weddingId: string) => {
     const targetId = weddingId === 'w_sophie_james' ? 'w1'
       : weddingId === 'w_aisha_marcus' ? 'w2'
       : weddingId === 'w_emma_tom' ? 'w3'
       : weddingId;
     setSelectedWeddingId(weddingId);
-    setConsoleTab('runsheet');
+    setConsoleTab('overview');
     setState({ ...state, currentWeddingId: targetId });
     if (viewportRef.current) {
       viewportRef.current.scrollTop = 0;
@@ -362,48 +552,39 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
     showToast(`✓ Opened ${wed?.couple || 'Sophie & James'} Wedding Console`, 'success');
   };
 
-  const handleOpenDesktopConsole = (weddingId: string) => {
-    const targetId = weddingId === 'w_sophie_james' ? 'w1'
-      : weddingId === 'w_aisha_marcus' ? 'w2'
-      : weddingId === 'w_emma_tom' ? 'w3'
-      : weddingId;
-    setState({ ...state, currentWeddingId: targetId });
-    if (onSelectView) {
-      onSelectView('mc');
-    } else {
-      window.location.hash = '#mc';
-    }
-    showToast('✓ Switched to full MC Pro Desktop Console', 'info');
-  };
+  const handleJoeyPrompt = (prompt: string, fileAttachment?: { name: string; size: number; type: string } | null) => {
+    const file = fileAttachment !== undefined ? fileAttachment : attachedFile;
+    if (file) setAttachedFile(null);
 
-  const handleSeatGuest = (guestId: string) => {
-    const table = selectedAssignTable[guestId] || 'Table 1';
-    setUnseatedGuests(unseatedGuests.filter(g => g.id !== guestId));
-    showToast(`Guest seated at ${table}`, 'success');
-  };
-
-  const handleSeatAll = () => {
-    setUnseatedGuests([]);
-    showToast('All remaining guests automatically seated across tables 2, 3, & 5', 'success');
-  };
-
-  const handleJoeyPrompt = (prompt: string) => {
-    const userMsg = { id: 'u_' + Date.now(), sender: 'user' as const, text: prompt, time: 'Just now' };
+    const userMsg = {
+      id: 'u_' + Date.now(),
+      sender: 'user' as const,
+      text: prompt || (file ? `Attached file: ${file.name}` : ''),
+      attachment: file || undefined,
+      time: 'Just now',
+    };
     let replyText = '';
 
-    if (prompt.toLowerCase().includes('dietary')) {
-      replyText = `🍽️ Dietary Alerts (17 special meals):\n• Priya Sharma: Vegetarian\n• Hannah Martin: Vegetarian\n• Charlotte Evans: Gluten-free\n• Michael Chen: Vegetarian\n• Lucy Palmer: Nut allergy\n• Chloe Jenkins: Gluten-free\n• William Ford: Vegetarian\n• Grace Turner: Gluten-free\n+ 9 more in the Guest List tab`;
+    if (file) {
+      replyText = `📎 Received & analyzed "${file.name}" (${(file.size / 1024).toFixed(1)} KB)!\n` +
+        (prompt.trim() ? `Regarding: "${prompt}"\n\n` : '') +
+        `I have parsed and indexed this document into ${activeWedding.couple}'s console. Relevant cues, dietary notes, and stage timeline items are synchronized with your MC console.`;
+    } else if (prompt.toLowerCase().includes('dietary')) {
+      replyText = `🍽️ Dietary Alerts (${vegCount + veganCount + gfCount + nutCount + otherDietCount} special meals):\n• Vegetarian: ${vegCount}\n• Vegan: ${veganCount}\n• Gluten-free: ${gfCount}\n• Nut Allergies: ${nutCount}\nCheck the Catering tab for table-by-table drops.`;
     } else if (prompt.toLowerCase().includes('next cue')) {
-      replyText = `Next cue on schedule: 14:00 — Guest seating & ceremony processional commence on The Meadow Lawn.`;
+      const upcoming = weddingRunSheet.find(c => !c.done);
+      replyText = upcoming
+        ? `Next cue on schedule: ${upcoming.time} — ${upcoming.activity}.`
+        : 'All run sheet cues have been completed!';
     } else if (prompt.toLowerCase().includes('head table')) {
-      replyText = `HEAD TABLE is fully confirmed with 8 seated VIPs: Sophie Bell, James Gordon, Hannah Martin, Oliver Vance, Charlotte Evans, Liam Fletcher, Grace Turner, and Benjamin Ross.`;
+      replyText = `HEAD TABLE has 8 seated VIPs including bride Sophie and groom James.`;
     } else if (prompt.toLowerCase().includes('venue phone')) {
-      replyText = `Fernwood Estate Concierge: (02) 4871 2000. Sarah Lin (Venue Manager): 0412 345 678.`;
+      replyText = `${activeWedding.venue.split(',')[0]} Concierge: (02) 4871 2000. Sarah Lin (Venue Manager): 0412 345 678.`;
     } else {
-      replyText = `I have updated your console with "${prompt}". All run sheet items are synced.`;
+      replyText = `I have updated your console with "${prompt}". All data is synchronized across mobile and desktop dashboards.`;
     }
 
-    setChatMessages([...chatMessages, userMsg, {
+    setChatMessages(prev => [...prev, userMsg, {
       id: 'j_' + Date.now(),
       sender: 'joey' as const,
       text: replyText,
@@ -411,11 +592,18 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
     }]);
   };
 
+  const activeMobileTable = selectedMobileTableId
+    ? weddingTables.find(t => t.id === selectedMobileTableId)
+    : null;
+  const activeTableGuests = selectedMobileTableId
+    ? weddingGuests.filter(g => g.tableId === selectedMobileTableId)
+    : [];
+
   return (
     <div className="w-full flex-1 flex flex-col items-center justify-center p-2 sm:p-4 bg-[radial-gradient(circle_at_50%_25%,_#f6f3ed_0%,_#e5e0d6_100%)] min-h-[calc(100vh-45px)] overflow-hidden font-sans select-none">
-      {/* 402x874 Phone Chassis matching Screenshot 4, 10, 13-22 & mc-mobile.html */}
+      {/* 402x874 Phone Chassis */}
       <div className="w-[402px] max-w-[402px] h-[874px] max-h-[calc(100vh-60px)] bg-[#f8f6f2] rounded-[46px] border-[4px] border-[#1c1511] shadow-[0_20px_60px_rgba(21,17,14,0.22),_0_4px_14px_rgba(21,17,14,0.08)] overflow-hidden relative flex flex-col">
-        
+
         {/* Phone Status Bar */}
         <div className="flex justify-between items-center px-6 pt-3 pb-2 text-[13px] font-bold text-[#15110e] bg-[#f8f6f2] z-20 flex-shrink-0">
           <span>17:28</span>
@@ -432,7 +620,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
         {/* HEADER: HOME MODE vs LIVE CONSOLE MODE                         */}
         {/* ============================================================== */}
         {!selectedWeddingId ? (
-          /* Home Mode Header (Screenshot 10) */
+          /* Home Mode Header */
           <header className="bg-[#15110e] text-white px-5 py-3 border-b border-[#2b221a] flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 border border-[#bd9661] rounded-[3px] flex items-center justify-center text-[#bd9661] font-serif font-bold text-sm">
@@ -443,16 +631,16 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
               </span>
             </div>
             <div className="text-[11px] font-semibold text-[#bd9661]">
-              MC Companion
+              Mobile Companion
             </div>
           </header>
         ) : (
-          /* Live Console Mode Header (Screenshot 13) */
-          <header className="bg-[#15110e] text-white px-3 py-2.5 border-b border-[#2b221a] flex items-center justify-between flex-shrink-0">
+          /* Live Console Mode Header - Clean & Elegant without any cluttered top slide tabs */
+          <header className="bg-[#15110e] text-white px-3.5 py-2.5 border-b border-[#2b221a] flex items-center justify-between flex-shrink-0">
             <button
               type="button"
               onClick={() => setSelectedWeddingId(null)}
-              className="text-xs text-[#dfc194] bg-[#2a2119] border border-[#3d3126] px-2.5 py-1 rounded-md hover:text-white flex items-center gap-1 font-semibold cursor-pointer"
+              className="text-xs text-[#dfc194] bg-[#2a2119] border border-[#3d3126] px-2.5 py-1 rounded-md hover:text-white flex items-center gap-1 font-semibold cursor-pointer transition-colors"
             >
               &larr; All Weddings
             </button>
@@ -474,9 +662,9 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
         {/* SCROLLABLE VIEWPORT                                            */}
         {/* ============================================================== */}
         <div ref={viewportRef} className="flex-1 overflow-y-auto p-4 space-y-3.5 no-scrollbar relative flex flex-col">
-          
+
           {/* ------------------------------------------------------------ */}
-          {/* HOME MODE: TAB 1 - ALL WEDDINGS (Screenshot 10: 172659.png) */}
+          {/* HOME MODE: TAB 1 - ALL WEDDINGS                             */}
           {/* ------------------------------------------------------------ */}
           {!selectedWeddingId && homeTab === 'weddings' && (
             <div className="space-y-3">
@@ -490,11 +678,11 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                   </p>
                 </div>
                 <span className="bg-[#faf6f0] border border-[#ebd3a8] text-[#916c3d] font-bold text-[11px] px-2.5 py-0.5 rounded-full">
-                  4 Active
+                  {state.weddings?.length || 3} Active
                 </span>
               </div>
 
-              {/* 4 Assigned Wedding Cards */}
+              {/* 3 Assigned Wedding Cards */}
               <div className="space-y-3 pt-1">
                 {/* Wedding 1: Sophie & James */}
                 <div className="bg-white border border-[#e8ded0] border-l-4 border-l-[#bd9661] rounded-2xl p-4 shadow-sm space-y-3">
@@ -513,7 +701,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                         Date: <strong>2026-11-14</strong>
                       </div>
                       <div className="text-[10px] font-bold uppercase text-[#916c3d] mt-0.5">
-                        Executive Lead MC
+                        Executive Lead Host
                       </div>
                     </div>
                     <button
@@ -543,7 +731,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                         Date: <strong>2027-05-02</strong>
                       </div>
                       <div className="text-[10px] font-bold uppercase text-[#916c3d] mt-0.5">
-                        Executive Lead MC
+                        Executive Lead Host
                       </div>
                     </div>
                     <button
@@ -573,7 +761,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                         Date: <strong>2027-06-20</strong>
                       </div>
                       <div className="text-[10px] font-bold uppercase text-[#916c3d] mt-0.5">
-                        Executive Lead MC
+                        Executive Lead Host
                       </div>
                     </div>
                     <button
@@ -590,13 +778,13 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
           )}
 
           {/* ------------------------------------------------------------ */}
-          {/* HOME MODE: TAB 2 - CALENDAR (Screenshot 18: 172813.png)     */}
+          {/* HOME MODE: TAB 2 - CALENDAR                                 */}
           {/* ------------------------------------------------------------ */}
           {!selectedWeddingId && homeTab === 'calendar' && (() => {
             const currentYear = calendarDate.getFullYear();
             const currentMonth = calendarDate.getMonth();
             const monthName = calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-            const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay(); // 0 = Sun
+            const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
             const totalDaysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
             const getWeddingsForDay = (day: number) => {
@@ -636,7 +824,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                     </button>
                   </div>
 
-                  {/* Month Grid */}
                   <div className="grid grid-cols-7 gap-1 text-center text-xs">
                     {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((d) => (
                       <div key={d} className="text-[10px] font-bold text-[#8b7b6b] py-1">
@@ -644,12 +831,10 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                       </div>
                     ))}
 
-                    {/* Leading Blank Cells */}
                     {Array.from({ length: firstDayOfWeek }).map((_, idx) => (
                       <div key={`blank-${idx}`} className="min-h-[46px] rounded-xl border border-transparent p-1 pointer-events-none" />
                     ))}
 
-                    {/* Days of the Month */}
                     {Array.from({ length: totalDaysInMonth }, (_, i) => i + 1).map((day) => {
                       const dayWeddings = getWeddingsForDay(day);
                       const hasWedding = dayWeddings.length > 0;
@@ -681,7 +866,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                   </div>
                 </div>
 
-                {/* Selected Day Schedule Details */}
                 {selectedCalendarDay !== null && (
                   <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-3 animate-in fade-in duration-150">
                     <div className="flex items-center justify-between pb-2 border-b border-[#f0ede4]">
@@ -754,7 +938,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
           })()}
 
           {/* ------------------------------------------------------------ */}
-          {/* HOME MODE: TAB 3 - INVOICE (Screenshot 19: 172822.png)      */}
+          {/* HOME MODE: TAB 3 - INVOICE                                  */}
           {/* ------------------------------------------------------------ */}
           {!selectedWeddingId && homeTab === 'invoice' && (
             <div className="space-y-3">
@@ -772,7 +956,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 </span>
               </div>
 
-              {/* Invoices List */}
               <div className="space-y-2.5 pt-1">
                 {[
                   { id: 'INV-1081', couple: 'Sophie & James', date: '08 Oct 2026', amount: '$1850 AUD' },
@@ -789,7 +972,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                     <div className="flex flex-col items-end gap-1">
                       <span className="font-bold text-sm text-[#15110e]">{inv.amount}</span>
                       
-                      {/* Status Dropdown */}
                       <div className="relative">
                         <button
                           type="button"
@@ -834,7 +1016,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
           )}
 
           {/* ------------------------------------------------------------ */}
-          {/* HOME MODE: TAB 4 - TEAM (Screenshot 20: 172828.png)         */}
+          {/* HOME MODE: TAB 4 - TEAM                                     */}
           {/* ------------------------------------------------------------ */}
           {!selectedWeddingId && homeTab === 'team' && (
             <div className="space-y-3">
@@ -844,7 +1026,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                     Event Crew &amp; Team
                   </h1>
                   <p className="text-[11px] text-[#8b7b6b]">
-                    MC associates, sound engineers &amp; technicians
+                    Hosts, coordinators, sound engineers &amp; technicians
                   </p>
                 </div>
                 <span className="bg-[#e8eee4] text-[#3c6a42] font-bold text-[11px] px-2.5 py-0.5 rounded-full">
@@ -852,10 +1034,9 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 </span>
               </div>
 
-              {/* 3 Crew Cards */}
               <div className="space-y-2.5 pt-1">
                 {[
-                  { name: 'Robert Galati', role: 'Lead Master of Ceremonies' },
+                  { name: 'Robert Galati', role: 'Executive Lead Event Host' },
                   { name: 'Sarah Jenkins', role: 'On-day Event Coordinator' },
                   { name: 'Dave Miller', role: 'Sound & AV Technician' },
                 ].map((crew, idx) => (
@@ -874,18 +1055,14 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
           )}
 
           {/* ------------------------------------------------------------ */}
-          {/* HOME MODE: TAB 5 - SETTINGS (Screenshot 21: 172832.png)     */}
-          {/* ------------------------------------------------------------ */}
-          {/* ------------------------------------------------------------ */}
           {/* HOME MODE: TAB - REFERRALS & DISCOUNTS                      */}
           {/* ------------------------------------------------------------ */}
           {!selectedWeddingId && homeTab === 'referrals' && (
             <div className="space-y-3.5 pb-2">
-              {/* Referrals Header */}
               <div className="flex items-center justify-between pt-1 px-1">
                 <div>
                   <div className="text-[10px] font-bold tracking-widest uppercase text-[#bd9661]">
-                    MC Partner Ambassador Hub
+                    Partner Ambassador Hub
                   </div>
                   <h1 className="font-serif text-xl font-bold text-[#15110e]">
                     Referrals &amp; Discounts
@@ -908,7 +1085,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                   </span>
                   <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    Active &bull; Verified MC
+                    Active &bull; Verified Partner
                   </span>
                 </div>
 
@@ -925,7 +1102,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                   Couples receive <strong className="text-[#dfc194]">15% OFF</strong> platform fee. You earn <strong className="text-emerald-400">$150 AUD</strong> payout per confirmed wedding.
                 </div>
 
-                {/* Quick Copy Action Buttons */}
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -948,44 +1124,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                     Copy Link
                   </button>
                 </div>
-
-                {/* Direct Share Options */}
-                <div className="flex gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const text = 'Hey! Use my exclusive MC promo code ROBERT-VIP-15 for 15% off your wedding platform on Tap & Toast: https://tapandtoast.demo/signup?ref=ROBERT-VIP-15';
-                      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
-                      showToast('Opening WhatsApp to share', 'info');
-                    }}
-                    className="flex-1 bg-[#25D366] hover:bg-[#20b858] text-white font-bold py-2 rounded-xl text-xs cursor-pointer transition-colors flex items-center justify-center gap-1 shadow-xs"
-                  >
-                    WhatsApp
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const body = encodeURIComponent('Hi! Here is my 15% discount code for Tap & Toast: ROBERT-VIP-15. Link: https://tapandtoast.demo/signup?ref=ROBERT-VIP-15');
-                      window.open(`sms:?&body=${body}`, '_blank');
-                      showToast('Opening SMS to share', 'info');
-                    }}
-                    className="flex-1 bg-white text-[#15110e] font-bold py-2 rounded-xl text-xs cursor-pointer transition-colors flex items-center justify-center gap-1 shadow-xs"
-                  >
-                    SMS Text
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const subject = encodeURIComponent('15% Discount on Tap & Toast Wedding Platform');
-                      const body = encodeURIComponent('Hi,\n\nUse my exclusive MC code ROBERT-VIP-15 at checkout to receive 15% off:\nhttps://tapandtoast.demo/signup?ref=ROBERT-VIP-15\n\nCheers,\nRobert Galati');
-                      window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
-                      showToast('Opening Email to share', 'info');
-                    }}
-                    className="flex-1 bg-[#2a2119] border border-[#bd9661]/40 text-[#dfc194] font-bold py-2 rounded-xl text-xs cursor-pointer transition-colors flex items-center justify-center gap-1 shadow-xs"
-                  >
-                    Email
-                  </button>
-                </div>
               </div>
 
               {/* QR Code Scan Card */}
@@ -1001,53 +1139,8 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                   <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661]">Instant QR Redemption</div>
                   <h3 className="font-serif text-sm font-bold text-[#15110e]">Couple Scan &amp; Save</h3>
                   <p className="text-[10px] text-[#8b7b6b] leading-tight">Couples scan with smartphone camera to apply ROBERT-VIP-15 automatically at sign up.</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      navigator.clipboard?.writeText('https://tapandtoast.demo/signup?ref=ROBERT-VIP-15');
-                      showToast('✓ QR signup link copied to clipboard!', 'success');
-                    }}
-                    className="text-[10px] font-bold text-[#bd9661] hover:underline pt-1 cursor-pointer block"
-                  >
-                    Share QR Link &rarr;
-                  </button>
                 </div>
               </div>
-
-              {/* Mobile Referral Stats Grid */}
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-white border border-[#e8ded0] p-3 rounded-xl">
-                  <div className="text-[10px] text-[#8b7b6b] uppercase font-bold">Couples Referred</div>
-                  <div className="font-serif text-lg font-bold text-[#15110e] mt-1">18 Couples</div>
-                  <div className="text-[10px] text-emerald-700 font-semibold">+4 this month</div>
-                </div>
-                <div className="bg-white border border-[#e8ded0] p-3 rounded-xl">
-                  <div className="text-[10px] text-[#8b7b6b] uppercase font-bold">Booked Weddings</div>
-                  <div className="font-serif text-lg font-bold text-[#15110e] mt-1">12 Booked</div>
-                  <div className="text-[10px] text-[#bd9661] font-semibold">66.7% converted</div>
-                </div>
-                <div className="bg-white border border-[#e8ded0] p-3 rounded-xl">
-                  <div className="text-[10px] text-[#8b7b6b] uppercase font-bold">Couples Saved</div>
-                  <div className="font-serif text-lg font-bold text-[#15110e] mt-1">$2,700 AUD</div>
-                  <div className="text-[10px] text-[#8b7b6b]">15% avg discount</div>
-                </div>
-                <div className="bg-white border border-[#e8ded0] p-3 rounded-xl flex flex-col justify-between">
-                  <div>
-                    <div className="text-[10px] text-[#8b7b6b] uppercase font-bold">Total Commission</div>
-                    <div className="font-serif text-lg font-bold text-emerald-700 mt-1">$1,800 AUD</div>
-                  </div>
-                  <span className="text-[9.5px] text-[#8b7b6b]">$600 available</span>
-                </div>
-              </div>
-
-              {/* Payout Request Button */}
-              <button
-                type="button"
-                onClick={() => showToast('✓ Payout request of $600 AUD submitted to St George Bank (Acc: ****4182)', 'success')}
-                className="w-full bg-[#15110e] hover:bg-[#231c17] text-[#dfc194] font-bold py-2.5 rounded-xl text-xs transition-colors cursor-pointer shadow-xs text-center"
-              >
-                Request Payout ($600 AUD Available) &rarr;
-              </button>
 
               {/* Active Promo Codes List */}
               <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-3">
@@ -1079,138 +1172,14 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                   ))}
                 </div>
               </div>
-
-              {/* Referred Couples Ledger */}
-              <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-3">
-                <h3 className="font-serif text-sm font-bold text-[#15110e]">Referred Couples Ledger</h3>
-                <div className="space-y-2 text-xs">
-                  {[
-                    { couple: 'Sophie & James', date: 'Nov 2026', code: 'ROBERT-VIP-15', status: 'Booked', payout: '$150 Paid' },
-                    { couple: 'Aisha & Marcus', date: 'May 2027', code: 'ROBERT-VIP-15', status: 'Booked', payout: '$150 Paid' },
-                    { couple: 'Emma & Tom', date: 'Sep 2027', code: 'BRIDALEXPO2027', status: 'Deposit Paid', payout: '$150 Pending' },
-                    { couple: 'Liam & Chloe', date: 'Dec 2027', code: 'ROBERT-VIP-15', status: 'Booked', payout: '$150 Paid' },
-                    { couple: 'Harrison & Grace', date: 'Feb 2028', code: 'SUMMERLOVE', status: 'Inquiry', payout: 'Pending' },
-                  ].map((r, i) => (
-                    <div key={i} className="border border-[#e8ded0] rounded-xl p-2.5 flex items-center justify-between">
-                      <div>
-                        <div className="font-bold text-[#15110e]">{r.couple}</div>
-                        <div className="text-[10px] text-[#8b7b6b]">{r.date} &bull; Code: <span className="font-mono">{r.code}</span></div>
-                      </div>
-                      <div className="text-right">
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                          r.status === 'Booked' ? 'bg-[#e8eee4] text-[#3c6a42]' : 'bg-[#faf5ed] text-[#bd9661]'
-                        }`}>
-                          {r.status}
-                        </span>
-                        <div className="text-[10px] text-[#8b7b6b] mt-0.5">{r.payout}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Create Referral Code Modal */}
-          {isCreateReferralOpen && (
-            <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-              <div className="bg-white border border-[#e8ded0] rounded-2xl p-5 w-full max-w-sm shadow-xl space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-[#f0ede4]">
-                  <h3 className="font-serif text-base font-bold text-[#15110e]">Create Promo Code</h3>
-                  <button
-                    type="button"
-                    onClick={() => setIsCreateReferralOpen(false)}
-                    className="text-gray-400 hover:text-black font-bold text-sm cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] uppercase font-bold text-[#8b7b6b] mb-1">Promo Code</label>
-                  <input
-                    type="text"
-                    value={newReferralCode}
-                    onChange={(e) => setNewReferralCode(e.target.value.toUpperCase())}
-                    placeholder="e.g. SPRINGLOVE"
-                    className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 text-xs font-mono font-bold text-[#15110e] outline-none focus:border-[#bd9661]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] uppercase font-bold text-[#8b7b6b] mb-1">Discount Value</label>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {['15% OFF', '$100 OFF', '10% OFF', '20% OFF'].map((d) => (
-                      <button
-                        key={d}
-                        type="button"
-                        onClick={() => setNewReferralDiscount(d)}
-                        className={`py-1.5 rounded-lg text-[10px] font-bold cursor-pointer border transition-colors ${
-                          newReferralDiscount === d ? 'bg-[#15110e] text-[#dfc194] border-[#bd9661]' : 'border-[#e8ded0] hover:bg-[#faf8f5]' 
-                        }`}
-                      >
-                        {d}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] uppercase font-bold text-[#8b7b6b] mb-1">Campaign Description</label>
-                  <input
-                    type="text"
-                    value={newReferralDesc}
-                    onChange={(e) => setNewReferralDesc(e.target.value)}
-                    placeholder="e.g. Spring 2027 VIP couples promotion"
-                    className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-                  />
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!newReferralCode.trim()) {
-                        showToast('Please enter a valid code name', 'error');
-                        return;
-                      }
-                      setMobileReferralCodes([
-                        {
-                          code: newReferralCode.trim(),
-                          discount: newReferralDiscount,
-                          desc: newReferralDesc.trim() || 'Custom promo campaign',
-                          uses: 0,
-                          status: 'Active',
-                        },
-                        ...mobileReferralCodes,
-                      ]);
-                      showToast(`✓ Promo code ${newReferralCode} created and activated!`, 'success');
-                      setNewReferralCode('');
-                      setNewReferralDesc('');
-                      setIsCreateReferralOpen(false);
-                    }}
-                    className="flex-1 bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold py-2.5 rounded-xl text-xs cursor-pointer shadow-xs transition-colors"
-                  >
-                    Create &amp; Activate Code
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsCreateReferralOpen(false)}
-                    className="bg-[#f0ede4] hover:bg-[#e4dfd5] text-[#15110e] font-bold px-3 py-2.5 rounded-xl text-xs cursor-pointer transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
             </div>
           )}
 
           {/* ------------------------------------------------------------ */}
-          {/* HOME MODE: TAB 5 - SETTINGS (Screenshot 21: 172832.png)     */}
+          {/* HOME MODE: TAB 5 - SETTINGS                                 */}
           {/* ------------------------------------------------------------ */}
           {!selectedWeddingId && homeTab === 'settings' && (
             <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-3.5">
-              {/* Profile Avatar Header */}
               <div className="flex items-center gap-3 pb-2 border-b border-[#f0ede4]">
                 <div className="relative">
                   <div className="w-14 h-14 rounded-full bg-[#dfc194] border-2 border-white shadow-sm flex items-center justify-center text-2xl">
@@ -1229,7 +1198,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 </div>
               </div>
 
-              {/* Form Fields */}
               <div className="space-y-2.5 text-xs">
                 <div>
                   <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-1">Full Name</label>
@@ -1261,16 +1229,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-1">MC Biography &amp; Description</label>
-                  <textarea
-                    value={profileForm.bio}
-                    onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
-                    rows={3}
-                    className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 outline-none focus:border-[#bd9661] resize-none"
-                  />
-                </div>
-
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-1">Direct Phone</label>
@@ -1292,16 +1250,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-1">Website / Portfolio</label>
-                  <input
-                    type="text"
-                    value={profileForm.website}
-                    onChange={(e) => setProfileForm({ ...profileForm, website: e.target.value })}
-                    className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 outline-none focus:border-[#bd9661]"
-                  />
-                </div>
-
                 <button
                   type="button"
                   onClick={() => showToast('Profile settings saved', 'success')}
@@ -1313,11 +1261,177 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
             </div>
           )}
 
-          {/* ------------------------------------------------------------ */}
-          {/* LIVE CONSOLE MODE: SUB-PANE 1 - RUN SHEET (Screenshot 13)    */}
-          {/* ------------------------------------------------------------ */}
+          {/* ============================================================ */}
+          {/* LIVE CONSOLE TAB 1: OVERVIEW                                 */}
+          {/* ============================================================ */}
+          {selectedWeddingId && consoleTab === 'overview' && (
+            <div className="space-y-3.5 animate-in fade-in duration-150">
+              {/* Couple Hero Card with Countdown */}
+              <div className="bg-[#15110e] text-white border border-[#bd9661]/40 rounded-2xl p-4 shadow-md space-y-2.5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-widest text-[#bd9661] font-bold">
+                      Active Wedding Console
+                    </div>
+                    <h2 className="font-serif text-xl font-bold text-[#dfc194] mt-0.5">
+                      {activeWedding.couple}
+                    </h2>
+                    <p className="text-xs text-[#d9c9b8] mt-0.5">
+                      📍 {activeWedding.venue}
+                    </p>
+                  </div>
+                  <span className="bg-[#2a1f16] border border-[#bd9661] text-[#dfc194] text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0">
+                    {countdown.upperFormatted || '23 DAYS TO GO'}
+                  </span>
+                </div>
+
+                <div className="bg-[#241a13] border border-[#3d2e23] p-2.5 rounded-xl flex items-center justify-between text-xs">
+                  <span className="text-[#a09080]">Date: <strong className="text-white">{activeWedding.dateDisplay || activeWedding.date}</strong></span>
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Console Live
+                  </span>
+                </div>
+              </div>
+
+              {/* 4 Clean Mobile KPI Cards (2x2 Grid) */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {/* KPI 1: RSVPs */}
+                <div className="bg-white border border-[#e8ded0] border-t-2 border-t-[#bd9661] p-3 rounded-2xl shadow-2xs">
+                  <div className="text-[10px] uppercase font-bold text-[#8b7b6b] flex items-center gap-1">
+                    <span>✉️</span> RSVPs
+                  </div>
+                  <div className="font-serif text-lg font-bold text-[#15110e] mt-1">
+                    {confirmedGuests.length} / {weddingGuests.length}
+                  </div>
+                  <div className="text-[10px] text-emerald-700 font-semibold mt-0.5">
+                    {Math.round((confirmedGuests.length / (weddingGuests.length || 1)) * 100)}% Confirmed
+                  </div>
+                </div>
+
+                {/* KPI 2: Wishing Well */}
+                <div className="bg-white border border-[#e8ded0] border-t-2 border-t-emerald-600 p-3 rounded-2xl shadow-2xs">
+                  <div className="text-[10px] uppercase font-bold text-[#8b7b6b] flex items-center gap-1">
+                    <span>🎁</span> Wishing Well
+                  </div>
+                  <div className="font-serif text-lg font-bold text-[#15110e] mt-1">
+                    ${(activeWedding.giftsTotal || 4680).toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-[#bd9661] font-semibold mt-0.5">
+                    42 Gifts Received
+                  </div>
+                </div>
+
+                {/* KPI 3: Seating Allocation */}
+                <div className="bg-white border border-[#e8ded0] border-t-2 border-t-amber-600 p-3 rounded-2xl shadow-2xs">
+                  <div className="text-[10px] uppercase font-bold text-[#8b7b6b] flex items-center gap-1">
+                    <span>🪑</span> Seated
+                  </div>
+                  <div className="font-serif text-lg font-bold text-[#15110e] mt-1">
+                    {seatedGuestsCount} / {weddingGuests.length}
+                  </div>
+                  <div className="text-[10px] text-[#8b7b6b] mt-0.5">
+                    Across {weddingTables.length} Tables
+                  </div>
+                </div>
+
+                {/* KPI 4: Thank-You Notes */}
+                <div className="bg-white border border-[#e8ded0] border-t-2 border-t-teal-600 p-3 rounded-2xl shadow-2xs">
+                  <div className="text-[10px] uppercase font-bold text-[#8b7b6b] flex items-center gap-1">
+                    <span>💌</span> Thank-Yous
+                  </div>
+                  <div className="font-serif text-lg font-bold text-[#15110e] mt-1">
+                    28 / {confirmedGuests.length}
+                  </div>
+                  <div className="text-[10px] text-[#8b7b6b] mt-0.5">
+                    25% Completed
+                  </div>
+                </div>
+              </div>
+
+              {/* RSVP Progress Bar */}
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-3.5 shadow-2xs space-y-2">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-serif font-bold text-[#15110e]">RSVP Attendance Status</span>
+                  <span className="text-[11px] font-bold text-[#bd9661]">{weddingGuests.length} Invited</span>
+                </div>
+                <div className="w-full h-2.5 bg-[#f0ede4] rounded-full overflow-hidden flex">
+                  <div style={{ width: `${(confirmedGuests.length / (weddingGuests.length || 1)) * 100}%` }} className="bg-[#3c6a42] h-full" title="Confirmed" />
+                  <div style={{ width: `${(pendingGuests.length / (weddingGuests.length || 1)) * 100}%` }} className="bg-[#bd9661] h-full" title="Pending" />
+                  <div style={{ width: `${(declinedGuests.length / (weddingGuests.length || 1)) * 100}%` }} className="bg-[#a09080] h-full" title="Declined" />
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-[#8b7b6b] pt-0.5">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#3c6a42]" /> Confirmed ({confirmedGuests.length})</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#bd9661]" /> Pending ({pendingGuests.length})</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#a09080]" /> Declined ({declinedGuests.length})</span>
+                </div>
+              </div>
+
+              {/* Interactive Wedding Checklist */}
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-serif text-sm font-bold text-[#15110e]">Wedding Checklist</h3>
+                  <span className="text-[10px] text-[#3c6a42] font-bold">
+                    {weddingTasks.filter(t => t.completed).length} / {weddingTasks.length} Done
+                  </span>
+                </div>
+                <div className="space-y-2 text-xs">
+                  {weddingTasks.map((t) => (
+                    <label key={t.id} className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={t.completed}
+                        onChange={() => handleToggleTask(t.id)}
+                        className="accent-[#bd9661] w-4 h-4 cursor-pointer"
+                      />
+                      <span className={t.completed ? 'line-through text-[#8b7b6b]' : 'font-medium text-[#15110e]'}>
+                        {t.text}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <form onSubmit={handleAddTask} className="flex gap-2 pt-2 border-t border-[#f0ede4]">
+                  <input
+                    type="text"
+                    value={newTaskInput}
+                    onChange={(e) => setNewTaskInput(e.target.value)}
+                    placeholder="Add a new wedding task..."
+                    className="flex-1 bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                  />
+                  <button type="submit" className="bg-[#bd9661] text-[#15110e] font-bold px-3 py-1.5 rounded-xl text-xs cursor-pointer">
+                    + Add
+                  </button>
+                </form>
+              </div>
+
+              {/* Recent Activity Feed */}
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-2xs space-y-2.5">
+                <h3 className="font-serif text-sm font-bold text-[#15110e]">Recent Wedding Activity</h3>
+                <div className="space-y-2 text-xs">
+                  {[
+                    { text: 'Priya Sharma updated dietary requirements to Vegetarian', time: '10 mins ago' },
+                    { text: 'The Whitfield family sent $250 AUD to Wishing Well', time: '38 mins ago' },
+                    { text: 'Robert Galati synced 14:00 ceremony cue sheet', time: '1 hour ago' },
+                    { text: 'Michael Chen confirmed RSVP attendance', time: '2 hours ago' },
+                  ].map((act, i) => (
+                    <div key={i} className="flex items-start gap-2 py-1 border-b border-[#f5f2eb] last:border-0">
+                      <span className="text-[#bd9661] font-bold">&bull;</span>
+                      <div>
+                        <div className="text-[#15110e] text-[11px]">{act.text}</div>
+                        <div className="text-[9.5px] text-[#8b7b6b] mt-0.5">{act.time}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* LIVE CONSOLE TAB 2: RUN SHEET                                */}
+          {/* ============================================================ */}
           {selectedWeddingId && consoleTab === 'runsheet' && (
-            <div className="space-y-3">
+            <div className="space-y-3 animate-in fade-in duration-150">
               {/* Broadcast Banner */}
               <div className="bg-[#15110e] text-white p-3 rounded-xl flex items-center justify-between text-xs">
                 <span>All cues running on schedule &bull; Audio tested</span>
@@ -1348,18 +1462,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    const newCue = {
-                      id: 'c_' + Date.now(),
-                      time: '18:00',
-                      title: 'Speeches & Toasts commence',
-                      desc: 'Introduce Father of the Bride and Maid of Honor',
-                      notes: 'Check roving mic battery.',
-                      done: false,
-                    };
-                    setCues([...cues, newCue]);
-                    showToast('New stage cue added', 'success');
-                  }}
+                  onClick={() => setShowAddCueModal(true)}
                   className="bg-[#bd9661] text-[#15110e] font-bold text-[11px] px-2.5 py-1.5 rounded-lg cursor-pointer hover:bg-[#a8824f]"
                 >
                   + Add Cue
@@ -1379,13 +1482,13 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
 
               {/* Cues List */}
               <div className="space-y-2.5">
-                {cues
+                {weddingRunSheet
                   .filter(c => {
                     if (runSheetFilter === 'upcoming') return !c.done;
                     if (runSheetFilter === 'done') return c.done;
                     return true;
                   })
-                  .filter(c => !cueSearch || c.title.toLowerCase().includes(cueSearch.toLowerCase()) || c.notes.toLowerCase().includes(cueSearch.toLowerCase()))
+                  .filter(c => !cueSearch || c.activity.toLowerCase().includes(cueSearch.toLowerCase()) || (c.notes && c.notes.toLowerCase().includes(cueSearch.toLowerCase())) || (c.privateNotes && c.privateNotes.toLowerCase().includes(cueSearch.toLowerCase())))
                   .map((cue, idx) => (
                     <div
                       key={cue.id}
@@ -1405,7 +1508,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                             {cue.time}
                           </span>
                           <span className="font-bold text-xs text-[#15110e] leading-snug">
-                            {cue.title}
+                            {cue.activity}
                           </span>
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
@@ -1413,6 +1516,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                             type="button"
                             onClick={() => moveCue(idx, 'up')}
                             className="w-6 h-6 rounded bg-[#faf8f5] border border-[#e8ded0] flex items-center justify-center text-[10px] cursor-pointer"
+                            title="Move Up"
                           >
                             ▲
                           </button>
@@ -1420,6 +1524,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                             type="button"
                             onClick={() => moveCue(idx, 'down')}
                             className="w-6 h-6 rounded bg-[#faf8f5] border border-[#e8ded0] flex items-center justify-center text-[10px] cursor-pointer"
+                            title="Move Down"
                           >
                             ▼
                           </button>
@@ -1427,577 +1532,560 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                             type="button"
                             onClick={() => deleteCue(cue.id)}
                             className="w-6 h-6 rounded bg-[#faf8f5] border border-[#e8ded0] flex items-center justify-center text-[10px] text-red-500 cursor-pointer"
+                            title="Delete Cue"
                           >
                             🗑
                           </button>
                         </div>
                       </div>
 
-                      <p className="text-xs text-[#6b5849] pl-6">
-                        {cue.desc}
-                      </p>
+                      {cue.notes && (
+                        <p className="text-xs text-[#6b5849] pl-6">
+                          {cue.notes}
+                        </p>
+                      )}
 
-                      {/* MC Cue Notes Box */}
-                      <div className="ml-6 bg-[#faf8f5] border border-[#ebd3a8] rounded-xl p-2 text-xs">
-                        <div className="text-[9px] font-bold uppercase text-[#916c3d] tracking-wider mb-0.5">
-                          MC Cue Notes
+                      {/* Private Cue & Stage Notes Box (No MC written!) */}
+                      {cue.privateNotes && (
+                        <div className="ml-6 bg-[#faf8f5] border border-[#ebd3a8] rounded-xl p-2 text-xs">
+                          <div className="text-[9px] font-bold uppercase text-[#916c3d] tracking-wider mb-0.5">
+                            🔒 Private Cue &amp; Stage Notes
+                          </div>
+                          <div className="text-[#15110e] text-[11px]">{cue.privateNotes}</div>
                         </div>
-                        <div className="text-[#15110e] text-[11px]">{cue.notes}</div>
-                      </div>
+                      )}
                     </div>
                   ))}
               </div>
             </div>
           )}
 
-          {/* ------------------------------------------------------------ */}
-          {/* LIVE CONSOLE MODE: SUB-PANE 2 - SEATING PLANNER (TWO-LEVEL)  */}
-          {/* ------------------------------------------------------------ */}
-          {selectedWeddingId && consoleTab === 'seating' && (() => {
-            const allTables = (state.tables || []).filter(t => (t.weddingId || 'w1') === currentWeddingId);
-            const allGuests = (state.guests || []).filter(g => (g.weddingId || 'w1') === currentWeddingId);
-            const confirmedCount = allGuests.filter(g => g.rsvpStatus === 'confirmed').length;
-
-            // Filter guests by search & table shape
-            const filteredGuests = allGuests.filter((g) => {
-              const matchesSearch = !guestSearch ||
-                g.name.toLowerCase().includes(guestSearch.toLowerCase()) ||
-                (g.dietary && g.dietary.toLowerCase().includes(guestSearch.toLowerCase())) ||
-                (g.household && g.household.toLowerCase().includes(guestSearch.toLowerCase()));
-              
-              if (!matchesSearch) return false;
-
-              if (shapeFilter === 'all') return true;
-              const tbl = allTables.find(t => t.id === g.tableId);
-              if (!tbl) return false;
-              const shape = tbl.shape || (tbl.isHead || tbl.name.toLowerCase().includes('head') ? 'king' : 'round');
-              if (shapeFilter === 'king') return shape === 'king';
-              return shape === shapeFilter;
-            });
-
-            // Filter tables by shape
-            const filteredTables = allTables.map(t => ({
-              ...t,
-              shape: t.shape || (t.isHead || t.name.toLowerCase().includes('head') ? 'king' : 'round'),
-            })).filter((t) => {
-              if (shapeFilter === 'all') return true;
-              if (shapeFilter === 'king') return t.shape === 'king';
-              return t.shape === shapeFilter;
-            });
-
-            return (
-              <div className="space-y-3">
-                {/* 3-Way Segment Switcher (Image 1) */}
-                <div className="grid grid-cols-3 gap-1 bg-[#f0ede4] p-1 rounded-xl text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setSeatingSubTab('guestlist')}
-                    className={`py-2 px-1 rounded-lg font-bold text-[11px] text-center cursor-pointer transition-colors ${
-                      seatingSubTab === 'guestlist' ? 'bg-white text-[#15110e] shadow-xs' : 'text-[#8b7b6b]'
-                    }`}
-                  >
-                    Guest List
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSeatingSubTab('seatingarr')}
-                    className={`py-2 px-1 rounded-lg font-bold text-[11px] text-center cursor-pointer transition-colors ${
-                      seatingSubTab === 'seatingarr' ? 'bg-white text-[#15110e] shadow-xs' : 'text-[#8b7b6b]'
-                    }`}
-                  >
-                    Seating Arrangement
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSeatingSubTab('unseated')}
-                    className={`py-2 px-1 rounded-lg font-bold text-[11px] text-center cursor-pointer transition-colors ${
-                      seatingSubTab === 'unseated' ? 'bg-white text-[#15110e] shadow-xs' : 'text-[#8b7b6b]'
-                    }`}
-                  >
-                    Unseated Guests
-                  </button>
-                </div>
-
-                {/* Search Bar + Shape Filter Dropdown to the right (Request 2) */}
-                <div className="flex items-center gap-2">
-                  <div className="relative flex-1 min-w-0">
-                    <input
-                      type="text"
-                      value={guestSearch}
-                      onChange={(e) => setGuestSearch(e.target.value)}
-                      placeholder="Search guests by name or dietary..."
-                      className="w-full bg-white border border-[#e8ded0] rounded-xl pl-8 pr-2.5 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-2xs"
-                    />
-                    <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#8b7b6b]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="11" cy="11" r="8" />
-                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
+          {/* ============================================================ */}
+          {/* LIVE CONSOLE TAB 3: SEATING STUDIO (PROFESSIONAL MOBILE VIEW) */}
+          {/* ============================================================ */}
+          {selectedWeddingId && consoleTab === 'seating' && (
+            <div className="space-y-3 animate-in fade-in duration-150">
+              {/* Clean Mobile Seating Header & Actions */}
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-3.5 shadow-2xs space-y-2.5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-serif text-base font-bold text-[#15110e]">
+                      Seating Studio
+                    </h3>
+                    <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                      {weddingTables.length} Tables &bull; {weddingGuests.length} Total Guests
+                    </div>
                   </div>
-
-                  <select
-                    value={shapeFilter}
-                    onChange={(e) => setShapeFilter(e.target.value as any)}
-                    className="bg-white border border-[#e8ded0] rounded-xl px-2.5 py-2 text-xs font-semibold text-[#15110e] outline-none shadow-2xs shrink-0 cursor-pointer max-w-[130px]"
-                    title="Filter tables by shape"
-                  >
-                    <option value="all">All Tables</option>
-                    <option value="round">⚪ Round</option>
-                    <option value="rectangular">▯ Rectangle</option>
-                    <option value="king">👑 King</option>
-                  </select>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10.5px] font-bold text-[#3c6a42] bg-[#e8eee4] px-2 py-0.5 rounded-full">
+                      {seatedGuestsCount} Seated
+                    </span>
+                    <span className="text-[10.5px] font-bold text-[#bd9661] bg-[#faf5ed] border border-[#ebd3a8] px-2 py-0.5 rounded-full">
+                      {unassignedGuests.length} Unseated
+                    </span>
+                  </div>
                 </div>
 
-                {/* Quick Action Toolbar: Cheers AI Assist + Add Table */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 pt-1 border-t border-[#f5f2eb]">
                   <button
                     type="button"
                     onClick={() => handleRunCheersAiSeating('households')}
-                    className="flex-1 bg-gradient-to-r from-[#15110e] to-[#2b221a] text-[#dfc194] hover:text-white border border-[#bd9661]/40 rounded-xl py-2 px-3 text-xs font-bold shadow-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all"
+                    className="flex-1 bg-gradient-to-r from-[#15110e] to-[#251e18] hover:to-[#15110e] text-[#dfc194] border border-[#bd9661]/40 rounded-xl py-2 px-2.5 text-xs font-bold cursor-pointer shadow-2xs flex items-center justify-center gap-1.5 transition-all"
                   >
-                    <span>✨ Cheers AI Assist</span>
+                    <span>✨</span>
+                    <span>Cheers AI Auto-Seat</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowAddTableModal(true)}
-                    className="bg-white hover:bg-[#faf7f2] text-[#916c3d] border border-[#ebd3a8] rounded-xl py-2 px-3 text-xs font-bold shadow-xs cursor-pointer flex items-center justify-center gap-1 transition-all shrink-0"
+                    className="bg-white hover:bg-[#faf8f5] text-[#15110e] border border-[#d5c7b5] rounded-xl py-2 px-3 text-xs font-bold cursor-pointer shadow-2xs flex items-center justify-center gap-1 transition-all shrink-0"
                   >
-                    <span>+ Add Table</span>
+                    <span>+</span>
+                    <span>Add Table</span>
                   </button>
                 </div>
+              </div>
 
-                {/* ============================================================== */}
-                {/* SEGMENT 1: GUEST LIST (Matching Image 1)                        */}
-                {/* ============================================================== */}
-                {seatingSubTab === 'guestlist' && (
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center text-xs text-[#8b7b6b] px-1">
-                      <span>Showing {filteredGuests.length} Guests</span>
-                      <span className="text-[#3c6a42] font-bold">{confirmedCount} Confirmed RSVPs</span>
-                    </div>
+              {/* 3-Segment View Switcher */}
+              <div className="grid grid-cols-3 gap-1 bg-[#f0ede4] p-1 rounded-xl text-xs">
+                <button
+                  type="button"
+                  onClick={() => setSeatingSubTab('canvas')}
+                  className={`py-2 px-1 rounded-lg font-bold text-[11px] text-center cursor-pointer transition-colors ${
+                    seatingSubTab === 'canvas' ? 'bg-white text-[#15110e] shadow-xs' : 'text-[#8b7b6b]'
+                  }`}
+                >
+                  Floor Canvas
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSeatingSubTab('tables')}
+                  className={`py-2 px-1 rounded-lg font-bold text-[11px] text-center cursor-pointer transition-colors ${
+                    seatingSubTab === 'tables' ? 'bg-white text-[#15110e] shadow-xs' : 'text-[#8b7b6b]'
+                  }`}
+                >
+                  Tables List
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSeatingSubTab('unseated')}
+                  className={`py-2 px-1 rounded-lg font-bold text-[11px] text-center cursor-pointer transition-colors ${
+                    seatingSubTab === 'unseated' ? 'bg-white text-[#15110e] shadow-xs' : 'text-[#8b7b6b]'
+                  }`}
+                >
+                  Unseated ({unassignedGuests.length})
+                </button>
+              </div>
 
-                    <div className="space-y-2">
-                      {filteredGuests.length === 0 ? (
-                        <div className="text-center py-8 text-xs text-[#8b7b6b] bg-white rounded-2xl border border-[#e8ded0] p-4">
-                          No guests match the current filters.
-                        </div>
-                      ) : (
-                        filteredGuests.map((g) => {
-                          const tbl = allTables.find((t) => t.id === g.tableId);
-                          const isHead = tbl?.isHead || tbl?.name?.toLowerCase().includes('head');
-                          const tableName = tbl ? tbl.name : (g.tableId ? g.tableId.toUpperCase() : 'Unassigned');
-
-                          return (
-                            <div
-                              key={g.id}
-                              className="bg-white border border-[#e8ded0] rounded-2xl p-3.5 flex items-center justify-between shadow-2xs hover:border-[#bd9661] transition-colors"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-full bg-[#15110e] text-[#dfc194] font-bold text-xs flex items-center justify-center shrink-0">
-                                  {g.initials || g.name.slice(0, 2).toUpperCase()}
-                                </div>
-                                <div>
-                                  <div className="text-xs font-bold text-[#15110e]">{g.name}</div>
-                                  <div className="text-[10px] text-[#8b7b6b] mt-0.5">
-                                    Individual {g.dietary && g.dietary !== 'None' ? `· ${g.dietary}` : ''}
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <span
-                                  className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${
-                                    isHead
-                                      ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]/40'
-                                      : tbl
-                                      ? 'bg-[#15110e] text-white'
-                                      : 'bg-[#faf5ee] text-[#916c3d] border border-[#ebd3a8]'
-                                  }`}
-                                >
-                                  {tableName}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
+              {/* -------------------------------------------------------- */}
+              {/* SUB-VIEW 1: FULL-WIDTH MOBILE 2D INTERACTIVE CANVAS     */}
+              {/* -------------------------------------------------------- */}
+              {seatingSubTab === 'canvas' && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between px-1 text-[11px] text-[#8b7b6b]">
+                    <span>Touch &amp; drag tables &bull; Tap table to manage</span>
+                    <span className="font-semibold text-[#bd9661]">Full Floor Plan</span>
                   </div>
-                )}
 
-                {/* ============================================================== */}
-                {/* SEGMENT 2: SEATING ARRANGEMENT (Matching Image 4) */}
-                {/* ============================================================== */}
-                {seatingSubTab === 'seatingarr' && (
-                  <div className="space-y-4">
-                    <div className="text-center text-xs text-[#8b7b6b] py-0.5">
-                      Scroll down to inspect all tables and seated guests
+                  <div
+                    id="mobile_canvas_container"
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      const el = document.getElementById('mobile_canvas_container');
+                      if (el) handleTableCanvasDrop(e, el.getBoundingClientRect());
+                    }}
+                    className="w-full h-[450px] bg-[#fbf9f5] border-2 border-[#e8ded0] rounded-2xl relative shadow-inner overflow-hidden select-none"
+                    style={{
+                      backgroundImage: 'radial-gradient(#d5c7b5 1.2px, transparent 1.2px)',
+                      backgroundSize: '20px 20px',
+                    }}
+                  >
+                    {/* Architectural Anchors */}
+                    <div className="absolute top-2.5 left-1/2 -translate-x-1/2 bg-[#15110e] text-[#dfc194] px-4 py-1 rounded-full border border-[#bd9661] text-[10px] font-bold tracking-wider shadow-sm flex items-center gap-1.5 z-10">
+                      <span>👑</span> BRIDAL STAGE &bull; HEAD TABLE
                     </div>
 
-                    {filteredTables.map((tbl) => {
-                      const seatedGuests = allGuests.filter((g) => g.tableId === tbl.id);
-                      const isFull = seatedGuests.length >= tbl.capacity;
-                      const unassignedGuests = allGuests.filter((g) => !g.tableId && g.rsvpStatus !== 'declined');
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-44 h-32 rounded-3xl border-2 border-dashed border-[#bd9661]/35 bg-[#bd9661]/5 flex flex-col items-center justify-center text-center pointer-events-none">
+                      <span className="text-lg">💃</span>
+                      <span className="font-serif text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mt-0.5">
+                        Main Dance Floor
+                      </span>
+                    </div>
+
+                    <div className="absolute bottom-2 left-4 bg-white/90 border border-[#e8ded0] px-3 py-1 rounded-lg text-[9.5px] font-bold text-[#8b7b6b] shadow-2xs pointer-events-none">
+                      🍸 Bar &amp; Lounge
+                    </div>
+
+                    <div className="absolute bottom-2 right-4 bg-white/90 border border-[#e8ded0] px-3 py-1 rounded-lg text-[9.5px] font-bold text-[#8b7b6b] shadow-2xs pointer-events-none">
+                      🌿 Garden Verandah
+                    </div>
+
+                    {/* Touch-Draggable Tables on Mobile Canvas */}
+                    {weddingTables.map((tbl, idx) => {
+                      const seated = weddingGuests.filter(g => g.tableId === tbl.id);
+                      const isFull = seated.length >= tbl.capacity;
+                      const coords = getMobileTableCoords(tbl, idx);
 
                       return (
-                        <div key={tbl.id} className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-3.5">
-                          {/* Table Header matching Image 4 */}
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <h3 className="font-serif text-base font-bold text-[#15110e] uppercase tracking-wide">
-                                {tbl.name}
-                              </h3>
-                              <div className="text-[11px] text-[#8b7b6b] mt-0.5">
-                                {tbl.isHead ? 'VIP Head Table • Bridal Party' : `${tbl.category || 'Ballroom'} • ${tbl.capacity} max capacity`}
-                              </div>
-                            </div>
-                            <span
-                              className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                                isFull ? 'bg-[#e8eee4] text-[#3c6a42]' : 'bg-[#faf5ed] text-[#916c3d] border border-[#ebd3a8]'
-                              }`}
-                            >
-                              {seatedGuests.length} / {tbl.capacity} Seated
-                            </span>
-                          </div>
-
-                          <div className="border-t border-[#f5f2eb]" />
-
-                          {/* Visual Table Diagram matching Image 4 */}
-                          <div
-                            className="rounded-2xl border border-[#e8ded0] bg-[#fbf9f5] p-4 min-h-[220px] flex items-center justify-center relative shadow-inner overflow-hidden"
-                            style={{
-                              backgroundImage: 'radial-gradient(#d5c7b5 1.2px, transparent 1.2px)',
-                              backgroundSize: '16px 16px',
-                            }}
-                          >
-                            {/* ROUND TABLE VISUALIZATION (Image 4) */}
-                            {tbl.shape === 'round' && (
-                              <div className="relative w-[210px] h-[210px] flex items-center justify-center">
-                                {/* Perimeter guide circle */}
-                                <div className="absolute inset-2 rounded-full border border-dashed border-[#bd9661]/35 pointer-events-none" />
-
-                                {/* Center table surface with gold ring */}
-                                <div className="w-[104px] h-[104px] rounded-full bg-white border-2 border-[#bd9661] shadow-md flex flex-col items-center justify-center text-center z-10 p-2 select-none">
-                                  <span className="font-serif text-[11px] font-bold text-[#15110e] line-clamp-1 leading-tight uppercase">
-                                    {tbl.name}
-                                  </span>
-                                  <span className="text-[10px] font-bold text-[#bd9661] mt-0.5">
-                                    {seatedGuests.length} / {tbl.capacity}
-                                  </span>
-                                </div>
-
-                                {/* Circular Seat Nodes (Initial Avatars) */}
-                                {Array.from({ length: tbl.capacity }).map((_, i) => {
-                                  const angle = (i / tbl.capacity) * 2 * Math.PI - Math.PI / 2;
-                                  const radius = 78;
-                                  const x = Math.cos(angle) * radius;
-                                  const y = Math.sin(angle) * radius;
-                                  const guest = seatedGuests[i];
-
-                                  return (
-                                    <div
-                                      key={i}
-                                      className={`absolute w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold shadow-xs select-none transition-transform hover:scale-110 ${
-                                        guest
-                                          ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]'
-                                          : 'bg-white border border-dashed border-[#bd9661]/60 text-[#8b7b6b]'
-                                      }`}
-                                      style={{
-                                        left: `calc(50% + ${x}px - 14px)`,
-                                        top: `calc(50% + ${y}px - 14px)`,
-                                      }}
-                                      title={guest ? `${guest.name} (Seat #${i + 1})` : `Seat #${i + 1} (Empty)`}
-                                    >
-                                      {guest ? guest.initials || guest.name.slice(0, 2).toUpperCase() : `#${i + 1}`}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-
-                            {/* RECTANGULAR TABLE VISUALIZATION */}
-                            {tbl.shape === 'rectangular' && (
-                              <div className="w-full flex flex-col items-center justify-center gap-2.5 py-1">
-                                {/* Top row seats */}
-                                <div className="flex justify-center gap-1.5 flex-wrap max-w-full">
-                                  {Array.from({ length: Math.ceil(tbl.capacity / 2) }).map((_, i) => {
-                                    const guest = seatedGuests[i];
-                                    return (
-                                      <div
-                                        key={i}
-                                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-[9px] font-bold shadow-xs select-none ${
-                                          guest
-                                            ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]'
-                                            : 'bg-white border border-dashed border-[#bd9661]/60 text-[#8b7b6b]'
-                                        }`}
-                                        title={guest ? `${guest.name} (Seat #${i + 1})` : `Seat #${i + 1} (Empty)`}
-                                      >
-                                        {guest ? guest.initials || guest.name.slice(0, 2).toUpperCase() : `#${i + 1}`}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-
-                                {/* Table Surface */}
-                                <div className="w-48 h-12 bg-white border-2 border-[#bd9661] rounded-xl shadow-xs flex flex-col items-center justify-center text-center px-2">
-                                  <span className="font-serif text-[11px] font-bold text-[#15110e] uppercase line-clamp-1 leading-tight">
-                                    {tbl.name}
-                                  </span>
-                                  <span className="text-[9.5px] font-bold text-[#bd9661]">
-                                    {seatedGuests.length} / {tbl.capacity} &bull; Rectangular
-                                  </span>
-                                </div>
-
-                                {/* Bottom row seats */}
-                                <div className="flex justify-center gap-1.5 flex-wrap max-w-full">
-                                  {Array.from({ length: Math.floor(tbl.capacity / 2) }).map((_, idx) => {
-                                    const sIdx = Math.ceil(tbl.capacity / 2) + idx;
-                                    const guest = seatedGuests[sIdx];
-                                    return (
-                                      <div
-                                        key={sIdx}
-                                        className={`w-7 h-7 rounded-lg flex items-center justify-center text-[9px] font-bold shadow-xs select-none ${
-                                          guest
-                                            ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]'
-                                            : 'bg-white border border-dashed border-[#bd9661]/60 text-[#8b7b6b]'
-                                        }`}
-                                        title={guest ? `${guest.name} (Seat #${sIdx + 1})` : `Seat #${sIdx + 1} (Empty)`}
-                                      >
-                                        {guest ? guest.initials || guest.name.slice(0, 2).toUpperCase() : `#${sIdx + 1}`}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* KING BANQUET TABLE VISUALIZATION */}
-                            {tbl.shape === 'king' && (
-                              <div className="w-full flex flex-col items-center justify-center gap-2 py-1">
-                                {/* Top row seats */}
-                                <div className="flex justify-center gap-1 overflow-x-auto max-w-full pb-1 no-scrollbar">
-                                  {Array.from({ length: Math.ceil(tbl.capacity / 2) }).map((_, i) => {
-                                    const guest = seatedGuests[i];
-                                    return (
-                                      <div
-                                        key={i}
-                                        className={`w-6 h-6 shrink-0 rounded-lg flex items-center justify-center text-[8.5px] font-bold shadow-xs select-none ${
-                                          guest
-                                            ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]'
-                                            : 'bg-white border border-dashed border-[#bd9661]/60 text-[#8b7b6b]'
-                                        }`}
-                                        title={guest ? `${guest.name} (Seat #${i + 1})` : `Seat #${i + 1} (Empty)`}
-                                      >
-                                        {guest ? guest.initials || guest.name.slice(0, 2).toUpperCase() : `#${i + 1}`}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-
-                                {/* Royal Banquet Runner */}
-                                <div className="w-full max-w-[270px] h-10 rounded-xl bg-gradient-to-r from-[#291f17] via-[#3d2e24] to-[#291f17] border-2 border-[#bd9661] text-white flex flex-col items-center justify-center text-center shadow-md px-2">
-                                  <span className="font-serif text-[10.5px] font-bold text-[#dfc194] uppercase tracking-wider line-clamp-1">
-                                    👑 {tbl.name}
-                                  </span>
-                                  <span className="text-[9px] text-[#e8ded0]">
-                                    {seatedGuests.length} / {tbl.capacity} Places &bull; Banquet
-                                  </span>
-                                </div>
-
-                                {/* Bottom row seats */}
-                                <div className="flex justify-center gap-1 overflow-x-auto max-w-full pb-1 no-scrollbar">
-                                  {Array.from({ length: Math.floor(tbl.capacity / 2) }).map((_, idx) => {
-                                    const sIdx = Math.ceil(tbl.capacity / 2) + idx;
-                                    const guest = seatedGuests[sIdx];
-                                    return (
-                                      <div
-                                        key={sIdx}
-                                        className={`w-6 h-6 shrink-0 rounded-lg flex items-center justify-center text-[8.5px] font-bold shadow-xs select-none ${
-                                          guest
-                                            ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]'
-                                            : 'bg-white border border-dashed border-[#bd9661]/60 text-[#8b7b6b]'
-                                        }`}
-                                        title={guest ? `${guest.name} (Seat #${sIdx + 1})` : `Seat #${sIdx + 1} (Empty)`}
-                                      >
-                                        {guest ? guest.initials || guest.name.slice(0, 2).toUpperCase() : `#${sIdx + 1}`}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Seated Guests Section matching Image 4 */}
-                          <div className="space-y-2 pt-1">
-                            <div className="text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b]">
-                              Seated Guests at {tbl.name}:
-                            </div>
-
-                            {seatedGuests.length === 0 ? (
-                              <div className="text-center py-3 text-xs text-[#8b7b6b] bg-[#faf8f5] rounded-xl border border-dashed border-[#e8ded0]">
-                                No guests currently seated at this table.
-                              </div>
-                            ) : (
-                              seatedGuests.map((item, sIdx) => (
-                                <div key={item.id} className="flex items-center justify-between text-xs py-1.5 border-b border-[#f5f2eb] last:border-0">
-                                  <div className="flex items-center gap-2 min-w-0 pr-2">
-                                    <span className="font-bold text-[#15110e] truncate">
-                                      {sIdx + 1}. {item.name}
-                                    </span>
-                                    {item.dietary && item.dietary !== 'None' && (
-                                      <span className="bg-[#fff1f0] text-[#c93b2b] text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0">
-                                        {item.dietary}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleUnseatGuestMobile(item.id, item.name)}
-                                    className="text-[11px] text-[#bd9661] hover:text-[#916c3d] font-semibold border border-[#ebd3a8] hover:border-[#bd9661] bg-[#faf8f5] hover:bg-[#f5ebd8] px-2.5 py-0.5 rounded-lg cursor-pointer transition-colors shrink-0"
-                                  >
-                                    Unseat
-                                  </button>
-                                </div>
-                              ))
-                            )}
-
-                            {/* Quick Seat Guest Row if capacity available and unassigned guests exist */}
-                            {!isFull && unassignedGuests.length > 0 && (
-                              <div className="pt-2 flex items-center gap-1.5">
-                                <select
-                                  id={`quick_seat_${tbl.id}`}
-                                  className="flex-1 min-w-0 bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-2.5 py-1.5 text-xs text-[#15110e] outline-none"
-                                  defaultValue=""
-                                >
-                                  <option value="" disabled>+ Seat unassigned guest...</option>
-                                  {unassignedGuests.map((g) => (
-                                    <option key={g.id} value={g.id}>
-                                      {g.name} ({g.household || 'General'}{g.dietary && g.dietary !== 'None' ? ` • ${g.dietary}` : ''})
-                                    </option>
-                                  ))}
-                                </select>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const sel = (document.getElementById(`quick_seat_${tbl.id}`) as HTMLSelectElement)?.value;
-                                    if (sel) handleSeatGuestMobile(sel, tbl.id, tbl.name);
-                                  }}
-                                  className="bg-[#15110e] hover:bg-[#2b221a] text-[#dfc194] text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer shrink-0 transition-colors"
-                                >
-                                  + Seat
-                                </button>
-                              </div>
-                            )}
-                          </div>
+                        <div
+                          key={tbl.id}
+                          draggable
+                          onDragStart={() => setDraggingTableId(tbl.id)}
+                          onTouchMove={(e) => handleTouchMoveTable(e, tbl.id)}
+                          onClick={() => setSelectedMobileTableId(tbl.id)}
+                          style={{
+                            left: `${coords.x}%`,
+                            top: `${coords.y}%`,
+                          }}
+                          className={`absolute -translate-x-1/2 -translate-y-1/2 transition-transform active:scale-110 cursor-pointer shadow-md select-none flex flex-col items-center justify-center text-center ${
+                            tbl.isHead || tbl.shape === 'king'
+                              ? 'w-28 h-12 bg-gradient-to-r from-[#1c1511] via-[#2a1f16] to-[#1c1511] text-white border-2 border-[#bd9661] rounded-xl'
+                              : tbl.shape === 'rectangular'
+                              ? 'w-20 h-11 bg-white text-[#15110e] border-2 border-[#bd9661] rounded-lg'
+                              : 'w-14 h-14 bg-white text-[#15110e] border-2 border-[#bd9661] rounded-full'
+                          } ${isFull ? 'ring-2 ring-emerald-500/40' : 'ring-1 ring-[#bd9661]/20'}`}
+                          title={`Tap to manage ${tbl.name}`}
+                        >
+                          <span className="font-serif text-[10px] font-bold leading-tight truncate max-w-[90%] px-1">
+                            {tbl.name}
+                          </span>
+                          <span className={`text-[9px] font-bold mt-0.5 px-1.5 py-0.2 rounded-full ${
+                            isFull ? 'bg-emerald-100 text-emerald-800' : 'bg-[#faf5ed] text-[#bd9661]'
+                          }`}>
+                            {seated.length}/{tbl.capacity}
+                          </span>
                         </div>
                       );
                     })}
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* ============================================================== */}
-                {/* SEGMENT 3: UNSEATED GUESTS                                     */}
-                {/* ============================================================== */}
-                {seatingSubTab === 'unseated' && (() => {
-                  const unseatedList = allGuests.filter(g => !g.tableId && g.rsvpStatus !== 'declined');
+              {/* -------------------------------------------------------- */}
+              {/* SUB-VIEW 2: TABLES LIST ROSTER VIEW                      */}
+              {/* -------------------------------------------------------- */}
+              {seatingSubTab === 'tables' && (
+                <div className="space-y-3">
+                  {weddingTables.map((tbl) => {
+                    const seatedGuests = weddingGuests.filter((g) => g.tableId === tbl.id);
+                    const isFull = seatedGuests.length >= tbl.capacity;
 
-                  return (
-                    <div className="space-y-3">
-                      <div className="bg-[#faf6f0] border border-[#ebd3a8] rounded-2xl p-3 flex items-center justify-between">
-                        <div>
-                          <div className="font-bold text-xs text-[#916c3d]">Remaining Guests to Seat</div>
-                          <div className="text-[11px] text-[#8b7b6b]">
-                            {unseatedList.length} unassigned guests
+                    return (
+                      <div key={tbl.id} className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="font-serif text-base font-bold text-[#15110e]">
+                              {tbl.name} {tbl.isHead ? '👑' : ''}
+                            </h3>
+                            <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                              {tbl.shape ? tbl.shape.toUpperCase() : 'ROUND'} &bull; {tbl.category || 'Ballroom'} &bull; {tbl.capacity} Max Seats
+                            </div>
                           </div>
+                          <span
+                            className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                              isFull ? 'bg-[#e8eee4] text-[#3c6a42]' : 'bg-[#faf5ed] text-[#916c3d] border border-[#ebd3a8]'
+                            }`}
+                          >
+                            {seatedGuests.length} / {tbl.capacity} Seated
+                          </span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            // Assign unseated guests to available tables
-                            let tableIdx = 0;
-                            const updated = state.guests.map(g => {
-                              if (!g.tableId && g.rsvpStatus !== 'declined' && allTables.length > 0) {
-                                const target = allTables[tableIdx % allTables.length];
-                                tableIdx++;
-                                return { ...g, tableId: target.id, seatIndex: 0 };
-                              }
-                              return g;
-                            });
-                            setState({ ...state, guests: updated });
-                            showToast('All remaining guests automatically seated across available tables', 'success');
-                          }}
-                          className="bg-[#bd9661] text-[#15110e] font-bold text-xs px-3 py-1.5 rounded-lg cursor-pointer hover:bg-[#a8824f]"
-                        >
-                          Seat All
-                        </button>
-                      </div>
 
-                      <div className="space-y-2.5">
-                        {unseatedList.length === 0 ? (
-                          <div className="text-center py-8 text-xs text-[#3c6a42] font-semibold bg-[#f0f7f1] rounded-2xl border border-emerald-200 p-4">
-                            🎉 All guests are successfully seated!
-                          </div>
-                        ) : (
-                          unseatedList.map((g) => (
-                            <div key={g.id} className="bg-white border border-[#e8ded0] rounded-2xl p-3.5 shadow-xs space-y-2">
-                              <div className="flex items-center justify-between">
-                                <h4 className="font-bold text-xs text-[#15110e]">{g.name}</h4>
-                                {g.dietary && g.dietary !== 'None' && (
-                                  <span className="bg-[#fff1f0] text-[#c93b2b] text-[10px] font-bold px-1.5 py-0.2 rounded">
-                                    {g.dietary}
+                        {/* Seated Guests List */}
+                        <div className="space-y-1.5 pt-1 border-t border-[#f5f2eb]">
+                          {seatedGuests.length === 0 ? (
+                            <div className="text-center py-2.5 text-xs text-[#8b7b6b] bg-[#faf8f5] rounded-xl border border-dashed border-[#e8ded0]">
+                              No guests currently seated at this table.
+                            </div>
+                          ) : (
+                            seatedGuests.map((item, sIdx) => (
+                              <div key={item.id} className="flex items-center justify-between text-xs py-1 border-b border-[#f5f2eb] last:border-0">
+                                <div className="flex items-center gap-2 min-w-0 pr-2">
+                                  <span className="font-bold text-[#15110e] truncate">
+                                    {sIdx + 1}. {item.name}
                                   </span>
-                                )}
-                              </div>
-                              <div className="text-[11px] text-[#8b7b6b]">
-                                {g.household || 'Individual'}
-                              </div>
-
-                              <div className="flex gap-2 pt-1">
-                                <select
-                                  id={`mc_seat_${g.id}`}
-                                  className="flex-1 bg-white border border-[#e8ded0] rounded-lg p-1.5 text-xs text-[#15110e] outline-none"
-                                  defaultValue={allTables[0]?.id || ''}
-                                >
-                                  {allTables.map((t) => {
-                                    const seated = allGuests.filter(x => x.tableId === t.id).length;
-                                    const free = Math.max(0, t.capacity - seated);
-                                    return (
-                                      <option key={t.id} value={t.id}>
-                                        {t.name} ({t.shape || 'round'} &bull; {free} free)
-                                      </option>
-                                    );
-                                  })}
-                                </select>
+                                  {item.dietary && item.dietary !== 'None' && (
+                                    <span className="bg-[#fff1f0] text-[#c93b2b] text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0">
+                                      {item.dietary}
+                                    </span>
+                                  )}
+                                </div>
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    const sel = (document.getElementById(`mc_seat_${g.id}`) as HTMLSelectElement)?.value;
-                                    if (sel) {
-                                      const updated = state.guests.map(x => x.id === g.id ? { ...x, tableId: sel, seatIndex: 0 } : x);
-                                      setState({ ...state, guests: updated });
-                                      const t = allTables.find(tbl => tbl.id === sel);
-                                      showToast(`Seated ${g.name} at ${t?.name || 'table'}`, 'success');
-                                    }
-                                  }}
-                                  className="bg-[#bd9661] text-[#15110e] font-bold text-xs px-3 py-1.5 rounded-lg cursor-pointer hover:bg-[#a8824f]"
+                                  onClick={() => handleUnseatGuestMobile(item.id, item.name)}
+                                  className="text-[10px] text-[#bd9661] hover:text-[#916c3d] font-semibold border border-[#ebd3a8] bg-[#faf8f5] px-2 py-0.5 rounded cursor-pointer shrink-0"
                                 >
-                                  Seat
+                                  Unseat
                                 </button>
                               </div>
-                            </div>
-                          ))
-                        )}
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* -------------------------------------------------------- */}
+              {/* SUB-VIEW 3: UNSEATED GUESTS ROSTER                       */}
+              {/* -------------------------------------------------------- */}
+              {seatingSubTab === 'unseated' && (
+                <div className="space-y-3">
+                  <div className="bg-[#faf6f0] border border-[#ebd3a8] rounded-2xl p-3 flex items-center justify-between">
+                    <div>
+                      <div className="font-bold text-xs text-[#916c3d]">Remaining Unseated Guests</div>
+                      <div className="text-[11px] text-[#8b7b6b]">
+                        {unassignedGuests.length} unassigned guests
                       </div>
                     </div>
-                  );
-                })()}
-              </div>
-            );
-          })()}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        let tableIdx = 0;
+                        const updated = state.guests.map(g => {
+                          if (!g.tableId && g.rsvpStatus !== 'declined' && weddingTables.length > 0) {
+                            const target = weddingTables[tableIdx % weddingTables.length];
+                            tableIdx++;
+                            return { ...g, tableId: target.id, seatIndex: 0 };
+                          }
+                          return g;
+                        });
+                        setState({ ...state, guests: updated });
+                        showToast('All remaining guests automatically seated across available tables', 'success');
+                      }}
+                      className="bg-[#bd9661] text-[#15110e] font-bold text-xs px-3 py-1.5 rounded-lg cursor-pointer hover:bg-[#a8824f]"
+                    >
+                      Seat All
+                    </button>
+                  </div>
 
+                  <div className="space-y-2.5">
+                    {unassignedGuests.length === 0 ? (
+                      <div className="text-center py-8 text-xs text-[#3c6a42] font-semibold bg-[#f0f7f1] rounded-2xl border border-emerald-200 p-4">
+                        🎉 All guests are successfully seated!
+                      </div>
+                    ) : (
+                      unassignedGuests.map((g) => (
+                        <div key={g.id} className="bg-white border border-[#e8ded0] rounded-2xl p-3 shadow-xs space-y-2">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-bold text-xs text-[#15110e]">{g.name}</h4>
+                            {g.dietary && g.dietary !== 'None' && (
+                              <span className="bg-[#fff1f0] text-[#c93b2b] text-[10px] font-bold px-1.5 py-0.2 rounded">
+                                {g.dietary}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-[#8b7b6b]">
+                            {g.household || 'Individual'}
+                          </div>
+
+                          <div className="flex gap-2 pt-1">
+                            <select
+                              id={`mc_seat_${g.id}`}
+                              className="flex-1 bg-white border border-[#e8ded0] rounded-lg p-1.5 text-xs text-[#15110e] outline-none"
+                              defaultValue={weddingTables[0]?.id || ''}
+                            >
+                              {weddingTables.map((t) => {
+                                const seated = weddingGuests.filter(x => x.tableId === t.id).length;
+                                const free = Math.max(0, t.capacity - seated);
+                                return (
+                                  <option key={t.id} value={t.id}>
+                                    {t.name} ({free} free)
+                                  </option>
+                                );
+                              })}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const sel = (document.getElementById(`mc_seat_${g.id}`) as HTMLSelectElement)?.value;
+                                if (sel) {
+                                  const updated = state.guests.map(x => x.id === g.id ? { ...x, tableId: sel, seatIndex: 0 } : x);
+                                  setState({ ...state, guests: updated });
+                                  const t = weddingTables.find(tbl => tbl.id === sel);
+                                  showToast(`Seated ${g.name} at ${t?.name || 'table'}`, 'success');
+                                }
+                              }}
+                              className="bg-[#bd9661] text-[#15110e] font-bold text-xs px-3 py-1.5 rounded-lg cursor-pointer hover:bg-[#a8824f]"
+                            >
+                              Seat
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* LIVE CONSOLE TAB 4: CATERING & HOSPITALITY SUMMARY          */}
+          {/* ============================================================ */}
+          {selectedWeddingId && consoleTab === 'catering' && (
+            <div className="space-y-3.5 animate-in fade-in duration-150">
+              <div className="px-1">
+                <div className="text-[10px] font-bold tracking-widest uppercase text-[#bd9661]">
+                  Hospitality &amp; Kitchen Operations
+                </div>
+                <h2 className="font-serif text-lg font-bold text-[#15110e]">
+                  Guest &amp; Catering Summary
+                </h2>
+                <p className="text-[11px] text-[#8b7b6b]">
+                  Full dietary requirements breakdown &amp; banquet table dispatch
+                </p>
+              </div>
+
+              {/* 5 Dietary Metric Cards */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-white border border-[#e8ded0] border-t-2 border-t-[#bd9661] p-3 rounded-2xl shadow-2xs col-span-2 flex items-center justify-between">
+                  <div>
+                    <div className="text-[10px] uppercase font-bold text-[#8b7b6b]">Total Confirmed Covers</div>
+                    <div className="font-serif text-xl font-bold text-[#15110e] mt-0.5">{confirmedGuests.length} Guests</div>
+                  </div>
+                  <span className="text-xs font-bold text-[#bd9661] bg-[#faf6f0] border border-[#ebd3a8] px-2.5 py-1 rounded-full">
+                    {weddingTables.length} Tables
+                  </span>
+                </div>
+
+                <div className="bg-white border border-[#e8ded0] border-t-2 border-t-emerald-600 p-2.5 rounded-xl shadow-2xs">
+                  <div className="text-[10px] uppercase font-bold text-emerald-800">Vegetarian</div>
+                  <div className="font-serif text-lg font-bold text-emerald-700 mt-0.5">{vegCount}</div>
+                </div>
+
+                <div className="bg-white border border-[#e8ded0] border-t-2 border-t-teal-600 p-2.5 rounded-xl shadow-2xs">
+                  <div className="text-[10px] uppercase font-bold text-teal-800">Vegan</div>
+                  <div className="font-serif text-lg font-bold text-teal-700 mt-0.5">{veganCount}</div>
+                </div>
+
+                <div className="bg-white border border-[#e8ded0] border-t-2 border-t-amber-600 p-2.5 rounded-xl shadow-2xs">
+                  <div className="text-[10px] uppercase font-bold text-amber-800">Gluten-Free</div>
+                  <div className="font-serif text-lg font-bold text-amber-700 mt-0.5">{gfCount}</div>
+                </div>
+
+                <div className="bg-white border border-[#e8ded0] border-t-2 border-t-rose-600 p-2.5 rounded-xl shadow-2xs">
+                  <div className="text-[10px] uppercase font-bold text-rose-800">Nut / Allergies</div>
+                  <div className="font-serif text-lg font-bold text-rose-700 mt-0.5">{nutCount + otherDietCount}</div>
+                </div>
+              </div>
+
+              {/* Table-by-Table Catering Breakdown */}
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-3.5 shadow-2xs space-y-2.5">
+                <h3 className="font-serif text-sm font-bold text-[#15110e]">
+                  Table-by-Table Catering Breakdown
+                </h3>
+                <div className="space-y-2 text-xs">
+                  {weddingTables.map((tbl) => {
+                    const seated = confirmedGuests.filter(g => g.tableId === tbl.id);
+                    const special = seated.filter(g => {
+                      const d = (g.dietary || '').toLowerCase().trim();
+                      return d !== '' && d !== 'none' && d !== 'no';
+                    });
+
+                    return (
+                      <div key={tbl.id} className="p-2.5 bg-[#faf8f5] border border-[#e8ded0] rounded-xl space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <strong className="text-xs font-bold text-[#15110e]">{tbl.name} {tbl.isHead ? '👑' : ''}</strong>
+                          <span className="text-[10px] font-bold text-[#8b7b6b]">{seated.length} Seated</span>
+                        </div>
+                        {special.length === 0 ? (
+                          <div className="text-[10.5px] text-emerald-700">✓ Standard estate menu</div>
+                        ) : (
+                          <div className="space-y-1">
+                            {special.map(sg => (
+                              <div key={sg.id} className="flex items-center justify-between bg-white border border-amber-200 px-2 py-0.5 rounded text-[10.5px]">
+                                <span className="font-medium text-[#15110e]">{sg.name}</span>
+                                <span className="font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded text-[9.5px]">{sg.dietary}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Guest Dietary Roster */}
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-3.5 shadow-2xs space-y-2.5">
+                <h3 className="font-serif text-sm font-bold text-[#15110e]">Dietary Guest Roster</h3>
+                <input
+                  type="text"
+                  placeholder="Filter dietary guest..."
+                  value={cateringSearch}
+                  onChange={(e) => setCateringSearch(e.target.value)}
+                  className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-1.5 text-xs text-[#15110e] outline-none"
+                />
+                <div className="space-y-1.5 text-xs max-h-56 overflow-y-auto no-scrollbar pr-0.5">
+                  {confirmedGuests
+                    .filter(g => {
+                      if (!cateringSearch) return true;
+                      return g.name.toLowerCase().includes(cateringSearch.toLowerCase()) || (g.dietary && g.dietary.toLowerCase().includes(cateringSearch.toLowerCase()));
+                    })
+                    .map(g => (
+                      <div key={g.id} className="p-2 bg-[#faf8f5] rounded-xl border border-[#f0ede4] flex items-center justify-between">
+                        <div>
+                          <div className="font-bold text-[#15110e]">{g.name}</div>
+                          <div className="text-[10px] text-[#8b7b6b]">{g.household || 'Individual'}</div>
+                        </div>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          g.dietary && g.dietary !== 'None'
+                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                            : 'bg-emerald-50 text-emerald-700'
+                        }`}>
+                          {g.dietary && g.dietary !== 'None' ? g.dietary : 'Standard'}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* LIVE CONSOLE TAB 5: GUEST LIST                               */}
+          {/* ============================================================ */}
+          {selectedWeddingId && consoleTab === 'guests' && (
+            <div className="space-y-3 animate-in fade-in duration-150">
+              <div className="flex justify-between items-center px-1">
+                <div>
+                  <h2 className="font-serif text-lg font-bold text-[#15110e]">
+                    Guest List
+                  </h2>
+                  <p className="text-[11px] text-[#8b7b6b]">
+                    {confirmedGuests.length} Confirmed of {weddingGuests.length} Total
+                  </p>
+                </div>
+              </div>
+
+              {/* Search Bar */}
+              <input
+                type="text"
+                placeholder="Search guests by name or dietary..."
+                value={guestSearch}
+                onChange={(e) => setGuestSearch(e.target.value)}
+                className="w-full bg-white border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+              />
+
+              {/* RSVP Filter Chips */}
+              <div className="grid grid-cols-4 gap-1 bg-[#f0ede4] p-1 rounded-xl text-xs">
+                {(['all', 'confirmed', 'awaiting', 'declined'] as const).map(rf => (
+                  <button
+                    key={rf}
+                    type="button"
+                    onClick={() => setGuestRsvpFilter(rf)}
+                    className={`py-1.5 rounded-lg font-bold text-[10.5px] capitalize cursor-pointer text-center transition-colors ${
+                      guestRsvpFilter === rf ? 'bg-white text-[#15110e] shadow-xs' : 'text-[#8b7b6b]'
+                    }`}
+                  >
+                    {rf === 'awaiting' ? 'Pending' : rf}
+                  </button>
+                ))}
+              </div>
+
+              {/* Guests Rows */}
+              <div className="space-y-2 text-xs">
+                {weddingGuests
+                  .filter(g => {
+                    if (guestRsvpFilter !== 'all' && g.rsvpStatus !== guestRsvpFilter) return false;
+                    if (!guestSearch) return true;
+                    return g.name.toLowerCase().includes(guestSearch.toLowerCase()) || (g.dietary && g.dietary.toLowerCase().includes(guestSearch.toLowerCase()));
+                  })
+                  .map(g => {
+                    const tbl = weddingTables.find(t => t.id === g.tableId);
+                    return (
+                      <div key={g.id} className="bg-white border border-[#e8ded0] rounded-2xl p-3 flex items-center justify-between shadow-2xs">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-[#15110e] text-[#dfc194] font-bold text-xs flex items-center justify-center shrink-0">
+                            {g.initials || g.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="font-bold text-[#15110e]">{g.name}</div>
+                            <div className="text-[10px] text-[#8b7b6b]">
+                              {g.household || 'Individual'}{g.dietary && g.dietary !== 'None' ? ` · ${g.dietary}` : ''}
+                            </div>
+                          </div>
+                        </div>
+
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          tbl ? 'bg-[#15110e] text-[#dfc194]' : 'bg-[#faf5ed] text-[#916c3d] border border-[#ebd3a8]'
+                        }`}>
+                          {tbl ? tbl.name : 'Unassigned'}
+                        </span>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
+          {/* ============================================================ */}
+          {/* LIVE CONSOLE TAB 6: VENUE & LOGISTICS                        */}
+          {/* ============================================================ */}
           {selectedWeddingId && consoleTab === 'venue' && (
-            <div className="space-y-3">
-              {/* Venue Info Card */}
+            <div className="space-y-3 animate-in fade-in duration-150">
               <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-2.5">
                 <div className="flex items-start justify-between">
                   <div>
@@ -2050,9 +2138,9 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 </div>
               </div>
 
-              {/* MC Tech & Audio Checklist */}
+              {/* Tech & Audio Checklist */}
               <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-2.5">
-                <h4 className="font-bold text-xs text-[#15110e]">MC Tech &amp; Audio Checklist</h4>
+                <h4 className="font-bold text-xs text-[#15110e]">Tech &amp; Audio Checklist</h4>
                 <div className="space-y-2 text-xs">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -2094,10 +2182,11 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
               </div>
             </div>
           )}
+
         </div>
 
         {/* ============================================================== */}
-        {/* JOEY CHATBOT FLOATING ACTION BUTTON                            */}
+        {/* JOEY CHATBOT FLOATING BUTTON & MODAL                          */}
         {/* ============================================================== */}
         <button
           type="button"
@@ -2108,9 +2197,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
           <img src="/chatbot-avatar.png" alt="Joey AI Assistant" className="w-full h-full object-cover" />
         </button>
 
-        {/* ============================================================== */}
-        {/* JOEY MODAL (Screenshots 11 & 22: 172705.png & 172839.png)       */}
-        {/* ============================================================== */}
         {showJoey && (
           <div className="absolute inset-x-3 bottom-16 top-16 bg-white rounded-3xl border border-[#d5c7b5] shadow-2xl flex flex-col overflow-hidden z-40 animate-in fade-in zoom-in-95">
             <div className="bg-[#15110e] text-white p-3.5 flex items-center justify-between">
@@ -2145,6 +2231,15 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                         : 'bg-white text-[#15110e] border border-[#e8ded0]'
                     }`}
                   >
+                    {msg.attachment && (
+                      <div className="flex items-center gap-2 mb-1.5 p-2 rounded-lg bg-black/10 border border-black/10 text-left">
+                        <span className="text-base">📄</span>
+                        <div className="truncate">
+                          <div className="font-bold text-[11px] truncate">{msg.attachment.name}</div>
+                          <div className="text-[9px] opacity-80">{(msg.attachment.size / 1024).toFixed(1)} KB • Document</div>
+                        </div>
+                      </div>
+                    )}
                     {msg.text}
                   </div>
                   <span className="text-[9px] text-[#8b7b6b] mt-0.5 px-1">{msg.time}</span>
@@ -2152,7 +2247,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
               ))}
             </div>
 
-            {/* Quick Pills (Screenshot 11 & 22) */}
             <div className="p-2 bg-white border-t border-[#e8ded0] flex gap-1.5 overflow-x-auto no-scrollbar">
               <button
                 type="button"
@@ -2184,26 +2278,69 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
               </button>
             </div>
 
-            {/* Input Bar */}
+            {/* Attached file preview chip */}
+            {attachedFile && (
+              <div className="px-3 py-1.5 bg-[#faf5ed] border-t border-[#ebd3a8] flex items-center justify-between text-xs text-[#544332]">
+                <div className="flex items-center gap-2 truncate">
+                  <span className="text-[#bd9661]">📎</span>
+                  <span className="font-semibold truncate max-w-[200px]">{attachedFile.name}</span>
+                  <span className="text-[10px] text-[#8b7b6b]">({(attachedFile.size / 1024).toFixed(1)} KB)</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAttachedFile(null)}
+                  className="text-[#8b7b6b] hover:text-red-700 font-bold p-0.5 cursor-pointer ml-2 text-sm"
+                  title="Remove attached file"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (!chatInput.trim()) return;
-                handleJoeyPrompt(chatInput);
+                if (!chatInput.trim() && !attachedFile) return;
+                handleJoeyPrompt(chatInput, attachedFile);
                 setChatInput('');
+                setAttachedFile(null);
               }}
-              className="p-2.5 bg-white border-t border-[#e8ded0] flex gap-2"
+              className="p-2.5 bg-white border-t border-[#e8ded0] flex items-center gap-2"
             >
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                className="hidden"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg"
+              />
+
+              {/* 1. Text box */}
               <input
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Ask Joey about cues, guests, tables..."
+                placeholder="Ask Joey or attach wedding files..."
                 className="flex-1 bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
               />
+
+              {/* 2. Attach File Button (to the left of arrow) */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-8 h-8 rounded-xl border border-[#e8ded0] bg-[#faf8f5] hover:bg-[#f2ede4] text-[#8b7b6b] hover:text-[#15110e] flex items-center justify-center cursor-pointer transition-colors shrink-0"
+                title="Attach file (Run sheet, seating list, floorplan, catering spec)"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                </svg>
+              </button>
+
+              {/* 3. Send Message Arrow */}
               <button
                 type="submit"
-                className="w-8 h-8 rounded-xl bg-[#bd9661] text-[#15110e] flex items-center justify-center font-bold text-sm cursor-pointer hover:bg-[#a8824f]"
+                disabled={!chatInput.trim() && !attachedFile}
+                className="w-8 h-8 rounded-xl bg-[#bd9661] text-[#15110e] flex items-center justify-center font-bold text-sm cursor-pointer hover:bg-[#a8824f] disabled:opacity-50 shrink-0"
               >
                 ➤
               </button>
@@ -2215,7 +2352,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
         {/* BOTTOM NAVIGATION: HOME DOCK vs LIVE CONSOLE DOCK              */}
         {/* ============================================================== */}
         {!selectedWeddingId ? (
-          /* Home Mode Bottom Dock (5 Tabs matching Screenshot 10, 18-21) */
+          /* Home Mode Bottom Dock */
           <div className="h-[64px] bg-[#15110e] border-t border-[#2b221a] flex items-center justify-around px-1 z-20 flex-shrink-0 text-white">
             <button
               type="button"
@@ -2224,7 +2361,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 homeTab === 'weddings' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
               }`}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="9" cy="12" r="5" />
                 <circle cx="15" cy="12" r="5" />
               </svg>
@@ -2238,7 +2375,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 homeTab === 'calendar' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
               }`}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                 <line x1="16" y1="2" x2="16" y2="6" />
                 <line x1="8" y1="2" x2="8" y2="6" />
@@ -2254,7 +2391,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 homeTab === 'team' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
               }`}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -2270,7 +2407,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 homeTab === 'invoice' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
               }`}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
                 <line x1="16" y1="13" x2="8" y2="13" />
@@ -2286,12 +2423,13 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 homeTab === 'referrals' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
               }`}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
                 <line x1="7" y1="7" x2="7.01" y2="7" />
               </svg>
               <span className="text-[10px] mt-0.5">Referrals</span>
             </button>
+
             <button
               type="button"
               onClick={() => setHomeTab('settings')}
@@ -2299,7 +2437,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 homeTab === 'settings' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
               }`}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
@@ -2307,8 +2445,26 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
             </button>
           </div>
         ) : (
-          /* Live Console Mode Bottom Dock (5 Tabs matching Screenshot 13) */
+          /* Live Console Mode Bottom Dock (6 Clean Tabs with Professional Vector SVG Icons replacing Image 2) */
           <div className="h-[64px] bg-[#15110e] border-t border-[#2b221a] flex items-center justify-around px-1 z-20 flex-shrink-0 text-white">
+            {/* 1. Overview */}
+            <button
+              type="button"
+              onClick={() => setConsoleTab('overview')}
+              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
+                consoleTab === 'overview' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
+              }`}
+            >
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="3" width="7" height="7" rx="1.5" />
+                <rect x="14" y="14" width="7" height="7" rx="1.5" />
+                <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              </svg>
+              <span className="text-[10px] mt-0.5">Overview</span>
+            </button>
+
+            {/* 2. Run Sheet */}
             <button
               type="button"
               onClick={() => setConsoleTab('runsheet')}
@@ -2316,15 +2472,16 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 consoleTab === 'runsheet' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
               }`}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-                <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-                <line x1="9" y1="12" x2="11" y2="12" />
-                <line x1="9" y1="16" x2="15" y2="16" />
+                <rect x="8" y="2" width="8" height="4" rx="1" />
+                <path d="M9 12h6" />
+                <path d="M9 16h6" />
               </svg>
               <span className="text-[10px] mt-0.5">Run Sheet</span>
             </button>
 
+            {/* 3. Seating */}
             <button
               type="button"
               onClick={() => setConsoleTab('seating')}
@@ -2332,16 +2489,52 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 consoleTab === 'seating' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
               }`}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="5" />
-                <circle cx="12" cy="4" r="2" />
-                <circle cx="12" cy="20" r="2" />
-                <circle cx="4" cy="12" r="2" />
-                <circle cx="20" cy="12" r="2" />
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="4.5" />
+                <circle cx="12" cy="3.5" r="1.5" />
+                <circle cx="12" cy="20.5" r="1.5" />
+                <circle cx="3.5" cy="12" r="1.5" />
+                <circle cx="20.5" cy="12" r="1.5" />
               </svg>
               <span className="text-[10px] mt-0.5">Seating</span>
             </button>
 
+            {/* 4. Catering */}
+            <button
+              type="button"
+              onClick={() => setConsoleTab('catering')}
+              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
+                consoleTab === 'catering' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
+              }`}
+            >
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+                <line x1="6" y1="1" x2="6" y2="4" />
+                <line x1="10" y1="1" x2="10" y2="4" />
+                <line x1="14" y1="1" x2="14" y2="4" />
+              </svg>
+              <span className="text-[10px] mt-0.5">Catering</span>
+            </button>
+
+            {/* 5. Guests */}
+            <button
+              type="button"
+              onClick={() => setConsoleTab('guests')}
+              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
+                consoleTab === 'guests' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
+              }`}
+            >
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              <span className="text-[10px] mt-0.5">Guests</span>
+            </button>
+
+            {/* 6. Venue */}
             <button
               type="button"
               onClick={() => setConsoleTab('venue')}
@@ -2349,45 +2542,102 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 consoleTab === 'venue' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
               }`}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
               <span className="text-[10px] mt-0.5">Venue</span>
             </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedWeddingId(null);
-                setHomeTab('settings');
-              }}
-              className="flex flex-col items-center justify-center flex-1 py-1 cursor-pointer text-[#8b7b6b] hover:text-white transition-colors"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-              <span className="text-[10px] mt-0.5">Profile</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedWeddingId(null)}
-              className="flex flex-col items-center justify-center flex-1 py-1 cursor-pointer text-[#8b7b6b] hover:text-white transition-colors"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="7" height="7" />
-                <rect x="14" y="3" width="7" height="7" />
-                <rect x="14" y="14" width="7" height="7" />
-                <rect x="3" y="14" width="7" height="7" />
-              </svg>
-              <span className="text-[10px] mt-0.5">Weddings</span>
-            </button>
           </div>
         )}
 
-        {/* MC Mobile Add Table Modal */}
+        {/* ============================================================== */}
+        {/* ADD CUE MODAL                                                  */}
+        {/* ============================================================== */}
+        {showAddCueModal && (
+          <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+            <div className="bg-white rounded-3xl p-5 max-w-[340px] w-full space-y-3.5 shadow-2xl border border-[#ebd3a8]">
+              <div className="flex items-center justify-between pb-2 border-b border-[#f0ede4]">
+                <h3 className="font-serif text-base font-bold text-[#15110e]">Add Cue Entry</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowAddCueModal(false)}
+                  className="text-gray-400 hover:text-black font-bold text-sm cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleAddCueSubmit} className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-[#8b7b6b] mb-1">Time (24h)</label>
+                  <input
+                    type="text"
+                    required
+                    value={newCueTime}
+                    onChange={(e) => setNewCueTime(e.target.value)}
+                    placeholder="17:00"
+                    className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl p-2 font-mono font-bold text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-[#8b7b6b] mb-1">Cue Activity Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={newCueActivity}
+                    onChange={(e) => setNewCueActivity(e.target.value)}
+                    placeholder="e.g. Speeches &amp; Champagne Toast"
+                    className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl p-2 text-xs font-bold text-[#15110e] outline-none focus:border-[#bd9661]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-[#8b7b6b] mb-1">Public Schedule Announcement</label>
+                  <input
+                    type="text"
+                    value={newCueNotes}
+                    onChange={(e) => setNewCueNotes(e.target.value)}
+                    placeholder="Housekeeping notes or announcements..."
+                    className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl p-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-[#bd9661] mb-1">🔒 Private Cue &amp; Stage Direction</label>
+                  <textarea
+                    rows={2}
+                    value={newCuePrivateNotes}
+                    onChange={(e) => setNewCuePrivateNotes(e.target.value)}
+                    placeholder="Technical sound directions, mic handoffs..."
+                    className="w-full bg-[#fff8ee] border border-[#ebd4b8] rounded-xl p-2 text-xs text-[#453423] outline-none resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddCueModal(false)}
+                    className="flex-1 py-2 rounded-xl border border-[#e8ded0] bg-[#faf8f5] text-xs font-bold text-[#8b7b6b] cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2 rounded-xl bg-[#bd9661] text-[#15110e] font-bold text-xs cursor-pointer shadow-xs"
+                  >
+                    Save Cue
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* ADD TABLE MODAL                                                */}
+        {/* ============================================================== */}
         {showAddTableModal && (
           <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
             <div className="bg-white rounded-3xl p-5 max-w-[340px] w-full space-y-4 shadow-2xl border border-[#e8ded0]">
@@ -2505,7 +2755,106 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
           </div>
         )}
 
-        {/* MC Mobile Cheers AI Assist Modal (Enhanced matching Image 1 & 3) */}
+        {/* ============================================================== */}
+        {/* TABLE DETAIL NATIVE BOTTOM SHEET (MOBILE CONSOLE)              */}
+        {/* ============================================================== */}
+        {activeMobileTable && (
+          <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end justify-center animate-in fade-in">
+            <div className="bg-white rounded-t-3xl p-5 max-w-[402px] w-full space-y-3.5 shadow-2xl border-t-2 border-[#bd9661] max-h-[82%] flex flex-col overflow-y-auto">
+              <div className="flex items-start justify-between pb-2 border-b border-[#f0ede4] flex-shrink-0">
+                <div>
+                  <h3 className="font-serif text-base font-bold text-[#15110e]">
+                    {activeMobileTable.name} {activeMobileTable.isHead ? '👑' : ''}
+                  </h3>
+                  <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                    {activeMobileTable.shape || 'Round'} &bull; {activeMobileTable.category || 'Ballroom'} &bull; {activeTableGuests.length} / {activeMobileTable.capacity} Seated
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedMobileTableId(null)}
+                  className="w-7 h-7 rounded-full bg-[#faf8f5] border border-[#e8ded0] text-[#8b7b6b] hover:text-[#15110e] font-bold text-base flex items-center justify-center cursor-pointer transition-colors"
+                >
+                  &times;
+                </button>
+              </div>
+
+              {/* Seated Guests at this Table */}
+              <div className="space-y-2 flex-1 overflow-y-auto pr-0.5">
+                <div className="text-[10px] uppercase font-bold text-[#8b7b6b] tracking-wider">
+                  Assigned Guests ({activeTableGuests.length}):
+                </div>
+                {activeTableGuests.length === 0 ? (
+                  <div className="text-center py-4 bg-[#faf8f5] rounded-xl text-xs text-[#8b7b6b] border border-dashed border-[#e8ded0]">
+                    No guests currently assigned to this table.
+                  </div>
+                ) : (
+                  activeTableGuests.map((g, idx) => (
+                    <div key={g.id} className="p-2.5 bg-[#faf8f5] rounded-xl border border-[#ebd3a8]/60 flex items-center justify-between text-xs">
+                      <div>
+                        <div className="font-bold text-[#15110e]">{idx + 1}. {g.name}</div>
+                        <div className="text-[10px] text-[#8b7b6b]">
+                          {g.household || 'Individual'}{g.dietary && g.dietary !== 'None' ? ` • ${g.dietary}` : ''}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleUnseatGuestMobile(g.id, g.name)}
+                        className="text-[10px] text-[#bd9661] hover:text-[#916c3d] font-bold border border-[#ebd3a8] bg-white px-2 py-0.5 rounded cursor-pointer transition-colors"
+                      >
+                        Unseat
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Quick-seat unallocated guest */}
+              {activeTableGuests.length < activeMobileTable.capacity && unassignedGuests.length > 0 && (
+                <div className="pt-2 border-t border-[#f0ede4] flex-shrink-0">
+                  <label className="block text-[10px] uppercase font-bold text-[#8b7b6b] mb-1">
+                    + Assign Unseated Guest to {activeMobileTable.name}:
+                  </label>
+                  <div className="flex gap-2">
+                    <select
+                      id={`seat_to_${activeMobileTable.id}`}
+                      className="flex-1 bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-2.5 py-1.5 text-xs text-[#15110e] outline-none"
+                      defaultValue={unassignedGuests[0]?.id || ''}
+                    >
+                      {unassignedGuests.map((ug) => (
+                        <option key={ug.id} value={ug.id}>
+                          {ug.name} ({ug.household || 'General'})
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const sel = (document.getElementById(`seat_to_${activeMobileTable.id}`) as HTMLSelectElement)?.value;
+                        if (sel) handleSeatGuestMobile(sel, activeMobileTable.id, activeMobileTable.name);
+                      }}
+                      className="bg-[#15110e] hover:bg-[#2b221a] text-[#dfc194] text-xs font-bold px-3 py-1.5 rounded-xl cursor-pointer"
+                    >
+                      Seat
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setSelectedMobileTableId(null)}
+                className="w-full bg-[#15110e] hover:bg-[#251e18] text-[#dfc194] font-bold py-2.5 rounded-xl text-xs cursor-pointer transition-colors shadow-xs flex-shrink-0"
+              >
+                Done Managing Table
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* CHEERS AI ASSIST MODAL                                         */}
+        {/* ============================================================== */}
         {showCheersAiModal && (
           <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 animate-in fade-in">
             <div className="bg-white rounded-3xl p-4 max-w-[340px] w-full space-y-3 shadow-2xl border border-[#ebd3a8] max-h-[92%] flex flex-col">
@@ -2528,7 +2877,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 </button>
               </div>
 
-              {/* Strategy tabs */}
               <div className="grid grid-cols-4 gap-1 bg-[#faf8f5] p-1 rounded-2xl border border-[#ebd3a8] flex-shrink-0">
                 {[
                   { id: 'households', label: 'Households', icon: '🏠' },
@@ -2552,7 +2900,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 ))}
               </div>
 
-              {/* AI Description & Proposed Allocations list */}
               {aiProposal && (
                 <div className="space-y-2 flex-1 overflow-y-auto pr-0.5">
                   <p className="text-[11px] text-[#5a4d41] leading-relaxed">
@@ -2583,10 +2930,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 </div>
               )}
 
-              <div className="text-[9.5px] text-[#8b7b6b] italic leading-tight flex-shrink-0">
-                AI recommendations are suggestions only. You can modify or override any table or seat assignment afterwards.
-              </div>
-
               <div className="flex gap-2 pt-1 flex-shrink-0">
                 <button
                   type="button"
@@ -2601,7 +2944,103 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                   onClick={handleApplyAiProposal}
                   className="flex-1 py-2 rounded-xl bg-gradient-to-r from-[#dfc194] to-[#bd9661] text-[#15110e] text-xs font-bold cursor-pointer hover:brightness-105 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
                 >
-                  Apply Recommendations
+                  Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* CREATE PROMO CODE MODAL                                        */}
+        {/* ============================================================== */}
+        {isCreateReferralOpen && (
+          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-white border border-[#e8ded0] rounded-2xl p-5 w-full max-w-sm shadow-xl space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-[#f0ede4]">
+                <h3 className="font-serif text-base font-bold text-[#15110e]">Create Promo Code</h3>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateReferralOpen(false)}
+                  className="text-gray-400 hover:text-black font-bold text-sm cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase font-bold text-[#8b7b6b] mb-1">Promo Code</label>
+                <input
+                  type="text"
+                  value={newReferralCode}
+                  onChange={(e) => setNewReferralCode(e.target.value.toUpperCase())}
+                  placeholder="e.g. SPRINGLOVE"
+                  className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 text-xs font-mono font-bold text-[#15110e] outline-none focus:border-[#bd9661]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase font-bold text-[#8b7b6b] mb-1">Discount Value</label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {['15% OFF', '$100 OFF', '10% OFF', '20% OFF'].map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setNewReferralDiscount(d)}
+                      className={`py-1.5 rounded-lg text-[10px] font-bold cursor-pointer border transition-colors ${
+                        newReferralDiscount === d ? 'bg-[#15110e] text-[#dfc194] border-[#bd9661]' : 'border-[#e8ded0] hover:bg-[#faf8f5]' 
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] uppercase font-bold text-[#8b7b6b] mb-1">Campaign Description</label>
+                <input
+                  type="text"
+                  value={newReferralDesc}
+                  onChange={(e) => setNewReferralDesc(e.target.value)}
+                  placeholder="e.g. Spring 2027 VIP couples promotion"
+                  className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!newReferralCode.trim()) {
+                      showToast('Please enter a valid code name', 'error');
+                      return;
+                    }
+                    setMobileReferralCodes([
+                      {
+                        code: newReferralCode.trim(),
+                        discount: newReferralDiscount,
+                        desc: newReferralDesc.trim() || 'Custom promo campaign',
+                        uses: 0,
+                        status: 'Active',
+                      },
+                      ...mobileReferralCodes,
+                    ]);
+                    showToast(`✓ Promo code ${newReferralCode} created and activated!`, 'success');
+                    setNewReferralCode('');
+                    setNewReferralDesc('');
+                    setIsCreateReferralOpen(false);
+                  }}
+                  className="flex-1 bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold py-2.5 rounded-xl text-xs cursor-pointer shadow-xs transition-colors"
+                >
+                  Create &amp; Activate Code
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateReferralOpen(false)}
+                  className="bg-[#f0ede4] hover:bg-[#e4dfd5] text-[#15110e] font-bold px-3 py-2.5 rounded-xl text-xs cursor-pointer transition-colors"
+                >
+                  Cancel
                 </button>
               </div>
             </div>

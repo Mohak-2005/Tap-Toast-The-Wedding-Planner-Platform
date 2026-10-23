@@ -109,17 +109,10 @@ export default function McReferralsSection({ state, setState }: McReferralsSecti
           <h1 className="font-serif text-3xl font-bold text-[#15110e]">
             Referrals &amp; Promo Codes
           </h1>
-          <p className="text-xs text-[#8b7b6b] mt-1">
+          <p className="text-xs text-[#8b7b6b] mt-1 max-w-2xl leading-relaxed">
             Share your custom referral code with engaged couples. They receive up to 15% off their platform booking, and you earn direct commission.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowNewCodeModal(true)}
-          className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
-        >
-          <span>+</span> Create Promo Code
-        </button>
       </div>
 
       {/* Hero Ambassador Card */}
@@ -183,6 +176,14 @@ export default function McReferralsSection({ state, setState }: McReferralsSecti
               >
                 <span>✉️</span> Email Invitation
               </button>
+
+              <button
+                type="button"
+                onClick={() => setShowNewCodeModal(true)}
+                className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-sm"
+              >
+                <span>+</span> Create Promo Code
+              </button>
             </div>
           </div>
 
@@ -205,8 +206,8 @@ export default function McReferralsSection({ state, setState }: McReferralsSecti
         </div>
       </div>
 
-      {/* 4 Performance Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 3 Performance Metric Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white border border-[#e8ded0] rounded-xl p-5 shadow-xs">
           <div className="text-xs uppercase text-[#8b7b6b] font-bold">Total Couples Referred</div>
           <div className="font-serif text-3xl font-bold text-[#15110e] mt-1.5">18 Couples</div>
@@ -221,14 +222,6 @@ export default function McReferralsSection({ state, setState }: McReferralsSecti
           <div className="font-serif text-3xl font-bold text-[#15110e] mt-1.5">12 Weddings</div>
           <div className="text-xs text-[#bd9661] font-semibold mt-1">
             66.7% referral conversion rate
-          </div>
-        </div>
-
-        <div className="bg-white border border-[#e8ded0] rounded-xl p-5 shadow-xs">
-          <div className="text-xs uppercase text-[#8b7b6b] font-bold">Couples Total Savings</div>
-          <div className="font-serif text-3xl font-bold text-[#15110e] mt-1.5">$2,700 AUD</div>
-          <div className="text-xs text-[#8b7b6b] font-semibold mt-1">
-            Average $225 saved per couple
           </div>
         </div>
 
@@ -261,8 +254,17 @@ export default function McReferralsSection({ state, setState }: McReferralsSecti
               Customize multiple promo codes for bridal expos, seasonal discounts, and VIP couples.
             </p>
           </div>
-          <div className="text-xs font-bold text-[#bd9661] bg-[#faf6f0] border border-[#ebd3a8] px-3 py-1 rounded-full">
-            {referralCodes.filter(c => c.status === 'active').length} Active Campaigns
+          <div className="flex items-center gap-3">
+            <div className="text-xs font-bold text-[#bd9661] bg-[#faf6f0] border border-[#ebd3a8] px-3 py-1.5 rounded-full">
+              {referralCodes.filter(c => c.status === 'active').length} Active Campaigns
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowNewCodeModal(true)}
+              className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-3.5 py-1.5 rounded-lg text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+            >
+              <span>+</span> Create Promo Code
+            </button>
           </div>
         </div>
 

@@ -87,7 +87,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 export default function App() {
   const getInitialView = () => {
     const hash = window.location.hash.replace('#', '');
-    const validViews = ['showcase', 'login', 'register', 'guest-mobile', 'mc-mobile', 'couple', 'mc', 'superadmin', 'guest-web'];
+    const validViews = ['showcase', 'login', 'register', 'register-mc', 'register-couple', 'guest-mobile', 'mc-mobile', 'couple', 'mc', 'superadmin', 'guest-web'];
     if (validViews.includes(hash)) {
       return hash;
     }
@@ -164,6 +164,8 @@ export default function App() {
       case 'login':
         return <LoginView onSelectView={handleSelectView} />;
       case 'register':
+      case 'register-mc':
+      case 'register-couple':
         return <RegisterView onSelectView={handleSelectView} />;
       case 'showcase':
       default:

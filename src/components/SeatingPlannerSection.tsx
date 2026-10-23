@@ -24,7 +24,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
 
   // Floor plan display mode
-  const [floorViewStyle, setFloorViewStyle] = useState<'canvas' | 'grid' | 'roster'>('grid');
+  const [floorViewStyle, setFloorViewStyle] = useState<'canvas' | 'grid' | 'roster'>(isMobileCompact ? 'canvas' : 'grid');
 
   // Search and Filters
   const [tableSearch, setTableSearch] = useState<string>('');
@@ -266,6 +266,23 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
     setState({ ...state, tables: updatedTables });
     setDraggingTableId(null);
     showToast('Table position saved', 'info');
+  };
+
+  const handleTouchMoveTable = (e: React.TouchEvent, tblId: string) => {
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const el = document.getElementById('room_canvas_container');
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const relX = ((touch.clientX - rect.left) / rect.width) * 100;
+    const relY = ((touch.clientY - rect.top) / rect.height) * 100;
+    const clampedX = Math.max(5, Math.min(90, Math.round(relX)));
+    const clampedY = Math.max(10, Math.min(85, Math.round(relY)));
+
+    const updatedTables = (state.tables || []).map((t) =>
+      t.id === tblId ? { ...t, x: clampedX, y: clampedY } : t
+    );
+    setState({ ...state, tables: updatedTables });
   };
 
   // Add new table
@@ -1088,7 +1105,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                   const el = document.getElementById('room_canvas_container');
                   if (el) handleTableCanvasDrop(e, el.getBoundingClientRect());
                 }}
-                className="bg-[#faf8f5] border-2 border-[#e8ded0] rounded-3xl p-6 min-h-[660px] relative shadow-inner overflow-hidden select-none"
+                className={`bg-[#faf8f5] border-2 border-[#e8ded0] rounded-2xl md:rounded-3xl ${isMobileCompact ? 'p-3 min-h-[460px]' : 'p-6 min-h-[660px]'} relative shadow-inner overflow-hidden select-none`}
                 style={{
                   backgroundImage: 'radial-gradient(#d5c7b5 1.2px, transparent 1.2px)',
                   backgroundSize: '24px 24px',
@@ -1137,6 +1154,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                       key={tbl.id}
                       draggable
                       onDragStart={() => setDraggingTableId(tbl.id)}
+                      onTouchMove={(e) => handleTouchMoveTable(e, tbl.id)}
                       onClick={() => setSelectedTableId(tbl.id)}
                       onDragOver={(e) => {
                         e.preventDefault();

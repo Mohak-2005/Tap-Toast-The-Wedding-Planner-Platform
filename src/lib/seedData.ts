@@ -1,4 +1,4 @@
-import { DemoState, SaaSPlan } from './types';
+import { DemoState, SaaSPlan, McTransaction } from './types';
 
 export const initialPlans: SaaSPlan[] = [
   {
@@ -56,6 +56,193 @@ export const initialPlans: SaaSPlan[] = [
       "Dedicated account manager",
     ],
   },
+];
+
+
+export const initialMcTransactions: McTransaction[] = [
+  {
+    id: "TXN-8841",
+    date: "23 Oct 2026, 09:15",
+    tenantId: "ten1",
+    mcName: "Robert Galati",
+    businessName: "Galati MC & Entertainment",
+    type: "subscription",
+    description: "Pro Plan Monthly SaaS Subscription Renewal",
+    amount: 299.00,
+    platformFee: 7.48,
+    netAmount: 291.52,
+    status: "Paid",
+    paymentMethod: "Stripe (Mastercard •••• 8812)",
+    xeroStatus: "Synced",
+    xeroInvoiceId: "XERO-SUB-1092"
+  },
+  {
+    id: "TXN-8835",
+    date: "21 Oct 2026, 16:40",
+    tenantId: "ten1",
+    mcName: "Robert Galati",
+    businessName: "Galati MC & Entertainment",
+    type: "client_invoice",
+    description: "Wedding MC & Reception Host: Sophie & James (INV-1081)",
+    amount: 1850.00,
+    platformFee: 46.25,
+    netAmount: 1803.75,
+    status: "Settled",
+    paymentMethod: "Stripe (Visa •••• 4242)",
+    xeroStatus: "Synced",
+    xeroInvoiceId: "XERO-INV-8835",
+    weddingCouple: "Sophie & James",
+    invoiceId: "INV-1081"
+  },
+  {
+    id: "TXN-8839",
+    date: "22 Oct 2026, 14:10",
+    tenantId: "ten2",
+    mcName: "Marcus Thorne",
+    businessName: "Coastal Celebrations MC",
+    type: "subscription",
+    description: "Pro Plan Monthly SaaS Subscription Renewal",
+    amount: 299.00,
+    platformFee: 7.48,
+    netAmount: 291.52,
+    status: "Paid",
+    paymentMethod: "Stripe (Amex •••• 3001)",
+    xeroStatus: "Synced",
+    xeroInvoiceId: "XERO-SUB-1091"
+  },
+  {
+    id: "TXN-8831",
+    date: "20 Oct 2026, 18:25",
+    tenantId: "ten3",
+    mcName: "Elena Rostova",
+    businessName: "Sydney Vows & Beats",
+    type: "subscription",
+    description: "Standard Plan Monthly SaaS Subscription Renewal",
+    amount: 199.00,
+    platformFee: 4.98,
+    netAmount: 194.02,
+    status: "Paid",
+    paymentMethod: "Stripe (Visa •••• 9021)",
+    xeroStatus: "Synced",
+    xeroInvoiceId: "XERO-SUB-1090"
+  },
+  {
+    id: "TXN-8828",
+    date: "19 Oct 2026, 13:45",
+    tenantId: "ten2",
+    mcName: "Marcus Thorne",
+    businessName: "Coastal Celebrations MC",
+    type: "client_invoice",
+    description: "Wedding Host Full Package: Liam & Chloe",
+    amount: 2100.00,
+    platformFee: 52.50,
+    netAmount: 2047.50,
+    status: "Settled",
+    paymentMethod: "Stripe (Visa •••• 1144)",
+    xeroStatus: "Synced",
+    xeroInvoiceId: "XERO-INV-8828",
+    weddingCouple: "Liam & Chloe"
+  },
+  {
+    id: "TXN-8822",
+    date: "18 Oct 2026, 11:20",
+    tenantId: "ten1",
+    mcName: "Robert Galati",
+    businessName: "Galati MC & Entertainment",
+    type: "client_invoice",
+    description: "Reception Coordination Deposit: Aisha & Marcus (INV-1082)",
+    amount: 1650.00,
+    platformFee: 41.25,
+    netAmount: 1608.75,
+    status: "Paid",
+    paymentMethod: "Direct Bank Debit",
+    xeroStatus: "Synced",
+    xeroInvoiceId: "XERO-INV-8822",
+    weddingCouple: "Aisha & Marcus",
+    invoiceId: "INV-1082"
+  },
+  {
+    id: "TXN-8815",
+    date: "16 Oct 2026, 09:30",
+    tenantId: "ten2",
+    mcName: "Marcus Thorne",
+    businessName: "Coastal Celebrations MC",
+    type: "client_invoice",
+    description: "Boutique Reception Host: Sarah & Luke",
+    amount: 1750.00,
+    platformFee: 43.75,
+    netAmount: 1706.25,
+    status: "Paid",
+    paymentMethod: "Apple Pay",
+    xeroStatus: "Synced",
+    xeroInvoiceId: "XERO-INV-8815",
+    weddingCouple: "Sarah & Luke"
+  },
+  {
+    id: "TXN-8810",
+    date: "15 Oct 2026, 14:05",
+    tenantId: "ten1",
+    mcName: "Robert Galati",
+    businessName: "Galati MC & Entertainment",
+    type: "platform_fee",
+    description: "Tap & Toast 2.5% Platform Take: INV-1081 & INV-1082",
+    amount: 87.50,
+    platformFee: 0.00,
+    netAmount: 87.50,
+    status: "Settled",
+    paymentMethod: "Stripe Split Payout",
+    xeroStatus: "Synced",
+    xeroInvoiceId: "XERO-FEE-8810"
+  },
+  {
+    id: "TXN-8805",
+    date: "14 Oct 2026, 15:50",
+    tenantId: "ten3",
+    mcName: "Elena Rostova",
+    businessName: "Sydney Vows & Beats",
+    type: "client_invoice",
+    description: "Bilingual Ceremony & Reception Host: David & Mei",
+    amount: 1800.00,
+    platformFee: 45.00,
+    netAmount: 1755.00,
+    status: "Settled",
+    paymentMethod: "Direct Debit",
+    xeroStatus: "Synced",
+    xeroInvoiceId: "XERO-INV-8805",
+    weddingCouple: "David & Mei"
+  },
+  {
+    id: "TXN-8795",
+    date: "12 Oct 2026, 10:00",
+    tenantId: "ten1",
+    mcName: "Robert Galati",
+    businessName: "Galati MC & Entertainment",
+    type: "client_invoice",
+    description: "Bridal Host Deposit: Emma & Tom (INV-1083)",
+    amount: 1950.00,
+    platformFee: 48.75,
+    netAmount: 1901.25,
+    status: "Pending",
+    paymentMethod: "EFT / Bank Wire",
+    xeroStatus: "Pending",
+    weddingCouple: "Emma & Tom",
+    invoiceId: "INV-1083"
+  },
+  {
+    id: "TXN-8780",
+    date: "01 Oct 2026, 08:00",
+    tenantId: "ten4",
+    mcName: "Julian Brooks",
+    businessName: "Melbourne Elite Hosts",
+    type: "subscription",
+    description: "Starter Plan Subscription Charge (Payment Failed - Expired Card)",
+    amount: 99.00,
+    platformFee: 0.00,
+    netAmount: 0.00,
+    status: "Pending",
+    paymentMethod: "Stripe (Visa •••• 0019)",
+    xeroStatus: "Pending"
+  }
 ];
 
 export const SEED_DATA: DemoState = {
@@ -130,6 +317,13 @@ export const SEED_DATA: DemoState = {
       runSheet: [
         { id: "rs21", time: "14:30", note: "MC setup & audio check", done: false },
         { id: "rs22", time: "15:00", note: "Ceremony begins", done: false }
+      ],
+      privateRunSheet: [
+        { id: "pmc_w2_1", time: "14:00", activity: "MC Arrival & Doltone Wharf Sound Check", notes: "Check wireless mic coverage across terrace and grand ballroom.", privateNotes: "Audio tech Dave is at the back mixing console. Master fader preset 3.", done: false, order: 1 },
+        { id: "pmc_w2_2", time: "14:45", activity: "Waterfront Cocktail Reception", notes: "Direct guests to outdoor wharf promenade for sparkling wine and canapés.", privateNotes: "Bride & Groom arrive by water taxi at East pier around 15:15.", done: false, order: 2 },
+        { id: "pmc_w2_3", time: "15:30", activity: "Ballroom Grand Entrance", notes: "Welcome wedding party followed by Aisha & Marcus.", privateNotes: "Smoke fountains cue on final chorus drop.", done: false, order: 3 },
+        { id: "pmc_w2_4", time: "17:00", activity: "Speeches & Champagne Toast", notes: "Father of the Bride, Best Man, followed by Groom.", privateNotes: "Ensure roaming microphone is sanitized and ready for parents table.", done: false, order: 4 },
+        { id: "pmc_w2_5", time: "19:30", activity: "Cake Cutting & First Dance", notes: "Invite all guests to surround center dance floor.", privateNotes: "First dance song: Until I Found You (acoustic version).", done: false, order: 5 }
       ]
     },
     {
@@ -154,6 +348,12 @@ export const SEED_DATA: DemoState = {
       ],
       runSheet: [
         { id: "rs31", time: "14:00", note: "Guest arrival at Dunbar lawn", done: false }
+      ],
+      privateRunSheet: [
+        { id: "pmc_w3_1", time: "13:30", activity: "MC Sound & Heritage Lawn Check", notes: "Test battery PA on outdoor fig tree lawn.", privateNotes: "Check ferry frequency band to avoid maritime radio static.", done: false, order: 1 },
+        { id: "pmc_w3_2", time: "14:30", activity: "Garden Lawn Ceremony", notes: "Acoustic duo begins prelude. Welcome guests.", privateNotes: "Reserved seats for grandparents in front row left.", done: false, order: 2 },
+        { id: "pmc_w3_3", time: "16:00", activity: "Harbour Balcony Canapés", notes: "Announce group family portrait under historic fig tree.", privateNotes: "Golden hour sunset lighting is at 16:45.", done: false, order: 3 },
+        { id: "pmc_w3_4", time: "17:30", activity: "Heritage Dining Room Seating Call", notes: "Sound traditional brass dinner bell. Usher guests inside.", privateNotes: "Chef Marco confirmed entrée plating starts strictly 17:45.", done: false, order: 4 }
       ]
     },
     {
@@ -471,7 +671,10 @@ export const SEED_DATA: DemoState = {
       role: "Lead MC & Director",
       email: "robert@galati.demo",
       phone: "0418 223 901",
-      status: "Active"
+      status: "Active",
+      accessLevel: "Full Access",
+      assignedWeddings: ["all"],
+      permissions: { canEditRunsheet: true, canEditSeating: true, canViewDietary: true, canMessageClients: true }
     },
     {
       id: "tm_2",
@@ -479,7 +682,10 @@ export const SEED_DATA: DemoState = {
       role: "Associate MC & Host",
       email: "sarah.j@galati.demo",
       phone: "0422 110 882",
-      status: "Active"
+      status: "Active",
+      accessLevel: "Host & Run Sheet",
+      assignedWeddings: ["wed_1", "wed_2"],
+      permissions: { canEditRunsheet: true, canEditSeating: false, canViewDietary: true, canMessageClients: true }
     },
     {
       id: "tm_3",
@@ -487,7 +693,10 @@ export const SEED_DATA: DemoState = {
       role: "Sound Engineer & AV Lead",
       email: "dave.sound@galati.demo",
       phone: "0433 991 445",
-      status: "Active"
+      status: "Active",
+      accessLevel: "Audio & AV Lead",
+      assignedWeddings: ["all"],
+      permissions: { canEditRunsheet: false, canEditSeating: false, canViewDietary: false, canMessageClients: false }
     }
   ],
   referralCodes: [
@@ -536,6 +745,7 @@ export const SEED_DATA: DemoState = {
       createdDate: "10 Jul 2026"
     }
   ],
+  mcTransactions: initialMcTransactions,
   referredCouples: [
     {
       id: "rc_1",
