@@ -53,18 +53,22 @@ export type TableShape = 'round' | 'rectangular' | 'king';
 
 export interface Table {
   id: string;
+  weddingId?: string;
   name: string;
   capacity: number;
   isHead: boolean;
   shape?: TableShape;
   x?: number;
   y?: number;
+  mobileX?: number;
+  mobileY?: number;
   category?: string;
   zone?: string;
 }
 
 export interface Guest {
   id: string;
+  weddingId?: string;
   name: string;
   initials?: string;
   household: string;
@@ -195,6 +199,14 @@ export interface TeamMember {
   email: string;
   phone: string;
   status: string;
+  accessLevel?: 'Full Access' | 'Host & Run Sheet' | 'Seating & Guests' | 'Audio & AV Lead';
+  assignedWeddings?: string[];
+  permissions?: {
+    canEditRunsheet?: boolean;
+    canEditSeating?: boolean;
+    canViewDietary?: boolean;
+    canMessageClients?: boolean;
+  };
 }
 
 export interface SaaSPlan {
@@ -232,6 +244,25 @@ export interface ReferredCouple {
   dateReferred: string;
 }
 
+export interface McTransaction {
+  id: string;
+  date: string;
+  tenantId: string;
+  mcName: string;
+  businessName: string;
+  type: 'subscription' | 'client_invoice' | 'platform_fee' | 'payout';
+  description: string;
+  amount: number;
+  platformFee: number;
+  netAmount: number;
+  status: 'Settled' | 'Paid' | 'Pending' | 'Refunded';
+  paymentMethod: string;
+  xeroStatus: 'Synced' | 'Pending' | 'Failed';
+  xeroInvoiceId?: string;
+  weddingCouple?: string;
+  invoiceId?: string;
+}
+
 export interface DemoState {
   version: number;
   currentWeddingId: string;
@@ -251,5 +282,6 @@ export interface DemoState {
   team?: TeamMember[];
   referralCodes?: ReferralCode[];
   referredCouples?: ReferredCouple[];
+  mcTransactions?: McTransaction[];
 }
 

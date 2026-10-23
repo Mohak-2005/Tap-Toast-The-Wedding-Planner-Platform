@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppState, useSession, showToast, formatAUD } from '../lib/state';
-import { Tenant, SupportTicket, SaaSPlan } from '../lib/types';
-import { initialPlans } from '../lib/seedData';
+import { Tenant, SupportTicket, SaaSPlan, McTransaction } from '../lib/types';
+import { initialPlans, initialMcTransactions } from '../lib/seedData';
 
 interface SuperAdminViewProps {
   onSelectView?: (view: string) => void;
@@ -16,6 +16,139 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
   const plans: SaaSPlan[] = Array.isArray(state?.plans) && state.plans.length > 0 ? state.plans : initialPlans;
   const tenants: Tenant[] = Array.isArray(state?.tenants) ? state.tenants : [];
   const auditLog: any[] = Array.isArray(state?.auditLog) ? state.auditLog : [];
+
+  // MC Transactions & Billing States
+  const mcTransactions: McTransaction[] = Array.isArray(state?.mcTransactions) && state.mcTransactions.length > 0
+    ? state.mcTransactions
+    : initialMcTransactions;
+
+  const [selectedMcFilter, setSelectedMcFilter] = useState<string>('all');
+  const [txnTypeFilter, setTxnTypeFilter] = useState<string>('all');
+  const [txnStatusFilter, setTxnStatusFilter] = useState<string>('all');
+  const [txnSearch, setTxnSearch] = useState<string>('');
+  const [isFetchingTxns, setIsFetchingTxns] = useState<boolean>(false);
+  const [isSyncingXero, setIsSyncingXero] = useState<boolean>(false);
+  const [showXeroModal, setShowXeroModal] = useState<boolean>(false);
+  const [selectedTxnDetail, setSelectedTxnDetail] = useState<McTransaction | null>(null);
+  const [lastXeroSyncTime, setLastXeroSyncTime] = useState<string>('Today at 10:45 AM');
+  const [billingSectionFocus, setBillingSectionFocus] = useState<'all' | 'subscriptions' | 'transactions' | 'plans'>('all');
+
+  // Filtered MC Transactions
+  const filteredMcTransactions = mcTransactions.filter((txn) => {
+    if (selectedMcFilter !== 'all' && txn.tenantId !== selectedMcFilter) return false;
+    if (txnTypeFilter !== 'all' && txn.type !== txnTypeFilter) return false;
+    if (txnStatusFilter !== 'all' && txn.status !== txnStatusFilter) return false;
+    if (txnSearch.trim()) {
+      const q = txnSearch.toLowerCase();
+      const matchId = txn.id.toLowerCase().includes(q);
+      const matchMc = txn.mcName.toLowerCase().includes(q) || txn.businessName.toLowerCase().includes(q);
+      const matchDesc = txn.description.toLowerCase().includes(q);
+      const matchCouple = txn.weddingCouple ? txn.weddingCouple.toLowerCase().includes(q) : false;
+      const matchXero = txn.xeroInvoiceId ? txn.xeroInvoiceId.toLowerCase().includes(q) : false;
+      if (!matchId && !matchMc && !matchDesc && !matchCouple && !matchXero) return false;
+    }
+    return true;
+  });
+
+  // Handler to filter transactions by MC and scroll to table
+  const handleViewTransactionsForMc = (tenantId: string) => {
+    setSelectedMcFilter(tenantId);
+    setBillingSectionFocus('transactions');
+    const tenant = tenants.find((t) => t.id === tenantId);
+    showToast(`Filtered transactions for ${tenant?.contactName || 'MC'}`, 'info');
+    setTimeout(() => {
+      const el = document.getElementById('mc_transactions_ledger_section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
+  };
+
+  // Live fetch latest transactions from MCs and invoices
+  const handleFetchMcTransactions = () => {
+    setIsFetchingTxns(true);
+    setTimeout(() => {
+      const currentTxns = state.mcTransactions && state.mcTransactions.length > 0 ? state.mcTransactions : initialMcTransactions;
+      const existingTxnInvoiceIds = new Set(currentTxns.map((t) => t.invoiceId).filter(Boolean));
+
+      const newTxnsFromInvoices: McTransaction[] = [];
+      (state.invoices || []).forEach((inv) => {
+        if (!existingTxnInvoiceIds.has(inv.id)) {
+          newTxnsFromInvoices.push({
+            id: `TXN-${Math.floor(8845 + Math.random() * 100)}`,
+            date: inv.date || 'Today, Just now',
+            tenantId: 'ten1',
+            mcName: 'Robert Galati',
+            businessName: 'Galati MC & Entertainment',
+            type: 'client_invoice',
+            description: `Wedding Host Booking: ${inv.couple} (${inv.id})`,
+            amount: inv.amount,
+            platformFee: Math.round(inv.amount * 0.025 * 100) / 100,
+            netAmount: Math.round(inv.amount * 0.975 * 100) / 100,
+            status: inv.status === 'Paid' ? 'Paid' : 'Pending',
+            paymentMethod: inv.status === 'Paid' ? 'Stripe (Visa •••• 4242)' : 'Bank Transfer',
+            xeroStatus: inv.status === 'Paid' ? 'Synced' : 'Pending',
+            xeroInvoiceId: inv.status === 'Paid' ? `XERO-INV-${Math.floor(8900 + Math.random() * 50)}` : undefined,
+            weddingCouple: inv.couple,
+            invoiceId: inv.id,
+          });
+        }
+      });
+
+      const updated = [...newTxnsFromInvoices, ...currentTxns];
+      setState({ ...state, mcTransactions: updated });
+      setIsFetchingTxns(false);
+      showToast(`✓ Fetched ${updated.length} latest MC transactions across Stripe & Invoices`, 'success');
+    }, 600);
+  };
+
+  // Sync pending transactions to Xero Accounting
+  const handleSyncToXero = () => {
+    setIsSyncingXero(true);
+    setTimeout(() => {
+      const currentTxns = state.mcTransactions && state.mcTransactions.length > 0 ? state.mcTransactions : initialMcTransactions;
+      let count = 0;
+      const updatedTxns = currentTxns.map((t) => {
+        if (t.xeroStatus === 'Pending') {
+          count++;
+          return {
+            ...t,
+            xeroStatus: 'Synced' as const,
+            xeroInvoiceId: t.xeroInvoiceId || `XERO-INV-${Math.floor(8850 + Math.random() * 100)}`,
+          };
+        }
+        return t;
+      });
+      setState({ ...state, mcTransactions: updatedTxns });
+      setIsSyncingXero(false);
+      setLastXeroSyncTime('Just now');
+      showToast(`✓ Reconciled & synced ${count > 0 ? count : 'all'} MC transactions into Xero Chart of Accounts`, 'success');
+    }, 700);
+  };
+
+  // Export CSV for Xero Bank Feeds
+  const handleExportXeroCsv = () => {
+    const currentTxns = state.mcTransactions && state.mcTransactions.length > 0 ? state.mcTransactions : initialMcTransactions;
+    const headers = ['*Date', '*Amount', 'Payee', 'Description', 'Reference', 'Tax Code', 'Xero Account Code'];
+    const rows = currentTxns.map((t) => [
+      t.date.split(',')[0],
+      t.amount.toFixed(2),
+      `"${t.businessName}"`,
+      `"${t.description.replace(/"/g, '""')}"`,
+      t.id,
+      'GST on Income (10%)',
+      t.type === 'subscription' ? '400 - SaaS Subscription Revenue' : '410 - Platform Commission',
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `xero_reconciliation_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('✓ Xero Reconciliation Bank Feed CSV exported', 'success');
+  };
 
   // Helper to extract clean plan key matching available plans
   const getTenantPlanKey = (planStr: string | any): string => {
@@ -749,80 +882,649 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
         )}
 
         {/* ================================================================ */}
-        {/* TAB 3: PLANS & BILLING (Matches superadmin.html)                  */}
+        {/* TAB 3: PLANS, MC TRANSACTIONS & XERO BILLING                     */}
         {/* ================================================================ */}
         {activeTab === 'plans' && (
-          <section className="space-y-6">
-            <div className="page-header flex justify-between items-center">
+          <section className="space-y-6 animate-in fade-in duration-150">
+            {/* Top Page Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#e8ded0]">
               <div>
                 <div className="header-eyebrow text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1">
-                  SUBSCRIPTIONS
+                  SUBSCRIPTIONS &amp; BILLING
                 </div>
                 <h1 className="header-title font-serif text-3xl font-bold text-[#15110e]">
                   Plans &amp; Billing
                 </h1>
+                <p className="text-xs text-[#8b7b6b] mt-1">
+                  Manage MC subscription tiers, review live transaction activity, and reconcile general ledgers in Xero.
+                </p>
               </div>
+            </div>
+
+            {/* Xero Accounting Notice & Gateway (Clean UI Colors) */}
+            <div className="bg-white border border-[#e8ded0] rounded-xl p-4 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#15110e] text-[#bd9661] font-serif font-bold text-lg flex items-center justify-center shrink-0 border border-[#bd9661]/40">
+                  X
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-serif font-bold text-base text-[#15110e]">Xero Cloud Accounting</span>
+                    <span className="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Live Sync Connected &bull; Tap &amp; Toast Pty Ltd
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#8b7b6b] mt-0.5">
+                    For actual accounting, statutory tax compliance (BAS / GST), and bank reconciliations, the SuperAdmin uses Xero.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleSyncToXero}
+                  disabled={isSyncingXero}
+                  className="px-3 py-1.5 rounded-lg bg-[#faf8f5] hover:bg-[#f2ede4] border border-[#e8ded0] text-xs font-bold text-[#15110e] flex items-center gap-1.5 cursor-pointer transition-colors disabled:opacity-60"
+                  title="Sync pending transactions to Xero"
+                >
+                  <span className={`text-[#bd9661] ${isSyncingXero ? 'animate-spin' : ''}`}>⟳</span>
+                  <span>{isSyncingXero ? 'Syncing...' : 'Sync Now'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowXeroModal(true)}
+                  className="px-3.5 py-1.5 rounded-lg bg-[#15110e] hover:bg-[#251e18] text-[#dfc194] hover:text-white text-xs font-bold cursor-pointer transition-colors flex items-center gap-1 shadow-2xs"
+                >
+                  <span>Open Xero</span>
+                  <span>↗</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Financial KPI Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-xl p-4 shadow-2xs">
+                <div className="text-[10.5px] font-bold uppercase text-[#8b7b6b] tracking-wider">Total MC Monthly MRR</div>
+                <div className="text-2xl font-serif font-bold text-[#15110e] mt-1">
+                  $1,496<span className="text-xs font-sans text-[#8b7b6b] font-normal"> / mo AUD</span>
+                </div>
+                <div className="text-[11px] text-emerald-700 font-semibold mt-1 flex items-center gap-1">
+                  <span>&uarr; 18.4%</span> across 4 MC agencies
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-xl p-4 shadow-2xs">
+                <div className="text-[10.5px] font-bold uppercase text-[#8b7b6b] tracking-wider">MC Transaction Volume (30D)</div>
+                <div className="text-2xl font-serif font-bold text-[#15110e] mt-1">
+                  $24,850<span className="text-xs font-sans text-[#8b7b6b] font-normal"> .00 AUD</span>
+                </div>
+                <div className="text-[11px] text-[#8b7b6b] mt-1">
+                  {mcTransactions.length} processed wedding &amp; SaaS records
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-xl p-4 shadow-2xs">
+                <div className="text-[10.5px] font-bold uppercase text-[#8b7b6b] tracking-wider">Platform Take (2.5%)</div>
+                <div className="text-2xl font-serif font-bold text-[#15110e] mt-1">
+                  $621<span className="text-xs font-sans text-[#8b7b6b] font-normal"> .25 AUD</span>
+                </div>
+                <div className="text-[11px] text-[#8b7b6b] mt-1">
+                  Auto-split via Stripe Connect
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-xl p-4 shadow-2xs">
+                <div className="text-[10.5px] font-bold uppercase text-[#8b7b6b] tracking-wider">Xero Sync Health</div>
+                <div className="text-2xl font-serif font-bold text-[#15110e] mt-1 flex items-center gap-1.5">
+                  <span>96.4%</span>
+                  <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-2 py-0.5 rounded-full">Healthy</span>
+                </div>
+                <div className="text-[11px] text-[#8b7b6b] mt-1">
+                  Synced to Chart of Accounts
+                </div>
+              </div>
+            </div>
+
+            {/* Sub-Section Filter / Focus Tabs */}
+            <div className="flex items-center gap-2 border-b border-[#e8ded0] pb-2">
               <button
                 type="button"
-                onClick={() => {
-                  setNewPlanKey('');
-                  setNewPlanTagline('');
-                  setNewPlanPrice(249);
-                  setNewPlanBilling('AUD / mo');
-                  setNewPlanBadge('');
-                  setNewPlanFeatured(false);
-                  setNewPlanFeatures('Up to 5 active weddings at a time\nQaRd physical QR code printing\nAI Seating Optimization Assistant\nFull client messaging suite');
-                  setShowAddPlanModal(true);
-                }}
-                className="btn btn-gold btn-sm"
+                onClick={() => setBillingSectionFocus('all')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                  billingSectionFocus === 'all'
+                    ? 'bg-[#15110e] text-[#dfc194]'
+                    : 'text-[#8b7b6b] hover:text-[#15110e] hover:bg-white'
+                }`}
               >
-                + Add Plan
+                All Billing Overview
+              </button>
+              <button
+                type="button"
+                onClick={() => setBillingSectionFocus('subscriptions')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                  billingSectionFocus === 'subscriptions'
+                    ? 'bg-[#15110e] text-[#dfc194]'
+                    : 'text-[#8b7b6b] hover:text-[#15110e] hover:bg-white'
+                }`}
+              >
+                Subscriptions &amp; Features ({tenants.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setBillingSectionFocus('transactions')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                  billingSectionFocus === 'transactions'
+                    ? 'bg-[#15110e] text-[#dfc194]'
+                    : 'text-[#8b7b6b] hover:text-[#15110e] hover:bg-white'
+                }`}
+              >
+                MC Transactions ({filteredMcTransactions.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setBillingSectionFocus('plans')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                  billingSectionFocus === 'plans'
+                    ? 'bg-[#15110e] text-[#dfc194]'
+                    : 'text-[#8b7b6b] hover:text-[#15110e] hover:bg-white'
+                }`}
+              >
+                SaaS Plan Tiers ({plans.length})
               </button>
             </div>
 
-            <div className="plan-cards-grid">
-              {plans.map(p => {
-                const subCount = tenants.filter(t => getTenantPlanKey(t?.plan).toLowerCase() === p.key.toLowerCase()).length;
-                return (
-                  <div
-                    key={p.id}
-                    className={`plan-card ${p.featured ? 'featured' : ''} relative flex flex-col justify-between`}
-                  >
-                    {p.badge && (
-                      <div className="plan-featured-badge">{p.badge}</div>
-                    )}
-                    <div>
-                      <div className={`text-xs tracking-wider font-bold uppercase ${p.featured ? 'text-[#bd9661]' : 'text-[#8b7b6b]'}`}>
-                        {p.key}
-                      </div>
-                      <h3 className="font-serif text-2xl font-bold text-[#15110e] mt-1">
-                        {p.tagline}
-                      </h3>
-                      <div className="plan-price mt-3">
-                        ${p.price} <small className="text-sm text-[#8b7b6b] font-normal">{p.billingCycle || 'AUD / mo'}</small>
-                      </div>
-                      <ul className="text-xs text-[#5a4b3d] space-y-2 list-none p-0 mt-4">
-                        {(p.features || []).map((feat, fIdx) => (
-                          <li key={fIdx}>✓ {feat}</li>
-                        ))}
-                      </ul>
+            {/* ============================================================== */}
+            {/* 1. ACTIVE MC SUBSCRIPTIONS & FEATURE ENTITLEMENTS TABLE        */}
+            {/* ============================================================== */}
+            {(billingSectionFocus === 'all' || billingSectionFocus === 'subscriptions') && (
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <div className="text-[10px] uppercase font-bold tracking-wider text-[#bd9661]">
+                      TENANT SUBSCRIPTIONS
                     </div>
-                    <div className="mt-6 border-t border-[#e8ded0] pt-4 text-xs text-[#8b7b6b] flex justify-between items-center">
-                      <span>
-                        Active Subscribers: <strong className="text-[#15110e]">{subCount}</strong>
-                      </span>
-                      <span className="text-[11px] text-[#bd9661] font-semibold">
-                        ${p.price * subCount}/mo MRR
-                      </span>
-                    </div>
+                    <h2 className="font-serif text-xl font-bold text-[#15110e] mt-0.5">
+                      Active Subscriptions &amp; Feature Entitlements
+                    </h2>
+                    <p className="text-xs text-[#8b7b6b]">
+                      Showing active subscriptions across all MCs, enabled features according to each subscription, and direct access to view transactions.
+                    </p>
                   </div>
-                );
-              })}
-            </div>
+                  <span className="text-xs font-bold text-[#15110e] bg-[#faf6f0] border border-[#ebd3a8] px-3 py-1 rounded-full self-start sm:self-auto">
+                    {tenants.filter(t => t.status === 'Active').length} Active Paying MCs
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-[#e8ded0] text-[10px] uppercase tracking-wider text-[#8b7b6b] bg-[#faf8f5]">
+                        <th className="py-3 px-3 font-bold">MC Agency &amp; Host</th>
+                        <th className="py-3 px-3 font-bold">Subscription Plan</th>
+                        <th className="py-3 px-3 font-bold">Status</th>
+                        <th className="py-3 px-3 font-bold">Billing Cycle</th>
+                        <th className="py-3 px-3 font-bold">Next Renewal</th>
+                        <th className="py-3 px-3 font-bold">Features According to Subscription</th>
+                        <th className="py-3 px-3 font-bold text-right">Transactions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#f2ede4]">
+                      {tenants.map((t) => {
+                        const planKey = getTenantPlanKey(t.plan);
+                        const matchedPlan = plans.find(p => p.key.toLowerCase() === planKey.toLowerCase());
+                        const mcTxnCount = mcTransactions.filter(x => x.tenantId === t.id).length;
+
+                        // Features according to each subscription
+                        const featuresList = matchedPlan?.features && matchedPlan.features.length > 0
+                          ? matchedPlan.features
+                          : planKey === 'Pro'
+                          ? [
+                              'Unlimited active weddings',
+                              'AI Seating Optimization Assistant',
+                              'Live interactive run sheets & cues',
+                              'Private MC run sheet & catering summary',
+                              'Multi-coordinator logins'
+                            ]
+                          : planKey === 'Standard'
+                          ? [
+                              'Up to 3 active weddings',
+                              'Drag-and-drop seating studio',
+                              'Custom guest QR links',
+                              'Standard email support'
+                            ]
+                          : [
+                              '1 active wedding at a time',
+                              'Digital RSVPs & basic seating',
+                              'Digital wishing well',
+                              'Standard community support'
+                            ];
+
+                        return (
+                          <tr key={t.id} className="hover:bg-[#fbf9f6] transition-colors">
+                            {/* MC & Contact */}
+                            <td className="py-3.5 px-3">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-full bg-[#15110e] text-[#dfc194] font-bold text-xs flex items-center justify-center shrink-0 border border-[#bd9661]/40">
+                                  {t.contactName.split(' ').map(n => n[0]).join('')}
+                                </div>
+                                <div>
+                                  <div className="font-bold text-[#15110e] text-[13px]">{t.businessName}</div>
+                                  <div className="text-[11px] text-[#8b7b6b]">{t.contactName} &bull; {t.email}</div>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Plan */}
+                            <td className="py-3.5 px-3">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-[#15110e] text-xs">{planKey}</span>
+                                {matchedPlan?.badge && (
+                                  <span className="text-[9px] bg-[#bd9661] text-[#15110e] font-bold px-1.5 py-0.2 rounded">
+                                    {matchedPlan.badge}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="font-mono text-[11px] text-[#bd9661] font-semibold mt-0.5">
+                                ${t.mrr || (matchedPlan ? matchedPlan.price : 199)} / mo AUD
+                              </div>
+                            </td>
+
+                            {/* Status */}
+                            <td className="py-3.5 px-3">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                t.status === 'Active'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {t.status}
+                              </span>
+                            </td>
+
+                            {/* Billing Cycle */}
+                            <td className="py-3.5 px-3 text-[#15110e] font-medium">
+                              Monthly (Stripe)
+                            </td>
+
+                            {/* Renewal */}
+                            <td className="py-3.5 px-3 text-[#8b7b6b]">
+                              {t.status === 'Active' ? '12 Nov 2026' : 'Suspended'}
+                            </td>
+
+                            {/* Features according to each subscription */}
+                            <td className="py-3.5 px-3 max-w-md">
+                              <div className="flex flex-wrap gap-1">
+                                {featuresList.map((feat, fIdx) => (
+                                  <span
+                                    key={fIdx}
+                                    className="bg-[#faf5ee] border border-[#ebd3a8] text-[#544332] text-[10.5px] px-2 py-0.5 rounded-md flex items-center gap-1"
+                                    title={feat}
+                                  >
+                                    <span className="text-[#bd9661] font-bold text-[9px]">✓</span>
+                                    <span className="truncate max-w-[200px]">{feat}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+
+                            {/* Action: View Transactions */}
+                            <td className="py-3.5 px-3 text-right">
+                              <button
+                                type="button"
+                                onClick={() => handleViewTransactionsForMc(t.id)}
+                                className="px-3 py-1.5 rounded-lg bg-[#15110e] hover:bg-[#251e18] text-[#dfc194] hover:text-white font-bold text-[11px] cursor-pointer transition-colors shadow-2xs inline-flex items-center gap-1.5"
+                                title={`View all transactions for ${t.contactName}`}
+                              >
+                                <span>View Transactions</span>
+                                <span className="bg-[#2a2119] text-[#bd9661] text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+                                  {mcTxnCount}
+                                </span>
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ============================================================== */}
+            {/* 2. LIVE MC TRANSACTIONS LEDGER (FETCHED LIVE FROM MCs)         */}
+            {/* ============================================================== */}
+            {(billingSectionFocus === 'all' || billingSectionFocus === 'transactions') && (
+              <div id="mc_transactions_ledger_section" className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[#f0ede4]">
+                  <div>
+                    <div className="text-[10px] uppercase font-bold tracking-wider text-[#bd9661]">
+                      PAYMENT &amp; BILLING LEDGER
+                    </div>
+                    <h2 className="font-serif text-xl font-bold text-[#15110e] mt-0.5 flex items-center gap-2">
+                      <span>MC Transactions</span>
+                      <span className="text-xs font-sans font-bold bg-[#faf5ed] text-[#bd9661] border border-[#ebd3a8] px-2 py-0.5 rounded-full">
+                        {filteredMcTransactions.length} Records
+                      </span>
+                    </h2>
+                    <p className="text-xs text-[#8b7b6b] mt-0.5">
+                      Live transaction stream fetched across MC SaaS subscription renewals, client wedding invoice bookings, and platform fees.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleFetchMcTransactions}
+                      disabled={isFetchingTxns}
+                      className="px-3 py-1.5 rounded-lg bg-[#faf8f5] hover:bg-[#f0ede4] border border-[#e8ded0] text-xs font-bold text-[#15110e] flex items-center gap-1.5 cursor-pointer transition-colors disabled:opacity-60"
+                    >
+                      <span className={isFetchingTxns ? 'animate-spin' : ''}>⟳</span>
+                      {isFetchingTxns ? 'Fetching...' : 'Fetch Latest MC Txns'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filter & Search Bar */}
+                <div className="flex flex-col lg:flex-row gap-2.5 items-stretch lg:items-center justify-between">
+                  {/* Search */}
+                  <div className="relative flex-1 max-w-md">
+                    <input
+                      type="text"
+                      placeholder="Search by transaction ID, MC name, couple, or notes..."
+                      value={txnSearch}
+                      onChange={(e) => setTxnSearch(e.target.value)}
+                      className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl pl-8 pr-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] focus:bg-white"
+                    />
+                    <svg className="w-4 h-4 text-[#8b7b6b] absolute left-2.5 top-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="11" cy="11" r="8" />
+                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                    </svg>
+                  </div>
+
+                  {/* Dropdown Filters */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Filter by MC Tenant */}
+                    <select
+                      value={selectedMcFilter}
+                      onChange={(e) => setSelectedMcFilter(e.target.value)}
+                      className="bg-[#faf8f5] border border-[#e8ded0] text-xs text-[#15110e] rounded-xl px-2.5 py-2 outline-none cursor-pointer"
+                    >
+                      <option value="all">All MCs ({mcTransactions.length})</option>
+                      {tenants.map(t => (
+                        <option key={t.id} value={t.id}>
+                          {t.contactName} ({t.businessName})
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Filter by Type */}
+                    <select
+                      value={txnTypeFilter}
+                      onChange={(e) => setTxnTypeFilter(e.target.value)}
+                      className="bg-[#faf8f5] border border-[#e8ded0] text-xs text-[#15110e] rounded-xl px-2.5 py-2 outline-none cursor-pointer"
+                    >
+                      <option value="all">All Transaction Types</option>
+                      <option value="subscription">MC Subscriptions</option>
+                      <option value="client_invoice">Client Invoices</option>
+                      <option value="platform_fee">Platform Fees (2.5%)</option>
+                    </select>
+
+                    {/* Filter by Status */}
+                    <select
+                      value={txnStatusFilter}
+                      onChange={(e) => setTxnStatusFilter(e.target.value)}
+                      className="bg-[#faf8f5] border border-[#e8ded0] text-xs text-[#15110e] rounded-xl px-2.5 py-2 outline-none cursor-pointer"
+                    >
+                      <option value="all">All Statuses</option>
+                      <option value="Settled">Settled</option>
+                      <option value="Paid">Paid</option>
+                      <option value="Pending">Pending</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Active Filter Notification Pill */}
+                {selectedMcFilter !== 'all' && (
+                  <div className="bg-[#faf5ee] border border-[#ebd3a8] px-3 py-1.5 rounded-xl flex items-center justify-between text-xs">
+                    <span className="text-[#544332]">
+                      Filtered by MC: <strong>{tenants.find(t => t.id === selectedMcFilter)?.businessName || selectedMcFilter}</strong> ({filteredMcTransactions.length} transactions)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMcFilter('all')}
+                      className="text-[#bd9661] hover:text-[#15110e] font-bold text-xs underline cursor-pointer"
+                    >
+                      ✕ Clear Filter (Show All MCs)
+                    </button>
+                  </div>
+                )}
+
+                {/* Transactions Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-[#e8ded0] text-[10px] uppercase tracking-wider text-[#8b7b6b] bg-[#faf8f5]">
+                        <th className="py-3 px-3 font-bold">Date &amp; Time</th>
+                        <th className="py-3 px-3 font-bold">Transaction ID</th>
+                        <th className="py-3 px-3 font-bold">MC Tenant</th>
+                        <th className="py-3 px-3 font-bold">Type</th>
+                        <th className="py-3 px-3 font-bold">Description &amp; Reference</th>
+                        <th className="py-3 px-3 font-bold">Gross (AUD)</th>
+                        <th className="py-3 px-3 font-bold">Fee (2.5%)</th>
+                        <th className="py-3 px-3 font-bold">Net (AUD)</th>
+                        <th className="py-3 px-3 font-bold">Payment Method</th>
+                        <th className="py-3 px-3 font-bold">Status</th>
+                        <th className="py-3 px-3 font-bold">Xero Sync</th>
+                        <th className="py-3 px-3 font-bold text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#f2ede4]">
+                      {filteredMcTransactions.length === 0 ? (
+                        <tr>
+                          <td colSpan={12} className="text-center py-8 text-xs text-[#8b7b6b] bg-[#faf8f5]">
+                            No MC transactions matched your filter criteria.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredMcTransactions.map((txn) => {
+                          return (
+                            <tr key={txn.id} className="hover:bg-[#fbf9f6] transition-colors">
+                              {/* Date */}
+                              <td className="py-3 px-3 text-[#8b7b6b] font-medium whitespace-nowrap">
+                                {txn.date}
+                              </td>
+
+                              {/* Transaction ID */}
+                              <td className="py-3 px-3 font-mono font-bold text-[#15110e]">
+                                {txn.id}
+                              </td>
+
+                              {/* MC Tenant */}
+                              <td className="py-3 px-3">
+                                <div className="font-bold text-[#15110e]">{txn.mcName}</div>
+                                <div className="text-[10px] text-[#8b7b6b] truncate max-w-[140px]">{txn.businessName}</div>
+                              </td>
+
+                              {/* Type Badge */}
+                              <td className="py-3 px-3 whitespace-nowrap">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  txn.type === 'subscription'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : txn.type === 'client_invoice'
+                                    ? 'bg-purple-100 text-purple-800'
+                                    : 'bg-amber-100 text-amber-800'
+                                }`}>
+                                  {txn.type === 'subscription'
+                                    ? 'Subscription'
+                                    : txn.type === 'client_invoice'
+                                    ? 'Client Invoice'
+                                    : 'Platform Fee'}
+                                </span>
+                              </td>
+
+                              {/* Description & Reference */}
+                              <td className="py-3 px-3 max-w-xs">
+                                <div className="font-medium text-[#15110e] truncate">{txn.description}</div>
+                                {txn.weddingCouple && (
+                                  <div className="text-[10.5px] text-[#bd9661] font-semibold mt-0.5 flex items-center gap-1">
+                                    <span>💍</span> {txn.weddingCouple}
+                                  </div>
+                                )}
+                              </td>
+
+                              {/* Gross Amount */}
+                              <td className="py-3 px-3 font-mono font-bold text-[#15110e] whitespace-nowrap">
+                                ${txn.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </td>
+
+                              {/* Fee */}
+                              <td className="py-3 px-3 font-mono text-[#8b7b6b] whitespace-nowrap">
+                                ${txn.platformFee.toFixed(2)}
+                              </td>
+
+                              {/* Net Amount */}
+                              <td className="py-3 px-3 font-mono font-bold text-emerald-800 whitespace-nowrap">
+                                ${txn.netAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </td>
+
+                              {/* Payment Method */}
+                              <td className="py-3 px-3 text-[#544332] whitespace-nowrap text-[11px]">
+                                {txn.paymentMethod}
+                              </td>
+
+                              {/* Status */}
+                              <td className="py-3 px-3 whitespace-nowrap">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  txn.status === 'Settled'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : txn.status === 'Paid'
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-300'
+                                    : 'bg-amber-100 text-amber-800'
+                                }`}>
+                                  {txn.status}
+                                </span>
+                              </td>
+
+                              {/* Xero Sync Status */}
+                              <td className="py-3 px-3 whitespace-nowrap">
+                                {txn.xeroStatus === 'Synced' ? (
+                                  <span className="bg-[#faf6f0] border border-[#ebd3a8] text-[#8e6e42] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 w-max">
+                                    <span>✓</span> {txn.xeroInvoiceId || 'Xero Synced'}
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={handleSyncToXero}
+                                    className="bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 cursor-pointer transition-colors"
+                                    title="Click to sync this transaction to Xero"
+                                  >
+                                    <span>⏳</span> Sync to Xero
+                                  </button>
+                                )}
+                              </td>
+
+                              {/* Actions */}
+                              <td className="py-3 px-3 text-right whitespace-nowrap">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedTxnDetail(txn)}
+                                  className="text-[11px] font-bold text-[#bd9661] hover:text-[#916c3d] underline cursor-pointer"
+                                >
+                                  View Receipt
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ============================================================== */}
+            {/* 3. SAAS SUBSCRIPTION TIER CARDS GRID                           */}
+            {/* ============================================================== */}
+            {(billingSectionFocus === 'all' || billingSectionFocus === 'plans') && (
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <div className="text-[10px] uppercase font-bold tracking-wider text-[#bd9661]">
+                      TIER CATALOGUE
+                    </div>
+                    <h2 className="font-serif text-xl font-bold text-[#15110e] mt-0.5">
+                      SaaS Subscription Tiers &amp; Pricing
+                    </h2>
+                    <p className="text-xs text-[#8b7b6b] mt-0.5">
+                      {plans.length} configured plans available for self-service or invited MCs
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewPlanKey('');
+                      setNewPlanTagline('');
+                      setNewPlanPrice(249);
+                      setNewPlanBilling('AUD / mo');
+                      setNewPlanBadge('');
+                      setNewPlanFeatured(false);
+                      setNewPlanFeatures('Up to 5 active weddings at a time\nQaRd physical QR code printing\nAI Seating Optimization Assistant\nFull client messaging suite');
+                      setShowAddPlanModal(true);
+                    }}
+                    className="btn btn-gold btn-sm self-start sm:self-auto flex items-center gap-1.5"
+                  >
+                    <span>+ Add Plan</span>
+                  </button>
+                </div>
+
+                <div className="plan-cards-grid">
+                  {plans.map((p) => {
+                    const subCount = tenants.filter(t => getTenantPlanKey(t?.plan).toLowerCase() === p.key.toLowerCase()).length;
+                    return (
+                      <div
+                        key={p.id}
+                        className={`plan-card ${p.featured ? 'featured' : ''} relative flex flex-col justify-between`}
+                      >
+                        {p.badge && (
+                          <div className="plan-featured-badge">{p.badge}</div>
+                        )}
+                        <div>
+                          <div className={`text-xs tracking-wider font-bold uppercase ${p.featured ? 'text-[#bd9661]' : 'text-[#8b7b6b]'}`}>
+                            {p.key}
+                          </div>
+                          <h3 className="font-serif text-2xl font-bold text-[#15110e] mt-1">
+                            {p.tagline}
+                          </h3>
+                          <div className="plan-price mt-3">
+                            ${p.price} <small className="text-sm text-[#8b7b6b] font-normal">{p.billingCycle || 'AUD / mo'}</small>
+                          </div>
+                          <ul className="text-xs text-[#5a4b3d] space-y-2 list-none p-0 mt-4">
+                            {(p.features || []).map((feat, fIdx) => (
+                              <li key={fIdx}>✓ {feat}</li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="mt-6 border-t border-[#e8ded0] pt-4 text-xs text-[#8b7b6b] flex justify-between items-center">
+                          <span>
+                            Active Subscribers: <strong className="text-[#15110e]">{subCount}</strong>
+                          </span>
+                          <span className="text-[11px] text-[#bd9661] font-semibold">
+                            ${p.price * subCount}/mo MRR
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </section>
         )}
 
-        {/* ================================================================ */}
         {/* TAB 4: FEATURE FLAGS (Matches superadmin.html)                    */}
         {/* ================================================================ */}
         {activeTab === 'flags' && (
@@ -1621,6 +2323,254 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
           </div>
         </div>
       )}
+
+      {/* ============================================================== */}
+      {/* XERO ACCOUNTING PORTAL MODAL                                   */}
+      {/* ============================================================== */}
+      {showXeroModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-[#e8ded0] overflow-hidden space-y-0">
+            {/* Xero Header */}
+            <div className="bg-[#15110e] text-white p-5 flex items-start justify-between border-b border-[#29211a]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#2a2119] text-[#bd9661] border border-[#bd9661]/40 font-serif font-bold text-xl flex items-center justify-center shrink-0 shadow-sm">
+                  X
+                </div>
+                <div>
+                  <div className="text-[10px] tracking-widest uppercase font-bold text-[#bd9661]">
+                    Xero Cloud Accounting Integration
+                  </div>
+                  <h3 className="font-serif text-lg font-bold text-white mt-0.5">
+                    Tap &amp; Toast Pty Ltd &bull; General Ledger
+                  </h3>
+                  <div className="text-[11px] text-[#a09080]">
+                    Connected Organisation: <strong>Tap &amp; Toast Pty Ltd (ABN 48 619 204 881)</strong>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowXeroModal(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold text-base cursor-pointer transition-colors"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 space-y-4 text-xs">
+              <div className="bg-[#faf8f5] border border-[#e8ded0] rounded-xl p-3.5 text-[#544332] space-y-1">
+                <div className="font-bold text-[12px] flex items-center gap-1.5 text-[#15110e]">
+                  <span className="text-[#bd9661]">📘</span> Direct General Ledger &amp; Reconciliation Notice
+                </div>
+                <p className="leading-relaxed">
+                  For actual accounting, BAS / GST tax returns, and bank reconciliation, the SuperAdmin uses Xero. All transactions below are automatically synchronized with your Xero Invoices &amp; Stripe Bank Feed.
+                </p>
+              </div>
+
+              {/* Xero Chart of Accounts Mapping */}
+              <div className="space-y-2">
+                <div className="text-[10px] uppercase font-bold tracking-wider text-[#8b7b6b]">
+                  Xero Chart of Accounts Mapping:
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-[#faf8f5] border border-[#e8ded0] p-3 rounded-xl">
+                    <div className="text-[10px] text-[#8b7b6b]">Account 400 (Revenue)</div>
+                    <div className="font-bold text-[#15110e] text-xs mt-0.5">SaaS MC Subscriptions</div>
+                    <div className="font-mono text-emerald-700 font-semibold text-[11px] mt-1">$1,496.00 AUD/mo</div>
+                  </div>
+                  <div className="bg-[#faf8f5] border border-[#e8ded0] p-3 rounded-xl">
+                    <div className="text-[10px] text-[#8b7b6b]">Account 410 (Commission)</div>
+                    <div className="font-bold text-[#15110e] text-xs mt-0.5">Platform Booking Fees (2.5%)</div>
+                    <div className="font-mono text-emerald-700 font-semibold text-[11px] mt-1">$621.25 AUD</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Direct Links to Xero Portals */}
+              <div className="space-y-2 pt-1 border-t border-[#f0ede4]">
+                <div className="text-[10px] uppercase font-bold tracking-wider text-[#8b7b6b]">
+                  Quick Access to Xero Modules:
+                </div>
+                <div className="space-y-1.5">
+                  <a
+                    href="https://go.xero.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between p-2.5 bg-[#faf8f5] hover:bg-[#f2ede4] rounded-xl border border-[#e8ded0] text-xs text-[#15110e] font-semibold transition-colors group cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="text-[#bd9661]">📊</span>
+                      <span>Xero Dashboard &amp; Bank Reconciliation</span>
+                    </span>
+                    <span className="text-[#8b7b6b] group-hover:text-[#bd9661] font-bold">↗</span>
+                  </a>
+
+                  <a
+                    href="https://go.xero.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between p-2.5 bg-[#faf8f5] hover:bg-[#f2ede4] rounded-xl border border-[#e8ded0] text-xs text-[#15110e] font-semibold transition-colors group cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="text-emerald-700">🧾</span>
+                      <span>Xero Sales Invoices &amp; Customer Ledger (38 synced)</span>
+                    </span>
+                    <span className="text-[#8b7b6b] group-hover:text-[#bd9661] font-bold">↗</span>
+                  </a>
+
+                  <a
+                    href="https://go.xero.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between p-2.5 bg-[#faf8f5] hover:bg-[#f2ede4] rounded-xl border border-[#e8ded0] text-xs text-[#15110e] font-semibold transition-colors group cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="text-[#bd9661]">🏛️</span>
+                      <span>Australian GST / BAS Summary Reports</span>
+                    </span>
+                    <span className="text-[#8b7b6b] group-hover:text-[#bd9661] font-bold">↗</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="p-4 bg-[#faf8f5] border-t border-[#e8ded0] flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={handleSyncToXero}
+                disabled={isSyncingXero}
+                className="px-3.5 py-2 rounded-xl bg-[#15110e] hover:bg-[#251e18] text-[#dfc194] text-xs font-bold cursor-pointer transition-colors disabled:opacity-60 flex items-center gap-1.5"
+              >
+                <span className={isSyncingXero ? 'animate-spin text-[#bd9661]' : 'text-[#bd9661]'}>⟳</span>
+                <span>{isSyncingXero ? 'Syncing...' : 'Sync Pending to Xero'}</span>
+              </button>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowXeroModal(false)}
+                  className="px-3.5 py-2 rounded-xl border border-[#e8ded0] bg-white hover:bg-[#faf8f5] text-xs font-bold text-[#8b7b6b] cursor-pointer"
+                >
+                  Close
+                </button>
+                <a
+                  href="https://go.xero.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-2 rounded-xl bg-[#bd9661] hover:bg-[#a6804d] text-white text-xs font-bold cursor-pointer shadow-xs transition-colors flex items-center gap-1"
+                >
+                  <span>Open go.xero.com</span>
+                  <span>↗</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* ============================================================== */}
+      {/* TRANSACTION RECEIPT / DETAIL MODAL                             */}
+      {/* ============================================================== */}
+      {selectedTxnDetail && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-[#e8ded0] overflow-hidden">
+            <div className="bg-[#15110e] text-white p-5 flex items-start justify-between">
+              <div>
+                <div className="text-[10px] tracking-widest uppercase font-bold text-[#bd9661]">
+                  TRANSACTION RECEIPT
+                </div>
+                <h3 className="font-serif text-lg font-bold text-white mt-0.5">
+                  {selectedTxnDetail.id}
+                </h3>
+                <div className="text-[11px] text-[#a09080]">
+                  {selectedTxnDetail.date} &bull; {selectedTxnDetail.paymentMethod}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedTxnDetail(null)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold text-base cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="p-5 space-y-3.5 text-xs">
+              <div className="flex items-center justify-between pb-2 border-b border-[#f0ede4]">
+                <span className="text-[#8b7b6b]">MC Agency:</span>
+                <span className="font-bold text-[#15110e] text-right">
+                  {selectedTxnDetail.mcName}<br />
+                  <small className="text-[#8b7b6b] font-normal">{selectedTxnDetail.businessName}</small>
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between pb-2 border-b border-[#f0ede4]">
+                <span className="text-[#8b7b6b]">Transaction Type:</span>
+                <span className="font-bold text-[#15110e] capitalize">
+                  {selectedTxnDetail.type.replace('_', ' ')}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between pb-2 border-b border-[#f0ede4]">
+                <span className="text-[#8b7b6b]">Description:</span>
+                <span className="font-bold text-[#15110e] text-right max-w-[240px]">
+                  {selectedTxnDetail.description}
+                </span>
+              </div>
+
+              {selectedTxnDetail.weddingCouple && (
+                <div className="flex items-center justify-between pb-2 border-b border-[#f0ede4]">
+                  <span className="text-[#8b7b6b]">Wedding Couple:</span>
+                  <span className="font-bold text-[#bd9661]">
+                    {selectedTxnDetail.weddingCouple}
+                  </span>
+                </div>
+              )}
+
+              <div className="bg-[#faf8f5] rounded-xl p-3 space-y-1.5 border border-[#e8ded0]">
+                <div className="flex justify-between text-[#8b7b6b]">
+                  <span>Gross Amount:</span>
+                  <span className="font-mono font-bold text-[#15110e]">
+                    ${selectedTxnDetail.amount.toFixed(2)} AUD
+                  </span>
+                </div>
+                <div className="flex justify-between text-[#8b7b6b]">
+                  <span>Platform Commission (2.5%):</span>
+                  <span className="font-mono text-amber-700">
+                    -${selectedTxnDetail.platformFee.toFixed(2)} AUD
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs font-bold pt-1.5 border-t border-[#e8ded0] text-emerald-800">
+                  <span>Net Settled Amount:</span>
+                  <span className="font-mono">
+                    ${selectedTxnDetail.netAmount.toFixed(2)} AUD
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-[#8b7b6b]">Xero Reconciliation:</span>
+                <span className="bg-[#faf6f0] border border-[#ebd3a8] text-[#8e6e42] text-[10.5px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <span>✓</span> {selectedTxnDetail.xeroInvoiceId || 'Synced with Xero'}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4 bg-[#faf8f5] border-t border-[#e8ded0] flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedTxnDetail(null)}
+                className="px-4 py-2 rounded-xl bg-[#15110e] text-[#dfc194] text-xs font-bold cursor-pointer hover:bg-[#251e18]"
+              >
+                Close Receipt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* ================================================================== */}
       {/* ADD NEW SAAS PLAN MODAL                                            */}

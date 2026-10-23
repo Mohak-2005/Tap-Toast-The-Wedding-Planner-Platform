@@ -1,35 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import { useAppState, useSession, getWeddingCountdown, formatAUD, showToast } from '../lib/state';
 import JoeyChatbot from './JoeyChatbot';
-import { Guest } from '../lib/types';
+import { Guest, PrivateRunSheetItem } from '../lib/types';
+import { logAudit } from '../lib/state';
 import { InvitationTemplatesSection } from './InvitationTemplatesSection';
 import { WeddingDayCelebrationSection } from './WeddingDayCelebrationSection';
 import { SeatingPlannerSection } from './SeatingPlannerSection';
 
-interface CoupleViewProps {
+export type CoupleTab =
+  | 'overview'
+  | 'guests'
+  | 'seating'
+  | 'mc_runsheet'
+  | 'mc_catering'
+  | 'pages'
+  | 'invitations'
+  | 'gifts'
+  | 'feed'
+  | 'vault'
+  | 'anniversary'
+  | 'venue'
+  | 'settings';
+
+export interface CoupleViewProps {
   onSelectView?: (view: string) => void;
+  weddingId?: string;
+  isMcView?: boolean;
+  onBackToWeddings?: () => void;
+  initialTab?: CoupleTab;
 }
 
-export default function CoupleView({ onSelectView }: CoupleViewProps) {
+export default function CoupleView({
+  onSelectView,
+  weddingId,
+  isMcView,
+  onBackToWeddings,
+  initialTab,
+}: CoupleViewProps) {
   const { state, setState } = useAppState();
-  const { clearSession } = useSession();
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'guests' | 'seating' | 'pages' | 'invitations' | 'gifts' | 'feed' | 'vault' | 'anniversary' | 'venue' | 'settings'
-  >('overview');
+  const { session, clearSession } = useSession();
 
-  const wedding = state.weddings[0];
+  const activeWeddingId = weddingId || session?.weddingId || state.currentWeddingId || 'w1';
+  const wedding = (state.weddings || []).find(w => w.id === activeWeddingId) || (state.weddings || [])[0];
+
+  const [activeTab, setActiveTab] = useState<CoupleTab>(initialTab || 'overview');
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Wedding Day Celebration Mode (Interactive demo toggle)
   const [isWeddingDayMode, setIsWeddingDayMode] = useState<boolean>(false);
 
   // Overview Countdown
-  const [countdown, setCountdown] = useState(getWeddingCountdown('2026-11-14T14:00:00'));
+  const [countdown, setCountdown] = useState(getWeddingCountdown(wedding.date || '2026-11-14T14:00:00'));
   useEffect(() => {
+    setCountdown(getWeddingCountdown(wedding.date || '2026-11-14T14:00:00'));
     const timer = setInterval(() => {
-      setCountdown(getWeddingCountdown('2026-11-14T14:00:00'));
+      setCountdown(getWeddingCountdown(wedding.date || '2026-11-14T14:00:00'));
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [wedding.date]);
 
   // Overview Tasks
   const [newTaskInput, setNewTaskInput] = useState('');
@@ -498,8 +531,13 @@ export default function CoupleView({ onSelectView }: CoupleViewProps) {
     hideSeatingUntilMorning: false,
   });
 
-  // Filtered guests for list
-  const filteredGuests = state.guests.filter(g => {
+  // Scoped guests for this active wedding
+  const weddingGuests = (state.guests || []).filter(g => g.weddingId === wedding.id || (!g.weddingId && wedding.id === 'w1'));
+  const confirmedGuests = weddingGuests.filter(g => g.rsvpStatus === 'confirmed');
+  const awaitingGuests = weddingGuests.filter(g => g.rsvpStatus === 'awaiting');
+  const declinedGuests = weddingGuests.filter(g => g.rsvpStatus === 'declined');
+
+  const filteredGuests = weddingGuests.filter(g => {
     const matchSearch = g.name.toLowerCase().includes(guestSearch.toLowerCase()) ||
       g.household.toLowerCase().includes(guestSearch.toLowerCase()) ||
       g.dietary.toLowerCase().includes(guestSearch.toLowerCase());
@@ -507,18 +545,131 @@ export default function CoupleView({ onSelectView }: CoupleViewProps) {
     return matchSearch && matchFilter;
   });
 
-  const confirmedCount = state.guests.filter(g => g.rsvpStatus === 'confirmed').length;
-  const awaitingCount = state.guests.filter(g => g.rsvpStatus === 'awaiting').length;
+  const confirmedCount = confirmedGuests.length;
+  const awaitingCount = awaitingGuests.length;
   const totalGifts = state.gifts.reduce((sum, g) => sum + Number(g.amount || 0), 0);
   const thankYousDue = state.gifts.filter(g => g.thankYouStatus !== 'Completed' && g.thankYouStatus !== 'Sent').length;
 
+  // -------------------------------------------------------------
+  // Feature 1: Private MC Run Sheet State & Handlers
+  // -------------------------------------------------------------
+  const [runSheetFilter, setRunSheetFilter] = useState<'all' | 'pending' | 'done'>('all');
+  const [runSheetSearch, setRunSheetSearch] = useState('');
+  const [showAddCueModal, setShowAddCueModal] = useState(false);
+  const [cueTime, setCueTime] = useState('17:00');
+  const [cueActivity, setCueActivity] = useState('');
+  const [cueNotes, setCueNotes] = useState('');
+  const [cuePrivateNotes, setCuePrivateNotes] = useState('');
+
+  const runSheet = wedding.privateRunSheet || [];
+
+  const updateWeddingRunSheet = (newCues: PrivateRunSheetItem[]) => {
+    const updatedWeddings = (state.weddings || []).map(w => {
+      if (w.id === wedding.id) {
+        return { ...w, privateRunSheet: newCues };
+      }
+      return w;
+    });
+    setState({ ...state, weddings: updatedWeddings });
+  };
+
+  const handleToggleCueDone = (cueId: string) => {
+    const updated = runSheet.map(c => (c.id === cueId ? { ...c, done: !c.done } : c));
+    updateWeddingRunSheet(updated);
+  };
+
+  const handleUpdateCueField = (cueId: string, field: keyof PrivateRunSheetItem, value: any) => {
+    const updated = runSheet.map(c => (c.id === cueId ? { ...c, [field]: value } : c));
+    updateWeddingRunSheet(updated);
+  };
+
+  const handleMoveCue = (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= runSheet.length) return;
+    const newItems = [...runSheet];
+    const temp = newItems[index];
+    newItems[index] = newItems[targetIndex];
+    newItems[targetIndex] = temp;
+    updateWeddingRunSheet(newItems);
+  };
+
+  const handleDeleteCue = (cueId: string) => {
+    const updated = runSheet.filter(c => c.id !== cueId);
+    updateWeddingRunSheet(updated);
+    showToast('Cue removed from run sheet', 'info');
+  };
+
+  const handleAddCue = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cueTime || !cueActivity) return;
+    const newItem: PrivateRunSheetItem = {
+      id: 'pmc_' + Date.now(),
+      time: cueTime,
+      activity: cueActivity,
+      notes: cueNotes,
+      privateNotes: cuePrivateNotes,
+      done: false,
+      order: runSheet.length + 1,
+    };
+    updateWeddingRunSheet([...runSheet, newItem]);
+    logAudit(state, setState, 'MC Cue Added', 'Robert Galati', 'mc', `Added schedule entry: ${newItem.activity} at ${newItem.time} for ${wedding.couple}`, 'Run Sheet');
+    setCueTime('17:00');
+    setCueActivity('');
+    setCueNotes('');
+    setCuePrivateNotes('');
+    setShowAddCueModal(false);
+    showToast(`Added "${newItem.activity}" to schedule`, 'success');
+  };
+
+  const filteredCues = runSheet.filter(cue => {
+    const matchesSearch = cue.activity.toLowerCase().includes(runSheetSearch.toLowerCase()) ||
+      (cue.notes || '').toLowerCase().includes(runSheetSearch.toLowerCase()) ||
+      (cue.privateNotes || '').toLowerCase().includes(runSheetSearch.toLowerCase()) ||
+      cue.time.includes(runSheetSearch);
+    const matchesStatus = runSheetFilter === 'all' || (runSheetFilter === 'done' ? cue.done : !cue.done);
+    return matchesSearch && matchesStatus;
+  });
+
+  // -------------------------------------------------------------
+  // Feature 2: Guest & Catering Summary State & Calculations
+  // -------------------------------------------------------------
+  const [cateringDietFilter, setCateringDietFilter] = useState<'all' | 'special' | 'vegetarian' | 'gluten' | 'vegan' | 'nut'>('all');
+  const [cateringSearch, setCateringSearch] = useState('');
+
+  const weddingTables = (state.tables || []).filter(t => t.weddingId === wedding.id || (!t.weddingId && wedding.id === 'w1'));
+
+  const vegCount = confirmedGuests.filter(g => (g.dietary || '').toLowerCase().includes('veg') && !(g.dietary || '').toLowerCase().includes('vegan')).length;
+  const veganCount = confirmedGuests.filter(g => (g.dietary || '').toLowerCase().includes('vegan')).length;
+  const gfCount = confirmedGuests.filter(g => (g.dietary || '').toLowerCase().includes('gluten')).length;
+  const nutCount = confirmedGuests.filter(g => (g.dietary || '').toLowerCase().includes('nut')).length;
+  const otherDietCount = confirmedGuests.filter(g => {
+    const d = (g.dietary || '').toLowerCase().trim();
+    return d !== '' && d !== 'none' && d !== 'no' && !d.includes('veg') && !d.includes('gluten') && !d.includes('nut');
+  }).length;
+
+  const filteredCateringGuests = confirmedGuests.filter(g => {
+    const matchesSearch = g.name.toLowerCase().includes(cateringSearch.toLowerCase()) ||
+      (g.dietary || '').toLowerCase().includes(cateringSearch.toLowerCase()) ||
+      (g.household || '').toLowerCase().includes(cateringSearch.toLowerCase());
+
+    const d = (g.dietary || '').toLowerCase();
+    let matchesDiet = true;
+    if (cateringDietFilter === 'special') matchesDiet = d !== '' && d !== 'none' && d !== 'no';
+    else if (cateringDietFilter === 'vegetarian') matchesDiet = d.includes('veg') && !d.includes('vegan');
+    else if (cateringDietFilter === 'vegan') matchesDiet = d.includes('vegan');
+    else if (cateringDietFilter === 'gluten') matchesDiet = d.includes('gluten');
+    else if (cateringDietFilter === 'nut') matchesDiet = d.includes('nut');
+
+    return matchesSearch && matchesDiet;
+  });
+
   return (
     <div className="flex-1 flex flex-col md:flex-row min-h-[calc(100vh-45px)] bg-[#f8f6f2] font-sans select-none">
-      {/* 11-Item Dark Sidebar matching Screenshot 5, 23-34 & couple.html */}
+      {/* Navigation Sidebar (Couples Suite + MC Pro Live Console) */}
       <aside className="w-full md:w-[240px] bg-[#15110e] text-[#d9c9b8] flex flex-col justify-between border-r border-[#29211a] flex-shrink-0">
         <div>
           {/* Brand */}
-          <div className="p-5 pb-4 flex items-center gap-2.5 border-b border-[#231b14]">
+          <div className="p-5 pb-3 flex items-center gap-2.5">
             <span className="tt-mark inline-grid place-items-center w-6 h-6 border border-[#bd9661] text-[#bd9661] font-serif font-bold text-sm rounded-[3px]">
               T
             </span>
@@ -526,6 +677,24 @@ export default function CoupleView({ onSelectView }: CoupleViewProps) {
               Tap <span className="gold-amp">&amp;</span> Toast
             </span>
           </div>
+
+          {/* MC Mode Navigation Header */}
+          {isMcView && (
+            <div className="px-3 pb-3 border-b border-[#231b14]">
+              <button
+                type="button"
+                onClick={onBackToWeddings}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-[#2a2119] hover:bg-[#3d3024] text-[#dfc194] border border-[#bd9661]/50 rounded-xl text-xs font-bold transition-all cursor-pointer mb-2 shadow-xs"
+              >
+                <span>&larr;</span>
+                <span>Back to All Weddings</span>
+              </button>
+              <div className="text-[9.5px] uppercase tracking-[1.5px] text-[#bd9661] font-bold px-1 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="truncate">MC SUITE: {wedding.couple}</span>
+              </div>
+            </div>
+          )}
 
           {/* Navigation Links */}
           <nav className="p-2 flex flex-col gap-1">
@@ -568,6 +737,32 @@ export default function CoupleView({ onSelectView }: CoupleViewProps) {
                   </svg>
                 ),
               },
+              ...(isMcView ? [
+                {
+                  id: 'mc_runsheet' as const,
+                  label: 'Private Run Sheet',
+                  icon: (
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                      <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                      <path d="M9 12h6M9 16h4" />
+                    </svg>
+                  ),
+                },
+                {
+                  id: 'mc_catering' as const,
+                  label: 'Guest & Catering Summary',
+                  icon: (
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+                      <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+                      <line x1="6" y1="1" x2="6" y2="4" />
+                      <line x1="10" y1="1" x2="10" y2="4" />
+                      <line x1="14" y1="1" x2="14" y2="4" />
+                    </svg>
+                  ),
+                },
+              ] : []),
               {
                 id: 'pages',
                 label: 'Content & Stories',
@@ -656,16 +851,23 @@ export default function CoupleView({ onSelectView }: CoupleViewProps) {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-[#291f17] text-[#dfc194] border-l-3 border-l-[#bd9661]'
-                      : 'text-[#d9c9b8] hover:bg-[#1e1713] hover:text-white'
+                      ? 'bg-[#291f17] text-[#dfc194] border-l-[3px] border-l-[#bd9661] shadow-xs'
+                      : 'text-[#d9c9b8] hover:bg-[#1e1713] hover:text-white border-l-[3px] border-l-transparent'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-4 h-4 flex items-center justify-center text-[#bd9661]">{tab.icon}</span>
-                    <span>{tab.label}</span>
+                  <div className="flex items-center gap-2.5 truncate">
+                    <span className={`w-4 h-4 flex items-center justify-center ${isActive ? 'text-[#bd9661]' : 'text-[#8b7b6b]'}`}>
+                      {tab.icon}
+                    </span>
+                    <span className="truncate">{tab.label}</span>
                   </div>
+                  {(tab as any).badge && (
+                    <span className="text-[9px] font-bold bg-[#bd9661] text-[#15110e] px-1.5 py-0.5 rounded-md uppercase tracking-wider">
+                      {(tab as any).badge}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -673,27 +875,71 @@ export default function CoupleView({ onSelectView }: CoupleViewProps) {
         </div>
 
         {/* User Footer */}
-        <div className="p-4 border-t border-[#231b14] flex items-center justify-between text-xs">
-          <div>
-            <div className="text-[10px] uppercase tracking-wider text-[#8b7b6b]">Signed in as</div>
-            <div className="font-serif font-bold text-white text-sm">Sophie &amp; James</div>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              clearSession();
-              if (onSelectView) onSelectView('login');
-              showToast('Signed out of couple dashboard', 'info');
-            }}
-            className="text-[11px] text-[#bd9661] hover:underline cursor-pointer"
-          >
-            Logout
-          </button>
+        <div className="p-4 border-t border-[#231b14] text-xs">
+          {isMcView ? (
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-[#bd9661] font-bold">Host Account</div>
+              <div className="font-semibold text-white">Robert Galati</div>
+              <div className="text-[11px] text-[#8c7b6c] truncate">Managing: {wedding.couple}</div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-[#8b7b6b]">Signed in as</div>
+                <div className="font-serif font-bold text-white text-sm truncate max-w-[120px]">{wedding.couple}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  clearSession();
+                  if (onSelectView) onSelectView('login');
+                  showToast('Signed out of couple dashboard', 'info');
+                }}
+                className="text-[11px] text-[#bd9661] hover:underline cursor-pointer font-medium"
+              >
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </aside>
 
       {/* Main Content Area */}
       <main className="flex-1 p-4 md:p-8 overflow-y-auto max-w-[1300px]">
+        {/* MC Pro Live Header Banner */}
+        {isMcView && (
+          <div className="bg-[#1c140e] border border-[#3d2e20] rounded-2xl p-4 mb-6 flex items-center justify-between flex-wrap gap-3 shadow-sm text-xs">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1.5 font-bold text-[#bd9661] bg-[#2d1f14] border border-[#bd9661]/40 px-2.5 py-1 rounded-xl text-[10px] uppercase tracking-wider">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" />
+                MC Pro Hosting Mode
+              </span>
+              <div>
+                <span className="text-white font-serif font-bold text-base block sm:inline">
+                  {wedding.couple}
+                </span>
+                <span className="text-[#8c7b6c] hidden sm:inline"> &bull; </span>
+                <span className="text-[#d9c9b8] text-xs">
+                  {wedding.dateDisplay || wedding.date} ({wedding.venue})
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (activeTab !== 'mc_runsheet' && activeTab !== 'mc_catering') {
+                    setActiveTab('mc_runsheet');
+                  }
+                  setTimeout(() => window.print(), 100);
+                }}
+                className="bg-[#2a2119] hover:bg-[#382b21] text-[#dfc194] border border-[#bd9661]/40 font-bold px-3.5 py-1.5 rounded-xl text-xs transition-colors cursor-pointer shadow-xs flex items-center gap-1.5"
+              >
+                <span>🖨️</span> Print
+              </button>
+            </div>
+          </div>
+        )}
         
         {/* ================================================================ */}
         {/* TAB 1: OVERVIEW (Screenshot 5)                                   */}
@@ -706,7 +952,7 @@ export default function CoupleView({ onSelectView }: CoupleViewProps) {
                   YOUR WEDDING
                 </div>
                 <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#15110e]">
-                  Sophie <span className="text-[#bd9661] italic font-normal">&amp;</span> James
+                  {wedding.couple}
                 </h1>
               </div>
               <div className="flex items-center gap-2.5">
@@ -1032,7 +1278,7 @@ export default function CoupleView({ onSelectView }: CoupleViewProps) {
         {/* ================================================================ */}
         {activeTab === 'seating' && (
           <section className="space-y-4">
-            <SeatingPlannerSection onSelectView={onSelectView} />
+            <SeatingPlannerSection weddingId={wedding.id} onSelectView={onSelectView} />
           </section>
         )}
 
@@ -1843,7 +2089,7 @@ export default function CoupleView({ onSelectView }: CoupleViewProps) {
                     <span className="text-[#3c6a42] font-bold">0.25 GB</span>
                   </div>
                   <div className="p-3 bg-[#faf8f5] rounded-xl flex items-center justify-between border border-[#f0ede4]">
-                    <span>Official MC Run Sheet &amp; Speeches Final PDF</span>
+                    <span>Official Run Sheet &amp; Speeches Final PDF</span>
                     <span className="text-[#3c6a42] font-bold">0.05 GB</span>
                   </div>
                 </div>
@@ -2612,7 +2858,7 @@ export default function CoupleView({ onSelectView }: CoupleViewProps) {
             <div className="bg-[#faf8f5] border border-[#ebd3a8] rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
               <div>
                 <strong className="text-sm font-serif text-[#15110e] block">Ready to apply changes?</strong>
-                <p className="text-xs text-[#8b7b6b]">All updates reflect immediately in the Guest Hub and MC Run Sheet.</p>
+                <p className="text-xs text-[#8b7b6b]">All updates reflect immediately in the Guest Hub and Run Sheet.</p>
               </div>
               <div className="flex gap-2.5">
                 <button
@@ -2633,6 +2879,562 @@ export default function CoupleView({ onSelectView }: CoupleViewProps) {
                 >
                   Save Settings
                 </button>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ================================================================ */}
+        {/* TAB MC 1: PRIVATE MC RUN SHEET                                   */}
+        {/* ================================================================ */}
+        {activeTab === 'mc_runsheet' && (
+          <section className="space-y-6 animate-in fade-in duration-200">
+            {/* Header */}
+            <div className="flex items-start justify-between flex-wrap gap-4">
+              <div>
+                <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1 flex items-center gap-2">
+                  <span>🔒 PRIVATE CONSOLE</span>
+                  <span className="text-[#8b7b6b]">•</span>
+                  <span className="text-[#15110e] font-semibold">{wedding.couple}</span>
+                </div>
+                <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#15110e]">
+                  Private Run Sheet
+                </h1>
+                <p className="text-xs text-[#8b7b6b] mt-1">
+                  Saturday, {wedding.dateDisplay || wedding.date} &bull; {wedding.venue} &bull; {runSheet.length} Cue Entries
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="bg-white border border-[#d5c7b5] hover:bg-[#f5ede0] text-[#15110e] font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                >
+                  <span>🖨️</span> Print Run Sheet
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddCueModal(true)}
+                  className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
+                >
+                  <span>+</span> Add Cue Entry
+                </button>
+              </div>
+            </div>
+
+            {/* Run Sheet KPI & Filter Bar */}
+            <div className="bg-white border border-[#e8ded0] rounded-2xl p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search cues & notes..."
+                      value={runSheetSearch}
+                      onChange={(e) => setRunSheetSearch(e.target.value)}
+                      className="bg-[#faf8f5] border border-[#d5c7b5] rounded-xl px-3.5 py-1.5 text-xs text-[#15110e] placeholder-[#a09080] focus:outline-none focus:border-[#bd9661] w-56 md:w-64"
+                    />
+                    {runSheetSearch && (
+                      <button
+                        onClick={() => setRunSheetSearch('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#8b7b6b] hover:text-[#15110e]"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1 bg-[#faf8f5] p-1 rounded-xl border border-[#e8ded0]">
+                    {(['all', 'pending', 'done'] as const).map(st => (
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => setRunSheetFilter(st)}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold capitalize transition-colors cursor-pointer ${
+                          runSheetFilter === st
+                            ? 'bg-[#15110e] text-[#dfc194]'
+                            : 'text-[#8b7b6b] hover:text-[#15110e]'
+                        }`}
+                      >
+                        {st}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 text-xs">
+                  <div className="bg-[#faf6f0] border border-[#ebd3a8] px-3 py-1.5 rounded-xl font-medium text-[#15110e]">
+                    <span className="font-bold text-[#bd9661]">{runSheet.filter(c => c.done).length}</span> / {runSheet.length} Completed
+                  </div>
+                  <div className="text-xs text-[#8b7b6b]">
+                    {runSheet.filter(c => !c.done).length} cues remaining
+                  </div>
+                </div>
+              </div>
+
+              {/* Cue Entries List */}
+              <div className="space-y-3 pt-2">
+                {filteredCues.length === 0 ? (
+                  <div className="text-center py-10 bg-[#fdfbf8] rounded-xl border border-dashed border-[#d5c7b5]">
+                    <div className="text-3xl mb-2">📋</div>
+                    <div className="text-sm font-bold text-[#15110e]">No cue schedule entries found</div>
+                    <div className="text-xs text-[#8b7b6b] mt-1">Try adjusting your search filter or click "+ Add Cue Entry"</div>
+                  </div>
+                ) : (
+                  filteredCues.map((cue, idx) => (
+                    <div
+                      key={cue.id}
+                      className={`border rounded-xl p-4 transition-all ${
+                        cue.done ? 'bg-emerald-50/20 border-emerald-200/80 opacity-75' : 'bg-[#faf8f5] border-[#ebd8c3] shadow-xs'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3.5">
+                        <input
+                          type="checkbox"
+                          checked={cue.done}
+                          onChange={() => handleToggleCueDone(cue.id)}
+                          className="mt-1.5 w-4 h-4 rounded text-[#bd9661] cursor-pointer accent-[#bd9661]"
+                        />
+
+                        <div className="flex-1 space-y-2.5">
+                          {/* Row 1: Time, Activity, Controls */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] font-mono font-bold bg-[#15110e] text-[#dfc194] px-2 py-0.5 rounded">
+                              #{idx + 1}
+                            </span>
+                            <input
+                              type="text"
+                              value={cue.time}
+                              onChange={(e) => handleUpdateCueField(cue.id, 'time', e.target.value)}
+                              className="w-24 text-xs font-bold font-mono bg-white border border-[#d4c5b3] rounded-lg px-2.5 py-1 text-[#15110e] text-center"
+                              title="Cue Time"
+                            />
+                            <input
+                              type="text"
+                              value={cue.activity}
+                              onChange={(e) => handleUpdateCueField(cue.id, 'activity', e.target.value)}
+                              className={`flex-1 min-w-[200px] text-sm font-bold bg-white border border-[#d4c5b3] rounded-lg px-3 py-1 text-[#15110e] ${
+                                cue.done ? 'line-through text-[#8b7b6b]' : ''
+                              }`}
+                              placeholder="Cue Activity Title"
+                            />
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleMoveCue(idx, -1)}
+                                disabled={idx === 0}
+                                className="bg-white border border-[#d5c7b5] hover:bg-[#f0ede6] text-[#15110e] text-xs font-bold px-2 py-1 rounded cursor-pointer disabled:opacity-30"
+                                title="Move Up"
+                              >
+                                ▲
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleMoveCue(idx, 1)}
+                                disabled={idx === runSheet.length - 1}
+                                className="bg-white border border-[#d5c7b5] hover:bg-[#f0ede6] text-[#15110e] text-xs font-bold px-2 py-1 rounded cursor-pointer disabled:opacity-30"
+                                title="Move Down"
+                              >
+                                ▼
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCue(cue.id)}
+                                className="bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs font-bold px-2 py-1 rounded cursor-pointer"
+                                title="Delete Cue"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Row 2: Public Notes */}
+                          <div>
+                            <label className="block text-[10px] uppercase font-bold text-[#8b7b6b] mb-1">
+                              Public Schedule Announcement / Housekeeping Notes
+                            </label>
+                            <input
+                              type="text"
+                              value={cue.notes || ''}
+                              onChange={(e) => handleUpdateCueField(cue.id, 'notes', e.target.value)}
+                              className="w-full text-xs bg-white border border-[#d4c5b3] rounded-lg px-3 py-1.5 text-[#15110e] focus:outline-none focus:border-[#bd9661]"
+                              placeholder="Announcements for guests, bridal party cues..."
+                            />
+                          </div>
+
+                          {/* Row 3: Private MC Stage & Audio Directions */}
+                          <div className="bg-[#fff8ee] border border-[#ebd4b8] rounded-xl p-3 space-y-1">
+                            <span className="block text-[10px] font-bold uppercase tracking-wider text-[#bd9661]">
+                              🔒 Private Cue &amp; Stage Direction
+                            </span>
+                            <input
+                              type="text"
+                              value={cue.privateNotes || ''}
+                              onChange={(e) => handleUpdateCueField(cue.id, 'privateNotes', e.target.value)}
+                              className="w-full text-xs bg-transparent border-0 border-b border-[#e3d4bf] text-[#453423] font-medium px-1 py-1 focus:outline-none focus:border-[#bd9661]"
+                              placeholder="Private cues, technical sound directions, mic handoffs..."
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Add Cue Modal */}
+            {showAddCueModal && (
+              <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+                <div className="bg-white border border-[#bd9661] rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="flex items-center justify-between border-b border-[#e8ded0] pb-3">
+                    <h3 className="font-serif text-xl font-bold text-[#15110e]">
+                      Add Schedule Cue Entry
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddCueModal(false)}
+                      className="text-[#8b7b6b] hover:text-[#15110e] text-lg cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleAddCue} className="space-y-4">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-[#15110e] mb-1">Time (24h)</label>
+                        <input
+                          type="text"
+                          required
+                          value={cueTime}
+                          onChange={(e) => setCueTime(e.target.value)}
+                          className="w-full text-xs font-mono font-bold bg-[#faf8f5] border border-[#d5c7b5] rounded-xl px-3 py-2 text-[#15110e]"
+                          placeholder="17:00"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-xs font-bold text-[#15110e] mb-1">Cue Activity Title</label>
+                        <input
+                          type="text"
+                          required
+                          value={cueActivity}
+                          onChange={(e) => setCueActivity(e.target.value)}
+                          className="w-full text-xs font-bold bg-[#faf8f5] border border-[#d5c7b5] rounded-xl px-3 py-2 text-[#15110e]"
+                          placeholder="e.g. Speeches &amp; Champagne Toast"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#15110e] mb-1">Public Schedule Notes</label>
+                      <input
+                        type="text"
+                        value={cueNotes}
+                        onChange={(e) => setCueNotes(e.target.value)}
+                        className="w-full text-xs bg-[#faf8f5] border border-[#d5c7b5] rounded-xl px-3 py-2 text-[#15110e]"
+                        placeholder="Housekeeping notes or announcements..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#bd9661] uppercase tracking-wider mb-1">
+                        🔒 Private Notes &amp; Tech Cues
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={cuePrivateNotes}
+                        onChange={(e) => setCuePrivateNotes(e.target.value)}
+                        className="w-full text-xs bg-[#fff8ee] border border-[#ebd4b8] rounded-xl p-3 text-[#453423]"
+                        placeholder="Sound instructions, lighting cues, special speaker directions..."
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2 border-t border-[#e8ded0]">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddCueModal(false)}
+                        className="btn btn-outline btn-sm"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="btn btn-gold btn-sm"
+                      >
+                        Save Cue to Schedule
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ================================================================ */}
+        {/* TAB MC 2: GUEST & CATERING SUMMARY                               */}
+        {/* ================================================================ */}
+        {activeTab === 'mc_catering' && (
+          <section className="space-y-6 animate-in fade-in duration-200">
+            {/* Header */}
+            <div className="flex items-start justify-between flex-wrap gap-4">
+              <div>
+                <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1 flex items-center gap-2">
+                  <span>🍽️ CATERING &amp; HOSPITALITY SUMMARY</span>
+                  <span className="text-[#8b7b6b]">•</span>
+                  <span className="text-[#15110e] font-semibold">{wedding.couple}</span>
+                </div>
+                <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#15110e]">
+                  Guest &amp; Catering Summary
+                </h1>
+                <p className="text-xs text-[#8b7b6b] mt-1">
+                  Full dietary requirements breakdown, meal covers, and table roster for banquet staff &amp; event hosts
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="bg-white border border-[#d5c7b5] hover:bg-[#f5ede0] text-[#15110e] font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                >
+                  <span>🖨️</span> Print Catering Sheet
+                </button>
+              </div>
+            </div>
+
+            {/* 5 Dietary Metric Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+              <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-xl p-4 shadow-xs">
+                <div className="text-xs uppercase text-[#8b7b6b] font-bold">Total Confirmed Covers</div>
+                <div className="font-serif text-3xl font-bold text-[#15110e] mt-1">
+                  {confirmedGuests.length}
+                </div>
+                <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                  Across {weddingTables.length} tables
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-emerald-600 rounded-xl p-4 shadow-xs">
+                <div className="text-xs uppercase text-emerald-800 font-bold">Vegetarian Meals</div>
+                <div className="font-serif text-3xl font-bold text-emerald-700 mt-1">
+                  {vegCount}
+                </div>
+                <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                  Plant-based &amp; lacto-ovo
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-teal-600 rounded-xl p-4 shadow-xs">
+                <div className="text-xs uppercase text-teal-800 font-bold">Vegan Meals</div>
+                <div className="font-serif text-3xl font-bold text-teal-700 mt-1">
+                  {veganCount}
+                </div>
+                <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                  Strictly plant-based
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-amber-600 rounded-xl p-4 shadow-xs">
+                <div className="text-xs uppercase text-amber-800 font-bold">Gluten-Free (Celiac)</div>
+                <div className="font-serif text-3xl font-bold text-amber-700 mt-1">
+                  {gfCount}
+                </div>
+                <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                  Separate preparation
+                </div>
+              </div>
+
+              <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-rose-600 rounded-xl p-4 shadow-xs col-span-2 sm:col-span-1">
+                <div className="text-xs uppercase text-rose-800 font-bold">Nut Allergies &amp; Other</div>
+                <div className="font-serif text-3xl font-bold text-rose-700 mt-1">
+                  {nutCount + otherDietCount}
+                </div>
+                <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                  High-alert kitchen flag
+                </div>
+              </div>
+            </div>
+
+            {/* Table-by-Table Catering Summary */}
+            <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <h2 className="font-serif text-xl font-bold text-[#15110e]">
+                    Table-by-Table Catering Breakdown
+                  </h2>
+                  <p className="text-xs text-[#8b7b6b] mt-0.5">
+                    Banquet service guide: special dietary requirements assigned to each ballroom table.
+                  </p>
+                </div>
+                <span className="text-xs font-bold text-[#bd9661] bg-[#faf6f0] border border-[#ebd3a8] px-3 py-1 rounded-full">
+                  {weddingTables.length} Ballroom Tables
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-2">
+                {weddingTables.map((tbl) => {
+                  const seatedGuests = confirmedGuests.filter(g => g.tableId === tbl.id);
+                  const specialGuests = seatedGuests.filter(g => {
+                    const d = (g.dietary || '').toLowerCase().trim();
+                    return d !== '' && d !== 'none' && d !== 'no';
+                  });
+
+                  return (
+                    <div
+                      key={tbl.id}
+                      className="border border-[#e8ded0] rounded-xl p-4 bg-[#fdfbf8] space-y-2 hover:border-[#bd9661] transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <strong className="text-sm font-serif font-bold text-[#15110e]">
+                          {tbl.name} {tbl.isHead ? '👑' : ''}
+                        </strong>
+                        <span className="text-[11px] font-bold text-[#8b7b6b] bg-white border border-[#e8ded0] px-2 py-0.5 rounded">
+                          {seatedGuests.length} / {tbl.capacity} Seated
+                        </span>
+                      </div>
+
+                      {specialGuests.length === 0 ? (
+                        <div className="text-[11px] text-emerald-700 font-medium bg-emerald-50/60 border border-emerald-200/60 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5">
+                          <span>✓</span> Standard estate menu (No special dietaries)
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5 pt-1">
+                          <div className="text-[10px] uppercase font-bold text-amber-800 tracking-wider">
+                            Special Drops ({specialGuests.length}):
+                          </div>
+                          {specialGuests.map(sg => (
+                            <div
+                              key={sg.id}
+                              className="text-xs bg-white border border-amber-200 rounded-lg px-2.5 py-1 flex items-center justify-between"
+                            >
+                              <span className="font-semibold text-[#15110e]">{sg.name}</span>
+                              <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
+                                {sg.dietary}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Comprehensive Dietary Guest Roster */}
+            <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <h2 className="font-serif text-xl font-bold text-[#15110e]">
+                    Confirmed Guest Dietary Roster
+                  </h2>
+                  <p className="text-xs text-[#8b7b6b] mt-0.5">
+                    Showing {filteredCateringGuests.length} of {confirmedGuests.length} confirmed guests
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <input
+                    type="text"
+                    placeholder="Search guest or dietary..."
+                    value={cateringSearch}
+                    onChange={(e) => setCateringSearch(e.target.value)}
+                    className="bg-[#faf8f5] border border-[#d5c7b5] rounded-xl px-3.5 py-1.5 text-xs text-[#15110e] placeholder-[#a09080] focus:outline-none focus:border-[#bd9661] w-48 md:w-56"
+                  />
+
+                  <div className="flex items-center gap-1 bg-[#faf8f5] p-1 rounded-xl border border-[#e8ded0] flex-wrap">
+                    {[
+                      { id: 'all', label: 'All' },
+                      { id: 'special', label: 'Dietaries Only' },
+                      { id: 'vegetarian', label: 'Vegetarian' },
+                      { id: 'gluten', label: 'Gluten-Free' },
+                      { id: 'vegan', label: 'Vegan' },
+                      { id: 'nut', label: 'Nut Allergy' },
+                    ].map(f => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => setCateringDietFilter(f.id as any)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                          cateringDietFilter === f.id
+                            ? 'bg-[#15110e] text-[#dfc194]'
+                            : 'text-[#8b7b6b] hover:text-[#15110e]'
+                        }`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto border border-[#e8ded0] rounded-xl">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#faf8f5] text-[#8b7b6b] font-bold uppercase tracking-wider border-b border-[#e8ded0]">
+                    <tr>
+                      <th className="p-3">Guest Name</th>
+                      <th className="p-3">Table Assignment</th>
+                      <th className="p-3">Seat #</th>
+                      <th className="p-3">Household / Plus-One</th>
+                      <th className="p-3">Dietary Requirements</th>
+                      <th className="p-3">Catering Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#f0ede6]">
+                    {filteredCateringGuests.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-[#8b7b6b]">
+                          No guests match the selected dietary criteria.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredCateringGuests.map(g => {
+                        const table = weddingTables.find(t => t.id === g.tableId);
+                        const hasSpecialDiet = g.dietary && g.dietary.toLowerCase() !== 'none' && g.dietary.toLowerCase() !== 'no';
+
+                        return (
+                          <tr key={g.id} className="hover:bg-[#fdfbf8] transition-colors">
+                            <td className="p-3 font-semibold text-[#15110e]">
+                              {g.name}
+                            </td>
+                            <td className="p-3">
+                              {table ? (
+                                <span className="bg-[#faf6f0] border border-[#ebd3a8] text-[#15110e] font-medium px-2 py-0.5 rounded">
+                                  {table.name} {table.isHead ? '👑' : ''}
+                                </span>
+                              ) : (
+                                <span className="text-[#8b7b6b] italic">Unassigned</span>
+                              )}
+                            </td>
+                            <td className="p-3 font-mono text-[#8b7b6b]">
+                              {g.seatIndex != null ? `Seat ${g.seatIndex + 1}` : '—'}
+                            </td>
+                            <td className="p-3 text-[#8b7b6b]">
+                              {g.household || 'Individual'}
+                            </td>
+                            <td className="p-3">
+                              {hasSpecialDiet ? (
+                                <span className="bg-amber-50 border border-amber-300 text-amber-800 font-bold px-2.5 py-0.5 rounded-full inline-block">
+                                  ⚠️ {g.dietary}
+                                </span>
+                              ) : (
+                                <span className="text-emerald-700 font-medium">Standard</span>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              <span className="bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded text-[11px]">
+                                Confirmed Cover
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </section>

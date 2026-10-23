@@ -12,6 +12,11 @@ interface MessageItem {
   id: string;
   sender: 'bot' | 'user';
   text?: string;
+  fileAttachment?: {
+    name: string;
+    size: number;
+    type: string;
+  };
   actionCard?: {
     id: string;
     title: string;
@@ -23,12 +28,26 @@ interface MessageItem {
   time: string;
 }
 
-export default function JoeyChatbot({ embeddedInPhone = false }: JoeyChatbotProps) {
+export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest' }: JoeyChatbotProps) {
   const { state, setState } = useAppState();
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [attachedFile, setAttachedFile] = useState<{ name: string; size: number; type: string } | null>(null);
+  const allowFileUpload = context === 'couple' || context === 'mc';
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAttachedFile({
+      name: file.name,
+      size: file.size,
+      type: file.type || 'document'
+    });
+    showToast(`Attached: ${file.name}`, 'info');
+  };
 
   const [messages, setMessages] = useState<MessageItem[]>([
     {
@@ -60,10 +79,14 @@ export default function JoeyChatbot({ embeddedInPhone = false }: JoeyChatbotProp
     if (!text) return;
     setInputValue('');
 
+    const currentAttached = attachedFile;
+    setAttachedFile(null);
+
     const userMsg: MessageItem = {
       id: 'user_' + Date.now(),
       sender: 'user',
-      text,
+      text: text || (currentAttached ? `Attached ${currentAttached.name}` : ''),
+      fileAttachment: currentAttached || undefined,
       time: 'Just now'
     };
 
@@ -72,11 +95,21 @@ export default function JoeyChatbot({ embeddedInPhone = false }: JoeyChatbotProp
 
     setTimeout(() => {
       setIsTyping(false);
-      respondToQuery(text);
+      respondToQuery(text, currentAttached);
     }, 450);
   };
 
-  const respondToQuery = (rawQuery: string) => {
+  const respondToQuery = (rawQuery: string, fileAttached?: { name: string; size: number; type: string } | null) => {
+    if (fileAttached) {
+      const botMsg: MessageItem = {
+        id: 'bot_' + Date.now(),
+        sender: 'bot',
+        text: `📎 I have received **${fileAttached.name}** (${(fileAttached.size / 1024).toFixed(1)} KB). I've analyzed the file contents and automatically cross-referenced it with your wedding itinerary and live cues. Let me know if you would like me to apply any specific adjustments!`,
+        time: 'Just now'
+      };
+      setMessages(prev => [...prev, botMsg]);
+      return;
+    }
     const q = rawQuery.toLowerCase();
     const guest = state.guests.find(g => g.id === 'johnson_fam' || g.id === 'priya') || state.guests[0];
     const wedding = state.weddings[0];
@@ -413,6 +446,25 @@ export default function JoeyChatbot({ embeddedInPhone = false }: JoeyChatbotProp
             ))}
           </div>
 
+          {/* Attached File Preview Chip */}
+          {attachedFile && (
+            <div className="px-3 py-1.5 bg-[#faf5ed] border-t border-[#ebdcc9] flex items-center justify-between text-xs text-[#855c26]">
+              <div className="flex items-center gap-1.5 truncate">
+                <span>📎</span>
+                <span className="font-medium truncate">{attachedFile.name}</span>
+                <span className="text-[10px] text-[#8b7b6b]">({(attachedFile.size / 1024).toFixed(1)} KB)</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAttachedFile(null)}
+                className="text-stone-400 hover:text-red-500 font-bold ml-2 cursor-pointer p-0.5"
+                title="Remove attachment"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           {/* Input Form */}
           <form
             onSubmit={(e) => {
@@ -421,17 +473,43 @@ export default function JoeyChatbot({ embeddedInPhone = false }: JoeyChatbotProp
             }}
             className="p-2.5 bg-white border-t border-[#ebdcc9] flex items-center gap-2"
           >
+            {/* 1. Text box */}
             <input
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Ask Joey anything or change diet..."
+              placeholder={allowFileUpload ? "Ask Joey or attach wedding files..." : "Ask Joey anything or change diet..."}
               className="flex-1 bg-[#fbf9f6] border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 text-xs text-[#15110e] outline-none"
             />
+
+            {/* 2. Attach File Button (to the left of arrow) */}
+            {allowFileUpload && (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Attach document or file"
+                  className="p-2 text-[#8b7b6b] hover:text-[#bd9661] hover:bg-[#faf5ed] rounded-lg transition-colors cursor-pointer shrink-0"
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                  </svg>
+                </button>
+              </>
+            )}
+
+            {/* 3. Send Message Arrow */}
             <button
               type="submit"
-              disabled={!inputValue.trim()}
-              className="bg-[#181310] disabled:opacity-40 hover:bg-[#bd9661] hover:text-[#15110e] text-white p-2 rounded-lg transition-colors flex items-center justify-center"
+              disabled={!inputValue.trim() && !attachedFile}
+              className="bg-[#181310] disabled:opacity-40 hover:bg-[#bd9661] hover:text-[#15110e] text-white p-2 rounded-lg transition-colors flex items-center justify-center shrink-0 cursor-pointer"
               aria-label="Send message"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
