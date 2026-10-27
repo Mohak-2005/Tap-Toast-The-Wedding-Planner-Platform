@@ -228,12 +228,10 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
   const [showInviteCoupleModal, setShowInviteCoupleModal] = useState(false);
   const [couplePartner1, setCouplePartner1] = useState('James Wilson');
   const [couplePartner2, setCouplePartner2] = useState('Sophie Carter');
-  const [coupleEmail, setCoupleEmail] = useState('sophie.carter@example.com');
-  const [coupleMobile, setCoupleMobile] = useState('0412 345 678');
-  const [coupleWeddingDate, setCoupleWeddingDate] = useState('2026-11-14');
-  const [coupleVenue, setCoupleVenue] = useState('Fernwood Estate, Hunter Valley');
-  const [coupleAssignedMc, setCoupleAssignedMc] = useState('Robert Galati (Galati MC Services)');
-  const [couplePlanTier, setCouplePlanTier] = useState('Signature Pro Wedding Suite ($299 AUD)');
+  const [groomEmail, setGroomEmail] = useState('james.wilson@example.com');
+  const [brideEmail, setBrideEmail] = useState('sophie.carter@example.com');
+  const [groomPhone, setGroomPhone] = useState('0412 345 678');
+  const [bridePhone, setBridePhone] = useState('0423 456 789');
   const [showInviteCoupleLinkModal, setShowInviteCoupleLinkModal] = useState(false);
   const [generatedInviteLink, setGeneratedInviteLink] = useState('');
 
@@ -249,7 +247,10 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
       role: 'superadmin' as const,
       action: 'Couple Registration Invitation Sent',
       category: 'Tenants',
-      details: `Dispatched registration invite link to ${couplePartner1} & ${couplePartner2} (${coupleEmail}) with assigned host ${coupleAssignedMc}`,
+      details: `Dispatched registration invite link to Groom ${couplePartner1} (${groomEmail}, ${groomPhone}) & Bride ${couplePartner2} (${brideEmail}, ${bridePhone})`,
+      wedding: `${couplePartner1} & ${couplePartner2} Wedding`,
+      channel: 'Admin Console',
+      status: 'Success',
     };
 
     setState({
@@ -259,7 +260,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
 
     setShowInviteCoupleModal(false);
     setShowInviteCoupleLinkModal(true);
-    showToast(`Invitation dispatched to ${coupleEmail}! Link ready.`, 'success');
+    showToast(`Invitation dispatched for ${couplePartner1} & ${couplePartner2}! Link ready.`, 'success');
   };
 
   const featureFlags = state.featureFlags || {
@@ -2836,12 +2837,17 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
             <form onSubmit={handleInviteCoupleSubmit} className="flex flex-col flex-1 overflow-hidden">
               <div className="p-6 overflow-y-auto space-y-4 flex-1">
                 <p className="text-xs text-[#8b7b6b]">
-                  Send a dedicated onboarding invite to the couple. They will be directed to register their wedding details, select a SaaS subscription, and collaborate with their MC.
+                  Send a dedicated onboarding invite to the couple. They will receive their invite link with co-host access to configure guest management, RSVPs, and live runsheet sync.
                 </p>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="field-group">
-                    <label className="field-label">Groom / Partner 1 Name *</label>
+                {/* Groom Details */}
+                <div className="bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8ded0] space-y-3">
+                  <div className="text-[11px] font-bold text-[#bd9661] uppercase tracking-wider flex items-center gap-1.5 pb-1 border-b border-[#e8ded0]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#bd9661]" />
+                    <span>Groom Details</span>
+                  </div>
+                  <div>
+                    <label className="field-label text-xs font-bold text-[#15110e]">Groom Full Name *</label>
                     <input
                       type="text"
                       required
@@ -2851,8 +2857,40 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                       className="text-input"
                     />
                   </div>
-                  <div className="field-group">
-                    <label className="field-label">Bride / Partner 2 Name *</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="field-group">
+                      <label className="field-label text-xs font-bold text-[#15110e]">Groom Email Address *</label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="james.wilson@example.com"
+                        value={groomEmail}
+                        onChange={(e) => setGroomEmail(e.target.value)}
+                        className="text-input"
+                      />
+                    </div>
+                    <div className="field-group">
+                      <label className="field-label text-xs font-bold text-[#15110e]">Groom Phone Number *</label>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="0412 345 678"
+                        value={groomPhone}
+                        onChange={(e) => setGroomPhone(e.target.value)}
+                        className="text-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bride Details */}
+                <div className="bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8ded0] space-y-3">
+                  <div className="text-[11px] font-bold text-[#bd9661] uppercase tracking-wider flex items-center gap-1.5 pb-1 border-b border-[#e8ded0]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#bd9661]" />
+                    <span>Bride Details</span>
+                  </div>
+                  <div>
+                    <label className="field-label text-xs font-bold text-[#15110e]">Bride Full Name *</label>
                     <input
                       type="text"
                       required
@@ -2862,80 +2900,30 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                       className="text-input"
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="field-group">
-                    <label className="field-label">Primary Contact Email *</label>
-                    <input
-                      type="email"
-                      required
-                      placeholder="sophie.carter@example.com"
-                      value={coupleEmail}
-                      onChange={(e) => setCoupleEmail(e.target.value)}
-                      className="text-input"
-                    />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="field-group">
+                      <label className="field-label text-xs font-bold text-[#15110e]">Bride Email Address *</label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="sophie.carter@example.com"
+                        value={brideEmail}
+                        onChange={(e) => setBrideEmail(e.target.value)}
+                        className="text-input"
+                      />
+                    </div>
+                    <div className="field-group">
+                      <label className="field-label text-xs font-bold text-[#15110e]">Bride Phone Number *</label>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="0423 456 789"
+                        value={bridePhone}
+                        onChange={(e) => setBridePhone(e.target.value)}
+                        className="text-input"
+                      />
+                    </div>
                   </div>
-                  <div className="field-group">
-                    <label className="field-label">Australian Mobile *</label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="0412 345 678"
-                      value={coupleMobile}
-                      onChange={(e) => setCoupleMobile(e.target.value)}
-                      className="text-input"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="field-group">
-                    <label className="field-label">Wedding Date</label>
-                    <input
-                      type="date"
-                      value={coupleWeddingDate}
-                      onChange={(e) => setCoupleWeddingDate(e.target.value)}
-                      className="text-input"
-                    />
-                  </div>
-                  <div className="field-group">
-                    <label className="field-label">Preferred / Assigned MC</label>
-                    <select
-                      value={coupleAssignedMc}
-                      onChange={(e) => setCoupleAssignedMc(e.target.value)}
-                      className="text-input"
-                    >
-                      <option value="Robert Galati (Galati MC Services)">Robert Galati ($1,850 · 5.0 Rating)</option>
-                      <option value="Marcus Thorne (Thorne Signature Hosts)">Marcus Thorne ($1,650 · 4.9 Rating)</option>
-                      <option value="Elena Rostova (Artisan Wedding MCs)">Elena Rostova ($1,750 · 5.0 Rating)</option>
-                      <option value="Open / Let Couple Choose">Open / Let Couple Choose via Joey AI</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="field-group">
-                  <label className="field-label">Venue Location (Optional)</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Fernwood Estate, Hunter Valley"
-                    value={coupleVenue}
-                    onChange={(e) => setCoupleVenue(e.target.value)}
-                    className="text-input"
-                  />
-                </div>
-
-                <div className="field-group">
-                  <label className="field-label">Recommended Couple SaaS Tier</label>
-                  <select
-                    value={couplePlanTier}
-                    onChange={(e) => setCouplePlanTier(e.target.value)}
-                    className="text-input"
-                  >
-                    <option value="Signature Pro Wedding Suite ($299 AUD)">Signature Pro Wedding Suite ($299 AUD - Most Popular)</option>
-                    <option value="Essential Wedding Pass ($149 AUD)">Essential Wedding Pass ($149 AUD)</option>
-                    <option value="Couture Luxury Tier ($499 AUD)">Couture Luxury Tier ($499 AUD)</option>
-                  </select>
                 </div>
               </div>
 
