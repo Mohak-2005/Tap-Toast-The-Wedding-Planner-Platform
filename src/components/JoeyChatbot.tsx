@@ -178,7 +178,7 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
     }
 
     const q = rawQuery.toLowerCase();
-    const guest = state.guests.find(g => g.id === 'johnson_fam' || g.id === 'priya') || state.guests[0];
+    const guest = state.guests.find(g => g.id === 'mark_johnson' || g.id === 'johnson_fam' || g.id === 'priya') || state.guests[0];
     const wedding = state.weddings[0];
 
     // COUPLE NATURAL LANGUAGE COMMANDS
@@ -441,7 +441,7 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
     if (decision === 'accept' && dietaryVal) {
       // Update in global state
       const updatedGuests = state.guests.map(g => {
-        if (g.id === 'johnson_fam' || g.id === 'priya') {
+        if (g.id === 'mark_johnson' || g.id === 'johnson_fam' || g.id === 'priya') {
           return { ...g, dietary: dietaryVal };
         }
         return g;

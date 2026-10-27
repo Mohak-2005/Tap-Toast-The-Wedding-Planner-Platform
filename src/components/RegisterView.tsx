@@ -2064,10 +2064,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-5 py-3.5 bg-[#faf8f5] border-t border-[#e8ded0] flex items-center justify-between">
-              <span className="text-[11px] text-[#8b7b6b]">
-                Click anywhere outside to close
-              </span>
+            <div className="px-5 py-3.5 bg-[#faf8f5] border-t border-[#e8ded0] flex items-center justify-end">
               <button
                 type="button"
                 onClick={() => setShowMcInfoModal(false)}

@@ -37,10 +37,37 @@ export function getStoredState(): DemoState {
             };
           }) : SEED_DATA.weddings,
           guests: Array.isArray(parsed.guests) ? (() => {
-            const list = parsed.guests.map((g: Guest) => ({
+            const rawList = parsed.guests.map((g: Guest) => ({
               ...g,
               weddingId: g.weddingId || 'w1'
             }));
+            // Auto-migrate legacy combined guests (e.g. 'johnson_fam', combined Chen, Whitfield, etc.)
+            const hasLegacy = rawList.some((g: Guest) =>
+              g.id === 'johnson_fam' ||
+              g.id === 'g_rchen' ||
+              g.id === 'g_dwhitfield' ||
+              g.id === 'g_toneill' ||
+              g.id === 'g_u13' ||
+              g.id === 'g_u17' ||
+              g.name === 'Mark & Sarah Johnson'
+            );
+            let list = rawList;
+            if (hasLegacy) {
+              const seedW1 = (SEED_DATA.guests || []).filter(g => !g.weddingId || g.weddingId === 'w1');
+              const nonLegacy = rawList.filter((g: Guest) =>
+                g.id !== 'johnson_fam' &&
+                g.id !== 'g_rchen' &&
+                g.id !== 'g_dwhitfield' &&
+                g.id !== 'g_toneill' &&
+                g.id !== 'g_u13' &&
+                g.id !== 'g_u17' &&
+                g.name !== 'Mark & Sarah Johnson' &&
+                !g.name.includes(' & Family')
+              );
+              const presentIds = new Set(nonLegacy.map((g: Guest) => g.id));
+              const missingSeedW1 = seedW1.filter(g => !presentIds.has(g.id));
+              list = [...nonLegacy, ...missingSeedW1];
+            }
             const hasW2 = list.some((g: Guest) => g.weddingId === 'w2');
             const hasW3 = list.some((g: Guest) => g.weddingId === 'w3');
             const missingSeed = (SEED_DATA.guests || []).filter((g: Guest) =>

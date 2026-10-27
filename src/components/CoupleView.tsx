@@ -6,6 +6,7 @@ import { logAudit } from '../lib/state';
 import { InvitationTemplatesSection } from './InvitationTemplatesSection';
 import { WeddingDayCelebrationSection } from './WeddingDayCelebrationSection';
 import { SeatingPlannerSection } from './SeatingPlannerSection';
+import { DietaryBadges, parseDietaryRequirements } from '../lib/dietaryHelper';
 
 export type CoupleTab =
   | 'overview'
@@ -90,6 +91,7 @@ export default function CoupleView({
   const [guestSearch, setGuestSearch] = useState('');
   const [guestFilter, setGuestFilter] = useState<'all' | 'confirmed' | 'declined' | 'awaiting'>('all');
   const [guestCategoryFilter, setGuestCategoryFilter] = useState<string>('all');
+  const [guestViewMode, setGuestViewMode] = useState<'individual' | 'family'>('individual');
   const [showAddGuestModal, setShowAddGuestModal] = useState(false);
   const [newGuestName, setNewGuestName] = useState('');
   const [newGuestHousehold, setNewGuestHousehold] = useState('');
@@ -120,6 +122,25 @@ export default function CoupleView({
       guests: state.guests.filter(g => g.id !== guestId),
     });
     showToast('Guest removed from guest list', 'info');
+  };
+
+  const handleUpdateFamilyCategory = (householdKey: string, newCat: string) => {
+    const updated = state.guests.map(g => {
+      if ((g.household || g.name).trim() === householdKey.trim()) {
+        return { ...g, category: newCat };
+      }
+      return g;
+    });
+    setState({ ...state, guests: updated });
+    showToast(`Category for ${householdKey} updated to ${newCat}`, 'success');
+  };
+
+  const handleRemoveFamily = (householdKey: string) => {
+    const membersToRemove = state.guests.filter(g => (g.household || g.name).trim() === householdKey.trim());
+    const count = membersToRemove.length;
+    const updated = state.guests.filter(g => (g.household || g.name).trim() !== householdKey.trim());
+    setState({ ...state, guests: updated });
+    showToast(`Removed ${householdKey} (${count} guest${count > 1 ? 's' : ''}) from list`, 'info');
   };
 
   const handleAddNewGuest = (e: React.FormEvent) => {
@@ -576,6 +597,136 @@ export default function CoupleView({
         : guestCategoryFilter === 'needs_category'
         ? (!g.category || g.category === 'Uncategorised')
         : g.category === guestCategoryFilter;
+    return matchSearch && matchFilter && matchCat;
+  });
+
+  // Group wedding guests into families / households
+  interface FamilyGroupItem {
+    id: string;
+    householdKey: string;
+    familyName: string;
+    members: Guest[];
+    memberNames: string;
+    category: string;
+    phone: string;
+    email: string;
+    rsvpStatus: 'confirmed' | 'declined' | 'awaiting';
+    adultsCount: number;
+    kidsCount: number;
+    partyTotal: number;
+    dietarySummary: string;
+    tableId: string | null;
+    tableLabel: string;
+  }
+
+  const familyGroups: FamilyGroupItem[] = React.useMemo(() => {
+    const map = new Map<string, Guest[]>();
+    weddingGuests.forEach(g => {
+      const key = (g.household || g.name).trim();
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+      map.get(key)!.push(g);
+    });
+
+    const groups: FamilyGroupItem[] = [];
+    map.forEach((members, householdKey) => {
+      const primary = members[0];
+      let adultsCount = 0;
+      let kidsCount = 0;
+      members.forEach(m => {
+        const isChild = (m.kids || 0) > 0 && (!m.adults || m.adults === 0);
+        if (isChild) {
+          kidsCount += 1;
+        } else {
+          adultsCount += 1;
+        }
+      });
+      const partyTotal = adultsCount + kidsCount;
+
+      const dietCounts: Record<string, number> = {};
+      members.forEach(m => {
+        const parsed = parseDietaryRequirements(m.dietary);
+        parsed.forEach(d => {
+          const clean = d.replace(/^\d+x\s*/i, '').trim();
+          if (clean) {
+            dietCounts[clean] = (dietCounts[clean] || 0) + 1;
+          }
+        });
+      });
+      const dietEntries = Object.entries(dietCounts);
+      const dietarySummary =
+        dietEntries.length > 0
+          ? dietEntries.map(([diet, count]) => `${count}x ${diet}`).join(', ')
+          : 'None';
+
+      const allConfirmed = members.every(m => m.rsvpStatus === 'confirmed');
+      const allDeclined = members.every(m => m.rsvpStatus === 'declined');
+      const rsvpStatus: 'confirmed' | 'declined' | 'awaiting' = allConfirmed
+        ? 'confirmed'
+        : allDeclined
+        ? 'declined'
+        : 'awaiting';
+
+      const seatedMembers = members.filter(m => m.tableId);
+      const primaryTableId = seatedMembers.length > 0 ? seatedMembers[0].tableId : null;
+      const tableObj = primaryTableId ? (state.tables || []).find(t => t.id === primaryTableId) : null;
+      const tableLabel = tableObj ? tableObj.name.toUpperCase() : primaryTableId ? primaryTableId.toUpperCase().replace('_', ' ') : 'Unassigned';
+
+      let familyName = householdKey;
+      let memberNames = members.map(m => m.name).join(', ');
+      if (members.length === 2) {
+        const parts0 = members[0].name.split(' ');
+        const parts1 = members[1].name.split(' ');
+        if (parts0.length > 1 && parts1.length > 1 && parts0[parts0.length - 1] === parts1[parts1.length - 1]) {
+          familyName = `${parts0[0]} & ${parts1[0]} ${parts0[parts0.length - 1]}`;
+        } else {
+          familyName = `${members[0].name} & ${members[1].name}`;
+        }
+      } else if (members.length > 2 && householdKey.toLowerCase().includes('family')) {
+        familyName = `${members[0].name} & Family`;
+      } else if (members.length === 1) {
+        familyName = members[0].name;
+      }
+
+      groups.push({
+        id: `fam_${householdKey.replace(/[^a-zA-Z0-9]/g, '_')}`,
+        householdKey,
+        familyName,
+        members,
+        memberNames,
+        category: primary.category || 'Uncategorised',
+        phone: primary.phone || '0412 884 991',
+        email: primary.email || 'guest@example.com',
+        rsvpStatus,
+        adultsCount,
+        kidsCount,
+        partyTotal,
+        dietarySummary,
+        tableId: primaryTableId,
+        tableLabel,
+      });
+    });
+
+    return groups;
+  }, [weddingGuests, state.tables]);
+
+  const filteredFamilies = familyGroups.filter(f => {
+    const q = guestSearch.toLowerCase();
+    const matchSearch =
+      !guestSearch ||
+      f.familyName.toLowerCase().includes(q) ||
+      f.householdKey.toLowerCase().includes(q) ||
+      f.memberNames.toLowerCase().includes(q) ||
+      f.dietarySummary.toLowerCase().includes(q) ||
+      (f.category || '').toLowerCase().includes(q);
+    const matchFilter = guestFilter === 'all' || f.rsvpStatus === guestFilter;
+    const matchCat =
+      guestCategoryFilter === 'all'
+        ? true
+        : guestCategoryFilter === 'needs_category'
+        ? (!f.category || f.category === 'Uncategorised')
+        : f.category === guestCategoryFilter;
     return matchSearch && matchFilter && matchCat;
   });
 
@@ -1212,10 +1363,10 @@ export default function CoupleView({
             {/* Filter Bar */}
             <div className="bg-white border border-[#e8ded0] rounded-xl p-4 shadow-sm space-y-4">
               <div className="flex gap-3 flex-wrap items-center justify-between">
-                <div className="flex gap-3 flex-wrap flex-1">
+                <div className="flex gap-3 flex-wrap flex-1 items-center">
                   <input
                     type="text"
-                    placeholder="Search guests by name, household, or category..."
+                    placeholder="Search guests by name, household, or dietary..."
                     value={guestSearch}
                     onChange={(e) => setGuestSearch(e.target.value)}
                     className="flex-1 min-w-[220px] max-w-[320px] bg-white border border-[#e8ded0] rounded-lg px-3 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
@@ -1223,17 +1374,49 @@ export default function CoupleView({
                   <select
                     value={guestFilter}
                     onChange={(e) => setGuestFilter(e.target.value as any)}
-                    className="bg-white border border-[#e8ded0] rounded-lg px-3 py-1.5 text-xs text-[#15110e] outline-none"
+                    className="bg-white border border-[#e8ded0] rounded-lg px-3 py-1.5 text-xs text-[#15110e] outline-none cursor-pointer"
                   >
                     <option value="all">All RSVP Statuses</option>
                     <option value="confirmed">Confirmed</option>
                     <option value="awaiting">Awaiting</option>
                     <option value="declined">Declined</option>
                   </select>
+
+                  {/* View Mode Toggle: Individuals vs Family / Household */}
+                  <div className="inline-flex p-0.5 bg-[#faf7f2] border border-[#e8ded0] rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setGuestViewMode('individual')}
+                      className={`px-3 py-1 rounded-md text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5 ${
+                        guestViewMode === 'individual'
+                          ? 'bg-[#15110e] text-[#dfc194] shadow-xs font-bold'
+                          : 'text-[#6b5a4a] hover:text-[#15110e]'
+                      }`}
+                    >
+                      <span>👤</span>
+                      <span>Individual Guests ({weddingGuests.length})</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGuestViewMode('family')}
+                      className={`px-3 py-1 rounded-md text-xs font-semibold cursor-pointer transition-all flex items-center gap-1.5 ${
+                        guestViewMode === 'family'
+                          ? 'bg-[#15110e] text-[#dfc194] shadow-xs font-bold'
+                          : 'text-[#6b5a4a] hover:text-[#15110e]'
+                      }`}
+                    >
+                      <span>👨‍👩‍👧‍👦</span>
+                      <span>By Family / Household ({familyGroups.length})</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="text-xs text-[#8b7b6b]">
-                  Showing <strong className="text-[#15110e]">{filteredGuests.length}</strong> of {weddingGuests.length} guests
+                  {guestViewMode === 'individual' ? (
+                    <>Showing <strong className="text-[#15110e]">{filteredGuests.length}</strong> of {weddingGuests.length} guests</>
+                  ) : (
+                    <>Showing <strong className="text-[#15110e]">{filteredFamilies.length}</strong> of {familyGroups.length} families ({weddingGuests.length} guests)</>
+                  )}
                 </div>
               </div>
 
@@ -1249,7 +1432,7 @@ export default function CoupleView({
                         : 'bg-[#faf7f2] text-[#6b5a4a] border border-[#e8ded0] hover:bg-[#ede5d8]'
                     }`}
                   >
-                    All ({weddingGuests.length})
+                    All ({guestViewMode === 'individual' ? weddingGuests.length : familyGroups.length})
                   </button>
 
                   <button
@@ -1290,110 +1473,219 @@ export default function CoupleView({
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="border-b border-[#e8ded0] text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b]">
-                      <th className="py-2.5 px-3">GUEST / HOUSEHOLD</th>
-                      <th className="py-2.5 px-3">CATEGORY</th>
-                      <th className="py-2.5 px-3">CONTACT</th>
-                      <th className="py-2.5 px-3">STATUS</th>
-                      <th className="py-2.5 px-3 text-center">ADULTS</th>
-                      <th className="py-2.5 px-3 text-center">KIDS</th>
-                      <th className="py-2.5 px-3 text-center">PARTY TOTAL</th>
-                      <th className="py-2.5 px-3">DIETARY</th>
-                      <th className="py-2.5 px-3">TABLE</th>
-                      <th className="py-2.5 px-3">ACTIONS</th>
+                      <th className="py-2.5 px-3 min-w-[170px]">GUEST / HOUSEHOLD</th>
+                      <th className="py-2.5 px-2 min-w-[125px]">CATEGORY</th>
+                      <th className="py-2.5 px-2 min-w-[130px]">CONTACT</th>
+                      <th className="py-2.5 px-2 text-center min-w-[75px]">STATUS</th>
+                      <th className="py-2.5 px-1.5 text-center w-14">ADULTS</th>
+                      <th className="py-2.5 px-1.5 text-center w-14">KIDS</th>
+                      <th className="py-2.5 px-1.5 text-center w-20">PARTY TOTAL</th>
+                      <th className="py-2.5 px-2 min-w-[145px]">DIETARY</th>
+                      <th className="py-2.5 px-2 text-center min-w-[85px]">TABLE</th>
+                      <th className="py-2.5 px-3 text-right min-w-[75px]">ACTIONS</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#f0ede4]">
-                    {filteredGuests.map((g) => (
-                      <tr key={g.id} className="hover:bg-[#faf8f5] transition-colors">
-                        <td className="py-3 px-3">
-                          <strong className="text-sm text-[#15110e] block">{g.name}</strong>
-                          <span className="text-[11px] text-[#8b7b6b]">{g.household}</span>
-                        </td>
-                        <td className="py-3 px-3">
-                          {!g.category || g.category === 'Uncategorised' ? (
-                            <div className="flex items-center gap-1">
-                              <select
-                                value=""
-                                onChange={(e) => handleUpdateGuestCategory(g.id, e.target.value)}
-                                className="text-[11px] font-bold bg-[#fff8e7] hover:bg-[#ffefc9] text-[#9b681e] border border-[#f1c583] rounded-md px-2 py-1 outline-none cursor-pointer transition-colors shadow-2xs"
-                              >
-                                <option value="" disabled>+ Categorise Guest</option>
-                                {GUEST_CATEGORIES.map(c => (
-                                  <option key={c} value={c}>{c}</option>
-                                ))}
-                              </select>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1">
-                              <select
-                                value={g.category}
-                                onChange={(e) => handleUpdateGuestCategory(g.id, e.target.value)}
-                                className="text-[11px] font-medium text-[#15110e] bg-[#fbf9f6] border border-[#d5c7b5] hover:border-[#bd9661] focus:border-[#bd9661] rounded px-2.5 py-1 outline-none cursor-pointer transition-colors shadow-2xs"
-                              >
-                                {GUEST_CATEGORIES.map(c => (
-                                  <option key={c} value={c}>{c}</option>
-                                ))}
-                                <option value="Uncategorised">Uncategorised</option>
-                              </select>
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-3 px-3">
-                          <div className="text-[#15110e] font-medium">{g.phone || '0412 884 992'}</div>
-                          <div className="text-[11px] text-[#8b7b6b]">{g.email}</div>
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            g.rsvpStatus === 'confirmed' ? 'bg-[#e8eee4] text-[#3c6a42]' : g.rsvpStatus === 'declined' ? 'bg-[#fbeae8] text-[#a8382c]' : 'bg-[#faf6f0] text-[#916c3d]'
-                          }`}>
-                            {g.rsvpStatus === 'confirmed' ? 'Confirmed' : g.rsvpStatus === 'declined' ? 'Declined' : 'Awaiting'}
-                          </span>
-                        </td>
-                        {/* ADULTS */}
-                        <td className="py-2.5 px-3 text-center">
-                          <span className="inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded text-xs font-semibold text-[#15110e] bg-[#f5ede2] border border-[#e2d5c5]">
-                            {g.adults !== undefined ? g.adults : (g.partySize || 1)}
-                          </span>
-                        </td>
+                    {guestViewMode === 'individual' ? (
+                      filteredGuests.length === 0 ? (
+                        <tr>
+                          <td colSpan={10} className="py-8 text-center text-xs text-[#8b7b6b]">
+                            No individual guests found matching the selected filters.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredGuests.map((g) => {
+                          const isChild = (g.kids || 0) > 0 && (!g.adults || g.adults === 0);
+                          const adultsVal = isChild ? 0 : 1;
+                          const kidsVal = isChild ? 1 : 0;
+                          return (
+                            <tr key={g.id} className="hover:bg-[#faf8f5] transition-colors">
+                              <td className="py-3 px-3">
+                                <strong className="text-sm text-[#15110e] block">{g.name}</strong>
+                                <span className="text-[11px] text-[#8b7b6b]">{g.household}</span>
+                              </td>
+                              <td className="py-3 px-3">
+                                {!g.category || g.category === 'Uncategorised' ? (
+                                  <div className="flex items-center gap-1">
+                                    <select
+                                      value=""
+                                      onChange={(e) => handleUpdateGuestCategory(g.id, e.target.value)}
+                                      className="text-[11px] font-bold bg-[#fff8e7] hover:bg-[#ffefc9] text-[#9b681e] border border-[#f1c583] rounded-md px-2 py-1 outline-none cursor-pointer transition-colors shadow-2xs"
+                                    >
+                                      <option value="" disabled>+ Categorise Guest</option>
+                                      {GUEST_CATEGORIES.map(c => (
+                                        <option key={c} value={c}>{c}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1">
+                                    <select
+                                      value={g.category}
+                                      onChange={(e) => handleUpdateGuestCategory(g.id, e.target.value)}
+                                      className="text-[11px] font-medium text-[#15110e] bg-[#fbf9f6] border border-[#d5c7b5] hover:border-[#bd9661] focus:border-[#bd9661] rounded px-2.5 py-1 outline-none cursor-pointer transition-colors shadow-2xs"
+                                    >
+                                      {GUEST_CATEGORIES.map(c => (
+                                        <option key={c} value={c}>{c}</option>
+                                      ))}
+                                      <option value="Uncategorised">Uncategorised</option>
+                                    </select>
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-3 px-3">
+                                <div className="text-[#15110e] font-medium">{g.phone || '0412 884 991'}</div>
+                                <div className="text-[11px] text-[#8b7b6b]">{g.email}</div>
+                              </td>
+                              <td className="py-3 px-3">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  g.rsvpStatus === 'confirmed' ? 'bg-[#e8eee4] text-[#3c6a42]' : g.rsvpStatus === 'declined' ? 'bg-[#fbeae8] text-[#a8382c]' : 'bg-[#faf6f0] text-[#916c3d]'
+                                }`}>
+                                  {g.rsvpStatus === 'confirmed' ? 'Confirmed' : g.rsvpStatus === 'declined' ? 'Declined' : 'Awaiting'}
+                                </span>
+                              </td>
+                              {/* ADULTS: 1 if adult, 0 if child */}
+                              <td className="py-2.5 px-3 text-center">
+                                <span className="inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded text-xs font-semibold text-[#15110e] bg-[#f5ede2] border border-[#e2d5c5]">
+                                  {adultsVal}
+                                </span>
+                              </td>
 
-                        {/* KIDS */}
-                        <td className="py-2.5 px-3 text-center">
-                          <span className={`inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded text-xs font-semibold ${
-                            (g.kids || 0) > 0
-                              ? 'text-[#6b5847] bg-[#f5ede2] border border-[#e2d5c5]'
-                              : 'text-[#8b7b6b] bg-[#faf8f5] border border-[#e8ded0]'
-                          }`}>
-                            {g.kids || 0}
-                          </span>
-                        </td>
+                              {/* KIDS: 1 if child, 0 if adult */}
+                              <td className="py-2.5 px-3 text-center">
+                                <span className={`inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded text-xs font-semibold ${
+                                  kidsVal > 0
+                                    ? 'text-[#6b5847] bg-[#f5ede2] border border-[#e2d5c5]'
+                                    : 'text-[#8b7b6b] bg-[#faf8f5] border border-[#e8ded0]'
+                                }`}>
+                                  {kidsVal}
+                                </span>
+                              </td>
 
-                        {/* PARTY TOTAL */}
-                        <td className="py-2.5 px-3 text-center font-bold text-xs text-[#15110e]">
-                          {(g.adults !== undefined ? g.adults : (g.partySize || 1)) + (g.kids || 0)}
-                        </td>
-                        <td className="py-3 px-3">
-                          {g.dietary && g.dietary !== 'None' ? (
-                            <span className="bg-[#faf6f0] border border-[#ebd3a8] text-[#916c3d] text-[10px] font-bold px-2 py-0.5 rounded">
-                              {g.dietary}
-                            </span>
-                          ) : (
-                            <span className="text-[#8b7b6b]">None</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-3 font-semibold text-[#15110e]">
-                          {g.tableId ? g.tableId.toUpperCase().replace('_', ' ') : 'Unassigned'}
-                        </td>
-                        <td className="py-3 px-3">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveGuest(g.id)}
-                            className="text-[#a8382c] hover:bg-[#fbeae8] px-2.5 py-1 rounded border border-[#f2a89f] text-[11px] font-semibold cursor-pointer transition-colors"
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                              {/* PARTY TOTAL: exactly 1 for an individual guest */}
+                              <td className="py-2.5 px-3 text-center font-bold text-xs text-[#15110e]">
+                                1
+                              </td>
+                              <td className="py-3 px-3">
+                                <DietaryBadges dietary={g.dietary} size="sm" />
+                              </td>
+                              <td className="py-3 px-2 text-center font-semibold text-[#15110e]">
+                                {g.tableId ? g.tableId.toUpperCase().replace('_', ' ') : 'Unassigned'}
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveGuest(g.id)}
+                                  className="text-[#a8382c] hover:bg-[#fbeae8] px-2.5 py-1 rounded border border-[#f2a89f] text-[11px] font-semibold cursor-pointer transition-colors"
+                                >
+                                  Remove
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )
+                    ) : (
+                      filteredFamilies.length === 0 ? (
+                        <tr>
+                          <td colSpan={10} className="py-8 text-center text-xs text-[#8b7b6b]">
+                            No families or households found matching the selected filters.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredFamilies.map((fam) => (
+                          <tr key={fam.id} className="hover:bg-[#faf8f5] transition-colors">
+                            <td className="py-3 px-3">
+                              <strong className="text-sm text-[#15110e] block">{fam.familyName}</strong>
+                              <span className="text-[11px] text-[#8b7b6b]">{fam.householdKey}</span>
+                            </td>
+                            <td className="py-3 px-3">
+                              {!fam.category || fam.category === 'Uncategorised' ? (
+                                <div className="flex items-center gap-1">
+                                  <select
+                                    value=""
+                                    onChange={(e) => handleUpdateFamilyCategory(fam.householdKey, e.target.value)}
+                                    className="text-[11px] font-bold bg-[#fff8e7] hover:bg-[#ffefc9] text-[#9b681e] border border-[#f1c583] rounded-md px-2 py-1 outline-none cursor-pointer transition-colors shadow-2xs"
+                                  >
+                                    <option value="" disabled>+ Categorise Family</option>
+                                    {GUEST_CATEGORIES.map(c => (
+                                      <option key={c} value={c}>{c}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1">
+                                  <select
+                                    value={fam.category}
+                                    onChange={(e) => handleUpdateFamilyCategory(fam.householdKey, e.target.value)}
+                                    className="text-[11px] font-medium text-[#15110e] bg-[#fbf9f6] border border-[#d5c7b5] hover:border-[#bd9661] focus:border-[#bd9661] rounded px-2.5 py-1 outline-none cursor-pointer transition-colors shadow-2xs"
+                                  >
+                                    {GUEST_CATEGORIES.map(c => (
+                                      <option key={c} value={c}>{c}</option>
+                                    ))}
+                                    <option value="Uncategorised">Uncategorised</option>
+                                  </select>
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-3 px-3">
+                              <div className="text-[#15110e] font-medium">{fam.phone}</div>
+                              <div className="text-[11px] text-[#8b7b6b]">{fam.email}</div>
+                            </td>
+                            <td className="py-3 px-3">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                fam.rsvpStatus === 'confirmed' ? 'bg-[#e8eee4] text-[#3c6a42]' : fam.rsvpStatus === 'declined' ? 'bg-[#fbeae8] text-[#a8382c]' : 'bg-[#faf6f0] text-[#916c3d]'
+                              }`}>
+                                {fam.rsvpStatus === 'confirmed' ? 'Confirmed' : fam.rsvpStatus === 'declined' ? 'Declined' : 'Awaiting'}
+                              </span>
+                            </td>
+                            {/* ADULTS FOR FAMILY */}
+                            <td className="py-2.5 px-3 text-center">
+                              <span className="inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded text-xs font-semibold text-[#15110e] bg-[#f5ede2] border border-[#e2d5c5]">
+                                {fam.adultsCount}
+                              </span>
+                            </td>
+
+                            {/* KIDS FOR FAMILY */}
+                            <td className="py-2.5 px-3 text-center">
+                              <span className={`inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded text-xs font-semibold ${
+                                fam.kidsCount > 0
+                                  ? 'text-[#6b5847] bg-[#f5ede2] border border-[#e2d5c5]'
+                                  : 'text-[#8b7b6b] bg-[#faf8f5] border border-[#e8ded0]'
+                              }`}>
+                                {fam.kidsCount}
+                              </span>
+                            </td>
+
+                            {/* TOTAL PARTY FOR FAMILY */}
+                            <td className="py-2.5 px-3 text-center font-bold text-xs text-[#15110e]">
+                              {fam.partyTotal}
+                            </td>
+
+                            {/* COMBINED DIETARY REQUIREMENTS */}
+                            <td className="py-3 px-3">
+                              <DietaryBadges dietary={fam.dietarySummary} size="sm" />
+                            </td>
+
+                            {/* TABLE */}
+                            <td className="py-3 px-2 text-center font-semibold text-[#15110e]">
+                              {fam.tableLabel}
+                            </td>
+
+                            {/* REMOVE FAMILY */}
+                            <td className="py-3 px-3 text-right">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveFamily(fam.householdKey)}
+                                className="text-[#a8382c] hover:bg-[#fbeae8] px-2.5 py-1 rounded border border-[#f2a89f] text-[11px] font-semibold cursor-pointer transition-colors"
+                              >
+                                Remove
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -3537,12 +3829,10 @@ export default function CoupleView({
                           {specialGuests.map(sg => (
                             <div
                               key={sg.id}
-                              className="text-xs bg-white border border-amber-200 rounded-lg px-2.5 py-1 flex items-center justify-between"
+                              className="text-xs bg-white border border-amber-200 rounded-lg px-2.5 py-1.5 flex items-center justify-between gap-2"
                             >
                               <span className="font-semibold text-[#15110e]">{sg.name}</span>
-                              <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
-                                {sg.dietary}
-                              </span>
+                              <DietaryBadges dietary={sg.dietary} size="xs" />
                             </div>
                           ))}
                         </div>
@@ -3646,11 +3936,9 @@ export default function CoupleView({
                             </td>
                             <td className="p-3">
                               {hasSpecialDiet ? (
-                                <span className="bg-amber-50 border border-amber-300 text-amber-800 font-bold px-2.5 py-0.5 rounded-full inline-block">
-                                  ⚠️ {g.dietary}
-                                </span>
+                                <DietaryBadges dietary={g.dietary} size="sm" />
                               ) : (
-                                <span className="text-emerald-700 font-medium">Standard</span>
+                                <span className="text-emerald-700 font-medium text-xs">Standard</span>
                               )}
                             </td>
                             <td className="p-3">

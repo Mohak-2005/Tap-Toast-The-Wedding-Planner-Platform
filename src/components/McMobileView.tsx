@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppState, showToast, getWeddingCountdown } from '../lib/state';
-import { Table, TableShape, PrivateRunSheetItem, SavedSeatingArrangement, AuditLogEntry } from '../lib/types';
+import { Table, TableShape, PrivateRunSheetItem, SavedSeatingArrangement, AuditLogEntry, Guest } from '../lib/types';
+import { DietaryBadges, parseDietaryRequirements } from '../lib/dietaryHelper';
 
 interface McMobileViewProps {
   onSelectView?: (view: string) => void;
@@ -66,6 +67,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
   const [cueSearch, setCueSearch] = useState('');
   const [guestSearch, setGuestSearch] = useState('');
   const [guestRsvpFilter, setGuestRsvpFilter] = useState<'all' | 'confirmed' | 'awaiting' | 'declined'>('all');
+  const [mobileGuestViewMode, setMobileGuestViewMode] = useState<'individual' | 'family'>('individual');
   const [cateringSearch, setCateringSearch] = useState('');
 
   // Add cue modal states
@@ -192,6 +194,99 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
   const declinedGuests = weddingGuests.filter(g => g.rsvpStatus === 'declined');
   const seatedGuestsCount = weddingGuests.filter(g => g.tableId).length;
   const unassignedGuests = weddingGuests.filter(g => !g.tableId && g.rsvpStatus !== 'declined');
+
+  // Aggregated Family Groups for Mobile Guest List
+  const mobileFamilyGroups = React.useMemo(() => {
+    const map = new Map<string, Guest[]>();
+    weddingGuests.forEach(g => {
+      const key = (g.household || g.name).trim();
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(g);
+    });
+    const groups: Array<{
+      id: string;
+      householdKey: string;
+      familyName: string;
+      members: Guest[];
+      memberNames: string;
+      category: string;
+      rsvpStatus: 'confirmed' | 'declined' | 'awaiting';
+      adultsCount: number;
+      kidsCount: number;
+      partyTotal: number;
+      dietarySummary: string;
+      tableLabel: string;
+      initials: string;
+    }> = [];
+
+    map.forEach((members, householdKey) => {
+      const primary = members[0];
+      let adultsCount = 0;
+      let kidsCount = 0;
+      members.forEach(m => {
+        const isChild = (m.kids || 0) > 0 && (!m.adults || m.adults === 0);
+        if (isChild) kidsCount += 1;
+        else adultsCount += 1;
+      });
+      const partyTotal = adultsCount + kidsCount;
+
+      const dietCounts: Record<string, number> = {};
+      members.forEach(m => {
+        const parsed = parseDietaryRequirements(m.dietary);
+        parsed.forEach(d => {
+          const clean = d.replace(/^\d+x\s*/i, '').trim();
+          if (clean) dietCounts[clean] = (dietCounts[clean] || 0) + 1;
+        });
+      });
+      const dietEntries = Object.entries(dietCounts);
+      const dietarySummary =
+        dietEntries.length > 0
+          ? dietEntries.map(([diet, count]) => `${count}x ${diet}`).join(', ')
+          : 'None';
+
+      const allConfirmed = members.every(m => m.rsvpStatus === 'confirmed');
+      const allDeclined = members.every(m => m.rsvpStatus === 'declined');
+      const rsvpStatus = allConfirmed ? 'confirmed' : allDeclined ? 'declined' : 'awaiting';
+
+      const seated = members.filter(m => m.tableId);
+      const tbl = seated.length > 0 ? weddingTables.find(t => t.id === seated[0].tableId) : null;
+      const tableLabel = tbl ? tbl.name : 'Unassigned';
+
+      let familyName = householdKey;
+      let memberNames = members.map(m => m.name).join(', ');
+      if (members.length === 2) {
+        const p0 = members[0].name.split(' ');
+        const p1 = members[1].name.split(' ');
+        if (p0.length > 1 && p1.length > 1 && p0[p0.length - 1] === p1[p1.length - 1]) {
+          familyName = `${p0[0]} & ${p1[0]} ${p0[p0.length - 1]}`;
+        } else {
+          familyName = `${members[0].name} & ${members[1].name}`;
+        }
+      } else if (members.length > 2 && householdKey.toLowerCase().includes('family')) {
+        familyName = `${members[0].name} & Family`;
+      } else if (members.length === 1) {
+        familyName = members[0].name;
+      }
+
+      groups.push({
+        id: `fam_${householdKey.replace(/[^a-zA-Z0-9]/g, '_')}`,
+        householdKey,
+        familyName,
+        members,
+        memberNames,
+        category: primary.category || 'Uncategorised',
+        rsvpStatus,
+        adultsCount,
+        kidsCount,
+        partyTotal,
+        dietarySummary,
+        tableLabel,
+        initials: householdKey.replace(/The\s+/i, '').slice(0, 2).toUpperCase() || 'FM',
+      });
+    });
+
+    return groups;
+  }, [weddingGuests, weddingTables]);
 
   // Dietary counts
   const vegCount = confirmedGuests.filter(g => (g.dietary || '').toLowerCase().includes('veg') && !(g.dietary || '').toLowerCase().includes('vegan')).length;
@@ -1908,9 +2003,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                                     {sIdx + 1}. {item.name}
                                   </span>
                                   {item.dietary && item.dietary !== 'None' && (
-                                    <span className="bg-[#fff1f0] text-[#c93b2b] text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0">
-                                      {item.dietary}
-                                    </span>
+                                    <DietaryBadges dietary={item.dietary} size="xs" />
                                   )}
                                 </div>
                                 <button
@@ -1974,9 +2067,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                           <div className="flex items-center justify-between">
                             <h4 className="font-bold text-xs text-[#15110e]">{g.name}</h4>
                             {g.dietary && g.dietary !== 'None' && (
-                              <span className="bg-[#fff1f0] text-[#c93b2b] text-[10px] font-bold px-1.5 py-0.2 rounded">
-                                {g.dietary}
-                              </span>
+                              <DietaryBadges dietary={g.dietary} size="xs" />
                             )}
                           </div>
                           <div className="text-[11px] text-[#8b7b6b]">
@@ -2099,9 +2190,9 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                         ) : (
                           <div className="space-y-1">
                             {special.map(sg => (
-                              <div key={sg.id} className="flex items-center justify-between bg-white border border-amber-200 px-2 py-0.5 rounded text-[10.5px]">
+                              <div key={sg.id} className="flex items-center justify-between bg-white border border-amber-200 px-2 py-1 rounded text-[10.5px] gap-2">
                                 <span className="font-medium text-[#15110e]">{sg.name}</span>
-                                <span className="font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded text-[9.5px]">{sg.dietary}</span>
+                                <DietaryBadges dietary={sg.dietary} size="xs" />
                               </div>
                             ))}
                           </div>
@@ -2129,18 +2220,12 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                       return g.name.toLowerCase().includes(cateringSearch.toLowerCase()) || (g.dietary && g.dietary.toLowerCase().includes(cateringSearch.toLowerCase()));
                     })
                     .map(g => (
-                      <div key={g.id} className="p-2 bg-[#faf8f5] rounded-xl border border-[#f0ede4] flex items-center justify-between">
-                        <div>
-                          <div className="font-bold text-[#15110e]">{g.name}</div>
-                          <div className="text-[10px] text-[#8b7b6b]">{g.household || 'Individual'}</div>
+                      <div key={g.id} className="p-2 bg-[#faf8f5] rounded-xl border border-[#f0ede4] flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="font-bold text-[#15110e] truncate">{g.name}</div>
+                          <div className="text-[10px] text-[#8b7b6b] truncate">{g.household || 'Individual'}</div>
                         </div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          g.dietary && g.dietary !== 'None'
-                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                            : 'bg-emerald-50 text-emerald-700'
-                        }`}>
-                          {g.dietary && g.dietary !== 'None' ? g.dietary : 'Standard'}
-                        </span>
+                        <DietaryBadges dietary={g.dietary} size="xs" />
                       </div>
                     ))}
                 </div>
@@ -2173,6 +2258,30 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 className="w-full bg-white border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
               />
 
+              {/* View Mode Segmented Controls */}
+              <div className="grid grid-cols-2 gap-1 bg-[#f0ede4] p-1 rounded-xl text-xs">
+                <button
+                  type="button"
+                  onClick={() => setMobileGuestViewMode('individual')}
+                  className={`py-1.5 rounded-lg font-bold text-[11px] cursor-pointer text-center transition-all flex items-center justify-center gap-1.5 ${
+                    mobileGuestViewMode === 'individual' ? 'bg-[#15110e] text-[#dfc194] shadow-xs' : 'text-[#8b7b6b]'
+                  }`}
+                >
+                  <span>👤</span>
+                  <span>Individuals ({weddingGuests.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileGuestViewMode('family')}
+                  className={`py-1.5 rounded-lg font-bold text-[11px] cursor-pointer text-center transition-all flex items-center justify-center gap-1.5 ${
+                    mobileGuestViewMode === 'family' ? 'bg-[#15110e] text-[#dfc194] shadow-xs' : 'text-[#8b7b6b]'
+                  }`}
+                >
+                  <span>👨‍👩‍👧‍👦</span>
+                  <span>By Family ({mobileFamilyGroups.length})</span>
+                </button>
+              </div>
+
               {/* RSVP Filter Chips */}
               <div className="grid grid-cols-4 gap-1 bg-[#f0ede4] p-1 rounded-xl text-xs">
                 {(['all', 'confirmed', 'awaiting', 'declined'] as const).map(rf => (
@@ -2191,36 +2300,73 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
 
               {/* Guests Rows */}
               <div className="space-y-2 text-xs">
-                {weddingGuests
-                  .filter(g => {
-                    if (guestRsvpFilter !== 'all' && g.rsvpStatus !== guestRsvpFilter) return false;
-                    if (!guestSearch) return true;
-                    return g.name.toLowerCase().includes(guestSearch.toLowerCase()) || (g.dietary && g.dietary.toLowerCase().includes(guestSearch.toLowerCase()));
-                  })
-                  .map(g => {
-                    const tbl = weddingTables.find(t => t.id === g.tableId);
-                    return (
-                      <div key={g.id} className="bg-white border border-[#e8ded0] rounded-2xl p-3 flex items-center justify-between shadow-2xs gap-2">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-8 h-8 rounded-full bg-[#15110e] text-[#dfc194] font-bold text-xs flex items-center justify-center shrink-0">
-                            {g.initials || g.name.slice(0, 2).toUpperCase()}
+                {mobileGuestViewMode === 'individual' ? (
+                  weddingGuests
+                    .filter(g => {
+                      if (guestRsvpFilter !== 'all' && g.rsvpStatus !== guestRsvpFilter) return false;
+                      if (!guestSearch) return true;
+                      return g.name.toLowerCase().includes(guestSearch.toLowerCase()) || (g.dietary && g.dietary.toLowerCase().includes(guestSearch.toLowerCase()));
+                    })
+                    .map(g => {
+                      const tbl = weddingTables.find(t => t.id === g.tableId);
+                      const isChild = (g.kids || 0) > 0 && (!g.adults || g.adults === 0);
+                      return (
+                        <div key={g.id} className="bg-white border border-[#e8ded0] rounded-2xl p-3 flex items-center justify-between shadow-2xs gap-2">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-8 h-8 rounded-full bg-[#15110e] text-[#dfc194] font-bold text-xs flex items-center justify-center shrink-0">
+                              {g.initials || g.name.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div className="min-w-0 space-y-0.5">
+                              <div className="font-bold text-[#15110e] truncate">{g.name}</div>
+                              <div className="text-[10px] text-[#8b7b6b] truncate">
+                                {g.household || 'Individual'} · {isChild ? 'Child (0A, 1K)' : 'Adult (1A, 0K)'}
+                              </div>
+                              <DietaryBadges dietary={g.dietary} size="xs" showNone={false} />
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <div className="font-bold text-[#15110e] truncate">{g.name}</div>
+
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                            tbl ? 'bg-[#15110e] text-[#dfc194]' : 'bg-[#faf5ed] text-[#916c3d] border border-[#ebd3a8]'
+                          }`}>
+                            {tbl ? tbl.name : 'Unassigned'}
+                          </span>
+                        </div>
+                      );
+                    })
+                ) : (
+                  mobileFamilyGroups
+                    .filter(fam => {
+                      if (guestRsvpFilter !== 'all' && fam.rsvpStatus !== guestRsvpFilter) return false;
+                      if (!guestSearch) return true;
+                      const q = guestSearch.toLowerCase();
+                      return fam.familyName.toLowerCase().includes(q) || fam.householdKey.toLowerCase().includes(q) || fam.dietarySummary.toLowerCase().includes(q);
+                    })
+                    .map(fam => (
+                      <div key={fam.id} className="bg-white border border-[#e8ded0] rounded-2xl p-3 flex items-center justify-between shadow-2xs gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-8 h-8 rounded-full bg-[#bd9661] text-[#15110e] font-bold text-xs flex items-center justify-center shrink-0">
+                            {fam.initials}
+                          </div>
+                          <div className="min-w-0 space-y-0.5">
+                            <div className="font-bold text-[#15110e] truncate">{fam.familyName}</div>
                             <div className="text-[10px] text-[#8b7b6b] truncate">
-                              {g.household || 'Individual'}{g.dietary && g.dietary !== 'None' ? ` · ${g.dietary}` : ''}
+                              {fam.householdKey} · {fam.memberNames}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                              <span className="bg-[#f5ede2] text-[#15110e] font-semibold text-[9.5px] px-1.5 py-0.2 rounded border border-[#e2d5c5]">
+                                {fam.adultsCount}A · {fam.kidsCount}K ({fam.partyTotal})
+                              </span>
+                              <DietaryBadges dietary={fam.dietarySummary} size="xs" showNone={false} />
                             </div>
                           </div>
                         </div>
 
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
-                          tbl ? 'bg-[#15110e] text-[#dfc194]' : 'bg-[#faf5ed] text-[#916c3d] border border-[#ebd3a8]'
-                        }`}>
-                          {tbl ? tbl.name : 'Unassigned'}
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 bg-[#15110e] text-[#dfc194]">
+                          {fam.tableLabel}
                         </span>
                       </div>
-                    );
-                  })}
+                    ))
+                )}
               </div>
             </div>
           )}
