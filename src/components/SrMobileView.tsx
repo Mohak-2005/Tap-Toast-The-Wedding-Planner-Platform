@@ -6,6 +6,48 @@ interface SrMobileViewProps {
 }
 
 export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
+  const MC_PLANS = [
+    {
+      id: 'mc_base',
+      name: 'Community Host (Base)',
+      price: 0,
+      badge: 'BASE TIER · FREE FOREVER',
+      tagline: 'Ideal for solo hosts coordinating a private celebration',
+      features: [
+        '1 Active Wedding coordination at a time',
+        'Interactive live run sheets & timing cues',
+        'Direct runsheet sync with nominated couple',
+        'Standard email & community support',
+      ],
+    },
+    {
+      id: 'mc_pro',
+      name: 'Pro Master of Ceremonies',
+      price: 149,
+      badge: 'RECOMMENDED',
+      tagline: 'Get booked by couples with certified directory & Joey AI',
+      features: [
+        'Public Certified Directory Listing',
+        'Up to 5 Active Weddings simultaneously',
+        'Joey AI Matchmaker recommendations',
+        'Stripe Connect automated client payout split',
+      ],
+    },
+    {
+      id: 'mc_agency',
+      name: 'Boutique Agency / Host',
+      price: 299,
+      badge: 'ENTERPRISE HOST',
+      tagline: 'Top placement for luxury MC firms & multi-coordinators',
+      features: [
+        'Priority Top Featured Placement',
+        'Unlimited Active Weddings simultaneously',
+        'Multiple Coordinator sub-logins',
+        'Dedicated VIP Account Concierge',
+      ],
+    },
+  ];
+
   const { state, setState } = useAppState();
   const { session, setSession } = useSession();
 
@@ -77,6 +119,11 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
 
   // MC fields
   const [mcName, setMcName] = useState('');
+  const [mcRegStep, setMcRegStep] = useState<'details' | 'plan_payment'>('details');
+  const [selectedMcPlanId, setSelectedMcPlanId] = useState<string>('mc_base');
+  const [expandedMcPlanId, setExpandedMcPlanId] = useState<string | null>(null);
+  const [mcCardName, setMcCardName] = useState('Robert Galati');
+  const [mcCardNumber, setMcCardNumber] = useState('•••• •••• •••• 4242');
   const [mcBusiness, setMcBusiness] = useState('');
   const [mcEmail, setMcEmail] = useState('');
   const [mcMobile, setMcMobile] = useState('');
@@ -357,19 +404,31 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
     strengthScore === 0 ? 'Empty' : strengthScore <= 2 ? 'Weak password' : strengthScore === 3 ? 'Medium strength' : 'Strong password';
 
   // Registration submit: MC
-  const handleRegisterMC = (e: React.FormEvent) => {
+  // MC Step 1: Proceed to Plan selection
+  const handleProceedToMcPlan = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!mcName || !mcBusiness || !mcEmail || !mcMobile) {
+      showToast('Please fill out all required personal & agency details', 'error');
+      return;
+    }
     if (mcPassword !== mcConfirmPassword) {
       showToast('Passwords do not match', 'error');
       return;
     }
     if (!agreeTerms) {
-      showToast('Please agree to terms', 'error');
+      showToast('Please agree to terms to proceed', 'error');
       return;
     }
+    setMcRegStep('plan_payment');
+  };
+
+  // MC Step 2: Finalize MC Registration
+  const handleFinalizeMcRegistration = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setIsRegistering(true);
     setTimeout(() => {
       setIsRegistering(false);
+      const chosenPlan = MC_PLANS.find(p => p.id === selectedMcPlanId) || MC_PLANS[0];
       const newMcUser = {
         id: 'user_mc_' + Date.now(),
         email: mcEmail.trim(),
@@ -389,7 +448,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
       };
       setStoredSession(newSession);
       setSession(newSession);
-      logAudit(state, setState, 'MC Registration (Mobile)', newMcUser.name, 'mc', 'New MC registered via S/R Mobile', 'Security');
+      logAudit(state, setState, 'MC Registration (Mobile)', newMcUser.name, 'mc', `New MC registered via S/R Mobile on plan ${chosenPlan.name}`, 'Security');
       showToast(`Welcome to Tap & Toast, ${newMcUser.name}!`, 'success');
       if (onSelectView) onSelectView('mc');
     }, 450);
@@ -596,7 +655,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                   : 'text-[#6b5847] hover:text-[#15110e]'
               }`}
             >
-              <span>🔑</span> Sign In
+              <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Sign In
             </button>
             <button
               type="button"
@@ -607,7 +666,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                   : 'text-[#6b5847] hover:text-[#15110e]'
               }`}
             >
-              <span>📝</span> Register
+              <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> Register
             </button>
           </div>
         </div>
@@ -815,7 +874,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                         : 'bg-white border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e]'
                     }`}
                   >
-                    <span>👰🤵</span> Couple Portal
+                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg> Couple Portal
                   </button>
                   <button
                     type="button"
@@ -826,7 +885,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                         : 'bg-white border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e]'
                     }`}
                   >
-                    <span>🎙️</span> MC / Planner
+                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" /><line x1="8" y1="22" x2="16" y2="22" /></svg> MC / Planner
                   </button>
                 </div>
               </div>
@@ -875,7 +934,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                       {/* Groom Section */}
                       <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2.5">
                         <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 pb-1 border-b border-[#ebdcc9]">
-                          <span>🤵</span> Groom Details
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#bd9661]" /> Groom Details
                         </div>
                         <div>
                           <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
@@ -926,7 +985,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                       {/* Bride Section */}
                       <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2.5">
                         <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 pb-1 border-b border-[#ebdcc9]">
-                          <span>👰</span> Bride Details
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#bd9661]" /> Bride Details
                         </div>
                         <div>
                           <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
@@ -977,7 +1036,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                       {/* Wedding & Celebration Details */}
                       <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2.5">
                         <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center justify-between pb-1 border-b border-[#ebdcc9]">
-                          <span className="flex items-center gap-1">💒 Wedding &amp; Venue</span>
+                          <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#bd9661]" /> Wedding &amp; Venue Details</span>
                           <span className="text-[9.5px] font-semibold text-rose-600 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200">
                             Date Mandatory*
                           </span>
@@ -1040,7 +1099,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                       {/* Password & Security */}
                       <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2.5">
                         <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 pb-1 border-b border-[#ebdcc9]">
-                          <span>🔒</span> Account Password
+                          <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#bd9661]" /> Account Password</span>
                         </div>
                         <div>
                           <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
@@ -1367,7 +1426,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                                   {mc.image ? (
                                     <img src={mc.image} alt={mc.name} className="w-full h-full object-cover" />
                                   ) : (
-                                    <span>🎤</span>
+                                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
                                   )}
                                 </div>
                                 <div className="min-w-0">
@@ -1395,7 +1454,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                                   className="w-7 h-7 rounded-lg bg-[#faf8f5] hover:bg-[#f0ede4] text-[#15110e] border border-[#d5c7b5] flex items-center justify-center text-xs cursor-pointer"
                                   title={`View details for ${mc.name}`}
                                 >
-                                  👁️
+                                  <svg className="w-3.5 h-3.5 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                 </button>
                                 <button
                                   type="button"
@@ -1418,7 +1477,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                       <div className="bg-white border border-[#e8ded0] rounded-2xl overflow-hidden shadow-2xs">
                         <div className="px-3 py-2 bg-[#15110e] text-white flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm">🤖</span>
+                            <svg className="w-4 h-4 text-[#bd9661]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                             <span className="font-serif text-xs font-bold">Joey AI MC Concierge</span>
                           </div>
                           <span className="text-[9px] text-[#bd9661] uppercase font-bold tracking-wider">
@@ -1517,159 +1576,355 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                   )}
                 </div>
               ) : (
-                /* MC REGISTRATION FORM */
-                <form onSubmit={handleRegisterMC} className="space-y-3.5">
-                  <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2.5">
-                    <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 pb-1 border-b border-[#ebdcc9]">
-                      <span>🎙️</span> MC Profile Details
+                /* MC MULTI-STEP REGISTRATION FORM */
+                <div className="space-y-3.5">
+                  {/* 2-Step MC Wizard Breadcrumb */}
+                  <div className="bg-[#faf8f5] border border-[#e8ded0] rounded-xl p-2 flex items-center justify-center gap-3 text-[10px]">
+                    <div className={`flex items-center gap-1.5 font-bold ${
+                      mcRegStep === 'details' ? 'text-[#bd9661]' : 'text-[#8b7b6b]'
+                    }`}>
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] ${
+                        mcRegStep === 'details' ? 'bg-[#15110e] text-[#dfc194]' : 'bg-[#bd9661] text-[#15110e]'
+                      }`}>
+                        {mcRegStep !== 'details' ? '✓' : '1'}
+                      </span>
+                      <span>Host Profile</span>
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
-                        Full Name *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={mcName}
-                        onChange={(e) => setMcName(e.target.value)}
-                        placeholder="Jane Doe"
-                        className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
-                        Business Name *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={mcBusiness}
-                        onChange={(e) => setMcBusiness(e.target.value)}
-                        placeholder="Jane Doe Weddings"
-                        className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
-                        Email Address *
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        value={mcEmail}
-                        onChange={(e) => setMcEmail(e.target.value)}
-                        placeholder="jane@example.com"
-                        className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
-                        Mobile Number *
-                      </label>
-                      <div className="flex">
-                        <span className="inline-flex items-center px-2.5 py-1.5 border border-r-0 border-[#d5c7b5] bg-[#f5ede2] text-xs font-bold text-[#6b5847] rounded-l-lg select-none">
-                          +61
-                        </span>
-                        <input
-                          type="tel"
-                          required
-                          value={mcMobile}
-                          onChange={(e) => setMcMobile(formatAuMobile(e.target.value))}
-                          placeholder="0412 345 678"
-                          className="w-full bg-white border border-[#d5c7b5] rounded-r-lg rounded-l-none px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
-                        ABN <span className="font-normal lowercase">(optional)</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={mcAbn}
-                        onChange={(e) => setMcAbn(e.target.value)}
-                        placeholder="12 345 678 901"
-                        className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-                      />
+                    <div className="w-8 h-0.5 bg-[#e8ded0] rounded-full" />
+                    <div className={`flex items-center gap-1.5 font-bold ${
+                      mcRegStep === 'plan_payment' ? 'text-[#bd9661]' : 'text-[#8b7b6b]'
+                    }`}>
+                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] ${
+                        mcRegStep === 'plan_payment' ? 'bg-[#15110e] text-[#dfc194]' : 'bg-[#e8ded0] text-[#15110e]'
+                      }`}>
+                        2
+                      </span>
+                      <span>SaaS Plan &amp; Pay</span>
                     </div>
                   </div>
 
-                  {/* Password */}
-                  <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2.5">
-                    <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 pb-1 border-b border-[#ebdcc9]">
-                      <span>🔒</span> Password
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
-                        Password *
-                      </label>
-                      <div className="relative">
+                  {mcRegStep === 'details' ? (
+                    /* STEP 1: HOST DETAILS */
+                    <form onSubmit={handleProceedToMcPlan} className="space-y-3.5">
+                      <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2.5">
+                        <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 pb-1 border-b border-[#ebdcc9]">
+                          <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#bd9661]" /> Host Profile &amp; Business</span>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                            Full Name *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={mcName}
+                            onChange={(e) => setMcName(e.target.value)}
+                            placeholder="Jane Doe"
+                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                            Business Name *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={mcBusiness}
+                            onChange={(e) => setMcBusiness(e.target.value)}
+                            placeholder="Jane Doe Weddings"
+                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                            Email Address *
+                          </label>
+                          <input
+                            type="email"
+                            required
+                            value={mcEmail}
+                            onChange={(e) => setMcEmail(e.target.value)}
+                            placeholder="jane@example.com"
+                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                            Mobile Number *
+                          </label>
+                          <div className="flex">
+                            <span className="inline-flex items-center px-2.5 py-1.5 border border-r-0 border-[#d5c7b5] bg-[#f5ede2] text-xs font-bold text-[#6b5847] rounded-l-lg select-none">
+                              +61
+                            </span>
+                            <input
+                              type="tel"
+                              required
+                              value={mcMobile}
+                              onChange={(e) => setMcMobile(formatAuMobile(e.target.value))}
+                              placeholder="0412 345 678"
+                              className="w-full bg-white border border-[#d5c7b5] rounded-r-lg rounded-l-none px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                            ABN <span className="font-normal lowercase">(optional)</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={mcAbn}
+                            onChange={(e) => setMcAbn(e.target.value)}
+                            placeholder="12 345 678 901"
+                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Password */}
+                      <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2.5">
+                        <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 pb-1 border-b border-[#ebdcc9]">
+                          <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#bd9661]" /> Account Password</span>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                            Password *
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={mcShowPwd ? 'text' : 'password'}
+                              required
+                              value={mcPassword}
+                              onChange={(e) => setMcPassword(e.target.value)}
+                              placeholder="Create password"
+                              className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 pr-12 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setMcShowPwd(!mcShowPwd)}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#bd9661] font-bold"
+                            >
+                              {mcShowPwd ? 'Hide' : 'Show'}
+                            </button>
+                          </div>
+                          <div className="w-full bg-[#e8ded0] h-1 rounded-full mt-1.5 overflow-hidden">
+                            <div
+                              className="h-full transition-all duration-300"
+                              style={{
+                                width: `${(strengthScore / 4) * 100}%`,
+                                backgroundColor: strengthColor,
+                              }}
+                            />
+                          </div>
+                          <div className="text-[10px] text-[#8b7b6b] mt-0.5">{strengthLabel}</div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                            Confirm Password *
+                          </label>
+                          <input
+                            type={mcShowPwd ? 'text' : 'password'}
+                            required
+                            value={mcConfirmPassword}
+                            onChange={(e) => setMcConfirmPassword(e.target.value)}
+                            placeholder="Re-enter password"
+                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Terms */}
+                      <label className="flex items-start gap-2 text-[11px] text-[#8b7b6b] cursor-pointer">
                         <input
-                          type={mcShowPwd ? 'text' : 'password'}
-                          required
-                          value={mcPassword}
-                          onChange={(e) => setMcPassword(e.target.value)}
-                          placeholder="Create password"
-                          className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 pr-12 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                          type="checkbox"
+                          checked={agreeTerms}
+                          onChange={(e) => setAgreeTerms(e.target.checked)}
+                          className="mt-0.5 rounded text-[#bd9661]"
                         />
+                        <span>I agree to the Terms of Service &amp; Privacy Policy</span>
+                      </label>
+
+                      <button
+                        type="submit"
+                        className="w-full py-2.5 px-4 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm"
+                      >
+                        Proceed to Choose MC Plan &amp; Billing →
+                      </button>
+                    </form>
+                  ) : (
+                    /* STEP 2: MC PLAN SELECTION & BILLING (DROPDOWN ACCORDION STYLE) */
+                    <form onSubmit={handleFinalizeMcRegistration} className="space-y-3.5">
+                      <div className="text-center pb-1">
+                        <h3 className="font-serif text-sm font-bold text-[#15110e]">
+                          Select Your MC Subscription Plan
+                        </h3>
+                        <p className="text-[10.5px] text-[#8b7b6b]">
+                          Choose a plan to activate your MC hosting workspace.
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        {MC_PLANS.map((plan) => {
+                          const isSelected = selectedMcPlanId === plan.id;
+                          const isExpanded = expandedMcPlanId === plan.id;
+                          return (
+                            <div
+                              key={plan.id}
+                              onClick={() => setSelectedMcPlanId(plan.id)}
+                              className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'border-[#bd9661] bg-[#fdfbf7] shadow-2xs ring-1 ring-[#bd9661]'
+                                  : 'border-[#e8ded0] bg-white hover:border-[#d5c7b5]'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="radio"
+                                    name="mobileMcPlan"
+                                    checked={isSelected}
+                                    onChange={() => setSelectedMcPlanId(plan.id)}
+                                    className="text-[#bd9661] focus:ring-[#bd9661] cursor-pointer"
+                                  />
+                                  <div>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="font-serif text-xs font-bold text-[#15110e]">
+                                        {plan.name}
+                                      </span>
+                                      {plan.badge && (
+                                        <span className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded ${
+                                          plan.price === 0
+                                            ? 'bg-[#f0ebe3] text-[#5c4a3b]'
+                                            : 'bg-[#bd9661]/15 text-[#8b6528] border border-[#bd9661]/30'
+                                        }`}>
+                                          {plan.badge}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-[10px] text-[#8b7b6b]">
+                                      {plan.tagline}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <div className="text-right">
+                                    <div className="font-serif text-xs font-bold text-[#15110e]">
+                                      ${plan.price}
+                                    </div>
+                                    <div className="text-[8.5px] text-[#8b7b6b] uppercase">
+                                      {plan.price === 0 ? 'Free' : '/mo'}
+                                    </div>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExpandedMcPlanId(isExpanded ? null : plan.id);
+                                    }}
+                                    className="p-1 rounded text-[#8b7b6b] hover:text-[#15110e] cursor-pointer"
+                                  >
+                                    <svg
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                                    >
+                                      <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </div>
+
+                              {isExpanded && (
+                                <div className="mt-2 pt-2 border-t border-[#f0ede6]">
+                                  <ul className="space-y-1 text-[10.5px] text-[#524438]">
+                                    {plan.features.map((feat, fIdx) => (
+                                      <li key={fIdx} className="flex items-center gap-1.5">
+                                        <span className="text-[#bd9661] font-bold text-xs">✓</span>
+                                        <span>{feat}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Paid Plan Card Simulation */}
+                      {selectedMcPlanId !== 'mc_base' && (
+                        <div className="bg-[#faf8f5] p-2.5 rounded-xl border border-[#ebdcc9] space-y-2">
+                          <div className="flex items-center justify-between pb-1 border-b border-[#ebdcc9]">
+                            <span className="text-[10.5px] font-bold text-[#15110e]">Stripe Secure Payment</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMcCardNumber('4242 •••• •••• 4242');
+                                setMcCardName(mcName || 'Robert Galati');
+                                showToast('Test card filled', 'info');
+                              }}
+                              className="text-[9.5px] text-[#bd9661] font-bold hover:underline cursor-pointer"
+                            >
+                              Use Test Card
+                            </button>
+                          </div>
+                          <div>
+                            <label className="block text-[9px] font-bold uppercase text-[#8b7b6b] mb-0.5">Cardholder Name</label>
+                            <input
+                              type="text"
+                              value={mcCardName}
+                              onChange={(e) => setMcCardName(e.target.value)}
+                              className="w-full bg-white border border-[#d5c7b5] rounded-md px-2 py-1 text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] font-bold uppercase text-[#8b7b6b] mb-0.5">Card Number</label>
+                            <input
+                              type="text"
+                              value={mcCardNumber}
+                              onChange={(e) => setMcCardNumber(e.target.value)}
+                              className="w-full bg-white border border-[#d5c7b5] rounded-md px-2 py-1 text-xs"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 pt-1">
                         <button
                           type="button"
-                          onClick={() => setMcShowPwd(!mcShowPwd)}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#bd9661] font-bold"
+                          onClick={() => setMcRegStep('details')}
+                          className="px-3 py-2 bg-[#f0ede4] hover:bg-[#e5ded2] text-[#15110e] font-bold text-xs rounded-lg cursor-pointer"
                         >
-                          {mcShowPwd ? 'Hide' : 'Show'}
+                          ← Back
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isRegistering}
+                          className="flex-1 py-2.5 px-3 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm text-center"
+                        >
+                          {isRegistering
+                            ? 'Activating Plan...'
+                            : selectedMcPlanId === 'mc_base'
+                            ? 'Activate Free Plan & Launch MC Portal →'
+                            : 'Pay & Launch MC Portal →'}
                         </button>
                       </div>
-                      <div className="w-full bg-[#e8ded0] h-1 rounded-full mt-1.5 overflow-hidden">
-                        <div
-                          className="h-full transition-all duration-300"
-                          style={{
-                            width: `${(strengthScore / 4) * 100}%`,
-                            backgroundColor: strengthColor,
-                          }}
-                        />
-                      </div>
-                      <div className="text-[10px] text-[#8b7b6b] mt-0.5">{strengthLabel}</div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
-                        Confirm Password *
-                      </label>
-                      <input
-                        type={mcShowPwd ? 'text' : 'password'}
-                        required
-                        value={mcConfirmPassword}
-                        onChange={(e) => setMcConfirmPassword(e.target.value)}
-                        placeholder="Re-enter password"
-                        className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Terms */}
-                  <label className="flex items-start gap-2 text-[11px] text-[#8b7b6b] cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={agreeTerms}
-                      onChange={(e) => setAgreeTerms(e.target.checked)}
-                      className="mt-0.5 rounded text-[#bd9661]"
-                    />
-                    <span>I agree to the Terms of Service &amp; Privacy Policy</span>
-                  </label>
-
-                  <button
-                    type="submit"
-                    disabled={isRegistering}
-                    className="w-full py-2.5 px-4 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm"
-                  >
-                    {isRegistering ? 'Creating MC Account...' : 'Create MC Account →'}
-                  </button>
-                </form>
+                    </form>
+                  )}
+                </div>
               )}
 
               {/* Bottom Switch Link (Only on Step 1 for couple) */}
-              {(regAccountType === 'mc' || coupleStep === 'registration') && (
+              {(regAccountType === 'couple' ? coupleStep === 'registration' : mcRegStep === 'details') && (
                 <div className="text-center text-xs text-[#8b7b6b] pt-2">
                   Already have an account?{' '}
                   <button
@@ -1703,7 +1958,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                     {selectedMcModal.image ? (
                       <img src={selectedMcModal.image} alt={selectedMcModal.name} className="w-full h-full object-cover" />
                     ) : (
-                      <span>🎤</span>
+                      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
                     )}
                   </div>
                   <div>

@@ -809,7 +809,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
 
         {/* Bottom Trust Badge */}
         <div className="pt-6 border-t border-[#29211a]/80 text-xs text-[#8b7b6b] flex items-center justify-between">
-          <span>🔒 256-Bit Encrypted &amp; Stripe Verified</span>
+          <span>Stripe Verified &amp; Secure Checkout</span>
           <span className="text-[#bd9661] font-semibold">Sydney · Melbourne · Hunter Valley</span>
         </div>
       </div>
@@ -847,7 +847,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                     : 'text-[#6b5847] hover:text-[#15110e] hover:bg-[#e8ded0]/50'
                 }`}
               >
-                <span className="text-sm">👰🤵</span>
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
                 <div className="text-left">
                   <div className="leading-tight font-bold">Couple Portal</div>
                   <div className="text-[10px] font-normal opacity-75">Couple Onboarding</div>
@@ -866,7 +866,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                     : 'text-[#6b5847] hover:text-[#15110e] hover:bg-[#e8ded0]/50'
                 }`}
               >
-                <span className="text-sm">🎙️</span>
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" /><line x1="8" y1="22" x2="16" y2="22" /></svg>
                 <div className="text-left">
                   <div className="leading-tight font-bold">MC / Planner</div>
                   <div className="text-[10px] font-normal opacity-75">Business Account</div>
@@ -878,9 +878,9 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
           {/* MC ONBOARDING PROGRESS STEPPER */}
           {accountType === 'mc' && (
             <div className="mb-6 pb-4 border-b border-[#ebdcc9]">
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-center gap-3 text-xs max-w-sm mx-auto">
                 {/* Step 1 */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <div
                     className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
                       mcStep === 'details'
@@ -895,7 +895,8 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                   </span>
                 </div>
 
-                <div className="h-0.5 flex-1 bg-[#ebdcc9] mx-4">
+                {/* Connector bar */}
+                <div className="w-16 sm:w-20 h-0.5 bg-[#ebdcc9] overflow-hidden rounded-full shrink-0">
                   <div
                     className="h-full bg-[#bd9661] transition-all duration-300"
                     style={{ width: mcStep === 'details' ? '0%' : '100%' }}
@@ -903,7 +904,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                 </div>
 
                 {/* Step 2 */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <div
                     className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
                       mcStep === 'plan_payment'
@@ -914,7 +915,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                     2
                   </div>
                   <span className={`text-xs font-semibold ${mcStep === 'plan_payment' ? 'text-[#15110e]' : 'text-[#8b7b6b]'}`}>
-                    SaaS Plan &amp; Stripe Billing
+                    SaaS Plan &amp; Billing
                   </span>
                 </div>
               </div>
@@ -1261,22 +1262,12 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                                   {plan.name}
                                 </span>
                                 {plan.badge && (
-                                  <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${
+                                  <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
                                     plan.price === 0
-                                      ? 'bg-[#e2d8cb] text-[#4a3b2c]'
-                                      : 'bg-[#bd9661] text-[#15110e]'
+                                      ? 'bg-[#f0ebe3] text-[#5c4a3b]'
+                                      : 'bg-[#bd9661]/15 text-[#8b6528] border border-[#bd9661]/30'
                                   }`}>
                                     {plan.badge}
-                                  </span>
-                                )}
-                                {plan.isListed ? (
-                                  <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                    Public Directory Listed
-                                  </span>
-                                ) : (
-                                  <span className="text-[9.5px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                                    ⚠️ Unlisted (Private Link Only)
                                   </span>
                                 )}
                               </div>
@@ -1351,9 +1342,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                     <div className="flex items-center justify-between pb-1 border-b border-[#ebdcc9]">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-[#15110e]">Stripe Secure Payment</span>
-                        <span className="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-1.5 py-0.2 rounded">
-                          256-Bit Encrypted
-                        </span>
+                        
                       </div>
                       <button
                         type="button"
@@ -2373,7 +2362,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                       onClick={() => setIsFloatingChatOpen(!isFloatingChatOpen)}
                       className="px-3.5 py-2 bg-[#15110e] hover:bg-[#2b221a] text-[#dfc194] hover:text-white border border-[#bd9661]/40 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs"
                     >
-                      <span>💬</span>
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                       <span>{isFloatingChatOpen ? 'Close Chat' : 'Open Chat'}</span>
                     </button>
                   </div>
