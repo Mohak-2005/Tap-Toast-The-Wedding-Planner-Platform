@@ -400,7 +400,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
     e.preventDefault();
     if (!weddingDate) {
       setWeddingDateError(true);
-      showToast('Wedding Date is compulsory. Please choose your wedding date to proceed.', 'error');
+      showToast('Wedding Date is mandatory. Please choose your wedding date to proceed.', 'error');
       return;
     }
     if (couplePassword !== coupleConfirmPassword) {
@@ -979,7 +979,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                         <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center justify-between pb-1 border-b border-[#ebdcc9]">
                           <span className="flex items-center gap-1">💒 Wedding &amp; Venue</span>
                           <span className="text-[9.5px] font-semibold text-rose-600 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200">
-                            Date Compulsory
+                            Date Mandatory*
                           </span>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
@@ -1005,7 +1005,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                             />
                             {weddingDateError && (
                               <p className="text-[9px] text-rose-600 font-semibold mt-0.5">
-                                ✕ Wedding Date is compulsory.
+                                ✕ Wedding Date is mandatory.
                               </p>
                             )}
                           </div>

@@ -26,6 +26,75 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
     }
   }, []);
 
+  // MC Multi-Step Flow: details -> plan_payment
+  const [mcStep, setMcStep] = useState<'details' | 'plan_payment'>('details');
+  const [selectedMcPlanId, setSelectedMcPlanId] = useState<string>('mc_base');
+  const [mcCardName, setMcCardName] = useState('Robert Galati');
+  const [mcCardNumber, setMcCardNumber] = useState('•••• •••• •••• 4242');
+  const [mcCardExpiry, setMcCardExpiry] = useState('12/28');
+  const [mcCardCvc, setMcCardCvc] = useState('888');
+  const [mcPromoCode, setMcPromoCode] = useState('');
+  const [mcDiscountPercent, setMcDiscountPercent] = useState(0);
+
+  // MC SaaS Plan Directory
+  const MC_PLANS = [
+    {
+      id: 'mc_base',
+      name: 'Community Host (Base)',
+      tierKey: 'Starter',
+      price: 0,
+      monthlyPrice: 0,
+      badge: 'BASE TIER · FREE FOREVER',
+      tagline: 'Ideal for solo hosts coordinating a private nominated celebration',
+      isListed: false,
+      features: [
+        '1 Active Wedding coordination at a time',
+        'Interactive live run sheets & timing cues',
+        'Direct runsheet sync with nominated couple',
+        'Private speech timers & prompter access',
+        '⚠️ Unlisted — Does NOT appear in Public MC Directory',
+        'Standard email & community support',
+      ],
+    },
+    {
+      id: 'mc_pro',
+      name: 'Pro Master of Ceremonies',
+      tierKey: 'Pro',
+      price: 149,
+      monthlyPrice: 149,
+      badge: 'RECOMMENDED · DIRECTORY LISTED',
+      tagline: 'Get booked by couples with public directory certification & Joey AI referrals',
+      isListed: true,
+      features: [
+        '★ Public Certified Directory Listing (Couples can find & book you)',
+        'Up to 5 Active Weddings simultaneously',
+        'Joey AI Matchmaker recommendations to newly registered couples',
+        '5.0 Star verified client review badge & public profile showcase',
+        'Stripe Connect automated client payout split (97.5% net)',
+        'Catering & venue dietary export summaries',
+        'Live run sheet collaboration with wedding coordinators',
+      ],
+    },
+    {
+      id: 'mc_agency',
+      name: 'Boutique Agency / Host',
+      tierKey: 'Enterprise',
+      price: 299,
+      monthlyPrice: 299,
+      badge: 'ENTERPRISE HOST',
+      tagline: 'Top-tier directory placement for luxury MC firms & multi-coordinator agencies',
+      isListed: true,
+      features: [
+        '★ Priority Top Featured Placement at top of Certified MC Directory',
+        'Unlimited Active Weddings simultaneously',
+        'Multiple Coordinator sub-logins with granular permissions',
+        'Automated Xero accounting sync for all client invoices',
+        'Custom white-label branding on runsheets & client QA packs',
+        'Dedicated VIP Account Concierge & 24/7 phone support',
+      ],
+    },
+  ];
+
   // MC fields
   const [mcName, setMcName] = useState('');
   const [mcBusiness, setMcBusiness] = useState('');
@@ -273,7 +342,8 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
     },
   ];
 
-  const handleRegisterMC = (e: React.FormEvent) => {
+  // Step 1: Proceed to MC Plan Selection
+  const handleProceedToMcPlan = (e: React.FormEvent) => {
     e.preventDefault();
     if (!passwordsMatch) {
       showToast('Passwords do not match', 'error');
@@ -283,6 +353,15 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
       showToast('Please agree to the Terms of Service', 'error');
       return;
     }
+    setMcStep('plan_payment');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showToast('Host profile saved! Please select your MC SaaS Plan.', 'info');
+  };
+
+  // Step 2: Complete MC Registration & Activate SaaS Plan via Stripe
+  const handleCompleteMcRegistration = (e: React.FormEvent) => {
+    e.preventDefault();
+    const chosenPlan = MC_PLANS.find(p => p.id === selectedMcPlanId) || MC_PLANS[0];
 
     setIsSubmitting(true);
     setTimeout(() => {
@@ -298,9 +377,36 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
         weddingId: null,
       };
 
+      const newTenant = {
+        id: newTenantId,
+        businessName: mcBusiness,
+        contactName: mcName,
+        email: mcEmail,
+        phone: mcMobile,
+        abn: mcAbn || undefined,
+        plan: chosenPlan.name,
+        mrr: chosenPlan.price,
+        status: 'Active' as const,
+        isListed: chosenPlan.isListed,
+        weddingsCount: 1,
+        createdAt: new Date().toISOString(),
+      };
+
+      const auditEntry = {
+        id: `aud_${Date.now()}`,
+        timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
+        action: 'MC Registered & Subscribed',
+        user: mcName,
+        role: 'mc' as const,
+        category: 'Billing',
+        details: `Registered ${mcBusiness} (${mcName}) on ${chosenPlan.name} (${chosenPlan.price}/mo via Stripe). Directory listing: ${chosenPlan.isListed ? 'Listed' : 'Unlisted'}.`,
+      };
+
       setState({
         ...state,
         users: [...state.users, newUser],
+        tenants: [newTenant, ...(state.tenants || [])],
+        auditLog: [auditEntry, ...(state.auditLog || [])],
       });
 
       setStoredSession({
@@ -314,9 +420,18 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
         at: Date.now(),
       });
 
-      showToast(`Welcome to Tap & Toast, ${mcName}!`, 'success');
+      showToast(`Welcome to Tap & Toast, ${mcName}! Activated ${chosenPlan.name}.`, 'success');
       if (onSelectView) onSelectView('mc');
     }, 450);
+  };
+
+  const handleApplyMcPromo = () => {
+    if (mcPromoCode.trim().toUpperCase() === 'WELCOME10') {
+      setMcDiscountPercent(10);
+      showToast('Promo code applied: 10% off your MC plan!', 'success');
+    } else {
+      showToast('Invalid promo code', 'error');
+    }
   };
 
   // Step 1: Proceed to Payment (Enforces Compulsory Wedding Date)
@@ -324,7 +439,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
     e.preventDefault();
     if (!weddingDate || !weddingDate.trim()) {
       setWeddingDateError(true);
-      showToast('Wedding Date is compulsory. Please select your wedding date.', 'error');
+      showToast('Wedding Date is mandatory. Please select your wedding date.', 'error');
       return;
     }
     if (!couplePasswordsMatch) {
@@ -759,6 +874,52 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
             </div>
           )}
 
+          {/* MC ONBOARDING PROGRESS STEPPER */}
+          {accountType === 'mc' && (
+            <div className="mb-6 pb-4 border-b border-[#ebdcc9]">
+              <div className="flex items-center justify-between text-xs">
+                {/* Step 1 */}
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
+                      mcStep === 'details'
+                        ? 'bg-[#15110e] text-[#dfc194] ring-2 ring-[#bd9661]'
+                        : 'bg-[#bd9661] text-[#15110e]'
+                    }`}
+                  >
+                    {mcStep !== 'details' ? '✓' : '1'}
+                  </div>
+                  <span className={`text-xs font-semibold ${mcStep === 'details' ? 'text-[#15110e]' : 'text-[#8b7b6b]'}`}>
+                    Host Profile
+                  </span>
+                </div>
+
+                <div className="h-0.5 flex-1 bg-[#ebdcc9] mx-4">
+                  <div
+                    className="h-full bg-[#bd9661] transition-all duration-300"
+                    style={{ width: mcStep === 'details' ? '0%' : '100%' }}
+                  />
+                </div>
+
+                {/* Step 2 */}
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
+                      mcStep === 'plan_payment'
+                        ? 'bg-[#15110e] text-[#dfc194] ring-2 ring-[#bd9661]'
+                        : 'bg-[#ebdcc9] text-[#8b7b6b]'
+                    }`}
+                  >
+                    2
+                  </div>
+                  <span className={`text-xs font-semibold ${mcStep === 'plan_payment' ? 'text-[#15110e]' : 'text-[#8b7b6b]'}`}>
+                    SaaS Plan &amp; Stripe Billing
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* COUPLE ONBOARDING PROGRESS STEPPER */}
           {accountType === 'couple' && (
             <div className="mb-6 pb-4 border-b border-[#ebdcc9]">
@@ -830,229 +991,505 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
             </div>
           )}
 
-          {/* MC REGISTRATION FORM (POLISHED LUXURY UI) */}
+          {/* MC MULTI-STEP FLOW (STEP 1: DETAILS, STEP 2: PLAN & STRIPE) */}
           {accountType === 'mc' ? (
-            <form onSubmit={handleRegisterMC} className="space-y-5">
-              <div>
-                <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-1">
-                  PRO MC &amp; COORDINATOR ACCOUNT
-                </div>
-                <h2 className="font-serif text-[22px] font-bold text-[#15110e] leading-tight">
-                  Register Certified MC Account
-                </h2>
-                <p className="text-xs text-[#8b7b6b] mt-0.5">
-                  Manage multiple couple run sheets, client audio cues, and seamless wedding coordination.
-                </p>
-              </div>
-
-              {/* Business & Personal Details Card */}
-              <div className="bg-[#faf8f5] p-4 rounded-xl border border-[#e8ded0] space-y-3.5">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center gap-1.5">
-                  <svg className="w-3.5 h-3.5 text-[#bd9661]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  <span>Host Profile &amp; Business Information</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                      Full Name *
-                    </label>
-                    <div className="relative flex items-center">
-                      <span className="absolute left-3 text-[#bd9661]">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      </span>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. Robert Galati"
-                        value={mcName}
-                        onChange={(e) => setMcName(e.target.value)}
-                        className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                      Business Name *
-                    </label>
-                    <div className="relative flex items-center">
-                      <span className="absolute left-3 text-[#bd9661]">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                      </span>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. Galati MC Services"
-                        value={mcBusiness}
-                        onChange={(e) => setMcBusiness(e.target.value)}
-                        className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                      Email Address *
-                    </label>
-                    <div className="relative flex items-center">
-                      <span className="absolute left-3 text-[#bd9661]">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                      </span>
-                      <input
-                        type="email"
-                        required
-                        placeholder="robert@galatimc.com.au"
-                        value={mcEmail}
-                        onChange={(e) => setMcEmail(e.target.value)}
-                        className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                      Australian Mobile *
-                    </label>
-                    <div className="flex rounded-lg overflow-hidden border border-[#d5c7b5] focus-within:border-[#bd9661] focus-within:ring-1 focus-within:ring-[#bd9661] bg-white shadow-2xs">
-                      <span className="inline-flex items-center px-3 bg-[#f5ede2] text-xs font-bold text-[#6b5847] border-r border-[#e2d8cb] select-none">
-                        +61
-                      </span>
-                      <input
-                        type="tel"
-                        required
-                        placeholder="0412 345 678"
-                        value={mcMobile}
-                        onChange={(e) => setMcMobile(formatAuMobile(e.target.value))}
-                        className="w-full px-3 py-2 text-xs text-[#15110e] outline-none bg-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-
+            mcStep === 'details' ? (
+              /* STEP 1: MC HOST PROFILE & SECURITY */
+              <form onSubmit={handleProceedToMcPlan} className="space-y-5">
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c]">
-                      Australian Business Number (ABN)
-                    </label>
-                    <span className="text-[10px] text-[#8b7b6b] font-medium">(Optional for Tax Invoicing)</span>
+                  <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-1">
+                    STEP 1 OF 2 · PRO MC &amp; COORDINATOR ACCOUNT
                   </div>
-                  <input
-                    type="text"
-                    placeholder="12 345 678 901"
-                    value={mcAbn}
-                    onChange={(e) => setMcAbn(e.target.value)}
-                    className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
-                  />
-                </div>
-              </div>
-
-              {/* Password & Security Card */}
-              <div className="bg-[#faf8f5] p-4 rounded-xl border border-[#e8ded0] space-y-3">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center gap-1.5">
-                  <svg className="w-3.5 h-3.5 text-[#bd9661]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  <span>Account Security</span>
+                  <h2 className="font-serif text-[22px] font-bold text-[#15110e] leading-tight">
+                    Register Certified MC Account
+                  </h2>
+                  <p className="text-xs text-[#8b7b6b] mt-0.5">
+                    Manage multiple couple run sheets, client audio cues, and seamless wedding coordination.
+                  </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                      Password *
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={mcShowPwd ? 'text' : 'password'}
-                        required
-                        placeholder="Create a secure password"
-                        value={mcPassword}
-                        onChange={(e) => setMcPassword(e.target.value)}
-                        className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 pr-14 text-xs text-[#15110e] outline-none shadow-2xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setMcShowPwd(!mcShowPwd)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#bd9661] font-semibold hover:underline cursor-pointer"
-                      >
-                        {mcShowPwd ? 'Hide' : 'Show'}
-                      </button>
-                    </div>
-                    <div className="w-full bg-[#e8ded0] h-1.5 rounded-full mt-2 overflow-hidden">
-                      <div
-                        className="h-full transition-all duration-300"
-                        style={{ width: `${(strengthScore / 4) * 100}%`, backgroundColor: strengthColor }}
-                      />
-                    </div>
-                    <div className="text-[10px] text-[#8b7b6b] mt-0.5">{strengthLabel}</div>
+                {/* Business & Personal Details Card */}
+                <div className="bg-[#faf8f5] p-4 rounded-xl border border-[#e8ded0] space-y-3.5">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 text-[#bd9661]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span>Host Profile &amp; Business Information</span>
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                      Confirm Password *
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={mcShowConfirm ? 'text' : 'password'}
-                        required
-                        placeholder="Re-enter password"
-                        value={mcConfirmPassword}
-                        onChange={(e) => setMcConfirmPassword(e.target.value)}
-                        className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 pr-14 text-xs text-[#15110e] outline-none shadow-2xs"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setMcShowConfirm(!mcShowConfirm)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#bd9661] font-semibold hover:underline cursor-pointer"
-                      >
-                        {mcShowConfirm ? 'Hide' : 'Show'}
-                      </button>
-                    </div>
-                    {mcConfirmPassword && (
-                      <div className={`text-[10.5px] mt-1 font-semibold ${passwordsMatch ? 'text-emerald-700' : 'text-rose-600'}`}>
-                        {passwordsMatch ? '✓ Passwords match' : '✕ Passwords do not match'}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
+                        Full Name *
+                      </label>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3 text-[#bd9661]">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </span>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Robert Galati"
+                          value={mcName}
+                          onChange={(e) => setMcName(e.target.value)}
+                          className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
+                        />
                       </div>
-                    )}
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
+                        Business Name *
+                      </label>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3 text-[#bd9661]">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                        </span>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Galati MC Services"
+                          value={mcBusiness}
+                          onChange={(e) => setMcBusiness(e.target.value)}
+                          className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
+                        Email Address *
+                      </label>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3 text-[#bd9661]">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                        </span>
+                        <input
+                          type="email"
+                          required
+                          placeholder="robert@galatimc.com.au"
+                          value={mcEmail}
+                          onChange={(e) => setMcEmail(e.target.value)}
+                          className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
+                        Australian Mobile *
+                      </label>
+                      <div className="flex rounded-lg overflow-hidden border border-[#d5c7b5] focus-within:border-[#bd9661] focus-within:ring-1 focus-within:ring-[#bd9661] bg-white shadow-2xs">
+                        <span className="inline-flex items-center px-3 bg-[#f5ede2] text-xs font-bold text-[#6b5847] border-r border-[#e2d8cb] select-none">
+                          +61
+                        </span>
+                        <input
+                          type="tel"
+                          required
+                          placeholder="0412 345 678"
+                          value={mcMobile}
+                          onChange={(e) => setMcMobile(formatAuMobile(e.target.value))}
+                          className="w-full px-3 py-2 text-xs text-[#15110e] outline-none bg-white"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c]">
+                        Australian Business Number (ABN)
+                      </label>
+                      <span className="text-[10px] text-[#8b7b6b] font-medium">(Optional for Tax Invoicing)</span>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="12 345 678 901"
+                      value={mcAbn}
+                      onChange={(e) => setMcAbn(e.target.value)}
+                      className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
+                    />
                   </div>
                 </div>
-              </div>
 
-              {/* Terms Checkbox */}
-              <div className="pt-0.5">
-                <label className="flex items-start gap-2.5 text-xs text-[#6b5847] cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={agreeTerms}
-                    onChange={(e) => setAgreeTerms(e.target.checked)}
-                    className="mt-0.5 rounded text-[#bd9661] focus:ring-[#bd9661]"
-                  />
-                  <span>
-                    I agree to the <a href="#terms" className="text-[#bd9661] underline font-semibold">Terms of Service</a> and <a href="#privacy" className="text-[#bd9661] underline font-semibold">Privacy Policy</a>
-                  </span>
-                </label>
-              </div>
+                {/* Password & Security Card */}
+                <div className="bg-[#faf8f5] p-4 rounded-xl border border-[#e8ded0] space-y-3">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5 text-[#bd9661]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <span>Account Security</span>
+                  </div>
 
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
-              >
-                <span>{isSubmitting ? 'Creating MC Profile...' : 'Create MC Account'}</span>
-                <span>→</span>
-              </button>
-            </form>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
+                        Password *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={mcShowPwd ? 'text' : 'password'}
+                          required
+                          placeholder="Create a secure password"
+                          value={mcPassword}
+                          onChange={(e) => setMcPassword(e.target.value)}
+                          className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 pr-14 text-xs text-[#15110e] outline-none shadow-2xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setMcShowPwd(!mcShowPwd)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#bd9661] font-semibold hover:underline cursor-pointer"
+                        >
+                          {mcShowPwd ? 'Hide' : 'Show'}
+                        </button>
+                      </div>
+                      <div className="w-full bg-[#e8ded0] h-1.5 rounded-full mt-2 overflow-hidden">
+                        <div
+                          className="h-full transition-all duration-300"
+                          style={{ width: `${(strengthScore / 4) * 100}%`, backgroundColor: strengthColor }}
+                        />
+                      </div>
+                      <div className="text-[10px] text-[#8b7b6b] mt-0.5">{strengthLabel}</div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
+                        Confirm Password *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={mcShowConfirm ? 'text' : 'password'}
+                          required
+                          placeholder="Re-enter password"
+                          value={mcConfirmPassword}
+                          onChange={(e) => setMcConfirmPassword(e.target.value)}
+                          className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 pr-14 text-xs text-[#15110e] outline-none shadow-2xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setMcShowConfirm(!mcShowConfirm)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#bd9661] font-semibold hover:underline cursor-pointer"
+                        >
+                          {mcShowConfirm ? 'Hide' : 'Show'}
+                        </button>
+                      </div>
+                      {mcConfirmPassword && (
+                        <div className={`text-[10.5px] mt-1 font-semibold ${passwordsMatch ? 'text-emerald-700' : 'text-rose-600'}`}>
+                          {passwordsMatch ? '✓ Passwords match' : '✕ Passwords do not match'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Terms Checkbox */}
+                <div className="pt-0.5">
+                  <label className="flex items-start gap-2.5 text-xs text-[#6b5847] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={agreeTerms}
+                      onChange={(e) => setAgreeTerms(e.target.checked)}
+                      className="mt-0.5 rounded text-[#bd9661] focus:ring-[#bd9661]"
+                    />
+                    <span>
+                      I agree to the <a href="#terms" className="text-[#bd9661] underline font-semibold">Terms of Service</a> and <a href="#privacy" className="text-[#bd9661] underline font-semibold">Privacy Policy</a>
+                    </span>
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
+                >
+                  <span>Proceed to Choose MC Plan &amp; Billing</span>
+                  <span>→</span>
+                </button>
+              </form>
+            ) : (
+              /* STEP 2: MC PLAN SELECTION & STRIPE BILLING */
+              <form onSubmit={handleCompleteMcRegistration} className="space-y-4">
+                <div>
+                  <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-1">
+                    STEP 2 OF 2 · MC SAAS PLAN &amp; STRIPE BILLING
+                  </div>
+                  <h2 className="font-serif text-[22px] font-bold text-[#15110e] leading-tight mb-1">
+                    Select Your MC Subscription Plan
+                  </h2>
+                  <p className="text-xs text-[#8b7b6b]">
+                    Choose a base tier to manage private weddings or a certified paid tier to be listed and booked on the Tap &amp; Toast platform.
+                  </p>
+                </div>
+
+                {/* Plan Selection Cards */}
+                <div className="space-y-3">
+                  {MC_PLANS.map((plan) => {
+                    const isSelected = selectedMcPlanId === plan.id;
+                    return (
+                      <div
+                        key={plan.id}
+                        onClick={() => setSelectedMcPlanId(plan.id)}
+                        className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-[#bd9661] bg-[#fdfbf7] shadow-xs ring-1 ring-[#bd9661]'
+                            : 'border-[#e8ded0] bg-white hover:border-[#d5c7b5]'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-2.5">
+                            <input
+                              type="radio"
+                              name="mcPlanChoice"
+                              checked={isSelected}
+                              onChange={() => setSelectedMcPlanId(plan.id)}
+                              className="mt-1 text-[#bd9661] focus:ring-[#bd9661] cursor-pointer"
+                            />
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-serif text-sm font-bold text-[#15110e]">
+                                  {plan.name}
+                                </span>
+                                {plan.badge && (
+                                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                                    plan.price === 0
+                                      ? 'bg-[#e2d8cb] text-[#4a3b2c]'
+                                      : 'bg-[#bd9661] text-[#15110e]'
+                                  }`}>
+                                    {plan.badge}
+                                  </span>
+                                )}
+                                {plan.isListed ? (
+                                  <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                    Public Directory Listed
+                                  </span>
+                                ) : (
+                                  <span className="text-[9.5px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                    ⚠️ Unlisted (Private Link Only)
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11.5px] text-[#8b7b6b] mt-1 leading-relaxed">
+                                {plan.tagline}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <div className="font-serif text-base font-bold text-[#15110e]">
+                              ${plan.price}
+                            </div>
+                            <div className="text-[9.5px] text-[#8b7b6b] uppercase">
+                              {plan.price === 0 ? 'Free forever' : 'AUD / mo'}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Feature bullets */}
+                        <div className="mt-3 pt-2.5 border-t border-[#f2ede4] grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs text-[#544332]">
+                          {plan.features.map((feat, fIdx) => (
+                            <div key={fIdx} className="flex items-start gap-1.5 text-[11px]">
+                              <span className="text-[#bd9661] font-bold shrink-0">✓</span>
+                              <span>{feat}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Selected Tier Action Notice & Payment Fields */}
+                {selectedMcPlanId === 'mc_base' ? (
+                  <div className="bg-[#f7f9f7] border border-[#d2ded4] rounded-xl p-3.5 flex items-start gap-3 text-xs text-[#2b523c]">
+                    <div className="w-6 h-6 rounded-full bg-[#3f7360] text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
+                      ✓
+                    </div>
+                    <div>
+                      <div className="font-bold text-[#1a442e]">Free Base Tier Selected ($0 AUD)</div>
+                      <p className="text-[11px] text-[#3e6850] mt-0.5 leading-relaxed">
+                        You can coordinate 1 private nominated wedding with full run sheets, speech prompters, and couple sync at zero cost. Note that your profile will remain <strong>unlisted</strong> from the certified MC directory. No payment details required. Upgrade anytime to receive couple bookings.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  /* Paid Plan: Stripe Card Section */
+                  <div className="bg-[#faf8f5] p-4 rounded-xl border border-[#e8ded0] space-y-3">
+                    <div className="flex items-center justify-between pb-1 border-b border-[#ebdcc9]">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-[#15110e]">Stripe Secure Payment</span>
+                        <span className="text-[9px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-1.5 py-0.2 rounded">
+                          256-Bit Encrypted
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMcCardNumber('4242 •••• •••• 4242');
+                          setMcCardExpiry('12/28');
+                          setMcCardCvc('888');
+                          setMcCardName(mcName || 'Robert Galati');
+                          showToast('Demo test card filled', 'info');
+                        }}
+                        className="text-[10.5px] text-[#bd9661] font-bold hover:underline cursor-pointer"
+                      >
+                        Use Demo Test Card
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                        CARDHOLDER NAME
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={mcCardName}
+                        onChange={(e) => setMcCardName(e.target.value)}
+                        className="w-full bg-white border border-[#d5c7b5] rounded-md px-3 py-1.5 text-xs outline-none focus:border-[#bd9661]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                        CARD NUMBER
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={mcCardNumber}
+                        onChange={(e) => setMcCardNumber(e.target.value)}
+                        className="w-full bg-white border border-[#d5c7b5] rounded-md px-3 py-1.5 text-xs outline-none focus:border-[#bd9661]"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                          EXPIRY DATE
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="MM/YY"
+                          value={mcCardExpiry}
+                          onChange={(e) => setMcCardExpiry(e.target.value)}
+                          className="w-full bg-white border border-[#d5c7b5] rounded-md px-3 py-1.5 text-xs outline-none focus:border-[#bd9661]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                          CVC / CVV
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="123"
+                          value={mcCardCvc}
+                          onChange={(e) => setMcCardCvc(e.target.value)}
+                          className="w-full bg-white border border-[#d5c7b5] rounded-md px-3 py-1.5 text-xs outline-none focus:border-[#bd9661]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Promo Code Input */}
+                    <div className="flex gap-2 pt-0.5">
+                      <input
+                        type="text"
+                        placeholder="Promo Code (e.g. WELCOME10)"
+                        value={mcPromoCode}
+                        onChange={(e) => setMcPromoCode(e.target.value)}
+                        className="flex-1 bg-white border border-[#d5c7b5] rounded-md px-3 py-1.5 text-xs uppercase outline-none focus:border-[#bd9661]"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyMcPromo}
+                        className="bg-[#15110e] text-[#dfc194] px-3 py-1.5 rounded-md text-xs font-bold hover:bg-[#2b221a] cursor-pointer"
+                      >
+                        Apply
+                      </button>
+                    </div>
+
+                    {/* Price Breakdown */}
+                    <div className="bg-white p-2.5 rounded-lg border border-[#ebdcc9] text-xs space-y-1">
+                      {(() => {
+                        const plan = MC_PLANS.find(p => p.id === selectedMcPlanId) || MC_PLANS[1];
+                        const discount = Math.round((plan.price * mcDiscountPercent) / 100);
+                        const finalPrice = Math.max(0, plan.price - discount);
+                        return (
+                          <>
+                            <div className="flex justify-between text-[#8b7b6b]">
+                              <span>{plan.name} (Monthly Subscription)</span>
+                              <span>${plan.price}.00 AUD</span>
+                            </div>
+                            {mcDiscountPercent > 0 && (
+                              <div className="flex justify-between text-emerald-600 font-semibold">
+                                <span>Promo Discount ({mcDiscountPercent}%)</span>
+                                <span>-${discount}.00 AUD</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between text-[#8b7b6b]">
+                              <span>Certified Directory Listing Badge</span>
+                              <span className="text-emerald-700 font-semibold">✓ Active &amp; Bookable</span>
+                            </div>
+                            <div className="flex justify-between text-[#8b7b6b]">
+                              <span>Australian GST (10%)</span>
+                              <span>Included</span>
+                            </div>
+                            <div className="flex justify-between text-xs font-bold text-[#15110e] pt-1 border-t border-[#f0ede6]">
+                              <span>Total Due Today:</span>
+                              <span className="text-[#bd9661] text-sm font-serif">${finalPrice}.00 AUD</span>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Navigation CTA Buttons */}
+                <div className="flex items-center gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setMcStep('details')}
+                    className="px-3 py-2 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                  >
+                    ← Back to Profile
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
+                  >
+                    {(() => {
+                      const plan = MC_PLANS.find(p => p.id === selectedMcPlanId) || MC_PLANS[0];
+                      const discount = Math.round((plan.price * mcDiscountPercent) / 100);
+                      const finalPrice = Math.max(0, plan.price - discount);
+                      return (
+                        <span>
+                          {isSubmitting
+                            ? 'Activating Plan...'
+                            : plan.price === 0
+                            ? 'Activate Free Base Plan & Launch MC Portal'
+                            : `Pay via Stripe (${finalPrice}/mo) & Launch MC Portal`}
+                        </span>
+                      );
+                    })()}
+                    <span>→</span>
+                  </button>
+                </div>
+              </form>
+            )
           ) : coupleStep === 'registration' ? (
             /* STEP 1: COUPLE REGISTRATION (POLISHED LUXURY UI) */
+/* STEP 1: COUPLE REGISTRATION (POLISHED LUXURY UI) */
             <form onSubmit={handleProceedToPayment} noValidate className="space-y-4">
               <div>
                 <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-1">
@@ -1231,7 +1668,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                         Wedding Date *
                       </label>
                       <span className="text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200/80 px-1.5 py-0.5 rounded">
-                        Compulsory
+                        Mandatory*
                       </span>
                     </div>
                     <div className="relative flex items-center">
@@ -1257,7 +1694,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                     </div>
                     {weddingDateError && (
                       <p className="text-[10.5px] text-rose-600 font-semibold mt-1">
-                        ✕ Wedding Date is compulsory. Please choose your wedding date to proceed.
+                        ✕ Wedding Date is mandatory. Please choose your wedding date to proceed.
                       </p>
                     )}
                   </div>

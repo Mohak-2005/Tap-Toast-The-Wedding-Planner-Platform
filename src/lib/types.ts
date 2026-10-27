@@ -165,6 +165,9 @@ export interface Tenant {
   weddingsCount: number;
   mrr: number;
   createdAt: string;
+  phone?: string;
+  abn?: string;
+  isListed?: boolean;
 }
 
 export interface AuditLogEntry {
@@ -277,6 +280,7 @@ export interface SaaSPlan {
   activeSubscribers?: number;
   badge?: string;
   featured?: boolean;
+  category?: 'couple' | 'mc';
 }
 
 export interface ReferralCode {

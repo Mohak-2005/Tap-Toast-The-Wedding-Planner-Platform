@@ -10,7 +10,10 @@ interface SuperAdminViewProps {
 export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
   const { state, setState } = useAppState();
   const { clearSession, setSession } = useSession();
-  const [activeTab, setActiveTab] = useState<'platform' | 'tenants' | 'plans' | 'flags' | 'audit' | 'support' | 'settings'>('platform');
+  const [activeTab, setActiveTab] = useState<'platform' | 'tenants' | 'plans' | 'audit' | 'support' | 'settings'>('platform');
+  const [subscriptionSubTab, setSubscriptionSubTab] = useState<'couple' | 'mc'>('couple');
+  const [planCategoryFilter, setPlanCategoryFilter] = useState<'all' | 'couple' | 'mc'>('all');
+  const [newPlanCategory, setNewPlanCategory] = useState<'couple' | 'mc'>('couple');
 
   // Dynamic SaaS Plans
   const plans: SaaSPlan[] = Array.isArray(state?.plans) && state.plans.length > 0 ? state.plans : initialPlans;
@@ -31,7 +34,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
   const [showXeroModal, setShowXeroModal] = useState<boolean>(false);
   const [selectedTxnDetail, setSelectedTxnDetail] = useState<McTransaction | null>(null);
   const [lastXeroSyncTime, setLastXeroSyncTime] = useState<string>('Today at 10:45 AM');
-  const [billingSectionFocus, setBillingSectionFocus] = useState<'all' | 'subscriptions' | 'transactions' | 'plans'>('all');
+  const [billingSectionFocus, setBillingSectionFocus] = useState<'all' | 'couple_subs' | 'mc_subs' | 'transactions' | 'plans'>('all');
 
   // Filtered MC Transactions
   const filteredMcTransactions = mcTransactions.filter((txn) => {
@@ -327,6 +330,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
       ],
       badge: newPlanBadge.trim() || undefined,
       featured: newPlanFeatured,
+      category: newPlanCategory,
     };
 
     const newAudit = {
@@ -335,7 +339,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
       action: 'SaaS Plan Created',
       user: 'Platform Super Admin',
       role: 'superadmin',
-      details: `Created new subscription tier: ${newPlan.key} ($${newPlan.price}/mo)`,
+      details: `Created new ${newPlanCategory === 'couple' ? 'Couple' : 'MC'} subscription tier: ${newPlan.key} (${newPlan.price} ${newPlan.billingCycle})`,
       category: 'Billing',
     };
 
@@ -534,16 +538,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                   </svg>
                 ),
               },
-              {
-                id: 'flags',
-                label: 'Feature Flags',
-                icon: (
-                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-                    <line x1="4" y1="22" x2="4" y2="15" />
-                  </svg>
-                ),
-              },
+
               {
                 id: 'audit',
                 label: 'Audit Logs',
@@ -1039,11 +1034,11 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
             </div>
 
             {/* Sub-Section Filter / Focus Tabs */}
-            <div className="flex items-center gap-2 border-b border-[#e8ded0] pb-2">
+            <div className="flex items-center gap-2 border-b border-[#e8ded0] pb-2 overflow-x-auto">
               <button
                 type="button"
                 onClick={() => setBillingSectionFocus('all')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0 ${
                   billingSectionFocus === 'all'
                     ? 'bg-[#15110e] text-[#dfc194]'
                     : 'text-[#8b7b6b] hover:text-[#15110e] hover:bg-white'
@@ -1053,19 +1048,36 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
               </button>
               <button
                 type="button"
-                onClick={() => setBillingSectionFocus('subscriptions')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                  billingSectionFocus === 'subscriptions'
+                onClick={() => {
+                  setBillingSectionFocus('couple_subs');
+                  setSubscriptionSubTab('couple');
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                  billingSectionFocus === 'couple_subs' || (billingSectionFocus === 'all' && subscriptionSubTab === 'couple')
                     ? 'bg-[#15110e] text-[#dfc194]'
                     : 'text-[#8b7b6b] hover:text-[#15110e] hover:bg-white'
                 }`}
               >
-                Subscriptions &amp; Features ({tenants.length})
+                <span>👰 Couple Subscriptions ({(state.weddings || []).length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setBillingSectionFocus('mc_subs');
+                  setSubscriptionSubTab('mc');
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                  billingSectionFocus === 'mc_subs' || (billingSectionFocus === 'all' && subscriptionSubTab === 'mc')
+                    ? 'bg-[#15110e] text-[#dfc194]'
+                    : 'text-[#8b7b6b] hover:text-[#15110e] hover:bg-white'
+                }`}
+              >
+                <span>🎙️ MC Subscriptions ({tenants.length})</span>
               </button>
               <button
                 type="button"
                 onClick={() => setBillingSectionFocus('transactions')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0 ${
                   billingSectionFocus === 'transactions'
                     ? 'bg-[#15110e] text-[#dfc194]'
                     : 'text-[#8b7b6b] hover:text-[#15110e] hover:bg-white'
@@ -1076,7 +1088,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
               <button
                 type="button"
                 onClick={() => setBillingSectionFocus('plans')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0 ${
                   billingSectionFocus === 'plans'
                     ? 'bg-[#15110e] text-[#dfc194]'
                     : 'text-[#8b7b6b] hover:text-[#15110e] hover:bg-white'
@@ -1087,162 +1099,306 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
             </div>
 
             {/* ============================================================== */}
-            {/* 1. ACTIVE MC SUBSCRIPTIONS & FEATURE ENTITLEMENTS TABLE        */}
+            {/* 1. DUAL SUBSCRIPTION MANAGEMENT (COUPLE VS MC SUBSCRIPTIONS)   */}
             {/* ============================================================== */}
-            {(billingSectionFocus === 'all' || billingSectionFocus === 'subscriptions') && (
-              <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            {(billingSectionFocus === 'all' || billingSectionFocus === 'couple_subs' || billingSectionFocus === 'mc_subs') && (
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-5">
+                {/* Header & Segmented Switcher */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#f0ede4]">
                   <div>
                     <div className="text-[10px] uppercase font-bold tracking-wider text-[#bd9661]">
-                      TENANT SUBSCRIPTIONS
+                      SUBSCRIPTION INTELLIGENCE
                     </div>
                     <h2 className="font-serif text-xl font-bold text-[#15110e] mt-0.5">
-                      Active Subscriptions &amp; Feature Entitlements
+                      Platform Subscriptions &amp; Feature Entitlements
                     </h2>
-                    <p className="text-xs text-[#8b7b6b]">
-                      Showing active subscriptions across all MCs, enabled features according to each subscription, and direct access to view transactions.
+                    <p className="text-xs text-[#8b7b6b] mt-0.5">
+                      Monitor active wedding passes purchased by couples and recurring SaaS memberships paid by MCs.
                     </p>
                   </div>
-                  <span className="text-xs font-bold text-[#15110e] bg-[#faf6f0] border border-[#ebd3a8] px-3 py-1 rounded-full self-start sm:self-auto">
-                    {tenants.filter(t => t.status === 'Active').length} Active Paying MCs
-                  </span>
+
+                  {/* 2 Subscriptions Switcher */}
+                  <div className="grid grid-cols-2 gap-1.5 bg-[#f5ede2] p-1 rounded-xl border border-[#ebdcc9] self-start sm:self-auto shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setSubscriptionSubTab('couple')}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                        subscriptionSubTab === 'couple'
+                          ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
+                          : 'text-[#6b5847] hover:text-[#15110e]'
+                      }`}
+                    >
+                      <span>👰 Couple Subscriptions</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#3a2f26] text-[#dfc194]">
+                        {(state.weddings || []).length}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSubscriptionSubTab('mc')}
+                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                        subscriptionSubTab === 'mc'
+                          ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
+                          : 'text-[#6b5847] hover:text-[#15110e]'
+                      }`}
+                    >
+                      <span>🎙️ MC Subscriptions</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#3a2f26] text-[#dfc194]">
+                        {tenants.length}
+                      </span>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="border-b border-[#e8ded0] text-[10px] uppercase tracking-wider text-[#8b7b6b] bg-[#faf8f5]">
-                        <th className="py-3 px-3 font-bold">MC Agency &amp; Host</th>
-                        <th className="py-3 px-3 font-bold">Subscription Plan</th>
-                        <th className="py-3 px-3 font-bold">Status</th>
-                        <th className="py-3 px-3 font-bold">Billing Cycle</th>
-                        <th className="py-3 px-3 font-bold">Next Renewal</th>
-                        <th className="py-3 px-3 font-bold">Features According to Subscription</th>
-                        <th className="py-3 px-3 font-bold text-right">Transactions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#f2ede4]">
-                      {tenants.map((t) => {
-                        const planKey = getTenantPlanKey(t.plan);
-                        const matchedPlan = plans.find(p => p.key.toLowerCase() === planKey.toLowerCase());
-                        const mcTxnCount = mcTransactions.filter(x => x.tenantId === t.id).length;
+                {/* VIEW A: COUPLE SUBSCRIPTIONS TABLE */}
+                {subscriptionSubTab === 'couple' && (
+                  <div className="space-y-3 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between text-xs text-[#8b7b6b]">
+                      <span>Showing active couple passes and celebration subscriptions</span>
+                      <span className="font-bold text-[#15110e] bg-[#faf6f0] border border-[#ebd3a8] px-2.5 py-0.5 rounded-full">
+                        {(state.weddings || []).length} Couple Pass Accounts
+                      </span>
+                    </div>
 
-                        // Features according to each subscription
-                        const featuresList = matchedPlan?.features && matchedPlan.features.length > 0
-                          ? matchedPlan.features
-                          : planKey === 'Pro'
-                          ? [
-                              'Unlimited active weddings',
-                              'AI Seating Optimization Assistant',
-                              'Live interactive run sheets & cues',
-                              'Private MC run sheet & catering summary',
-                              'Multi-coordinator logins'
-                            ]
-                          : planKey === 'Standard'
-                          ? [
-                              'Up to 3 active weddings',
-                              'Drag-and-drop seating studio',
-                              'Custom guest QR links',
-                              'Standard email support'
-                            ]
-                          : [
-                              '1 active wedding at a time',
-                              'Digital RSVPs & basic seating',
-                              'Digital wishing well',
-                              'Standard community support'
-                            ];
-
-                        return (
-                          <tr key={t.id} className="hover:bg-[#fbf9f6] transition-colors">
-                            {/* MC & Contact */}
-                            <td className="py-3.5 px-3">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-full bg-[#15110e] text-[#dfc194] font-bold text-xs flex items-center justify-center shrink-0 border border-[#bd9661]/40">
-                                  {t.contactName.split(' ').map(n => n[0]).join('')}
-                                </div>
-                                <div>
-                                  <div className="font-bold text-[#15110e] text-[13px]">{t.businessName}</div>
-                                  <div className="text-[11px] text-[#8b7b6b]">{t.contactName} &bull; {t.email}</div>
-                                </div>
-                              </div>
-                            </td>
-
-                            {/* Plan */}
-                            <td className="py-3.5 px-3">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-bold text-[#15110e] text-xs">{planKey}</span>
-                                {matchedPlan?.badge && (
-                                  <span className="text-[9px] bg-[#bd9661] text-[#15110e] font-bold px-1.5 py-0.2 rounded">
-                                    {matchedPlan.badge}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="font-mono text-[11px] text-[#bd9661] font-semibold mt-0.5">
-                                ${t.mrr || (matchedPlan ? matchedPlan.price : 199)} / mo AUD
-                              </div>
-                            </td>
-
-                            {/* Status */}
-                            <td className="py-3.5 px-3">
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                t.status === 'Active'
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : 'bg-red-100 text-red-800'
-                              }`}>
-                                {t.status}
-                              </span>
-                            </td>
-
-                            {/* Billing Cycle */}
-                            <td className="py-3.5 px-3 text-[#15110e] font-medium">
-                              Monthly (Stripe)
-                            </td>
-
-                            {/* Renewal */}
-                            <td className="py-3.5 px-3 text-[#8b7b6b]">
-                              {t.status === 'Active' ? '12 Nov 2026' : 'Suspended'}
-                            </td>
-
-                            {/* Features according to each subscription */}
-                            <td className="py-3.5 px-3 max-w-md">
-                              <div className="flex flex-wrap gap-1">
-                                {featuresList.map((feat, fIdx) => (
-                                  <span
-                                    key={fIdx}
-                                    className="bg-[#faf5ee] border border-[#ebd3a8] text-[#544332] text-[10.5px] px-2 py-0.5 rounded-md flex items-center gap-1"
-                                    title={feat}
-                                  >
-                                    <span className="text-[#bd9661] font-bold text-[9px]">✓</span>
-                                    <span className="truncate max-w-[200px]">{feat}</span>
-                                  </span>
-                                ))}
-                              </div>
-                            </td>
-
-                            {/* Action: View Transactions */}
-                            <td className="py-3.5 px-3 text-right">
-                              <button
-                                type="button"
-                                onClick={() => handleViewTransactionsForMc(t.id)}
-                                className="px-3 py-1.5 rounded-lg bg-[#15110e] hover:bg-[#251e18] text-[#dfc194] hover:text-white font-bold text-[11px] cursor-pointer transition-colors shadow-2xs inline-flex items-center gap-1.5"
-                                title={`View all transactions for ${t.contactName}`}
-                              >
-                                <span>View Transactions</span>
-                                <span className="bg-[#2a2119] text-[#bd9661] text-[10px] font-bold px-1.5 py-0.2 rounded-full">
-                                  {mcTxnCount}
-                                </span>
-                              </button>
-                            </td>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-[#e8ded0] text-[10px] uppercase tracking-wider text-[#8b7b6b] bg-[#faf8f5]">
+                            <th className="py-3 px-3 font-bold">Couple &amp; Celebration</th>
+                            <th className="py-3 px-3 font-bold">Wedding Date &amp; Venue</th>
+                            <th className="py-3 px-3 font-bold">Couple SaaS Tier</th>
+                            <th className="py-3 px-3 font-bold">Status</th>
+                            <th className="py-3 px-3 font-bold">Pass Type</th>
+                            <th className="py-3 px-3 font-bold">Assigned MC / Host</th>
+                            <th className="py-3 px-3 font-bold">Entitlements</th>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                        </thead>
+                        <tbody className="divide-y divide-[#f2ede4]">
+                          {(state.weddings || []).map((w: any) => {
+                            const planName = w.subscriptionPlan?.name || 'Signature Pro Wedding Suite';
+                            const planPrice = w.subscriptionPlan?.price || 299;
+                            const isCouture = planName.toLowerCase().includes('couture');
+                            const isEssential = planName.toLowerCase().includes('essential');
+
+                            return (
+                              <tr key={w.id} className="hover:bg-[#fbf9f6] transition-colors">
+                                <td className="py-3.5 px-3">
+                                  <div className="font-serif font-bold text-[#15110e] text-sm">{w.couple}</div>
+                                  <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                                    {w.partner1} &amp; {w.partner2}
+                                  </div>
+                                </td>
+
+                                <td className="py-3.5 px-3">
+                                  <div className="font-semibold text-[#15110e]">{w.dateDisplay || w.date}</div>
+                                  <div className="text-[11px] text-[#8b7b6b] truncate max-w-[160px]">{w.venue}</div>
+                                </td>
+
+                                <td className="py-3.5 px-3">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="font-bold text-[#15110e] text-xs">{planName}</span>
+                                    <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${
+                                      isCouture ? 'bg-purple-100 text-purple-800' : isEssential ? 'bg-[#e2d8cb] text-[#4a3b2c]' : 'bg-[#bd9661] text-[#15110e]'
+                                    }`}>
+                                      {isCouture ? 'COUTURE' : isEssential ? 'ESSENTIAL' : 'SIGNATURE PRO'}
+                                    </span>
+                                  </div>
+                                  <div className="font-mono text-[11px] text-[#bd9661] font-semibold mt-0.5">
+                                    ${planPrice}.00 AUD (One-Time)
+                                  </div>
+                                </td>
+
+                                <td className="py-3.5 px-3">
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                                    {w.subscriptionPlan?.status || 'Active'}
+                                  </span>
+                                </td>
+
+                                <td className="py-3.5 px-3 text-[#15110e] font-medium">
+                                  Wedding Pass (Stripe)
+                                </td>
+
+                                <td className="py-3.5 px-3">
+                                  <div className="font-semibold text-[#15110e]">
+                                    {w.selectedMc?.name || 'Robert Galati'}
+                                  </div>
+                                  <div className="text-[10px] text-[#8b7b6b]">
+                                    {w.selectedMc?.isPreferredOwn ? 'Couple Preferred Host' : 'Certified Platform MC'}
+                                  </div>
+                                </td>
+
+                                <td className="py-3.5 px-3">
+                                  <div className="flex flex-wrap gap-1 max-w-xs">
+                                    <span className="bg-[#faf5ee] border border-[#ebd3a8] text-[#544332] text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
+                                      <span className="text-[#bd9661] font-bold">✓</span> Joey AI Concierge
+                                    </span>
+                                    <span className="bg-[#faf5ee] border border-[#ebd3a8] text-[#544332] text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
+                                      <span className="text-[#bd9661] font-bold">✓</span> Smart Seating
+                                    </span>
+                                    <span className="bg-[#faf5ee] border border-[#ebd3a8] text-[#544332] text-[10px] px-1.5 py-0.5 rounded flex items-center gap-1">
+                                      <span className="text-[#bd9661] font-bold">✓</span> QaRd Invites
+                                    </span>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* VIEW B: MC / COORDINATOR SUBSCRIPTIONS TABLE */}
+                {subscriptionSubTab === 'mc' && (
+                  <div className="space-y-3 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between text-xs text-[#8b7b6b]">
+                      <span>Showing active MC memberships, public directory listing status, and billing</span>
+                      <span className="font-bold text-[#15110e] bg-[#faf6f0] border border-[#ebd3a8] px-2.5 py-0.5 rounded-full">
+                        {tenants.length} Registered MC Accounts
+                      </span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-[#e8ded0] text-[10px] uppercase tracking-wider text-[#8b7b6b] bg-[#faf8f5]">
+                            <th className="py-3 px-3 font-bold">MC Agency &amp; Host</th>
+                            <th className="py-3 px-3 font-bold">Subscription Plan</th>
+                            <th className="py-3 px-3 font-bold">Directory Listing</th>
+                            <th className="py-3 px-3 font-bold">Status</th>
+                            <th className="py-3 px-3 font-bold">Billing Cycle</th>
+                            <th className="py-3 px-3 font-bold">Next Renewal</th>
+                            <th className="py-3 px-3 font-bold">Features Entitlements</th>
+                            <th className="py-3 px-3 font-bold text-right">Transactions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#f2ede4]">
+                          {tenants.map((t) => {
+                            const planKey = getTenantPlanKey(t.plan);
+                            const matchedPlan = plans.find(p => p.key.toLowerCase() === planKey.toLowerCase());
+                            const mcTxnCount = mcTransactions.filter(x => x.tenantId === t.id).length;
+                            const isPaidListed = t.isListed !== false && (t.mrr > 0 || !t.plan?.toLowerCase().includes('base'));
+
+                            const featuresList = matchedPlan?.features && matchedPlan.features.length > 0
+                              ? matchedPlan.features
+                              : planKey === 'Pro'
+                              ? [
+                                  '★ Public Certified Directory Listing',
+                                  'Up to 5 active weddings simultaneously',
+                                  'Joey AI Matchmaker recommendations',
+                                  'Stripe Connect auto-split payouts',
+                                  'Live run sheets & audio cues'
+                                ]
+                              : planKey === 'Standard'
+                              ? [
+                                  'Up to 3 active weddings',
+                                  'Custom guest QR links',
+                                  'Standard email support'
+                                ]
+                              : [
+                                  '1 active wedding at a time',
+                                  'Run sheets & private speech prompter',
+                                  '⚠️ Unlisted (No directory listing)',
+                                  'Standard community support'
+                                ];
+
+                            return (
+                              <tr key={t.id} className="hover:bg-[#fbf9f6] transition-colors">
+                                <td className="py-3.5 px-3">
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-8 h-8 rounded-full bg-[#15110e] text-[#dfc194] font-bold text-xs flex items-center justify-center shrink-0 border border-[#bd9661]/40">
+                                      {t.contactName.split(' ').map(n => n[0]).join('')}
+                                    </div>
+                                    <div>
+                                      <div className="font-bold text-[#15110e] text-[13px]">{t.businessName}</div>
+                                      <div className="text-[11px] text-[#8b7b6b]">{t.contactName} &bull; {t.email}</div>
+                                    </div>
+                                  </div>
+                                </td>
+
+                                <td className="py-3.5 px-3">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-bold text-[#15110e] text-xs">{planKey}</span>
+                                    {matchedPlan?.badge && (
+                                      <span className="text-[9px] bg-[#bd9661] text-[#15110e] font-bold px-1.5 py-0.2 rounded">
+                                        {matchedPlan.badge}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="font-mono text-[11px] text-[#bd9661] font-semibold mt-0.5">
+                                    ${t.mrr || (matchedPlan ? matchedPlan.price : 149)} / mo AUD
+                                  </div>
+                                </td>
+
+                                <td className="py-3.5 px-3">
+                                  {isPaidListed ? (
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1 w-max">
+                                      <span>★</span> Listed (Public)
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 flex items-center gap-1 w-max">
+                                      <span>⚠️</span> Unlisted (Base)
+                                    </span>
+                                  )}
+                                </td>
+
+                                <td className="py-3.5 px-3">
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                    t.status === 'Active'
+                                      ? 'bg-emerald-100 text-emerald-800'
+                                      : 'bg-red-100 text-red-800'
+                                  }`}>
+                                    {t.status}
+                                  </span>
+                                </td>
+
+                                <td className="py-3.5 px-3 text-[#15110e] font-medium">
+                                  {t.mrr === 0 ? 'Free Base Tier' : 'Monthly (Stripe)'}
+                                </td>
+
+                                <td className="py-3.5 px-3 text-[#8b7b6b]">
+                                  {t.status === 'Active' ? '12 Nov 2026' : 'Suspended'}
+                                </td>
+
+                                <td className="py-3.5 px-3 max-w-md">
+                                  <div className="flex flex-wrap gap-1">
+                                    {featuresList.map((feat, fIdx) => (
+                                      <span
+                                        key={fIdx}
+                                        className="bg-[#faf5ee] border border-[#ebd3a8] text-[#544332] text-[10.5px] px-2 py-0.5 rounded-md flex items-center gap-1"
+                                        title={feat}
+                                      >
+                                        <span className="text-[#bd9661] font-bold text-[9px]">✓</span>
+                                        <span className="truncate max-w-[200px]">{feat}</span>
+                                      </span>
+                                    ))}
+                                  </div>
+                                </td>
+
+                                <td className="py-3.5 px-3 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleViewTransactionsForMc(t.id)}
+                                    className="px-3 py-1.5 rounded-lg bg-[#15110e] hover:bg-[#251e18] text-[#dfc194] hover:text-white font-bold text-[11px] cursor-pointer transition-colors shadow-2xs inline-flex items-center gap-1.5"
+                                  >
+                                    <span>View Transactions</span>
+                                    <span className="bg-[#2a2119] text-[#bd9661] text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+                                      {mcTxnCount}
+                                    </span>
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* ============================================================== */}
             {/* 2. LIVE MC TRANSACTIONS LEDGER (FETCHED LIVE FROM MCs)         */}
             {/* ============================================================== */}
             {(billingSectionFocus === 'all' || billingSectionFocus === 'transactions') && (
@@ -1509,166 +1665,129 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                       SaaS Subscription Tiers &amp; Pricing
                     </h2>
                     <p className="text-xs text-[#8b7b6b] mt-0.5">
-                      {plans.length} configured plans available for self-service or invited MCs
+                      {plans.length} configured plans available for couples and certified MCs
                     </p>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setNewPlanKey('');
-                      setNewPlanTagline('');
-                      setNewPlanPrice(249);
-                      setNewPlanBilling('AUD / mo');
-                      setNewPlanBadge('');
-                      setNewPlanFeatured(false);
-                      setNewPlanFeatures('Up to 5 active weddings at a time\nQaRd physical QR code printing\nAI Seating Optimization Assistant\nFull client messaging suite');
-                      setShowAddPlanModal(true);
-                    }}
-                    className="btn btn-gold btn-sm self-start sm:self-auto flex items-center gap-1.5"
-                  >
-                    <span>+ Add Plan</span>
-                  </button>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center bg-[#f4efe8] p-1 rounded-lg border border-[#ebdcc9] text-xs font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setPlanCategoryFilter('all')}
+                        className={`px-2.5 py-1 rounded transition-colors cursor-pointer ${
+                          planCategoryFilter === 'all' ? 'bg-[#15110e] text-[#dfc194]' : 'text-[#6b5847]'
+                        }`}
+                      >
+                        All ({plans.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPlanCategoryFilter('couple')}
+                        className={`px-2.5 py-1 rounded transition-colors cursor-pointer ${
+                          planCategoryFilter === 'couple' ? 'bg-[#15110e] text-[#dfc194]' : 'text-[#6b5847]'
+                        }`}
+                      >
+                        👰 Couple ({plans.filter(p => p.category === 'couple').length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPlanCategoryFilter('mc')}
+                        className={`px-2.5 py-1 rounded transition-colors cursor-pointer ${
+                          planCategoryFilter === 'mc' ? 'bg-[#15110e] text-[#dfc194]' : 'text-[#6b5847]'
+                        }`}
+                      >
+                        🎙️ MC ({plans.filter(p => p.category === 'mc').length})
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewPlanKey('');
+                        setNewPlanCategory('couple');
+                        setNewPlanTagline('Smart Wedding Suite with Joey AI Concierge');
+                        setNewPlanPrice(299);
+                        setNewPlanBilling('AUD / one-time pass');
+                        setNewPlanBadge('');
+                        setNewPlanFeatured(false);
+                        setNewPlanFeatures('Guest list manager with Adults & Kids RSVP counts\nDigital QaRd mobile invitations & dietary tracking\nGift & Wishing Well ledger (0% platform fee)\nSmart Seating Planner with AI auto-seat solver');
+                        setShowAddPlanModal(true);
+                      }}
+                      className="btn btn-gold btn-sm self-start sm:self-auto flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>+ Add Plan</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="plan-cards-grid">
-                  {plans.map((p) => {
-                    const subCount = tenants.filter(t => getTenantPlanKey(t?.plan).toLowerCase() === p.key.toLowerCase()).length;
-                    return (
-                      <div
-                        key={p.id}
-                        className={`plan-card ${p.featured ? 'featured' : ''} relative flex flex-col justify-between`}
-                      >
-                        {p.badge && (
-                          <div className="plan-featured-badge">{p.badge}</div>
-                        )}
-                        <div>
-                          <div className={`text-xs tracking-wider font-bold uppercase ${p.featured ? 'text-[#bd9661]' : 'text-[#8b7b6b]'}`}>
-                            {p.key}
+                  {plans
+                    .filter(p => {
+                      if (planCategoryFilter === 'all') return true;
+                      if (planCategoryFilter === 'couple') return p.category === 'couple';
+                      if (planCategoryFilter === 'mc') return p.category === 'mc';
+                      return true;
+                    })
+                    .map((p) => {
+                      const planCat = p.category || (p.key.toLowerCase().includes('host') || p.key.toLowerCase().includes('ceremonies') ? 'mc' : 'couple');
+                      const subCount = planCat === 'couple'
+                        ? (state.weddings || []).length
+                        : tenants.filter(t => getTenantPlanKey(t?.plan).toLowerCase() === p.key.toLowerCase()).length;
+
+                      return (
+                        <div
+                          key={p.id}
+                          className={`plan-card ${p.featured ? 'featured' : ''} relative flex flex-col justify-between`}
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <span className={`text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                              planCat === 'couple'
+                                ? 'bg-[#f4ebe1] text-[#7a5a3a] border border-[#e4d4c2]'
+                                : 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]'
+                            }`}>
+                              {planCat === 'couple' ? '👰 Couple Plan' : '🎙️ MC SaaS Tier'}
+                            </span>
+                            {p.badge && (
+                              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-[#bd9661] text-[#15110e]">
+                                {p.badge}
+                              </span>
+                            )}
                           </div>
-                          <h3 className="font-serif text-2xl font-bold text-[#15110e] mt-1">
-                            {p.tagline}
-                          </h3>
-                          <div className="plan-price mt-3">
-                            ${p.price} <small className="text-sm text-[#8b7b6b] font-normal">{p.billingCycle || 'AUD / mo'}</small>
+
+                          <div>
+                            <div className={`text-xs tracking-wider font-bold uppercase ${p.featured ? 'text-[#bd9661]' : 'text-[#8b7b6b]'}`}>
+                              {p.key}
+                            </div>
+                            <h3 className="font-serif text-2xl font-bold text-[#15110e] mt-1">
+                              {p.tagline}
+                            </h3>
+                            <div className="plan-price mt-3">
+                              ${p.price} <small className="text-sm text-[#8b7b6b] font-normal">{p.billingCycle || 'AUD / mo'}</small>
+                            </div>
+                            <ul className="text-xs text-[#5a4b3d] space-y-2 list-none p-0 mt-4">
+                              {(p.features || []).map((feat, fIdx) => (
+                                <li key={fIdx}>✓ {feat}</li>
+                              ))}
+                            </ul>
                           </div>
-                          <ul className="text-xs text-[#5a4b3d] space-y-2 list-none p-0 mt-4">
-                            {(p.features || []).map((feat, fIdx) => (
-                              <li key={fIdx}>✓ {feat}</li>
-                            ))}
-                          </ul>
+
+                          <div className="mt-6 border-t border-[#e8ded0] pt-4 text-xs text-[#8b7b6b] flex justify-between items-center">
+                            <span>
+                              Active Subscribers: <strong className="text-[#15110e]">{subCount}</strong>
+                            </span>
+                            <span className="text-[11px] text-[#bd9661] font-semibold">
+                              ${p.price * subCount} Total
+                            </span>
+                          </div>
                         </div>
-                        <div className="mt-6 border-t border-[#e8ded0] pt-4 text-xs text-[#8b7b6b] flex justify-between items-center">
-                          <span>
-                            Active Subscribers: <strong className="text-[#15110e]">{subCount}</strong>
-                          </span>
-                          <span className="text-[11px] text-[#bd9661] font-semibold">
-                            ${p.price * subCount}/mo MRR
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               </div>
-            )}
-          </section>
+            )}</section>
         )}
 
         {/* TAB 4: FEATURE FLAGS (Matches superadmin.html)                    */}
-        {/* ================================================================ */}
-        {activeTab === 'flags' && (
-          <section className="space-y-6">
-            <div className="page-header">
-              <div>
-                <div className="header-eyebrow text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1">
-                  ENVIRONMENT CONTROLS
-                </div>
-                <h1 className="header-title font-serif text-3xl font-bold text-[#15110e]">
-                  Feature Flags
-                </h1>
-              </div>
-            </div>
-
-            <div className="bg-white border border-[#e8ded0] rounded-[6px] p-6 shadow-sm max-w-[760px]">
-              <div className="toggle-switch-row">
-                <div className="switch-label">
-                  <strong>Stripe Digital Gifting &amp; Wishing Well</strong>
-                  <small>Enable guest contributions via Apple Pay / Credit Card across wedding portals</small>
-                </div>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={featureFlags.digitalGifting}
-                    onChange={() => handleToggleFlag('digitalGifting')}
-                  />
-                  <span className="slider"></span>
-                </label>
-              </div>
-
-              <div className="toggle-switch-row">
-                <div className="switch-label">
-                  <strong>AI Seating Optimization Assistant</strong>
-                  <small>Allow couples and MCs to auto-generate seat pairings by dietary and party constraints</small>
-                </div>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={featureFlags.aiSeating}
-                    onChange={() => handleToggleFlag('aiSeating')}
-                  />
-                  <span className="slider"></span>
-                </label>
-              </div>
-
-              <div className="toggle-switch-row">
-                <div className="switch-label">
-                  <strong>Custom QaRd Printing Pipeline</strong>
-                  <small>Render high-resolution 300 DPI vector PDF print outputs for wedding stationery</small>
-                </div>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={featureFlags.qardPrinting}
-                    onChange={() => handleToggleFlag('qardPrinting')}
-                  />
-                  <span className="slider"></span>
-                </label>
-              </div>
-
-              <div className="toggle-switch-row">
-                <div className="switch-label">
-                  <strong>Real-time Photo Wall Moderation</strong>
-                  <small>Enable instant live photo stream with couple pre-approval filters</small>
-                </div>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={featureFlags.photoModeration}
-                    onChange={() => handleToggleFlag('photoModeration')}
-                  />
-                  <span className="slider"></span>
-                </label>
-              </div>
-
-              <div className="toggle-switch-row">
-                <div className="switch-label">
-                  <strong>Automated SMS RSVP Reminders</strong>
-                  <small>Trigger automated Twilio SMS reminders 14 days before RSVP cutoff</small>
-                </div>
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={featureFlags.smsReminders}
-                    onChange={() => handleToggleFlag('smsReminders')}
-                  />
-                  <span className="slider"></span>
-                </label>
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* ================================================================ */}
         {/* TAB 5: AUDIT LOG (Matches superadmin.html)                        */}
         {/* ================================================================ */}
@@ -2316,6 +2435,53 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
 
             <form onSubmit={handleInviteCoupleSubmit} className="flex flex-col flex-1 overflow-hidden">
               <div className="p-6 overflow-y-auto space-y-4 flex-1">
+                {/* PLAN AUDIENCE / CATEGORY SELECTOR */}
+                <div className="bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8ded0] space-y-2">
+                  <label className="field-label text-xs font-bold text-[#15110e]">
+                    Plan Target Audience / Category *
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewPlanCategory('couple');
+                        setNewPlanPrice(299);
+                        setNewPlanBilling('AUD / one-time pass');
+                        setNewPlanTagline('Smart Wedding Suite with Joey AI Concierge');
+                        setNewPlanFeatures('Guest list manager with Adults & Kids RSVP counts\nDigital QaRd mobile invitations & dietary tracking\nGift & Wishing Well ledger (0% platform fee)\nSmart Seating Planner with AI auto-seat solver\nJoey AI Concierge & Live Run Sheet Sync');
+                      }}
+                      className={`py-2 px-3 rounded-lg border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                        newPlanCategory === 'couple'
+                          ? 'bg-[#15110e] text-[#dfc194] border-[#15110e] shadow-xs ring-1 ring-[#bd9661]'
+                          : 'bg-white text-[#6b5847] border-[#d5c7b5] hover:border-[#bd9661]'
+                      }`}
+                    >
+                      <span>👰 Couple Wedding Pass</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewPlanCategory('mc');
+                        setNewPlanPrice(149);
+                        setNewPlanBilling('AUD / mo');
+                        setNewPlanTagline('Certified Public Directory Host');
+                        setNewPlanFeatures('★ Certified Public Directory Listing (Bookable by couples)\nUp to 5 active weddings simultaneously\nJoey AI Matchmaker recommendations to couples\nStripe Connect automated client payout split\nLive interactive run sheets & speech prompter');
+                      }}
+                      className={`py-2 px-3 rounded-lg border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                        newPlanCategory === 'mc'
+                          ? 'bg-[#15110e] text-[#dfc194] border-[#15110e] shadow-xs ring-1 ring-[#bd9661]'
+                          : 'bg-white text-[#6b5847] border-[#d5c7b5] hover:border-[#bd9661]'
+                      }`}
+                    >
+                      <span>🎙️ MC / Coordinator SaaS</span>
+                    </button>
+                  </div>
+                  <span className="text-[10.5px] text-[#8b7b6b] block">
+                    {newPlanCategory === 'couple'
+                      ? 'Couple passes are charged per celebration for digital RSVPs, seating, and live runsheet sync.'
+                      : 'MC plans are recurring SaaS memberships for professional hosts, directory listings, and client run sheets.'}
+                  </span>
+                </div>
                 <p className="text-xs text-[#8b7b6b]">
                   Send a dedicated onboarding invite to the couple. They will be directed to register their wedding details, select a SaaS subscription, and collaborate with their MC.
                 </p>

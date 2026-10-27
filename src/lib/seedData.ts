@@ -7,6 +7,7 @@ export const initialPlans: SaaSPlan[] = [
     tagline: "Smart Wedding Essentials",
     price: 149,
     billingCycle: "AUD / one-time pass",
+    category: "couple",
     features: [
       "Guest list manager with Adults & Kids RSVP counts",
       "Digital QaRd mobile invitations & dietary tracking",
@@ -23,6 +24,7 @@ export const initialPlans: SaaSPlan[] = [
     billingCycle: "AUD / one-time pass",
     badge: "MOST POPULAR",
     featured: true,
+    category: "couple",
     features: [
       "Everything in Essential",
       "Joey AI Wedding Concierge & Prompting Assistant",
@@ -38,6 +40,7 @@ export const initialPlans: SaaSPlan[] = [
     tagline: "VIP Concierge & Full-Service Suite",
     price: 499,
     billingCycle: "AUD / one-time pass",
+    category: "couple",
     features: [
       "Everything in Signature Pro",
       "VIP MC Concierge Matchmaking & custom contract",
@@ -47,8 +50,57 @@ export const initialPlans: SaaSPlan[] = [
       "Full export package (CSV, PDF run sheets, table cards)",
     ],
   },
+  {
+    id: "plan_mc_starter",
+    key: "Community Host (Base)",
+    tagline: "Essential Private MC Host",
+    price: 0,
+    billingCycle: "AUD / free",
+    badge: "BASE PLAN",
+    category: "mc",
+    features: [
+      "1 active wedding coordination at a time",
+      "Interactive live run sheets & timing cues",
+      "Direct client runsheet sync with nominated couple",
+      "⚠️ Unlisted — Does NOT appear in Public MC Directory",
+      "Standard community support",
+    ],
+  },
+  {
+    id: "plan_mc_pro",
+    key: "Pro Master of Ceremonies",
+    tagline: "Certified Public Directory Host",
+    price: 149,
+    billingCycle: "AUD / mo",
+    badge: "MOST POPULAR",
+    featured: true,
+    category: "mc",
+    features: [
+      "★ Certified Public Directory Listing (Bookable by couples)",
+      "Up to 5 active weddings simultaneously",
+      "Joey AI Matchmaker recommendations to couples",
+      "Stripe Connect automated client payout split",
+      "Live interactive run sheets & speech prompter",
+    ],
+  },
+  {
+    id: "plan_mc_agency",
+    key: "Boutique Agency / Host",
+    tagline: "Top-Tier Agency & Multi-Coordinator Suite",
+    price: 299,
+    billingCycle: "AUD / mo",
+    badge: "ENTERPRISE",
+    category: "mc",
+    features: [
+      "★ Priority Top Featured Placement in Couple Directory",
+      "Unlimited active weddings simultaneously",
+      "Multi-coordinator staff logins & permissions",
+      "Automated Xero accounting sync for invoices",
+      "Custom white-label branding on runsheets",
+      "Dedicated VIP Account Concierge",
+    ],
+  },
 ];
-
 
 export const initialMcTransactions: McTransaction[] = [
   {
