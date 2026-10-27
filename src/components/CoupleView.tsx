@@ -1959,13 +1959,18 @@ export default function CoupleView({
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">Mobile Phone (for QaRd)</label>
-                      <input
-                        type="text"
-                        value={newGuestPhone}
-                        onChange={(e) => setNewGuestPhone(e.target.value)}
-                        placeholder="0412 884 992"
-                        className="w-full bg-white border border-[#e8ded0] rounded-lg p-2 outline-none focus:border-[#bd9661]"
-                      />
+                      <div className="flex">
+                        <span className="inline-flex items-center px-2.5 border border-r-0 border-[#e8ded0] bg-[#faf8f5] text-xs font-bold font-mono text-[#8b7b6b] rounded-l-lg select-none">
+                          +61
+                        </span>
+                        <input
+                          type="tel"
+                          value={newGuestPhone}
+                          onChange={(e) => setNewGuestPhone(e.target.value)}
+                          placeholder="0412 884 992"
+                          className="w-full bg-white border border-[#e8ded0] rounded-r-lg rounded-l-none p-2 outline-none focus:border-[#bd9661] text-xs"
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">Guest Category / Group</label>
@@ -2081,14 +2086,19 @@ export default function CoupleView({
                       <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
                         Phone Number
                       </label>
-                      <input
-                        type="text"
-                        required
-                        value={editingFamilyContact.phone}
-                        onChange={(e) => setEditingFamilyContact({ ...editingFamilyContact, phone: e.target.value })}
-                        placeholder="0412 884 991"
-                        className="w-full bg-white border border-[#e8ded0] rounded-lg p-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-                      />
+                      <div className="flex">
+                        <span className="inline-flex items-center px-2.5 border border-r-0 border-[#e8ded0] bg-[#faf8f5] text-xs font-bold font-mono text-[#8b7b6b] rounded-l-lg select-none">
+                          +61
+                        </span>
+                        <input
+                          type="tel"
+                          required
+                          value={editingFamilyContact.phone}
+                          onChange={(e) => setEditingFamilyContact({ ...editingFamilyContact, phone: e.target.value })}
+                          placeholder="0412 884 991"
+                          className="w-full bg-white border border-[#e8ded0] rounded-r-lg rounded-l-none p-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">

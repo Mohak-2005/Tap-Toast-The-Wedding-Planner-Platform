@@ -1421,12 +1421,17 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-1">Direct Phone</label>
-                    <input
-                      type="text"
-                      value={profileForm.phone}
-                      onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                      className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 outline-none focus:border-[#bd9661]"
-                    />
+                    <div className="flex">
+                      <span className="inline-flex items-center px-2.5 border border-r-0 border-[#e8ded0] bg-[#faf8f5] text-xs font-bold font-mono text-[#8b7b6b] rounded-l-xl select-none">
+                        +61
+                      </span>
+                      <input
+                        type="tel"
+                        value={profileForm.phone}
+                        onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                        className="w-full bg-white border border-[#e8ded0] rounded-r-xl rounded-l-none p-2.5 text-xs outline-none focus:border-[#bd9661]"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-1">Direct Email</label>

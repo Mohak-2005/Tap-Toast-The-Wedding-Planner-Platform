@@ -2438,13 +2438,18 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                       <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
                         MC Mobile / Phone Number
                       </label>
-                      <input
-                        type="tel"
-                        value={ownMcPhone}
-                        onChange={(e) => setOwnMcPhone(e.target.value)}
-                        placeholder="e.g. 0412 888 777"
-                        className="w-full bg-white border border-[#d5c7b5] rounded-lg p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-                      />
+                      <div className="flex">
+                        <span className="inline-flex items-center px-3 border border-r-0 border-[#d5c7b5] bg-[#f5ede2] text-xs font-bold font-mono text-[#6b5847] rounded-l-lg select-none">
+                          +61
+                        </span>
+                        <input
+                          type="tel"
+                          value={ownMcPhone}
+                          onChange={(e) => setOwnMcPhone(e.target.value)}
+                          placeholder="0412 888 777"
+                          className="w-full bg-white border border-[#d5c7b5] rounded-r-lg rounded-l-none p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                        />
+                      </div>
                     </div>
 
                     <div>

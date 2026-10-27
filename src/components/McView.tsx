@@ -1799,12 +1799,17 @@ export default function McView({ onSelectView }: McViewProps) {
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
                       Direct Phone
                     </label>
-                    <input
-                      type="text"
-                      value={mcPhone}
-                      onChange={(e) => setMcPhone(e.target.value)}
-                      className="text-input"
-                    />
+                    <div className="flex">
+                      <span className="inline-flex items-center px-3 border border-r-0 border-[#d5c7b5] bg-[#f5ede2] text-xs font-bold font-mono text-[#6b5847] rounded-l select-none">
+                        +61
+                      </span>
+                      <input
+                        type="tel"
+                        value={mcPhone}
+                        onChange={(e) => setMcPhone(e.target.value)}
+                        className="text-input rounded-l-none"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
@@ -2432,13 +2437,18 @@ export default function McView({ onSelectView }: McViewProps) {
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
                     Mobile Phone
                   </label>
-                  <input
-                    type="tel"
-                    placeholder="e.g. 0422 990 112"
-                    value={invPhone}
-                    onChange={(e) => setInvPhone(e.target.value)}
-                    className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] focus:bg-white"
-                  />
+                  <div className="flex">
+                    <span className="inline-flex items-center px-3 border border-r-0 border-[#e8ded0] bg-[#faf8f5] text-xs font-bold font-mono text-[#8b7b6b] rounded-l-xl select-none">
+                      +61
+                    </span>
+                    <input
+                      type="tel"
+                      placeholder="e.g. 0422 990 112"
+                      value={invPhone}
+                      onChange={(e) => setInvPhone(e.target.value)}
+                      className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-r-xl rounded-l-none px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] focus:bg-white"
+                    />
+                  </div>
                 </div>
               </div>
 

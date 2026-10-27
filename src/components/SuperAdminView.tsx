@@ -2880,14 +2880,19 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                     </div>
                     <div className="field-group">
                       <label className="field-label text-xs font-bold text-[#15110e]">Groom Phone Number *</label>
-                      <input
-                        type="tel"
-                        required
-                        placeholder="0412 345 678"
-                        value={groomPhone}
-                        onChange={(e) => setGroomPhone(e.target.value)}
-                        className="text-input"
-                      />
+                      <div className="flex">
+                        <span className="inline-flex items-center px-3 border border-r-0 border-[#d5c7b5] bg-[#f5ede2] text-xs font-bold font-mono text-[#6b5847] rounded-l select-none">
+                          +61
+                        </span>
+                        <input
+                          type="tel"
+                          required
+                          placeholder="0412 345 678"
+                          value={groomPhone}
+                          onChange={(e) => setGroomPhone(e.target.value)}
+                          className="text-input rounded-l-none"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2923,14 +2928,19 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                     </div>
                     <div className="field-group">
                       <label className="field-label text-xs font-bold text-[#15110e]">Bride Phone Number *</label>
-                      <input
-                        type="tel"
-                        required
-                        placeholder="0423 456 789"
-                        value={bridePhone}
-                        onChange={(e) => setBridePhone(e.target.value)}
-                        className="text-input"
-                      />
+                      <div className="flex">
+                        <span className="inline-flex items-center px-3 border border-r-0 border-[#d5c7b5] bg-[#f5ede2] text-xs font-bold font-mono text-[#6b5847] rounded-l select-none">
+                          +61
+                        </span>
+                        <input
+                          type="tel"
+                          required
+                          placeholder="0423 456 789"
+                          value={bridePhone}
+                          onChange={(e) => setBridePhone(e.target.value)}
+                          className="text-input rounded-l-none"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -3071,16 +3081,21 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                     />
                   </div>
                   <div className="field-group">
-  <label className="field-label">MC Phone No</label>
-  <input
-    type="tel"
-    required
-    placeholder="e.g. 0412 884 991"
-    value={invPhone}
-    onChange={(e) => setInvPhone(e.target.value)}
-    className="text-input"
-  />
-</div>
+                    <label className="field-label">MC Phone No</label>
+                    <div className="flex">
+                      <span className="inline-flex items-center px-3 border border-r-0 border-[#d5c7b5] bg-[#f5ede2] text-xs font-bold font-mono text-[#6b5847] rounded-l select-none">
+                        +61
+                      </span>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="0412 884 991"
+                        value={invPhone}
+                        onChange={(e) => setInvPhone(e.target.value)}
+                        className="text-input rounded-l-none"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="px-6 py-4 bg-[#faf8f5] border-t border-[#e8ded0] flex justify-end gap-3">
