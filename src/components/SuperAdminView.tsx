@@ -763,13 +763,6 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setShowInviteCoupleModal(true)}
-                    className="btn btn-outline btn-sm font-bold flex items-center gap-1.5 border-[#bd9661] text-[#bd9661] hover:bg-[#bd9661] hover:text-[#15110e] cursor-pointer"
-                  >
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5"/></svg><span>Invite Couple</span>
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => setShowInviteModal(true)}
                     className="btn btn-gold btn-sm"
                   >
@@ -861,13 +854,6 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                 </h1>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowInviteCoupleModal(true)}
-                  className="btn btn-outline btn-sm font-bold flex items-center gap-1.5 border-[#bd9661] text-[#bd9661] hover:bg-[#bd9661] hover:text-[#15110e] cursor-pointer"
-                >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5"/></svg><span>Invite Couple</span>
-                </button>
                 <button
                   type="button"
                   onClick={() => setShowInviteModal(true)}
@@ -2849,53 +2835,6 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
 
             <form onSubmit={handleInviteCoupleSubmit} className="flex flex-col flex-1 overflow-hidden">
               <div className="p-6 overflow-y-auto space-y-4 flex-1">
-                {/* PLAN AUDIENCE / CATEGORY SELECTOR */}
-                <div className="bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8ded0] space-y-2">
-                  <label className="field-label text-xs font-bold text-[#15110e]">
-                    Plan Target Audience / Category *
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNewPlanCategory('couple');
-                        setNewPlanPrice(299);
-                        setNewPlanBilling('AUD / one-time pass');
-                        setNewPlanTagline('Smart Wedding Suite with Joey AI Concierge');
-                        setNewPlanFeatures('Guest list manager with Adults & Kids RSVP counts\nDigital QaRd mobile invitations & dietary tracking\nGift & Wishing Well ledger (0% platform fee)\nSmart Seating Planner with AI auto-seat solver\nJoey AI Concierge & Live Run Sheet Sync');
-                      }}
-                      className={`py-2 px-3 rounded-lg border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                        newPlanCategory === 'couple'
-                          ? 'bg-[#15110e] text-[#dfc194] border-[#15110e] shadow-xs ring-1 ring-[#bd9661]'
-                          : 'bg-white text-[#6b5847] border-[#d5c7b5] hover:border-[#bd9661]'
-                      }`}
-                    >
-                      <span>Couple Wedding Pass</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setNewPlanCategory('mc');
-                        setNewPlanPrice(149);
-                        setNewPlanBilling('AUD / mo');
-                        setNewPlanTagline('Certified Public Directory Host');
-                        setNewPlanFeatures('★ Certified Public Directory Listing (Bookable by couples)\nUp to 5 active weddings simultaneously\nJoey AI Matchmaker recommendations to couples\nStripe Connect automated client payout split\nLive interactive run sheets & speech prompter');
-                      }}
-                      className={`py-2 px-3 rounded-lg border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                        newPlanCategory === 'mc'
-                          ? 'bg-[#15110e] text-[#dfc194] border-[#15110e] shadow-xs ring-1 ring-[#bd9661]'
-                          : 'bg-white text-[#6b5847] border-[#d5c7b5] hover:border-[#bd9661]'
-                      }`}
-                    >
-                      <span>MC / Coordinator SaaS</span>
-                    </button>
-                  </div>
-                  <span className="text-[10.5px] text-[#8b7b6b] block">
-                    {newPlanCategory === 'couple'
-                      ? 'Couple passes are charged per celebration for digital RSVPs, seating, and live runsheet sync.'
-                      : 'MC plans are recurring SaaS memberships for professional hosts, directory listings, and client run sheets.'}
-                  </span>
-                </div>
                 <p className="text-xs text-[#8b7b6b]">
                   Send a dedicated onboarding invite to the couple. They will be directed to register their wedding details, select a SaaS subscription, and collaborate with their MC.
                 </p>
@@ -2967,9 +2906,9 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                       onChange={(e) => setCoupleAssignedMc(e.target.value)}
                       className="text-input"
                     >
-                      <option value="Robert Galati (Galati MC Services)">Robert Galati ($1,850 · 5.0 ⭐)</option>
-                      <option value="Marcus Thorne (Thorne Signature Hosts)">Marcus Thorne ($1,650 · 4.9 ⭐)</option>
-                      <option value="Elena Rostova (Artisan Wedding MCs)">Elena Rostova ($1,750 · 5.0 ⭐)</option>
+                      <option value="Robert Galati (Galati MC Services)">Robert Galati ($1,850 · 5.0 Rating)</option>
+                      <option value="Marcus Thorne (Thorne Signature Hosts)">Marcus Thorne ($1,650 · 4.9 Rating)</option>
+                      <option value="Elena Rostova (Artisan Wedding MCs)">Elena Rostova ($1,750 · 5.0 Rating)</option>
                       <option value="Open / Let Couple Choose">Open / Let Couple Choose via Joey AI</option>
                     </select>
                   </div>
