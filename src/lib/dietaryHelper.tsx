@@ -36,7 +36,7 @@ interface DietaryBadgesProps {
 
 /**
  * Renders dietary requirements as discrete, styled, non-wrapping badge pills
- * with distinct color accents for each diet category.
+ * with refined editorial colors matching the Tap & Toast luxury brand palette.
  */
 export function DietaryBadges({
   dietary,
@@ -56,22 +56,22 @@ export function DietaryBadges({
     // Gluten-Free / Celiac
     if (lower.includes('gluten') || lower.includes('celiac') || lower.includes('gf')) {
       return {
-        wrapper: 'bg-amber-50 text-amber-800 border border-amber-200/90 shadow-2xs',
-        dot: 'bg-amber-500',
+        wrapper: 'bg-[#fbf7f0] text-[#6b4c1e] border border-[#ecdcc3]',
+        dot: 'bg-[#b8863b]',
       };
     }
     // Vegan
     if (lower.includes('vegan')) {
       return {
-        wrapper: 'bg-teal-50 text-teal-800 border border-teal-200/90 shadow-2xs',
-        dot: 'bg-teal-500',
+        wrapper: 'bg-[#f3f7f5] text-[#244b3c] border border-[#d2e4dc]',
+        dot: 'bg-[#3f7360]',
       };
     }
     // Vegetarian
     if (lower.includes('veg') || lower.includes('vegetarian')) {
       return {
-        wrapper: 'bg-emerald-50 text-emerald-800 border border-emerald-200/90 shadow-2xs',
-        dot: 'bg-emerald-500',
+        wrapper: 'bg-[#f5f8f3] text-[#2c4731] border border-[#d8e4d3]',
+        dot: 'bg-[#4d7054]',
       };
     }
     // Allergies (Nut, Peanut, Shellfish, Dairy, Egg)
@@ -84,20 +84,20 @@ export function DietaryBadges({
       lower.includes('egg')
     ) {
       return {
-        wrapper: 'bg-rose-50 text-rose-800 border border-rose-200/90 shadow-2xs',
-        dot: 'bg-rose-500',
+        wrapper: 'bg-[#fcf4f3] text-[#732d27] border border-[#ecd3cf]',
+        dot: 'bg-[#a64840]',
       };
     }
     // Halal / Kosher
     if (lower.includes('halal') || lower.includes('kosher')) {
       return {
-        wrapper: 'bg-sky-50 text-sky-800 border border-sky-200/90 shadow-2xs',
-        dot: 'bg-sky-500',
+        wrapper: 'bg-[#f4f6fa] text-[#2d4361] border border-[#d7dfeb]',
+        dot: 'bg-[#4a6b94]',
       };
     }
-    // Default luxury badge
+    // Default luxury neutral badge
     return {
-      wrapper: 'bg-[#faf6f0] text-[#7d5f30] border border-[#ebd8b6] shadow-2xs',
+      wrapper: 'bg-[#faf7f2] text-[#524436] border border-[#e8ded0]',
       dot: 'bg-[#bd9661]',
     };
   };
@@ -106,8 +106,8 @@ export function DietaryBadges({
     size === 'xs'
       ? 'px-1.5 py-0.5 text-[9.5px]'
       : size === 'sm'
-      ? 'px-2 py-0.5 text-[10px]'
-      : 'px-2.5 py-0.5 text-[11px]';
+      ? 'px-2 py-0.5 text-[10.5px]'
+      : 'px-2.5 py-1 text-[11px]';
 
   return (
     <div className={`flex flex-wrap gap-1.5 items-center ${className}`}>
@@ -116,7 +116,7 @@ export function DietaryBadges({
         return (
           <span
             key={idx}
-            className={`inline-flex items-center gap-1.5 rounded-md font-semibold whitespace-nowrap transition-colors select-none ${padClass} ${style.wrapper}`}
+            className={`inline-flex items-center gap-1.5 rounded-md font-medium whitespace-nowrap select-none shadow-2xs ${padClass} ${style.wrapper}`}
           >
             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`} />
             <span className="whitespace-nowrap">{item}</span>

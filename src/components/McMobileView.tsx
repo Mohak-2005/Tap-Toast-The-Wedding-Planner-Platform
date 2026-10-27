@@ -253,20 +253,12 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
       const tableLabel = tbl ? tbl.name : 'Unassigned';
 
       let familyName = householdKey;
-      let memberNames = members.map(m => m.name).join(', ');
-      if (members.length === 2) {
-        const p0 = members[0].name.split(' ');
-        const p1 = members[1].name.split(' ');
-        if (p0.length > 1 && p1.length > 1 && p0[p0.length - 1] === p1[p1.length - 1]) {
-          familyName = `${p0[0]} & ${p1[0]} ${p0[p0.length - 1]}`;
-        } else {
-          familyName = `${members[0].name} & ${members[1].name}`;
-        }
-      } else if (members.length > 2 && householdKey.toLowerCase().includes('family')) {
-        familyName = `${members[0].name} & Family`;
-      } else if (members.length === 1) {
-        familyName = members[0].name;
+      if (!familyName || familyName.trim() === '' || familyName.toLowerCase() === 'individual' || familyName === members[0].name) {
+        const parts = members[0].name.trim().split(' ');
+        const lastName = parts.length > 1 ? parts[parts.length - 1] : '';
+        familyName = lastName ? `The ${lastName} Family` : `${members[0].name} Household`;
       }
+      const memberNames = members.map(m => m.name).join(', ');
 
       groups.push({
         id: `fam_${householdKey.replace(/[^a-zA-Z0-9]/g, '_')}`,
@@ -2267,7 +2259,10 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                     mobileGuestViewMode === 'individual' ? 'bg-[#15110e] text-[#dfc194] shadow-xs' : 'text-[#8b7b6b]'
                   }`}
                 >
-                  <span>👤</span>
+                  <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
                   <span>Individuals ({weddingGuests.length})</span>
                 </button>
                 <button
@@ -2277,7 +2272,12 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                     mobileGuestViewMode === 'family' ? 'bg-[#15110e] text-[#dfc194] shadow-xs' : 'text-[#8b7b6b]'
                   }`}
                 >
-                  <span>👨‍👩‍👧‍👦</span>
+                  <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
                   <span>By Family ({mobileFamilyGroups.length})</span>
                 </button>
               </div>
@@ -2350,7 +2350,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                           <div className="min-w-0 space-y-0.5">
                             <div className="font-bold text-[#15110e] truncate">{fam.familyName}</div>
                             <div className="text-[10px] text-[#8b7b6b] truncate">
-                              {fam.householdKey} · {fam.memberNames}
+                              {fam.memberNames} · {fam.members.length} {fam.members.length === 1 ? 'member' : 'members'}
                             </div>
                             <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                               <span className="bg-[#f5ede2] text-[#15110e] font-semibold text-[9.5px] px-1.5 py-0.2 rounded border border-[#e2d5c5]">
