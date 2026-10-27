@@ -40,6 +40,10 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
   const [isUnassignedDrawerOpen, setIsUnassignedDrawerOpen] = useState<boolean>(true);
   const [isGuestListCollapsed, setIsGuestListCollapsed] = useState<boolean>(false);
 
+  // Drilldown Level 2 Roster Panel Tab & Search
+  const [drilldownRosterTab, setDrilldownRosterTab] = useState<'assigned' | 'unassigned'>('assigned');
+  const [drilldownGuestSearch, setDrilldownGuestSearch] = useState<string>('');
+
   // Modals & Panels
   const [showAddTableModal, setShowAddTableModal] = useState<boolean>(false);
   const [showExportModal, setShowExportModal] = useState<boolean>(false);
@@ -263,6 +267,23 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
     return weddingGuests.filter((g) => g.tableId === selectedTableId);
   }, [selectedTableId, weddingGuests]);
 
+  // All unassigned guests across this wedding (independent of drawer filters)
+  const allWeddingUnassignedGuests = useMemo(() => {
+    return weddingGuests.filter((g) => !g.tableId || g.tableId === null);
+  }, [weddingGuests]);
+
+  // Filtered remaining guests for Level 2 drilldown panel
+  const filteredDrilldownRemainingGuests = useMemo(() => {
+    if (!drilldownGuestSearch.trim()) return allWeddingUnassignedGuests;
+    const q = drilldownGuestSearch.toLowerCase();
+    return allWeddingUnassignedGuests.filter(
+      (g) =>
+        g.name.toLowerCase().includes(q) ||
+        (g.household && g.household.toLowerCase().includes(q)) ||
+        (g.dietary && g.dietary.toLowerCase().includes(q))
+    );
+  }, [allWeddingUnassignedGuests, drilldownGuestSearch]);
+
   // All confirmed guests
   const confirmedGuests = useMemo(() => {
     return weddingGuests.filter((g) => g.rsvpStatus === 'confirmed');
@@ -315,32 +336,69 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
 
   // --- Handlers ---
 
-  // Assign a guest to a specific table & seat
+  // Assign a guest to a specific table & seat (handles drops, swaps & vacant placement)
   const handleAssignGuest = (guestId: string, tableId: string, seatIndex?: number) => {
     const targetTable = tables.find((t) => t.id === tableId);
     if (!targetTable) return;
 
+    const guestObj = state.guests.find((g) => g.id === guestId);
+    if (!guestObj) return;
+
+    const isAlreadyAtThisTable = guestObj.tableId === tableId;
     const currentSeated = state.guests.filter((g) => g.tableId === tableId);
-    if (currentSeated.length >= targetTable.capacity) {
-      showToast(`${targetTable.name} is already full (${targetTable.capacity}/${targetTable.capacity} seats occupied)`, 'error');
+
+    // If guest is coming from unassigned / another table, verify capacity
+    if (!isAlreadyAtThisTable && currentSeated.length >= targetTable.capacity) {
+      showToast(`${targetTable.name} is already at full capacity (${targetTable.capacity}/${targetTable.capacity} occupied)`, 'error');
       return;
     }
 
+    // Moving / Swapping within the active table
+    if (isAlreadyAtThisTable && seatIndex !== undefined) {
+      const occupantAtTarget = currentSeated.find((g) => g.seatIndex === seatIndex && g.id !== guestId);
+      if (occupantAtTarget) {
+        // Swap seats between the two seated guests
+        const oldSeat = guestObj.seatIndex ?? 0;
+        const updated = state.guests.map((g) => {
+          if (g.id === guestId) return { ...g, seatIndex };
+          if (g.id === occupantAtTarget.id) return { ...g, seatIndex: oldSeat };
+          return g;
+        });
+        setState({ ...state, guests: updated });
+        showToast(`Swapped seats: ${guestObj.name} (Seat ${seatIndex + 1}) & ${occupantAtTarget.name} (Seat ${oldSeat + 1})`, 'info');
+        return;
+      } else {
+        const updated = state.guests.map((g) => (g.id === guestId ? { ...g, seatIndex } : g));
+        setState({ ...state, guests: updated });
+        showToast(`Moved ${guestObj.name} to Seat ${seatIndex + 1}`, 'success');
+        return;
+      }
+    }
+
+    // Seating from unassigned or another table
     let targetSeat = seatIndex !== undefined ? seatIndex : -1;
-    if (targetSeat < 0 || currentSeated.some((g) => g.seatIndex === targetSeat)) {
+    const isTargetOccupied = targetSeat >= 0 && currentSeated.some((g) => g.seatIndex === targetSeat && g.id !== guestId);
+
+    if (targetSeat < 0 || targetSeat >= targetTable.capacity || isTargetOccupied) {
       // Find first vacant seat index
+      let firstVacant = -1;
       for (let i = 0; i < targetTable.capacity; i++) {
         if (!currentSeated.some((g) => g.seatIndex === i)) {
-          targetSeat = i;
+          firstVacant = i;
           break;
         }
       }
+      if (firstVacant === -1) {
+        showToast(`No vacant seats available at ${targetTable.name}`, 'error');
+        return;
+      }
+      targetSeat = firstVacant;
     }
 
     const updated = state.guests.map((g) => (g.id === guestId ? { ...g, tableId, seatIndex: targetSeat } : g));
     setState({ ...state, guests: updated });
-    const guestObj = state.guests.find((g) => g.id === guestId);
-    showToast(`Seated ${guestObj?.name || 'Guest'} at ${targetTable.name} (Seat ${targetSeat + 1})`, 'success');
+    const guestObjUpdated = state.guests.find((g) => g.id === guestId);
+    showToast(`Seated ${guestObjUpdated?.name || 'Guest'} at ${targetTable.name} (Seat ${targetSeat + 1})`, 'success');
   };
 
   // Unseat a guest
@@ -949,26 +1007,46 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
           {/* Individual Table Seating Diagram */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Visual Table Surface & Seat Ring (7 cols) */}
-            <div className="lg:col-span-7 bg-[#faf8f5] border border-[#e8ded0] rounded-2xl p-6 min-h-[460px] flex flex-col items-center justify-center relative shadow-inner">
-              <div className="text-[11px] text-[#8b7b6b] mb-4 bg-white border border-[#e8ded0] px-3 py-1 rounded-full shadow-2xs">
-                💡 Drag guests to rearrange seats, click &times; to unseat, or drop from unassigned list.
+            <div className="lg:col-span-7 bg-[#faf8f5] border border-[#e8ded0] rounded-2xl p-6 min-h-[480px] flex flex-col items-center justify-center relative shadow-inner">
+              <div className="text-[11px] text-[#8b7b6b] mb-4 bg-white border border-[#e8ded0] px-3.5 py-1.5 rounded-full shadow-2xs text-center flex items-center gap-1.5">
+                <span>💡</span>
+                <span>Drag guests directly onto seats, drop on the tabletop to auto-seat, or switch tabs on the right.</span>
               </div>
 
               {/* ROUND TABLE VISUALIZATION */}
               {activeTable.shape === 'round' && (
                 <div className="relative w-[340px] h-[340px] flex items-center justify-center">
                   {/* Outer circle perimeter line */}
-                  <div className="absolute inset-4 rounded-full border-2 border-dashed border-[#bd9661]/40" />
+                  <div className="absolute inset-4 rounded-full border-2 border-dashed border-[#bd9661]/40 pointer-events-none" />
 
-                  {/* Center table surface */}
-                  <div className="w-[150px] h-[150px] rounded-full bg-white border-2 border-[#bd9661] shadow-lg flex flex-col items-center justify-center text-center z-10 p-3 select-none">
+                  {/* Center table surface (Accepts Drop to auto-assign to first vacant seat) */}
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      setDragOverTarget({ type: 'table', tableId: activeTable.id });
+                    }}
+                    onDragLeave={() => setDragOverTarget(null)}
+                    onDrop={(e) => handleDropOnTable(e, activeTable.id)}
+                    className={`w-[150px] h-[150px] rounded-full bg-white border-2 shadow-lg flex flex-col items-center justify-center text-center z-10 p-3 select-none transition-all cursor-pointer ${
+                      dragOverTarget?.type === 'table' && dragOverTarget?.tableId === activeTable.id
+                        ? 'border-[#bd9661] ring-4 ring-[#bd9661]/40 bg-[#faf5ee] scale-105 shadow-xl'
+                        : 'border-[#bd9661]'
+                    }`}
+                    title="Drop any guest here to seat at next vacant place"
+                  >
                     <span className="font-serif text-sm font-bold text-[#15110e]">{activeTable.name}</span>
                     <span className="text-xs font-bold text-[#bd9661] mt-0.5">
                       {guestsAtActiveTable.length} / {activeTable.capacity}
                     </span>
                     <span className="text-[9.5px] text-[#8b7b6b] uppercase tracking-wider mt-0.5">
-                      {activeTable.shape}
+                      {activeTable.shape} Table
                     </span>
+                    {dragOverTarget?.type === 'table' && dragOverTarget?.tableId === activeTable.id && (
+                      <span className="text-[9px] font-bold text-[#bd9661] mt-1 animate-pulse">
+                        Drop to Seat
+                      </span>
+                    )}
                   </div>
 
                   {/* Radial seats */}
@@ -979,25 +1057,38 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                     const rad = ((angle - 90) * Math.PI) / 180;
                     const x = radius * Math.cos(rad);
                     const y = radius * Math.sin(rad);
+                    const isOver = dragOverTarget?.type === 'seat' && dragOverTarget?.seatIndex === sIdx;
 
                     return (
                       <div
                         key={sIdx}
+                        draggable={!!occupant}
+                        onDragStart={(e) => {
+                          if (occupant) handleGuestDragStart(e, occupant.id);
+                        }}
+                        onDragEnd={handleGuestDragEnd}
                         onDragOver={(e) => {
                           e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
                           setDragOverTarget({ type: 'seat', tableId: activeTable.id, seatIndex: sIdx });
                         }}
                         onDragLeave={() => setDragOverTarget(null)}
                         onDrop={(e) => handleDropOnSeat(e, activeTable.id, sIdx)}
                         style={{ transform: `translate(${x}px, ${y}px)` }}
-                        className={`absolute w-12 h-12 rounded-full flex flex-col items-center justify-center text-center z-20 transition-all select-none shadow-md ${
-                          occupant
-                            ? 'bg-[#15110e] border-2 border-[#bd9661] text-[#dfc194] cursor-grab hover:scale-110'
-                            : dragOverTarget?.seatIndex === sIdx
-                            ? 'bg-[#bd9661] text-white border-2 border-white scale-125'
-                            : 'bg-white border-2 border-dashed border-[#bd9661]/60 text-[#bd9661] hover:bg-[#faf5ee] cursor-pointer'
+                        className={`absolute w-12 h-12 rounded-full flex flex-col items-center justify-center text-center z-20 transition-all select-none shadow-md cursor-pointer ${
+                          isOver
+                            ? 'bg-[#bd9661] text-white border-2 border-white scale-125 ring-4 ring-[#bd9661]/50 z-30 shadow-xl'
+                            : occupant
+                            ? 'bg-[#15110e] border-2 border-[#bd9661] text-[#dfc194] cursor-grab active:cursor-grabbing hover:scale-110'
+                            : draggedGuestId
+                            ? 'bg-amber-50 border-2 border-dashed border-[#bd9661] text-[#bd9661] animate-pulse hover:bg-[#faf5ee]'
+                            : 'bg-white border-2 border-dashed border-[#bd9661]/60 text-[#bd9661] hover:bg-[#faf5ee]'
                         }`}
-                        title={occupant ? `${occupant.name} (${occupant.dietary || 'Standard'})` : `Seat ${sIdx + 1} (Empty)`}
+                        title={
+                          occupant
+                            ? `${occupant.name} (${occupant.dietary || 'Standard'}) - Drag to move or swap seat`
+                            : `Seat #${sIdx + 1} (Empty) - Drop guest here`
+                        }
                       >
                         {occupant ? (
                           <>
@@ -1016,29 +1107,63 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
               {/* RECTANGULAR TABLE VISUALIZATION */}
               {activeTable.shape === 'rectangular' && (
                 <div className="relative w-full max-w-[480px] p-8 flex flex-col items-center">
-                  <div className="w-[320px] h-[120px] rounded-2xl bg-white border-2 border-[#bd9661] shadow-lg flex flex-col items-center justify-center text-center z-10 select-none">
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      setDragOverTarget({ type: 'table', tableId: activeTable.id });
+                    }}
+                    onDragLeave={() => setDragOverTarget(null)}
+                    onDrop={(e) => handleDropOnTable(e, activeTable.id)}
+                    className={`w-[320px] h-[120px] rounded-2xl bg-white border-2 shadow-lg flex flex-col items-center justify-center text-center z-10 select-none transition-all cursor-pointer ${
+                      dragOverTarget?.type === 'table' && dragOverTarget?.tableId === activeTable.id
+                        ? 'border-[#bd9661] ring-4 ring-[#bd9661]/40 bg-[#faf5ee] scale-105'
+                        : 'border-[#bd9661]'
+                    }`}
+                    title="Drop any guest here to seat at next vacant place"
+                  >
                     <span className="font-serif text-base font-bold text-[#15110e]">{activeTable.name}</span>
                     <span className="text-xs font-bold text-[#bd9661]">
                       {guestsAtActiveTable.length} / {activeTable.capacity} Seated
                     </span>
                     <span className="text-[10px] text-[#8b7b6b] uppercase tracking-wider">Rectangular Table</span>
+                    {dragOverTarget?.type === 'table' && dragOverTarget?.tableId === activeTable.id && (
+                      <span className="text-[9px] font-bold text-[#bd9661] mt-1 animate-pulse">
+                        Drop to Seat
+                      </span>
+                    )}
                   </div>
 
-                  {/* Top & Bottom Seat rows */}
+                  {/* Top Seat row */}
                   <div className="flex justify-between w-[320px] -mt-16 mb-4 z-20">
                     {Array.from({ length: Math.ceil(activeTable.capacity / 2) }).map((_, sIdx) => {
                       const occupant = guestsAtActiveTable.find((g) => g.seatIndex === sIdx);
+                      const isOver = dragOverTarget?.type === 'seat' && dragOverTarget?.seatIndex === sIdx;
                       return (
                         <div
                           key={sIdx}
+                          draggable={!!occupant}
+                          onDragStart={(e) => {
+                            if (occupant) handleGuestDragStart(e, occupant.id);
+                          }}
+                          onDragEnd={handleGuestDragEnd}
                           onDragOver={(e) => {
                             e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
                             setDragOverTarget({ type: 'seat', tableId: activeTable.id, seatIndex: sIdx });
                           }}
+                          onDragLeave={() => setDragOverTarget(null)}
                           onDrop={(e) => handleDropOnSeat(e, activeTable.id, sIdx)}
-                          className={`w-11 h-11 rounded-full flex flex-col items-center justify-center shadow-md text-xs font-bold ${
-                            occupant ? 'bg-[#15110e] text-[#dfc194] border-2 border-[#bd9661]' : 'bg-white border-2 border-dashed border-[#bd9661]/60 text-[#bd9661]'
+                          className={`w-11 h-11 rounded-full flex flex-col items-center justify-center shadow-md text-xs font-bold transition-all select-none cursor-pointer ${
+                            isOver
+                              ? 'bg-[#bd9661] text-white border-2 border-white scale-125 ring-4 ring-[#bd9661]/50 z-30 shadow-xl'
+                              : occupant
+                              ? 'bg-[#15110e] text-[#dfc194] border-2 border-[#bd9661] cursor-grab active:cursor-grabbing hover:scale-110'
+                              : draggedGuestId
+                              ? 'bg-amber-50 border-2 border-dashed border-[#bd9661] text-[#bd9661] animate-pulse hover:bg-[#faf5ee]'
+                              : 'bg-white border-2 border-dashed border-[#bd9661]/60 text-[#bd9661] hover:bg-[#faf5ee]'
                           }`}
+                          title={occupant ? `${occupant.name} (${occupant.dietary || 'Standard'}) - Drag to move or swap` : `Seat #${sIdx + 1} (Empty) - Drop guest here`}
                         >
                           {occupant ? occupant.initials || occupant.name.slice(0, 2) : `#${sIdx + 1}`}
                         </div>
@@ -1046,21 +1171,37 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                     })}
                   </div>
 
+                  {/* Bottom Seat row */}
                   <div className="flex justify-between w-[320px] mt-16 z-20">
                     {Array.from({ length: Math.floor(activeTable.capacity / 2) }).map((_, idx) => {
                       const sIdx = Math.ceil(activeTable.capacity / 2) + idx;
                       const occupant = guestsAtActiveTable.find((g) => g.seatIndex === sIdx);
+                      const isOver = dragOverTarget?.type === 'seat' && dragOverTarget?.seatIndex === sIdx;
                       return (
                         <div
                           key={sIdx}
+                          draggable={!!occupant}
+                          onDragStart={(e) => {
+                            if (occupant) handleGuestDragStart(e, occupant.id);
+                          }}
+                          onDragEnd={handleGuestDragEnd}
                           onDragOver={(e) => {
                             e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
                             setDragOverTarget({ type: 'seat', tableId: activeTable.id, seatIndex: sIdx });
                           }}
+                          onDragLeave={() => setDragOverTarget(null)}
                           onDrop={(e) => handleDropOnSeat(e, activeTable.id, sIdx)}
-                          className={`w-11 h-11 rounded-full flex flex-col items-center justify-center shadow-md text-xs font-bold ${
-                            occupant ? 'bg-[#15110e] text-[#dfc194] border-2 border-[#bd9661]' : 'bg-white border-2 border-dashed border-[#bd9661]/60 text-[#bd9661]'
+                          className={`w-11 h-11 rounded-full flex flex-col items-center justify-center shadow-md text-xs font-bold transition-all select-none cursor-pointer ${
+                            isOver
+                              ? 'bg-[#bd9661] text-white border-2 border-white scale-125 ring-4 ring-[#bd9661]/50 z-30 shadow-xl'
+                              : occupant
+                              ? 'bg-[#15110e] text-[#dfc194] border-2 border-[#bd9661] cursor-grab active:cursor-grabbing hover:scale-110'
+                              : draggedGuestId
+                              ? 'bg-amber-50 border-2 border-dashed border-[#bd9661] text-[#bd9661] animate-pulse hover:bg-[#faf5ee]'
+                              : 'bg-white border-2 border-dashed border-[#bd9661]/60 text-[#bd9661] hover:bg-[#faf5ee]'
                           }`}
+                          title={occupant ? `${occupant.name} (${occupant.dietary || 'Standard'}) - Drag to move or swap` : `Seat #${sIdx + 1} (Empty) - Drop guest here`}
                         >
                           {occupant ? occupant.initials || occupant.name.slice(0, 2) : `#${sIdx + 1}`}
                         </div>
@@ -1088,18 +1229,32 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                       <div className="flex justify-between gap-2">
                         {Array.from({ length: Math.ceil(activeTable.capacity / 2) }).map((_, sIdx) => {
                           const occupant = guestsAtActiveTable.find((g) => g.seatIndex === sIdx);
+                          const isOver = dragOverTarget?.type === 'seat' && dragOverTarget?.seatIndex === sIdx;
                           return (
                             <div
                               key={sIdx}
+                              draggable={!!occupant}
+                              onDragStart={(e) => {
+                                if (occupant) handleGuestDragStart(e, occupant.id);
+                              }}
+                              onDragEnd={handleGuestDragEnd}
                               onDragOver={(e) => {
                                 e.preventDefault();
+                                e.dataTransfer.dropEffect = 'move';
                                 setDragOverTarget({ type: 'seat', tableId: activeTable.id, seatIndex: sIdx });
                               }}
+                              onDragLeave={() => setDragOverTarget(null)}
                               onDrop={(e) => handleDropOnSeat(e, activeTable.id, sIdx)}
-                              className={`flex-1 min-w-[36px] h-10 rounded-xl flex flex-col items-center justify-center text-[10px] font-bold shadow-xs cursor-pointer ${
-                                occupant ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]' : 'bg-[#faf8f5] border border-dashed border-[#bd9661]/50 text-[#8b7b6b]'
+                              className={`flex-1 min-w-[36px] h-10 rounded-xl flex flex-col items-center justify-center text-[10px] font-bold shadow-xs cursor-pointer transition-all select-none ${
+                                isOver
+                                  ? 'bg-[#bd9661] text-white border-2 border-white scale-125 ring-4 ring-[#bd9661]/50 z-30 shadow-xl'
+                                  : occupant
+                                  ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661] cursor-grab active:cursor-grabbing hover:scale-105'
+                                  : draggedGuestId
+                                  ? 'bg-amber-50 border border-dashed border-[#bd9661] text-[#bd9661] animate-pulse hover:bg-[#faf5ee]'
+                                  : 'bg-[#faf8f5] border border-dashed border-[#bd9661]/50 text-[#8b7b6b] hover:bg-[#faf5ee]'
                               }`}
-                              title={occupant ? `${occupant.name} (#${sIdx + 1})` : `Seat #${sIdx + 1} (Empty)`}
+                              title={occupant ? `${occupant.name} (#${sIdx + 1}) - Drag to move or swap` : `Seat #${sIdx + 1} (Empty) - Drop guest here`}
                             >
                               <span>{occupant ? occupant.initials || occupant.name.slice(0, 2) : `#${sIdx + 1}`}</span>
                             </div>
@@ -1108,7 +1263,21 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                       </div>
 
                       {/* Long Wooden Table Board */}
-                      <div className="h-10 rounded-xl bg-gradient-to-r from-[#291f17] via-[#3d2e24] to-[#291f17] border-2 border-[#bd9661] text-white flex items-center justify-center text-xs font-serif font-bold tracking-widest shadow-md">
+                      <div
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                          setDragOverTarget({ type: 'table', tableId: activeTable.id });
+                        }}
+                        onDragLeave={() => setDragOverTarget(null)}
+                        onDrop={(e) => handleDropOnTable(e, activeTable.id)}
+                        className={`h-11 rounded-xl bg-gradient-to-r from-[#291f17] via-[#3d2e24] to-[#291f17] border-2 text-white flex items-center justify-center text-xs font-serif font-bold tracking-widest shadow-md transition-all select-none cursor-pointer ${
+                          dragOverTarget?.type === 'table' && dragOverTarget?.tableId === activeTable.id
+                            ? 'border-white ring-4 ring-[#bd9661]/50 scale-[1.02]'
+                            : 'border-[#bd9661]'
+                        }`}
+                        title="Drop any guest here to seat at next vacant place"
+                      >
                         ROYAL BANQUET RUNNER &bull; {activeTable.capacity} PLACES
                       </div>
 
@@ -1117,18 +1286,32 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                         {Array.from({ length: Math.floor(activeTable.capacity / 2) }).map((_, idx) => {
                           const sIdx = Math.ceil(activeTable.capacity / 2) + idx;
                           const occupant = guestsAtActiveTable.find((g) => g.seatIndex === sIdx);
+                          const isOver = dragOverTarget?.type === 'seat' && dragOverTarget?.seatIndex === sIdx;
                           return (
                             <div
                               key={sIdx}
+                              draggable={!!occupant}
+                              onDragStart={(e) => {
+                                if (occupant) handleGuestDragStart(e, occupant.id);
+                              }}
+                              onDragEnd={handleGuestDragEnd}
                               onDragOver={(e) => {
                                 e.preventDefault();
+                                e.dataTransfer.dropEffect = 'move';
                                 setDragOverTarget({ type: 'seat', tableId: activeTable.id, seatIndex: sIdx });
                               }}
+                              onDragLeave={() => setDragOverTarget(null)}
                               onDrop={(e) => handleDropOnSeat(e, activeTable.id, sIdx)}
-                              className={`flex-1 min-w-[36px] h-10 rounded-xl flex flex-col items-center justify-center text-[10px] font-bold shadow-xs cursor-pointer ${
-                                occupant ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]' : 'bg-[#faf8f5] border border-dashed border-[#bd9661]/50 text-[#8b7b6b]'
+                              className={`flex-1 min-w-[36px] h-10 rounded-xl flex flex-col items-center justify-center text-[10px] font-bold shadow-xs cursor-pointer transition-all select-none ${
+                                isOver
+                                  ? 'bg-[#bd9661] text-white border-2 border-white scale-125 ring-4 ring-[#bd9661]/50 z-30 shadow-xl'
+                                  : occupant
+                                  ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661] cursor-grab active:cursor-grabbing hover:scale-105'
+                                  : draggedGuestId
+                                  ? 'bg-amber-50 border border-dashed border-[#bd9661] text-[#bd9661] animate-pulse hover:bg-[#faf5ee]'
+                                  : 'bg-[#faf8f5] border border-dashed border-[#bd9661]/50 text-[#8b7b6b] hover:bg-[#faf5ee]'
                               }`}
-                              title={occupant ? `${occupant.name} (#${sIdx + 1})` : `Seat #${sIdx + 1} (Empty)`}
+                              title={occupant ? `${occupant.name} (#${sIdx + 1}) - Drag to move or swap` : `Seat #${sIdx + 1} (Empty) - Drop guest here`}
                             >
                               <span>{occupant ? occupant.initials || occupant.name.slice(0, 2) : `#${sIdx + 1}`}</span>
                             </div>
@@ -1141,116 +1324,300 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
               )}
             </div>
 
-            {/* Table Roster & Seat Assignment List (5 cols) */}
+            {/* Table Roster & Seat Assignment List (5 cols) with 2 Tabs */}
             <div className="lg:col-span-5 bg-white border border-[#e8ded0] rounded-2xl p-5 shadow-sm space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-serif text-base font-bold text-[#15110e]">
-                    Assigned Guests ({guestsAtActiveTable.length})
-                  </h4>
-                  <p className="text-[11px] text-[#8b7b6b]">
-                    Manage individual seat allocations &amp; dietary notes
-                  </p>
-                </div>
-
-                {/* Edit Capacity Dropdown */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-[#8b7b6b]">Seats:</span>
-                  <select
-                    value={activeTable.capacity}
-                    onChange={(e) => handleUpdateTableDetails(activeTable.id, { capacity: Number(e.target.value) })}
-                    className="bg-[#faf8f5] border border-[#e8ded0] rounded-lg px-2 py-1 text-xs font-bold text-[#15110e] outline-none"
+              {/* Segmented 2-Tab Navigation */}
+              <div className="flex p-1 bg-[#faf8f5] border border-[#e8ded0] rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setDrilldownRosterTab('assigned')}
+                  className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    drilldownRosterTab === 'assigned'
+                      ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
+                      : 'text-[#8b7b6b] hover:text-[#15110e]'
+                  }`}
+                >
+                  <span>Assigned Guests</span>
+                  <span
+                    className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                      drilldownRosterTab === 'assigned'
+                        ? 'bg-[#2a1e14] text-[#dfc194] border border-[#bd9661]/40'
+                        : 'bg-[#e8ded0] text-[#15110e]'
+                    }`}
                   >
-                    {[6, 8, 10, 12, 16, 20, 24, 30, 32, 40].map((num) => (
-                      <option key={num} value={num}>
-                        {num} Seats
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    {guestsAtActiveTable.length} / {activeTable.capacity}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDrilldownRosterTab('unassigned')}
+                  className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    drilldownRosterTab === 'unassigned'
+                      ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
+                      : 'text-[#8b7b6b] hover:text-[#15110e]'
+                  }`}
+                >
+                  <span>Remaining Guest List</span>
+                  <span
+                    className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                      drilldownRosterTab === 'unassigned'
+                        ? 'bg-[#2a1e14] text-[#dfc194] border border-[#bd9661]/40'
+                        : 'bg-[#e8ded0] text-[#15110e]'
+                    }`}
+                  >
+                    {allWeddingUnassignedGuests.length}
+                  </span>
+                </button>
               </div>
 
-              {/* Seated Guests List */}
-              <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
-                {guestsAtActiveTable.length === 0 ? (
-                  <div className="bg-[#faf8f5] border border-dashed border-[#e8ded0] rounded-xl p-6 text-center text-xs text-[#8b7b6b]">
-                    No guests currently seated at this table. Drag guests from below or use Quick Assign.
-                  </div>
-                ) : (
-                  guestsAtActiveTable.map((g) => (
-                    <div
-                      key={g.id}
-                      draggable
-                      onDragStart={(e) => handleGuestDragStart(e, g.id)}
-                      onDragEnd={handleGuestDragEnd}
-                      className="bg-[#faf8f5] hover:bg-[#f5f0e6] border border-[#e8ded0] rounded-xl p-2.5 flex items-center justify-between text-xs transition-colors cursor-grab"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span className="w-6 h-6 rounded-full bg-[#15110e] text-[#dfc194] font-bold text-[10px] flex items-center justify-center">
-                          {g.initials || g.name.slice(0, 2).toUpperCase()}
-                        </span>
-                        <div>
-                          <div className="font-bold text-[#15110e] flex items-center gap-1.5">
-                            <span>{g.name}</span>
-                            <span className="text-[10px] font-mono text-[#bd9661] bg-white border px-1 rounded">
-                              Seat {(g.seatIndex || 0) + 1}
-                            </span>
-                          </div>
-                          <div className="text-[10px] text-[#8b7b6b] flex items-center gap-1.5 mt-0.5">
-                            <span>{g.household}</span>
-                            {g.dietary && g.dietary !== 'None' && (
-                              <span className="bg-[#fff1f0] text-[#c93b2b] px-1 rounded font-semibold text-[9px]">
-                                {g.dietary}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+              {/* TAB 1: ASSIGNED GUESTS */}
+              {drilldownRosterTab === 'assigned' && (
+                <div className="space-y-4 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-serif text-sm font-bold text-[#15110e]">
+                        {activeTable.name} Seating Roster
+                      </h4>
+                      <p className="text-[11px] text-[#8b7b6b]">
+                        {guestsAtActiveTable.length} seated &bull; Drag cards to rearrange seats
+                      </p>
+                    </div>
+
+                    {/* Edit Capacity Dropdown & Clear */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] text-[#8b7b6b]">Seats:</span>
+                        <select
+                          value={activeTable.capacity}
+                          onChange={(e) => handleUpdateTableDetails(activeTable.id, { capacity: Number(e.target.value) })}
+                          className="bg-[#faf8f5] border border-[#e8ded0] rounded-lg px-2 py-1 text-xs font-bold text-[#15110e] outline-none"
+                        >
+                          {[6, 8, 10, 12, 16, 20, 24, 30, 32, 40].map((num) => (
+                            <option key={num} value={num}>
+                              {num} Seats
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
+                      {guestsAtActiveTable.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleClearTable(activeTable.id)}
+                          className="text-[10px] text-[#c93b2b] hover:underline cursor-pointer font-semibold"
+                          title="Unseat all guests from this table"
+                        >
+                          Unseat All
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Seated Guests List */}
+                  <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+                    {guestsAtActiveTable.length === 0 ? (
+                      <div className="bg-[#faf8f5] border border-dashed border-[#e8ded0] rounded-xl p-8 text-center text-xs text-[#8b7b6b] space-y-2">
+                        <div className="text-2xl">🍽️</div>
+                        <p className="font-bold text-[#15110e]">No guests currently seated at {activeTable.name}</p>
+                        <p className="text-[11px]">
+                          Switch to the{' '}
+                          <button
+                            type="button"
+                            onClick={() => setDrilldownRosterTab('unassigned')}
+                            className="text-[#bd9661] underline font-bold cursor-pointer"
+                          >
+                            Remaining Guest List
+                          </button>{' '}
+                          tab to drag guests onto seats.
+                        </p>
+                      </div>
+                    ) : (
+                      guestsAtActiveTable
+                        .sort((a, b) => (a.seatIndex ?? 0) - (b.seatIndex ?? 0))
+                        .map((g) => (
+                          <div
+                            key={g.id}
+                            draggable
+                            onDragStart={(e) => handleGuestDragStart(e, g.id)}
+                            onDragEnd={handleGuestDragEnd}
+                            className="bg-[#faf8f5] hover:bg-[#f5f0e6] border border-[#e8ded0] rounded-xl p-2.5 flex items-center justify-between text-xs transition-colors cursor-grab active:cursor-grabbing shadow-2xs group"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0 pr-1">
+                              <span className="text-[#8b7b6b] opacity-40 group-hover:opacity-100 text-xs shrink-0 select-none">
+                                ⋮⋮
+                              </span>
+                              <span className="w-6 h-6 rounded-full bg-[#15110e] text-[#dfc194] font-bold text-[10px] flex items-center justify-center shrink-0">
+                                {g.initials || g.name.slice(0, 2).toUpperCase()}
+                              </span>
+                              <div className="min-w-0">
+                                <div className="font-bold text-[#15110e] flex items-center gap-1.5 truncate">
+                                  <span className="truncate">{g.name}</span>
+                                  <span className="text-[10px] font-mono text-[#bd9661] bg-white border border-[#ebdcc9] px-1.5 py-0.2 rounded shrink-0">
+                                    Seat {(g.seatIndex || 0) + 1}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] text-[#8b7b6b] flex items-center gap-1.5 mt-0.5 truncate">
+                                  <span className="truncate">{g.household}</span>
+                                  {g.dietary && g.dietary !== 'None' && (
+                                    <span className="bg-[#fff1f0] text-[#c93b2b] px-1 rounded font-semibold text-[9px] shrink-0">
+                                      {g.dietary}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleUnseatGuest(g.id)}
+                              className="text-[#8b7b6b] hover:text-[#c93b2b] text-base p-1 cursor-pointer shrink-0 ml-2"
+                              title="Unseat guest"
+                            >
+                              &times;
+                            </button>
+                          </div>
+                        ))
+                    )}
+                  </div>
+
+                  {/* Quick Assign Household Dropdown */}
+                  {unassignedHouseholds.length > 0 && (
+                    <div className="pt-3 border-t border-[#f0ede4] space-y-2">
+                      <div className="text-[11px] font-bold text-[#8b7b6b] uppercase tracking-wider">
+                        Quick Seat Entire Household
+                      </div>
+                      <div className="flex gap-2">
+                        <select
+                          id="household_quick_assign"
+                          className="flex-1 bg-white border border-[#e8ded0] rounded-xl p-2 text-xs text-[#15110e] outline-none"
+                          defaultValue=""
+                        >
+                          <option value="" disabled>Select unassigned household...</option>
+                          {unassignedHouseholds.map(({ household, members }) => (
+                            <option key={household} value={household}>
+                              {household} ({members.length} guests)
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const sel = (document.getElementById('household_quick_assign') as HTMLSelectElement)?.value;
+                            const hh = unassignedHouseholds.find((h) => h.household === sel);
+                            if (hh) handleAssignHousehold(hh.members, activeTable.id);
+                          }}
+                          className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-3 py-1.5 rounded-xl text-xs cursor-pointer shadow-2xs"
+                        >
+                          Seat All
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 2: REMAINING GUEST LIST (DRAGGABLE TO SEATS) */}
+              {drilldownRosterTab === 'unassigned' && (
+                <div className="space-y-3 animate-in fade-in duration-200">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-serif text-sm font-bold text-[#15110e]">
+                        Remaining Guest List
+                      </h4>
+                      <span className="text-[10px] font-mono text-[#8b7b6b]">
+                        {filteredDrilldownRemainingGuests.length} unassigned
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-[#8b7b6b] mt-1 bg-[#faf8f5] border border-[#ebdcc9] rounded-xl p-2 flex items-center gap-1.5">
+                      <span>💡</span>
+                      <span>
+                        <strong>Drag &amp; drop</strong> any guest onto a seat on {activeTable.name}, or click <strong>+ Seat</strong>.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Search Bar for Remaining Guests */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search remaining guests by name or household..."
+                      value={drilldownGuestSearch}
+                      onChange={(e) => setDrilldownGuestSearch(e.target.value)}
+                      className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl pl-8 pr-7 py-2 text-xs outline-none focus:border-[#bd9661] shadow-2xs"
+                    />
+                    <svg className="w-3.5 h-3.5 text-[#8b7b6b] absolute left-2.5 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    {drilldownGuestSearch && (
                       <button
                         type="button"
-                        onClick={() => handleUnseatGuest(g.id)}
-                        className="text-[#8b7b6b] hover:text-[#c93b2b] text-base p-1 cursor-pointer"
-                        title="Unseat guest"
+                        onClick={() => setDrilldownGuestSearch('')}
+                        className="absolute right-2.5 top-2 text-[#8b7b6b] hover:text-[#15110e] text-xs cursor-pointer font-bold"
                       >
                         &times;
                       </button>
-                    </div>
-                  ))
-                )}
-              </div>
+                    )}
+                  </div>
 
-              {/* Quick Assign Household Dropdown */}
-              <div className="pt-3 border-t border-[#f0ede4] space-y-2">
-                <div className="text-[11px] font-bold text-[#8b7b6b] uppercase tracking-wider">
-                  Quick Seat Entire Household
+                  {/* Draggable Remaining Guests List */}
+                  <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+                    {filteredDrilldownRemainingGuests.length === 0 ? (
+                      <div className="bg-[#f0f7f1] border border-emerald-200 rounded-xl p-8 text-center text-xs text-[#2b5930] space-y-1.5">
+                        <div className="text-2xl">🎉</div>
+                        <p className="font-bold">
+                          {drilldownGuestSearch ? 'No matching unassigned guests found' : 'All wedding guests are seated!'}
+                        </p>
+                        <p className="text-[11px] text-[#4d7351]">
+                          {drilldownGuestSearch
+                            ? 'Try a different search term or clear the filter.'
+                            : 'Every guest for this wedding has been placed at a table.'}
+                        </p>
+                      </div>
+                    ) : (
+                      filteredDrilldownRemainingGuests.map((g) => (
+                        <div
+                          key={g.id}
+                          draggable
+                          onDragStart={(e) => handleGuestDragStart(e, g.id)}
+                          onDragEnd={handleGuestDragEnd}
+                          className="bg-[#faf8f5] hover:bg-[#f5efe6] border border-[#e8ded0] hover:border-[#bd9661] rounded-xl p-2.5 flex items-center justify-between text-xs cursor-grab active:cursor-grabbing shadow-2xs transition-all group"
+                          title={`Drag ${g.name} to any seat on ${activeTable.name}, or click "+ Seat"`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                            <span className="text-[#8b7b6b] opacity-40 group-hover:opacity-100 text-xs shrink-0 select-none">
+                              ⋮⋮
+                            </span>
+                            <span className="w-7 h-7 rounded-full bg-[#bd9661]/15 text-[#8a6836] font-bold text-[10px] flex items-center justify-center shrink-0 border border-[#bd9661]/30">
+                              {g.initials || g.name.slice(0, 2).toUpperCase()}
+                            </span>
+                            <div className="min-w-0">
+                              <div className="font-bold text-[#15110e] truncate">{g.name}</div>
+                              <div className="text-[10px] text-[#8b7b6b] flex items-center gap-1.5 truncate mt-0.5">
+                                <span className="truncate">{g.household}</span>
+                                {g.dietary && g.dietary !== 'None' && (
+                                  <span className="bg-[#fff1f0] text-[#c93b2b] px-1 rounded text-[9px] font-semibold shrink-0">
+                                    {g.dietary}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleAssignGuest(g.id, activeTable.id)}
+                            className="bg-white hover:bg-[#bd9661] text-[#15110e] hover:text-white border border-[#d5c7b5] hover:border-[#bd9661] font-bold text-[11px] px-2.5 py-1 rounded-lg cursor-pointer transition-colors shrink-0 shadow-2xs flex items-center gap-1"
+                            title={`Seat ${g.name} at next vacant position at ${activeTable.name}`}
+                          >
+                            <span>+</span> Seat
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <select
-                    id="household_quick_assign"
-                    className="flex-1 bg-white border border-[#e8ded0] rounded-xl p-2 text-xs text-[#15110e] outline-none"
-                    defaultValue=""
-                  >
-                    <option value="" disabled>Select unassigned household...</option>
-                    {unassignedHouseholds.map(({ household, members }) => (
-                      <option key={household} value={household}>
-                        {household} ({members.length} guests)
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const sel = (document.getElementById('household_quick_assign') as HTMLSelectElement)?.value;
-                      const hh = unassignedHouseholds.find((h) => h.household === sel);
-                      if (hh) handleAssignHousehold(hh.members, activeTable.id);
-                    }}
-                    className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-3 py-1.5 rounded-xl text-xs cursor-pointer"
-                  >
-                    Seat All
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

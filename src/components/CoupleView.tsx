@@ -405,7 +405,18 @@ export default function CoupleView({
 
   // Tab 4: Content & Stories State (Screenshot 25)
   const [contentSubTab, setContentSubTab] = useState<'ourStory' | 'inMemoriam' | 'diningMenu' | 'meetTheTeam' | 'honeymoonUpdates'>('ourStory');
-  const [contentPages, setContentPages] = useState({
+  const [previewPhotoIndex, setPreviewPhotoIndex] = useState<number>(0);
+  const [contentPages, setContentPages] = useState<{
+    [key in 'ourStory' | 'inMemoriam' | 'diningMenu' | 'meetTheTeam' | 'honeymoonUpdates']: {
+      title: string;
+      subtitle: string;
+      content: string;
+      caption: string;
+      icon: string;
+      status: string;
+      photos: string[];
+    };
+  }>({
     ourStory: {
       title: 'Our Story',
       subtitle: 'From a chance encounter in Bowral to forever in the Southern Highlands',
@@ -413,6 +424,10 @@ export default function CoupleView({
       caption: 'Bowral Autumn 2021',
       icon: '💍',
       status: 'Published',
+      photos: [
+        'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80',
+      ],
     },
     inMemoriam: {
       title: 'In Loving Memory',
@@ -421,6 +436,9 @@ export default function CoupleView({
       caption: 'Grandma Helen & Uncle Robert',
       icon: '🕊️',
       status: 'Published',
+      photos: [
+        'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=800&q=80',
+      ],
     },
     diningMenu: {
       title: 'Wedding Feast & Menu',
@@ -429,6 +447,9 @@ export default function CoupleView({
       caption: 'Chef Marco Rossi Seasonal Menu',
       icon: '🍽️',
       status: 'Published',
+      photos: [
+        'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=800&q=80',
+      ],
     },
     meetTheTeam: {
       title: 'The Bridal Party & Crew',
@@ -437,6 +458,9 @@ export default function CoupleView({
       caption: 'The Bridal Party',
       icon: '👥',
       status: 'Published',
+      photos: [
+        'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=800&q=80',
+      ],
     },
     honeymoonUpdates: {
       title: 'Honeymoon in Queenstown',
@@ -445,8 +469,56 @@ export default function CoupleView({
       caption: 'Lake Wakatipu & Remarkables',
       icon: '✈️',
       status: 'Draft',
+      photos: [
+        'https://images.unsplash.com/photo-1507692049790-de58290a4334?auto=format&fit=crop&w=800&q=80',
+      ],
     },
   });
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const currentPhotos = contentPages[contentSubTab].photos || [];
+    const availableSlots = 5 - currentPhotos.length;
+    if (availableSlots <= 0) return;
+
+    const filesToRead = Array.from(files).slice(0, availableSlots);
+    const readers = filesToRead.map((file) => {
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+    });
+
+    Promise.all(readers).then((newPhotos) => {
+      setContentPages((prev) => ({
+        ...prev,
+        [contentSubTab]: {
+          ...prev[contentSubTab],
+          photos: [...(prev[contentSubTab].photos || []), ...newPhotos].slice(0, 5),
+        },
+      }));
+      showToast(`Added ${newPhotos.length} photo${newPhotos.length > 1 ? 's' : ''}`, 'success');
+      e.target.value = '';
+    });
+  };
+
+  const handleRemovePhoto = (photoIdx: number) => {
+    const currentPhotos = contentPages[contentSubTab].photos || [];
+    const updated = currentPhotos.filter((_, idx) => idx !== photoIdx);
+    setContentPages((prev) => ({
+      ...prev,
+      [contentSubTab]: {
+        ...prev[contentSubTab],
+        photos: updated,
+      },
+    }));
+    if (previewPhotoIndex >= updated.length) {
+      setPreviewPhotoIndex(Math.max(0, updated.length - 1));
+    }
+  };
 
   // Tab 5: Invitations State (Screenshot 26)
   const [selectedQaRdPalette, setSelectedQaRdPalette] = useState<'obsidian' | 'champagne' | 'merlot' | 'sage'>('obsidian');
@@ -2078,7 +2150,7 @@ export default function CoupleView({
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setContentSubTab(tab.id as any)}
+                  onClick={() => { setContentSubTab(tab.id as any); setPreviewPhotoIndex(0); }}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
                     contentSubTab === tab.id
                       ? 'bg-[#bd9661] text-[#15110e]'
@@ -2144,6 +2216,68 @@ export default function CoupleView({
                       rows={6}
                       className="w-full bg-white border border-[#e8ded0] rounded-lg p-2.5 outline-none focus:border-[#bd9661] resize-none"
                     />
+                  </div>
+
+                  {/* Photo Upload & Gallery Slots */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1.5">PHOTOS</label>
+                    <div className="grid grid-cols-5 gap-2.5">
+                      {(contentPages[contentSubTab].photos || []).map((photoUrl, idx) => {
+                        const isSelected = previewPhotoIndex === idx;
+                        return (
+                          <div
+                            key={idx}
+                            onClick={() => setPreviewPhotoIndex(idx)}
+                            className={`relative group aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-pointer shadow-2xs ${
+                              isSelected
+                                ? 'border-[#bd9661] ring-2 ring-[#bd9661]/30'
+                                : 'border-[#e8ded0] hover:border-[#bd9661]/60'
+                            }`}
+                          >
+                            <img
+                              src={photoUrl}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemovePhoto(idx);
+                              }}
+                              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#15110e]/80 hover:bg-[#c93b2b] text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-sm"
+                              title="Remove photo"
+                            >
+                              &times;
+                            </button>
+                            {isSelected && (
+                              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-[#bd9661] text-[#15110e] text-[8.5px] font-bold px-1.5 py-0.2 rounded-full uppercase tracking-wider shadow-2xs">
+                                Cover
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {/* Upload Slot Tile (shown strictly when fewer than 5 photos) */}
+                      {(contentPages[contentSubTab].photos || []).length < 5 && (
+                        <label className="aspect-square rounded-xl border-2 border-dashed border-[#bd9661]/60 hover:border-[#bd9661] bg-[#faf8f5] hover:bg-[#faf5ee] flex flex-col items-center justify-center cursor-pointer transition-all group text-center p-1 shadow-2xs">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={handlePhotoUpload}
+                          />
+                          <div className="w-7 h-7 rounded-full bg-white border border-[#bd9661]/40 flex items-center justify-center text-[#bd9661] group-hover:scale-110 transition-transform text-sm font-bold shadow-2xs">
+                            +
+                          </div>
+                          <span className="text-[10px] font-bold text-[#8b7b6b] group-hover:text-[#15110e] mt-1">
+                            Upload
+                          </span>
+                        </label>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -2216,11 +2350,97 @@ export default function CoupleView({
                     {contentPages[contentSubTab].subtitle}
                   </p>
 
-                  <div className="bg-[#ede5d8] border border-[#d5c7b5] rounded-xl p-8 my-4 text-center">
-                    <span className="text-2xl opacity-60">📷</span>
-                    <div className="text-xs font-bold text-[#15110e] mt-1">Featured Photo</div>
-                    <div className="text-[10px] text-[#8b7b6b]">{contentPages[contentSubTab].caption}</div>
-                  </div>
+                  {/* Photo Display / Gallery */}
+                  {(() => {
+                    const photos = contentPages[contentSubTab].photos || [];
+                    const activeIdx = previewPhotoIndex < photos.length ? previewPhotoIndex : 0;
+
+                    if (photos.length === 0) {
+                      return (
+                        <div className="bg-[#ede5d8] border border-[#d5c7b5] rounded-xl p-8 my-4 text-center">
+                          <span className="text-2xl opacity-60">📷</span>
+                          <div className="text-xs font-bold text-[#15110e] mt-1">Featured Photo</div>
+                          <div className="text-[10px] text-[#8b7b6b]">{contentPages[contentSubTab].caption}</div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="my-4 space-y-2.5">
+                        <div className="relative rounded-2xl overflow-hidden border border-[#e8ded0] bg-[#15110e] aspect-[16/10] max-h-[260px] shadow-sm flex items-center justify-center group">
+                          <img
+                            src={photos[activeIdx]}
+                            alt={contentPages[contentSubTab].caption || 'Wedding Photo'}
+                            className="w-full h-full object-cover transition-all duration-300"
+                          />
+
+                          {/* Navigation Arrows if > 1 photo */}
+                          {photos.length > 1 && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setPreviewPhotoIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1))}
+                                className="absolute left-2.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-md"
+                                aria-label="Previous photo"
+                              >
+                                &larr;
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPreviewPhotoIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0))}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-md"
+                                aria-label="Next photo"
+                              >
+                                &rarr;
+                              </button>
+
+                              {/* Dot Indicators */}
+                              <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/40 backdrop-blur-xs px-2.5 py-1 rounded-full">
+                                {photos.map((_, i) => (
+                                  <button
+                                    key={i}
+                                    type="button"
+                                    onClick={() => setPreviewPhotoIndex(i)}
+                                    className={`w-1.5 h-1.5 rounded-full transition-all cursor-pointer ${
+                                      activeIdx === i ? 'w-4 bg-white' : 'bg-white/50 hover:bg-white/80'
+                                    }`}
+                                    aria-label={`Photo ${i + 1}`}
+                                  />
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Caption & Mini Thumbnail Strip */}
+                        <div className="flex items-center justify-between text-left px-1">
+                          <div className="text-[11px] text-[#8b7b6b] flex items-center gap-1.5 truncate">
+                            <span>📷</span>
+                            <span className="font-medium truncate">{contentPages[contentSubTab].caption}</span>
+                          </div>
+
+                          {photos.length > 1 && (
+                            <div className="flex items-center gap-1 shrink-0">
+                              {photos.map((p, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => setPreviewPhotoIndex(idx)}
+                                  className={`w-6 h-6 rounded-md overflow-hidden border transition-all cursor-pointer ${
+                                    activeIdx === idx
+                                      ? 'border-[#bd9661] ring-1 ring-[#bd9661]'
+                                      : 'border-transparent opacity-60 hover:opacity-100'
+                                  }`}
+                                >
+                                  <img src={p} alt="" className="w-full h-full object-cover" />
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <p className="text-xs text-[#15110e] leading-relaxed text-left whitespace-pre-line bg-[#faf8f5] p-3 rounded-lg border border-[#f0ede4]">
                     {contentPages[contentSubTab].content}
