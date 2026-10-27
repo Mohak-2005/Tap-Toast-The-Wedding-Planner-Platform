@@ -29,6 +29,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
   // MC Multi-Step Flow: details -> plan_payment
   const [mcStep, setMcStep] = useState<'details' | 'plan_payment'>('details');
   const [selectedMcPlanId, setSelectedMcPlanId] = useState<string>('mc_base');
+  const [expandedMcPlanId, setExpandedMcPlanId] = useState<string | null>(null);
   const [mcCardName, setMcCardName] = useState('Robert Galati');
   const [mcCardNumber, setMcCardNumber] = useState('•••• •••• •••• 4242');
   const [mcCardExpiry, setMcCardExpiry] = useState('12/28');
@@ -1228,28 +1229,31 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                   </p>
                 </div>
 
-                {/* Plan Selection Cards */}
-                <div className="space-y-3">
+                {/* Plan Selection Cards: Accordion / Dropdown Style identical to Couple Registration */}
+                <div className="space-y-2.5">
                   {MC_PLANS.map((plan) => {
                     const isSelected = selectedMcPlanId === plan.id;
+                    const isExpanded = expandedMcPlanId === plan.id;
+
                     return (
                       <div
                         key={plan.id}
                         onClick={() => setSelectedMcPlanId(plan.id)}
-                        className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                        className={`p-3 rounded-xl border transition-all cursor-pointer ${
                           isSelected
                             ? 'border-[#bd9661] bg-[#fdfbf7] shadow-xs ring-1 ring-[#bd9661]'
                             : 'border-[#e8ded0] bg-white hover:border-[#d5c7b5]'
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-start gap-2.5">
+                        {/* Top Header Row: Name, Badges, Pricing, and Expand Dropdown Arrow */}
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2.5">
                             <input
                               type="radio"
                               name="mcPlanChoice"
                               checked={isSelected}
                               onChange={() => setSelectedMcPlanId(plan.id)}
-                              className="mt-1 text-[#bd9661] focus:ring-[#bd9661] cursor-pointer"
+                              className="text-[#bd9661] focus:ring-[#bd9661] cursor-pointer"
                             />
                             <div>
                               <div className="flex items-center gap-2 flex-wrap">
@@ -1257,7 +1261,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                                   {plan.name}
                                 </span>
                                 {plan.badge && (
-                                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                                  <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${
                                     plan.price === 0
                                       ? 'bg-[#e2d8cb] text-[#4a3b2c]'
                                       : 'bg-[#bd9661] text-[#15110e]'
@@ -1276,50 +1280,72 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                                   </span>
                                 )}
                               </div>
-                              <p className="text-[11.5px] text-[#8b7b6b] mt-1 leading-relaxed">
+                              <div className="text-[11px] text-[#8b7b6b] mt-0.5">
                                 {plan.tagline}
-                              </p>
+                              </div>
                             </div>
                           </div>
 
-                          <div className="text-right shrink-0">
-                            <div className="font-serif text-base font-bold text-[#15110e]">
-                              ${plan.price}
+                          <div className="flex items-center gap-3 shrink-0">
+                            <div className="text-right">
+                              <div className="font-serif text-base font-bold text-[#15110e]">
+                                ${plan.price}
+                              </div>
+                              <div className="text-[9.5px] text-[#8b7b6b] uppercase">
+                                {plan.price === 0 ? 'Free forever' : 'AUD / mo'}
+                              </div>
                             </div>
-                            <div className="text-[9.5px] text-[#8b7b6b] uppercase">
-                              {plan.price === 0 ? 'Free forever' : 'AUD / mo'}
-                            </div>
+
+                            {/* Dropdown Chevron button */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedMcPlanId(isExpanded ? null : plan.id);
+                              }}
+                              className="p-1 rounded text-[#8b7b6b] hover:text-[#15110e] hover:bg-[#f0ebe3] transition-colors cursor-pointer"
+                              title={isExpanded ? 'Collapse features' : 'Expand features'}
+                            >
+                              <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                              >
+                                <polyline points="6 9 12 15 18 9" />
+                              </svg>
+                            </button>
                           </div>
                         </div>
 
-                        {/* Feature bullets */}
-                        <div className="mt-3 pt-2.5 border-t border-[#f2ede4] grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs text-[#544332]">
-                          {plan.features.map((feat, fIdx) => (
-                            <div key={fIdx} className="flex items-start gap-1.5 text-[11px]">
-                              <span className="text-[#bd9661] font-bold shrink-0">✓</span>
-                              <span>{feat}</span>
+                        {/* Expandable Features Dropdown */}
+                        {isExpanded && (
+                          <div className="mt-2.5 pt-2.5 border-t border-[#f0ede6] transition-all">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1.5">
+                              Plan Features:
                             </div>
-                          ))}
-                        </div>
+                            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-[#524438]">
+                              {plan.features.map((feat, fIdx) => (
+                                <li key={fIdx} className="flex items-center gap-1.5 text-[11px]">
+                                  <span className="text-[#bd9661] font-bold text-xs shrink-0">✓</span>
+                                  <span>{feat}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
 
-                {/* Selected Tier Action Notice & Payment Fields */}
-                {selectedMcPlanId === 'mc_base' ? (
-                  <div className="bg-[#f7f9f7] border border-[#d2ded4] rounded-xl p-3.5 flex items-start gap-3 text-xs text-[#2b523c]">
-                    <div className="w-6 h-6 rounded-full bg-[#3f7360] text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
-                      ✓
-                    </div>
-                    <div>
-                      <div className="font-bold text-[#1a442e]">Free Base Tier Selected ($0 AUD)</div>
-                      <p className="text-[11px] text-[#3e6850] mt-0.5 leading-relaxed">
-                        You can coordinate 1 private nominated wedding with full run sheets, speech prompters, and couple sync at zero cost. Note that your profile will remain <strong>unlisted</strong> from the certified MC directory. No payment details required. Upgrade anytime to receive couple bookings.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
+                {/* Selected Tier Action Notice & Payment Fields (Free green box removed per user request) */}
+                {selectedMcPlanId !== 'mc_base' && (
                   /* Paid Plan: Stripe Card Section */
                   <div className="bg-[#faf8f5] p-4 rounded-xl border border-[#e8ded0] space-y-3">
                     <div className="flex items-center justify-between pb-1 border-b border-[#ebdcc9]">
@@ -2451,7 +2477,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
           )}
 
           {/* Bottom link to Login (Displayed only on initial registration step, not on payment or MC step) */}
-          {(accountType !== 'couple' || coupleStep === 'registration') && (
+          {(accountType === 'couple' ? coupleStep === 'registration' : mcStep === 'details') && (
             <div className="mt-5 text-center text-xs text-[#8b7b6b]">
               Already have an account?{' '}
               <button
