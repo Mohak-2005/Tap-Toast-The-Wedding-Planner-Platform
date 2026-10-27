@@ -716,10 +716,10 @@ export const SEED_DATA: DemoState = {
     { id: "gf12", guestName: "The Davis Family", amount: 500, type: "wishing-well", date: "3 weeks ago", message: "Warmest congratulations!", thankYouSent: true, thankYouStatus: "Completed" }
   ],
   tenants: [
-    { id: "ten1", businessName: "Galati MC & Entertainment", contactName: "Robert Galati", email: "robert@galati.demo", plan: "Pro ($299/mo)", status: "Active", weddingsCount: 7, mrr: 299, createdAt: "12 Jan 2025" },
-    { id: "ten2", businessName: "Coastal Celebrations MC", contactName: "Marcus Thorne", email: "marcus@coastalmc.com.au", plan: "Pro ($299/mo)", status: "Active", weddingsCount: 5, mrr: 299, createdAt: "04 Mar 2025" },
-    { id: "ten3", businessName: "Sydney Vows & Beats", contactName: "Elena Rostova", email: "elena@sydneyvows.com.au", plan: "Standard ($199/mo)", status: "Active", weddingsCount: 3, mrr: 199, createdAt: "18 May 2025" },
-    { id: "ten4", businessName: "Melbourne Elite Hosts", contactName: "Julian Brooks", email: "julian@melbourneelite.com.au", plan: "Starter ($99/mo)", status: "Suspended", weddingsCount: 1, mrr: 99, createdAt: "01 Aug 2025" }
+    { id: "ten1", businessName: "Galati MC & Entertainment", contactName: "Robert Galati", email: "robert@galati.demo", phone: "0412 884 991", plan: "Pro ($299/mo)", status: "Active", weddingsCount: 7, mrr: 299, createdAt: "12 Jan 2025" },
+    { id: "ten2", businessName: "Coastal Celebrations MC", contactName: "Marcus Thorne", email: "marcus@coastalmc.com.au", phone: "0413 772 109", plan: "Pro ($299/mo)", status: "Active", weddingsCount: 5, mrr: 299, createdAt: "04 Mar 2025" },
+    { id: "ten3", businessName: "Sydney Vows & Beats", contactName: "Elena Rostova", email: "elena@sydneyvows.com.au", phone: "0414 661 882", plan: "Standard ($199/mo)", status: "Active", weddingsCount: 3, mrr: 199, createdAt: "18 May 2025" },
+    { id: "ten4", businessName: "Melbourne Elite Hosts", contactName: "Julian Brooks", email: "julian@melbourneelite.com.au", phone: "0415 550 773", plan: "Starter ($99/mo)", status: "Suspended", weddingsCount: 1, mrr: 99, createdAt: "01 Aug 2025" }
   ],
   auditLog: [
     {

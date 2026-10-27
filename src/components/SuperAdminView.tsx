@@ -222,6 +222,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
   const [invBiz, setInvBiz] = useState('');
   const [invLead, setInvLead] = useState('');
   const [invEmail, setInvEmail] = useState('');
+  const [invPhone, setInvPhone] = useState('');
   const [invPlan, setInvPlan] = useState('Pro');
 
   // Couple Invitation States (Requirement: Super Admin can invite couple to register)
@@ -422,6 +423,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
       businessName: invBiz,
       contactName: invLead,
       email: invEmail,
+      phone: invPhone.trim() || '0412 884 991',
       plan: planDisplay,
       weddingsCount: 0,
       mrr,
@@ -446,6 +448,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
     setInvBiz('');
     setInvLead('');
     setInvEmail('');
+    setInvPhone('');
     showToast(`Onboarded new MC tenant: ${invBiz}!`, 'success');
   };
 
@@ -789,7 +792,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                       <tr key={t.id}>
                         <td>
                           <strong className="text-sm font-semibold text-[#15110e] block">{t.businessName}</strong>
-                          <span className="text-[11px] text-[#8b7b6b]">{t.contactName} ({t.email})</span>
+                          <span className="text-[11px] text-[#8b7b6b]">{t.contactName} &bull; {t.email}{t.phone ? ` &bull; ${t.phone}` : ''}</span>
                         </td>
                         <td>
                           <select
@@ -2659,6 +2662,12 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                 <label className="field-label">Email</label>
                 <div className="text-xs text-[#15110e]">{selectedTenant.email}</div>
               </div>
+              {selectedTenant.phone && (
+                <div>
+                  <label className="field-label">MC Phone No</label>
+                  <div className="text-xs text-[#15110e]">{selectedTenant.phone}</div>
+                </div>
+              )}
               <div>
                 <label className="field-label">Current Subscription</label>
                 <div className="flex items-center gap-2 mt-1">
@@ -3062,17 +3071,16 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                     />
                   </div>
                   <div className="field-group">
-                    <label className="field-label">Subscription Tier</label>
-                    <select
-                      value={invPlan}
-                      onChange={(e) => setInvPlan(e.target.value)}
-                      className="text-input"
-                    >
-                      {plans.map(p => (
-                        <option key={p.id} value={p.key}>{p.key} (${p.price}/mo)</option>
-                      ))}
-                    </select>
-                  </div>
+  <label className="field-label">MC Phone No</label>
+  <input
+    type="tel"
+    required
+    placeholder="e.g. 0412 884 991"
+    value={invPhone}
+    onChange={(e) => setInvPhone(e.target.value)}
+    className="text-input"
+  />
+</div>
                 </div>
               </div>
               <div className="px-6 py-4 bg-[#faf8f5] border-t border-[#e8ded0] flex justify-end gap-3">
