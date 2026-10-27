@@ -1343,21 +1343,8 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                           Select Certified MC
                         </h3>
                         <p className="text-[11px] text-[#8b7b6b] mt-0.5">
-                          Filtered to MCs available on your wedding date. Chat with Joey AI to compare.
+                          Chat with Joey AI to compare and audit reception preferences.
                         </p>
-                      </div>
-
-                      {/* Date Availability Status Badge */}
-                      <div className="bg-[#faf8f5] border border-[#e8ded0] rounded-xl p-2.5 flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1.5">
-                          <span>📅</span>
-                          <span className="font-serif font-bold text-[#15110e]">
-                            {weddingDate || 'Date Not Picked'}
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                          {availableMcs.filter(m => m.id !== 'mc_custom').length} Hosts Available
-                        </span>
                       </div>
 
                       {/* MC Cards with Photo, Name, Service, Rating, Eye-View Pop-up */}

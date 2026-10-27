@@ -1697,56 +1697,11 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                 </p>
               </div>
 
-              {/* WEDDING DATE AVAILABILITY STATUS BANNER */}
-              <div className="bg-[#faf8f5] border border-[#e8ded0] rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-[#bd9661] text-base">📅</span>
-                  <div>
-                    <div className="text-[10px] text-[#8b7b6b] uppercase font-bold tracking-wider">
-                      Selected Wedding Date
-                    </div>
-                    <div className="font-serif font-bold text-xs text-[#15110e]">
-                      {weddingDate
-                        ? new Date(weddingDate + 'T12:00:00').toLocaleDateString('en-AU', {
-                            weekday: 'short',
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })
-                        : 'Date Not Specified'}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 self-start sm:self-auto">
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-full">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>{availableMcs.filter(m => m.id !== 'mc_custom').length} Certified MCs Available on this Date</span>
-                  </span>
-                </div>
-              </div>
-
-              {availableMcs.filter(m => m.id !== 'mc_custom').length === 0 && (
-                <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 flex items-start gap-2">
-                  <span className="text-base">⚠️</span>
-                  <div>
-                    <strong className="font-bold">All certified hosts are booked on this date.</strong>
-                    <p className="mt-0.5 text-[#6b5847]">
-                      You can invite your private MC or coordinator below ($0 platform fee), or return to Step 1 to choose an alternate date.
-                    </p>
-                  </div>
-                </div>
-              )}
-
               {/* REQUIREMENT 2: MC DROPDOWN WITH INFO & PRICING */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#15110e]">
-                    SELECT YOUR CERTIFIED WEDDING MC
-                  </label>
-                  <span className="text-[10.5px] text-[#8b7b6b]">
-                    Showing only MCs available on your date
-                  </span>
-                </div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#15110e]">
+                  SELECT YOUR CERTIFIED WEDDING MC
+                </label>
 
                 <div className="relative">
                   <button
