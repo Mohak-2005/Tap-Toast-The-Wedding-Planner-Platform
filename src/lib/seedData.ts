@@ -378,8 +378,8 @@ export const SEED_DATA: DemoState = {
           notes: 'VIP family tables closer to bridal stage for smooth microphone handover during speeches',
           tables: [
             { id: 'head', weddingId: 'w1', name: 'HEAD TABLE', capacity: 8, isHead: true, shape: 'king', category: 'Bridal Party', zone: 'Stage & VIP Wing', x: 50, y: 12 },
-            { id: 'table_2', weddingId: 'w1', name: 'Table 2 (Family VIP)', capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'VIP Stage Left', x: 28, y: 28 },
-            { id: 'table_4', weddingId: 'w1', name: 'Table 4 (Family VIP)', capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'VIP Stage Right', x: 72, y: 28 },
+            { id: 'table_2', weddingId: 'w1', name: 'Table 2', capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'VIP Stage Left', x: 28, y: 28 },
+            { id: 'table_4', weddingId: 'w1', name: 'Table 4', capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'VIP Stage Right', x: 72, y: 28 },
             { id: 'table_1', weddingId: 'w1', name: 'Table 1', capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Center Ballroom', x: 22, y: 48 },
             { id: 'table_3', weddingId: 'w1', name: 'Table 3', capacity: 8, isHead: false, shape: 'rectangular', category: 'Friends', zone: 'Right Garden', x: 78, y: 48 },
             { id: 'table_5', weddingId: 'w1', name: 'Table 5', capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Left Terrace', x: 28, y: 72 },
@@ -558,14 +558,14 @@ export const SEED_DATA: DemoState = {
 
     // Wedding 2: Aisha & Marcus (w2)
     { id: "w2_head", weddingId: "w2", name: "HEAD TABLE", capacity: 8, isHead: true, shape: 'king', category: 'Bridal Party', zone: 'Harbour Stage', x: 50, y: 15 },
-    { id: "w2_t1", weddingId: "w2", name: "Table 1 (Family)", capacity: 10, isHead: false, shape: 'round', category: 'Family', zone: 'Harbour Terrace', x: 25, y: 35 },
-    { id: "w2_t2", weddingId: "w2", name: "Table 2 (Friends)", capacity: 10, isHead: false, shape: 'round', category: 'Friends', zone: 'Harbour Terrace', x: 75, y: 35 },
-    { id: "w2_t3", weddingId: "w2", name: "Table 3 (Colleagues)", capacity: 10, isHead: false, shape: 'rectangular', category: 'Colleagues', zone: 'Harbour Terrace', x: 50, y: 75 },
+    { id: "w2_t1", weddingId: "w2", name: "Table 1", capacity: 10, isHead: false, shape: 'round', category: 'Family', zone: 'Harbour Terrace', x: 25, y: 35 },
+    { id: "w2_t2", weddingId: "w2", name: "Table 2", capacity: 10, isHead: false, shape: 'round', category: 'Friends', zone: 'Harbour Terrace', x: 75, y: 35 },
+    { id: "w2_t3", weddingId: "w2", name: "Table 3", capacity: 10, isHead: false, shape: 'rectangular', category: 'Colleagues', zone: 'Harbour Terrace', x: 50, y: 75 },
 
     // Wedding 3: Emma & Tom (w3)
     { id: "w3_head", weddingId: "w3", name: "HEAD TABLE", capacity: 8, isHead: true, shape: 'king', category: 'Bridal Party', zone: 'Lawn Pavilion', x: 50, y: 15 },
-    { id: "w3_t1", weddingId: "w3", name: "Table 1 (Banqueting)", capacity: 12, isHead: false, shape: 'rectangular', category: 'Family', zone: 'Lawn Pavilion', x: 30, y: 35 },
-    { id: "w3_t2", weddingId: "w3", name: "Table 2 (Garden)", capacity: 10, isHead: false, shape: 'round', category: 'Friends', zone: 'Lawn Pavilion', x: 70, y: 35 }
+    { id: "w3_t1", weddingId: "w3", name: "Table 1", capacity: 12, isHead: false, shape: 'rectangular', category: 'Family', zone: 'Lawn Pavilion', x: 30, y: 35 },
+    { id: "w3_t2", weddingId: "w3", name: "Table 2", capacity: 10, isHead: false, shape: 'round', category: 'Friends', zone: 'Lawn Pavilion', x: 70, y: 35 }
   ],
   guests: [
     // Mark Johnson (The Johnson Family, Table 4 Seat 1)

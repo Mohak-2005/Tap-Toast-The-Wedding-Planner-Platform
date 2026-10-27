@@ -32,89 +32,149 @@ export function getStoredState(): DemoState {
                 ? w.privateRunSheet
                 : (seedW?.privateRunSheet || []),
               savedSeatingArrangements: (Array.isArray(w.savedSeatingArrangements) && w.savedSeatingArrangements.length > 0)
-                ? w.savedSeatingArrangements
+                ? w.savedSeatingArrangements.map((a: any) => ({
+                    ...a,
+                    tables: (a.tables || []).map((t: Table) => ({
+                      ...t,
+                      name: (t.name || '').replace(/\s*\([^)]*\)/g, '').trim() || t.name
+                    }))
+                  }))
                 : (seedW?.savedSeatingArrangements || [])
             };
           }) : SEED_DATA.weddings,
-          guests: Array.isArray(parsed.guests) ? (() => {
-            const rawList = parsed.guests.map((g: Guest) => ({
-              ...g,
-              weddingId: g.weddingId || 'w1'
-            }));
-            // Auto-migrate legacy combined guests (e.g. 'johnson_fam', combined Chen, Whitfield, etc.)
-            const hasLegacy = rawList.some((g: Guest) =>
-              g.id === 'johnson_fam' ||
-              g.id === 'g_rchen' ||
-              g.id === 'g_dwhitfield' ||
-              g.id === 'g_toneill' ||
-              g.id === 'g_u13' ||
-              g.id === 'g_u17' ||
-              g.name === 'Mark & Sarah Johnson'
-            );
-            let list = rawList;
-            if (hasLegacy) {
-              const seedW1 = (SEED_DATA.guests || []).filter(g => !g.weddingId || g.weddingId === 'w1');
-              const nonLegacy = rawList.filter((g: Guest) =>
-                g.id !== 'johnson_fam' &&
-                g.id !== 'g_rchen' &&
-                g.id !== 'g_dwhitfield' &&
-                g.id !== 'g_toneill' &&
-                g.id !== 'g_u13' &&
-                g.id !== 'g_u17' &&
-                g.name !== 'Mark & Sarah Johnson' &&
-                !g.name.includes(' & Family')
-              );
-              const presentIds = new Set(nonLegacy.map((g: Guest) => g.id));
-              const missingSeedW1 = seedW1.filter(g => !presentIds.has(g.id));
-              list = [...nonLegacy, ...missingSeedW1];
-            }
-            const hasW2 = list.some((g: Guest) => g.weddingId === 'w2');
-            const hasW3 = list.some((g: Guest) => g.weddingId === 'w3');
-            const missingSeed = (SEED_DATA.guests || []).filter((g: Guest) =>
-              (!hasW2 && g.weddingId === 'w2') || (!hasW3 && g.weddingId === 'w3')
-            );
-            const combinedList = [...list, ...missingSeed];
-            
-            // Enrich or ensure Uncle David Household is present with requested demo specs
-            const uncleExists = combinedList.some((g: Guest) => g.id === 'uncle_david' || g.household === 'Uncle David Household');
-            if (!uncleExists) {
-              const uncleSeed = (SEED_DATA.guests || []).find(g => g.id === 'uncle_david');
-              if (uncleSeed) combinedList.push(uncleSeed);
-            } else {
-              // Ensure its specs match: 2 adults, 3 kids, Vegan & Nut allergy, Table 6
-              return combinedList.map((g: Guest) => {
-                if (g.id === 'uncle_david' || g.household === 'Uncle David Household') {
-                  return {
-                    ...g,
-                    name: 'Uncle David',
-                    household: 'Uncle David Household',
-                    phone: g.phone || '0412 555 888',
-                    category: g.category || "Groom's Family",
-                    rsvpStatus: g.rsvpStatus || 'awaiting',
-                    adults: 2,
-                    kids: 3,
-                    guestCount: 5,
-                    dietary: 'Vegan, Nut allergy',
-                    tableId: g.tableId || 'table_6',
-                  };
-                }
-                return g;
-              });
-            }
-            return combinedList;
-          })() : SEED_DATA.guests,
-          tables: Array.isArray(parsed.tables) ? (() => {
-            const list = parsed.tables.map((t: Table) => ({
+          tables: (() => {
+            const list = Array.isArray(parsed.tables) ? parsed.tables.map((t: Table) => ({
               ...t,
+              name: (t.name || '').replace(/\s*\([^)]*\)/g, '').trim() || t.name,
               weddingId: t.weddingId || 'w1'
-            }));
+            })) : SEED_DATA.tables;
             const hasW2 = list.some((t: Table) => t.weddingId === 'w2');
             const hasW3 = list.some((t: Table) => t.weddingId === 'w3');
             const missingSeed = (SEED_DATA.tables || []).filter((t: Table) =>
               (!hasW2 && t.weddingId === 'w2') || (!hasW3 && t.weddingId === 'w3')
             );
             return [...list, ...missingSeed];
-          })() : SEED_DATA.tables,
+          })(),
+          guests: (() => {
+            const finalTables: Table[] = Array.isArray(parsed.tables) ? (() => {
+              const list = parsed.tables.map((t: Table) => ({
+                ...t,
+                name: (t.name || '').replace(/\s*\([^)]*\)/g, '').trim() || t.name,
+                weddingId: t.weddingId || 'w1'
+              }));
+              const hasW2 = list.some((t: Table) => t.weddingId === 'w2');
+              const hasW3 = list.some((t: Table) => t.weddingId === 'w3');
+              const missingSeed = (SEED_DATA.tables || []).filter((t: Table) =>
+                (!hasW2 && t.weddingId === 'w2') || (!hasW3 && t.weddingId === 'w3')
+              );
+              return [...list, ...missingSeed];
+            })() : SEED_DATA.tables;
+
+            const rawGuests: Guest[] = Array.isArray(parsed.guests) ? (() => {
+              const rawList = parsed.guests.map((g: Guest) => ({
+                ...g,
+                weddingId: g.weddingId || 'w1'
+              }));
+              const hasLegacy = rawList.some((g: Guest) =>
+                g.id === 'johnson_fam' ||
+                g.id === 'g_rchen' ||
+                g.id === 'g_dwhitfield' ||
+                g.id === 'g_toneill' ||
+                g.id === 'g_u13' ||
+                g.id === 'g_u17' ||
+                g.name === 'Mark & Sarah Johnson'
+              );
+              let list = rawList;
+              if (hasLegacy) {
+                const seedW1 = (SEED_DATA.guests || []).filter(g => !g.weddingId || g.weddingId === 'w1');
+                const nonLegacy = rawList.filter((g: Guest) =>
+                  g.id !== 'johnson_fam' &&
+                  g.id !== 'g_rchen' &&
+                  g.id !== 'g_dwhitfield' &&
+                  g.id !== 'g_toneill' &&
+                  g.id !== 'g_u13' &&
+                  g.id !== 'g_u17' &&
+                  g.name !== 'Mark & Sarah Johnson' &&
+                  !g.name.includes(' & Family')
+                );
+                const presentIds = new Set(nonLegacy.map((g: Guest) => g.id));
+                const missingSeedW1 = seedW1.filter(g => !presentIds.has(g.id));
+                list = [...nonLegacy, ...missingSeedW1];
+              }
+              const hasW2 = list.some((g: Guest) => g.weddingId === 'w2');
+              const hasW3 = list.some((g: Guest) => g.weddingId === 'w3');
+              const missingSeed = (SEED_DATA.guests || []).filter((g: Guest) =>
+                (!hasW2 && g.weddingId === 'w2') || (!hasW3 && g.weddingId === 'w3')
+              );
+              const combinedList = [...list, ...missingSeed];
+              
+              const uncleExists = combinedList.some((g: Guest) => g.id === 'uncle_david' || g.household === 'Uncle David Household');
+              if (!uncleExists) {
+                const uncleSeed = (SEED_DATA.guests || []).find(g => g.id === 'uncle_david');
+                if (uncleSeed) combinedList.push(uncleSeed);
+              } else {
+                return combinedList.map((g: Guest) => {
+                  if (g.id === 'uncle_david' || g.household === 'Uncle David Household') {
+                    return {
+                      ...g,
+                      name: 'Uncle David',
+                      household: 'Uncle David Household',
+                      phone: g.phone || '0412 555 888',
+                      category: g.category || "Groom's Family",
+                      rsvpStatus: g.rsvpStatus || 'awaiting',
+                      adults: 2,
+                      kids: 3,
+                      guestCount: 5,
+                      dietary: 'Vegan, Nut allergy',
+                      tableId: g.tableId || 'table_6',
+                    };
+                  }
+                  return g;
+                });
+              }
+              return combinedList;
+            })() : SEED_DATA.guests;
+
+            // STRICT CAPACITY ENFORCEMENT: Max capacity C => max seated count is strictly C (e.g. 8/8 or 10/10)
+            const tableCapMap = new Map<string, number>();
+            finalTables.forEach((t: Table) => tableCapMap.set(t.id, t.capacity || 8));
+
+            const guestsByTable = new Map<string, Guest[]>();
+            const unassignedGuests: Guest[] = [];
+
+            rawGuests.forEach((g: Guest) => {
+              if (g.tableId && tableCapMap.has(g.tableId)) {
+                if (!guestsByTable.has(g.tableId)) guestsByTable.set(g.tableId, []);
+                guestsByTable.get(g.tableId)!.push({ ...g });
+              } else {
+                unassignedGuests.push({ ...g, tableId: null, seatIndex: null });
+              }
+            });
+
+            const sanitizedGuests: Guest[] = [...unassignedGuests];
+            guestsByTable.forEach((seated, tableId) => {
+              const cap = tableCapMap.get(tableId) || 8;
+              seated.sort((a, b) => (a.seatIndex ?? 999) - (b.seatIndex ?? 999));
+              seated.forEach((g, idx) => {
+                if (idx < cap) {
+                  sanitizedGuests.push({
+                    ...g,
+                    tableId,
+                    seatIndex: idx,
+                  });
+                } else {
+                  // Overflow guests exceeding capacity are unseated safely
+                  sanitizedGuests.push({
+                    ...g,
+                    tableId: null,
+                    seatIndex: null,
+                  });
+                }
+              });
+            });
+
+            return sanitizedGuests;
+          })(),
           gifts: Array.isArray(parsed.gifts) ? parsed.gifts : SEED_DATA.gifts,
           users: Array.isArray(parsed.users) ? parsed.users : SEED_DATA.users,
           clients: Array.isArray(parsed.clients) ? parsed.clients : (SEED_DATA.clients || []),

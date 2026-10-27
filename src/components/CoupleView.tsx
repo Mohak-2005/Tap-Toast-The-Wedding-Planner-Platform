@@ -414,6 +414,7 @@ export default function CoupleView({
       caption: string;
       icon: string;
       status: string;
+      layoutMode?: 'single' | 'collage';
       photos: string[];
     };
   }>({
@@ -426,7 +427,7 @@ export default function CoupleView({
       status: 'Published',
       photos: [
         'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80',
       ],
     },
     inMemoriam: {
@@ -475,13 +476,17 @@ export default function CoupleView({
     },
   });
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, mode?: 'single' | 'collage') => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     const currentPhotos = contentPages[contentSubTab].photos || [];
-    const availableSlots = 5 - currentPhotos.length;
-    if (availableSlots <= 0) return;
+    const maxSlots = mode === 'single' ? 1 : 5;
+    const availableSlots = mode === 'single' ? 1 : Math.max(0, 5 - currentPhotos.length);
+    if (availableSlots <= 0 && mode !== 'single') {
+      showToast('Maximum of 5 photos reached for this page', 'error');
+      return;
+    }
 
     const filesToRead = Array.from(files).slice(0, availableSlots);
     const readers = filesToRead.map((file) => {
@@ -493,14 +498,22 @@ export default function CoupleView({
     });
 
     Promise.all(readers).then((newPhotos) => {
-      setContentPages((prev) => ({
-        ...prev,
-        [contentSubTab]: {
-          ...prev[contentSubTab],
-          photos: [...(prev[contentSubTab].photos || []), ...newPhotos].slice(0, 5),
-        },
-      }));
-      showToast(`Added ${newPhotos.length} photo${newPhotos.length > 1 ? 's' : ''}`, 'success');
+      setContentPages((prev) => {
+        const targetMode = mode || (prev[contentSubTab].layoutMode || (newPhotos.length > 1 ? 'collage' : 'single'));
+        const updatedPhotos = mode === 'single'
+          ? newPhotos.slice(0, 1)
+          : [...(prev[contentSubTab].photos || []), ...newPhotos].slice(0, 5);
+        return {
+          ...prev,
+          [contentSubTab]: {
+            ...prev[contentSubTab],
+            photos: updatedPhotos,
+            layoutMode: targetMode,
+          },
+        };
+      });
+      setPreviewPhotoIndex(0);
+      showToast(mode === 'single' ? 'Single hero photo uploaded' : `Added ${newPhotos.length} photo${newPhotos.length > 1 ? 's' : ''} to collage`, 'success');
       e.target.value = '';
     });
   };
@@ -2218,66 +2231,144 @@ export default function CoupleView({
                     />
                   </div>
 
-                  {/* Photo Upload & Gallery Slots */}
-                  <div>
-                    <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1.5">PHOTOS</label>
-                    <div className="grid grid-cols-5 gap-2.5">
-                      {(contentPages[contentSubTab].photos || []).map((photoUrl, idx) => {
-                        const isSelected = previewPhotoIndex === idx;
-                        return (
-                          <div
-                            key={idx}
-                            onClick={() => setPreviewPhotoIndex(idx)}
-                            className={`relative group aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-pointer shadow-2xs ${
-                              isSelected
-                                ? 'border-[#bd9661] ring-2 ring-[#bd9661]/30'
-                                : 'border-[#e8ded0] hover:border-[#bd9661]/60'
-                            }`}
-                          >
-                            <img
-                              src={photoUrl}
-                              alt=""
-                              className="w-full h-full object-cover"
-                            />
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemovePhoto(idx);
-                              }}
-                              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#15110e]/80 hover:bg-[#c93b2b] text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-sm"
-                              title="Remove photo"
-                            >
-                              &times;
-                            </button>
-                            {isSelected && (
-                              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-[#bd9661] text-[#15110e] text-[8.5px] font-bold px-1.5 py-0.2 rounded-full uppercase tracking-wider shadow-2xs">
-                                Cover
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
+                  {/* Photo Upload & Gallery Management */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase">PHOTOS &amp; GALLERY</label>
+                      {/* Layout Mode Selector */}
+                      <div className="flex items-center gap-1 bg-[#f5efe6] p-0.5 rounded-lg border border-[#e8ded0]">
+                        <button
+                          type="button"
+                          onClick={() => setContentPages({
+                            ...contentPages,
+                            [contentSubTab]: { ...contentPages[contentSubTab], layoutMode: 'single' }
+                          })}
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer transition-all ${
+                            (contentPages[contentSubTab].layoutMode || 'single') === 'single'
+                              ? 'bg-[#bd9661] text-[#15110e] shadow-2xs'
+                              : 'text-[#8b7b6b] hover:text-[#15110e]'
+                          }`}
+                        >
+                          📷 Single Photo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setContentPages({
+                            ...contentPages,
+                            [contentSubTab]: { ...contentPages[contentSubTab], layoutMode: 'collage' }
+                          })}
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer transition-all ${
+                            contentPages[contentSubTab].layoutMode === 'collage'
+                              ? 'bg-[#bd9661] text-[#15110e] shadow-2xs'
+                              : 'text-[#8b7b6b] hover:text-[#15110e]'
+                          }`}
+                        >
+                          🖼️ Photo Collage
+                        </button>
+                      </div>
+                    </div>
 
-                      {/* Upload Slot Tile (shown strictly when fewer than 5 photos) */}
-                      {(contentPages[contentSubTab].photos || []).length < 5 && (
-                        <label className="aspect-square rounded-xl border-2 border-dashed border-[#bd9661]/60 hover:border-[#bd9661] bg-[#faf8f5] hover:bg-[#faf5ee] flex flex-col items-center justify-center cursor-pointer transition-all group text-center p-1 shadow-2xs">
+                    {/* Initial Upload Options (Provide 2 options: Single Image vs Images as Collage) */}
+                    {(!contentPages[contentSubTab].photos || contentPages[contentSubTab].photos.length === 0) ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-1">
+                        <label className="border-2 border-dashed border-[#bd9661]/60 hover:border-[#bd9661] bg-[#faf8f5] hover:bg-[#f5efe6] rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all group shadow-2xs">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handlePhotoUpload(e, 'single')}
+                          />
+                          <div className="w-10 h-10 rounded-full bg-white border border-[#bd9661]/40 flex items-center justify-center text-lg mb-2 group-hover:scale-110 transition-transform shadow-2xs">
+                            📷
+                          </div>
+                          <span className="text-xs font-bold text-[#15110e]">Upload Single Image</span>
+                          <span className="text-[10px] text-[#8b7b6b] mt-0.5">Featured full-width hero photo</span>
+                        </label>
+
+                        <label className="border-2 border-dashed border-[#bd9661]/60 hover:border-[#bd9661] bg-[#faf8f5] hover:bg-[#f5efe6] rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all group shadow-2xs">
                           <input
                             type="file"
                             accept="image/*"
                             multiple
                             className="hidden"
-                            onChange={handlePhotoUpload}
+                            onChange={(e) => handlePhotoUpload(e, 'collage')}
                           />
-                          <div className="w-7 h-7 rounded-full bg-white border border-[#bd9661]/40 flex items-center justify-center text-[#bd9661] group-hover:scale-110 transition-transform text-sm font-bold shadow-2xs">
-                            +
+                          <div className="w-10 h-10 rounded-full bg-white border border-[#bd9661]/40 flex items-center justify-center text-lg mb-2 group-hover:scale-110 transition-transform shadow-2xs">
+                            🖼️
                           </div>
-                          <span className="text-[10px] font-bold text-[#8b7b6b] group-hover:text-[#15110e] mt-1">
-                            Upload
-                          </span>
+                          <span className="text-xs font-bold text-[#15110e]">Upload Images as Collage</span>
+                          <span className="text-[10px] text-[#8b7b6b] mt-0.5">Curated collage of 2 to 5 photos</span>
                         </label>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {/* Centered Photo Slots */}
+                        <div className="bg-[#faf8f5] border border-[#e8ded0] rounded-xl p-3">
+                          <div className="flex flex-wrap items-center justify-center gap-3">
+                            {(contentPages[contentSubTab].photos || []).map((photoUrl, idx) => {
+                              const isSelected = previewPhotoIndex === idx;
+                              return (
+                                <div
+                                  key={idx}
+                                  onClick={() => setPreviewPhotoIndex(idx)}
+                                  className={`relative group w-18 h-18 sm:w-20 sm:h-20 aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-pointer shadow-2xs ${
+                                    isSelected
+                                      ? 'border-[#bd9661] ring-2 ring-[#bd9661]/30'
+                                      : 'border-[#e8ded0] hover:border-[#bd9661]/60'
+                                  }`}
+                                >
+                                  <img
+                                    src={photoUrl}
+                                    alt=""
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect fill="%23f5efe6" width="100" height="100"/><text fill="%23bd9661" font-size="12" x="50%" y="50%" text-anchor="middle" dominant-baseline="middle">Photo</text></svg>';
+                                    }}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRemovePhoto(idx);
+                                    }}
+                                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-[#15110e]/80 hover:bg-[#c93b2b] text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-sm"
+                                    title="Remove photo"
+                                  >
+                                    &times;
+                                  </button>
+                                  {isSelected && (
+                                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-[#bd9661] text-[#15110e] text-[8.5px] font-bold px-1.5 py-0.2 rounded-full uppercase tracking-wider shadow-2xs">
+                                      Cover
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+
+                            {/* Centered Upload Slot Tile (shown strictly when fewer than 5 photos) */}
+                            {(contentPages[contentSubTab].photos || []).length < 5 && (
+                              <label className="w-18 h-18 sm:w-20 sm:h-20 aspect-square rounded-xl border-2 border-dashed border-[#bd9661]/60 hover:border-[#bd9661] bg-white hover:bg-[#faf5ee] flex flex-col items-center justify-center cursor-pointer transition-all group text-center p-1 shadow-2xs">
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  className="hidden"
+                                  onChange={(e) => handlePhotoUpload(e, contentPages[contentSubTab].layoutMode || 'collage')}
+                                />
+                                <div className="w-6 h-6 rounded-full bg-white border border-[#bd9661]/40 flex items-center justify-center text-[#bd9661] group-hover:scale-110 transition-transform text-xs font-bold shadow-2xs">
+                                  +
+                                </div>
+                                <span className="text-[9.5px] font-bold text-[#8b7b6b] group-hover:text-[#15110e] mt-1">
+                                  Upload
+                                </span>
+                              </label>
+                            )}
+                          </div>
+                        </div>
+
+
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -2350,14 +2441,15 @@ export default function CoupleView({
                     {contentPages[contentSubTab].subtitle}
                   </p>
 
-                  {/* Photo Display / Gallery */}
+                  {/* Photo Display / Gallery (Centered) */}
                   {(() => {
                     const photos = contentPages[contentSubTab].photos || [];
                     const activeIdx = previewPhotoIndex < photos.length ? previewPhotoIndex : 0;
+                    const isCollage = contentPages[contentSubTab].layoutMode === 'collage' && photos.length > 1;
 
                     if (photos.length === 0) {
                       return (
-                        <div className="bg-[#ede5d8] border border-[#d5c7b5] rounded-xl p-8 my-4 text-center">
+                        <div className="bg-[#ede5d8] border border-[#d5c7b5] rounded-xl p-8 my-4 text-center max-w-md mx-auto">
                           <span className="text-2xl opacity-60">📷</span>
                           <div className="text-xs font-bold text-[#15110e] mt-1">Featured Photo</div>
                           <div className="text-[10px] text-[#8b7b6b]">{contentPages[contentSubTab].caption}</div>
@@ -2365,12 +2457,104 @@ export default function CoupleView({
                       );
                     }
 
+                    if (isCollage) {
+                      // COLLAGE MODE: Photos centered in a luxury collage
+                      return (
+                        <div className="my-4 space-y-2.5 max-w-md mx-auto">
+                          {photos.length === 2 && (
+                            <div className="grid grid-cols-2 gap-2 aspect-[16/10] max-h-[260px] rounded-2xl overflow-hidden shadow-sm">
+                              {photos.map((p, idx) => (
+                                <div key={idx} className="relative overflow-hidden group">
+                                  <img
+                                    src={p}
+                                    alt=""
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300"><rect fill="%23f5efe6" width="300" height="300"/><text fill="%23bd9661" font-size="14" x="50%" y="50%" text-anchor="middle" dominant-baseline="middle">Photo</text></svg>';
+                                    }}
+                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {photos.length === 3 && (
+                            <div className="grid grid-cols-3 gap-2 aspect-[16/10] max-h-[260px] rounded-2xl overflow-hidden shadow-sm">
+                              <div className="col-span-2 relative overflow-hidden group">
+                                <img
+                                  src={photos[0]}
+                                  alt=""
+                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                />
+                              </div>
+                              <div className="col-span-1 grid grid-rows-2 gap-2">
+                                {photos.slice(1, 3).map((p, idx) => (
+                                  <div key={idx} className="relative overflow-hidden group">
+                                    <img
+                                      src={p}
+                                      alt=""
+                                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {photos.length === 4 && (
+                            <div className="grid grid-cols-2 gap-2 aspect-square max-h-[280px] rounded-2xl overflow-hidden shadow-sm">
+                              {photos.map((p, idx) => (
+                                <div key={idx} className="relative overflow-hidden group">
+                                  <img
+                                    src={p}
+                                    alt=""
+                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {photos.length >= 5 && (
+                            <div className="grid grid-cols-4 grid-rows-2 gap-2 aspect-[16/11] max-h-[300px] rounded-2xl overflow-hidden shadow-sm">
+                              <div className="col-span-4 row-span-1 relative overflow-hidden group">
+                                <img
+                                  src={photos[0]}
+                                  alt=""
+                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                />
+                              </div>
+                              {photos.slice(1, 5).map((p, idx) => (
+                                <div key={idx} className="col-span-1 row-span-1 relative overflow-hidden group">
+                                  <img
+                                    src={p}
+                                    alt=""
+                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Centered Caption */}
+                          <div className="text-center text-[11px] text-[#8b7b6b] flex items-center justify-center gap-1.5 px-1 mt-2">
+                            <span>🖼️</span>
+                            <span className="font-medium">{contentPages[contentSubTab].caption}</span>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // SINGLE PHOTO MODE: Centered hero photo with carousel
                     return (
-                      <div className="my-4 space-y-2.5">
-                        <div className="relative rounded-2xl overflow-hidden border border-[#e8ded0] bg-[#15110e] aspect-[16/10] max-h-[260px] shadow-sm flex items-center justify-center group">
+                      <div className="my-4 space-y-2.5 max-w-md mx-auto">
+                        <div className="relative rounded-2xl overflow-hidden border border-[#e8ded0] bg-[#15110e] aspect-[16/10] max-h-[260px] shadow-sm flex items-center justify-center group mx-auto">
                           <img
                             src={photos[activeIdx]}
                             alt={contentPages[contentSubTab].caption || 'Wedding Photo'}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect fill="%23f5efe6" width="400" height="300"/><text fill="%23bd9661" font-family="serif" font-size="20" x="50%" y="50%" text-anchor="middle" dominant-baseline="middle">Wedding Photo</text></svg>';
+                            }}
                             className="w-full h-full object-cover transition-all duration-300"
                           />
 
@@ -2412,32 +2596,13 @@ export default function CoupleView({
                           )}
                         </div>
 
-                        {/* Caption & Mini Thumbnail Strip */}
-                        <div className="flex items-center justify-between text-left px-1">
-                          <div className="text-[11px] text-[#8b7b6b] flex items-center gap-1.5 truncate">
-                            <span>📷</span>
-                            <span className="font-medium truncate">{contentPages[contentSubTab].caption}</span>
-                          </div>
-
-                          {photos.length > 1 && (
-                            <div className="flex items-center gap-1 shrink-0">
-                              {photos.map((p, idx) => (
-                                <button
-                                  key={idx}
-                                  type="button"
-                                  onClick={() => setPreviewPhotoIndex(idx)}
-                                  className={`w-6 h-6 rounded-md overflow-hidden border transition-all cursor-pointer ${
-                                    activeIdx === idx
-                                      ? 'border-[#bd9661] ring-1 ring-[#bd9661]'
-                                      : 'border-transparent opacity-60 hover:opacity-100'
-                                  }`}
-                                >
-                                  <img src={p} alt="" className="w-full h-full object-cover" />
-                                </button>
-                              ))}
-                            </div>
-                          )}
+                        {/* Centered Caption */}
+                        <div className="text-center text-[11px] text-[#8b7b6b] flex items-center justify-center gap-1.5 px-1 mt-2">
+                          <span>📷</span>
+                          <span className="font-medium">{contentPages[contentSubTab].caption}</span>
                         </div>
+
+
                       </div>
                     );
                   })()}

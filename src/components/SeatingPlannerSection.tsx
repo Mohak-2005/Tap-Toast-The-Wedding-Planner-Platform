@@ -81,7 +81,8 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
       let y = tbl.y !== undefined ? tbl.y : 25 + Math.floor(idx / 4) * 16;
       let category = tbl.category || (tbl.isHead ? 'Bridal Party' : idx % 2 === 0 ? 'Family' : 'Friends');
       let zone = tbl.zone || 'Main Ballroom';
-      return { ...tbl, weddingId: currentWeddingId, shape, capacity, x, y, category, zone };
+      const cleanName = (tbl.name || '').replace(/\s*\([^)]*\)/g, '').trim() || tbl.name || `Table ${idx + 1}`;
+      return { ...tbl, name: cleanName, weddingId: currentWeddingId, shape, capacity, x, y, category, zone };
     });
   }, [state.tables, currentWeddingId]);
 
@@ -611,10 +612,10 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
 
     const new40Tables: Table[] = [
       // Head Table & Stage
-      { id: 'head', name: 'HEAD TABLE (Bridal Party)', capacity: 8, isHead: true, shape: 'king', x: 50, y: 12, category: 'Bridal Party', zone: 'Stage & VIP Wing' },
+      { id: 'head', name: 'HEAD TABLE', capacity: 8, isHead: true, shape: 'king', x: 50, y: 12, category: 'Bridal Party', zone: 'Stage & VIP Wing' },
       // King Table A & B (large banquets accommodating 32 guests each)
-      { id: 'king_a', name: 'King Table A (Banquet)', capacity: 32, isHead: false, shape: 'king', x: 25, y: 78, category: 'Family', zone: 'North Wing' },
-      { id: 'king_b', name: 'King Table B (Banquet)', capacity: 32, isHead: false, shape: 'king', x: 75, y: 78, category: 'Family', zone: 'South Wing' },
+      { id: 'king_a', name: 'King Table A', capacity: 32, isHead: false, shape: 'king', x: 25, y: 78, category: 'Family', zone: 'North Wing' },
+      { id: 'king_b', name: 'King Table B', capacity: 32, isHead: false, shape: 'king', x: 75, y: 78, category: 'Family', zone: 'South Wing' },
     ];
 
     // Generate remaining 37 tables (Round & Rectangular, 8-12 capacity each)
@@ -630,7 +631,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
 
       new40Tables.push({
         id: `tbl_40_${i}`,
-        name: `Table ${i} (${cat})`,
+        name: `Table ${i}`,
         capacity,
         shape,
         isHead: false,
@@ -869,11 +870,8 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                 </div>
                 <div className="flex items-center gap-2 mt-0.5">
                   <h3 className="font-serif text-2xl font-bold text-[#15110e]">
-                    {activeTable.name}
+                    {(activeTable.name || '').replace(/\s*\([^)]*\)/g, '').trim()}
                   </h3>
-                  <span className="bg-[#faf5ed] border border-[#bd9661]/50 text-[#916c3d] text-xs font-bold px-2.5 py-0.5 rounded-full uppercase">
-                    {activeTable.shape} &bull; {activeTable.category || 'General'}
-                  </span>
                 </div>
               </div>
             </div>
@@ -918,29 +916,10 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                   value={activeTable.name}
                   onChange={(e) => handleUpdateTableDetails(activeTable.id, { name: e.target.value })}
                   className="bg-white border border-[#e8ded0] rounded-xl px-3 py-1.5 font-serif font-bold text-sm text-[#15110e] outline-none focus:border-[#bd9661] w-full max-w-xs shadow-2xs"
-                  placeholder="e.g. Table 1 (Family)"
+                  placeholder="e.g. Table 1, Table 2, Head Table"
                 />
               </div>
-              {/* Quick Preset Chips */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                <span className="text-[10px] text-[#8b7b6b]">Suggestions:</span>
-                {['Family', 'School Friends', 'Paris', 'Rose Garden', 'Colleagues', 'VIP', 'Friends'].map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => {
-                      const prefix = activeTable.name.split('(')[0].trim() || 'Table';
-                      handleUpdateTableDetails(activeTable.id, {
-                        name: `${prefix} (${tag})`,
-                        category: tag,
-                      });
-                    }}
-                    className="bg-white hover:bg-[#faf5ee] border border-[#d5c7b5] text-[#15110e] px-2 py-0.5 rounded-full text-[10px] cursor-pointer transition-colors"
-                  >
-                    +{tag}
-                  </button>
-                ))}
-              </div>
+
             </div>
 
             {/* Shape Segmented Control */}
@@ -1032,12 +1011,9 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                     }`}
                     title="Drop any guest here to seat at next vacant place"
                   >
-                    <span className="font-serif text-sm font-bold text-[#15110e]">{activeTable.name}</span>
-                    <span className="text-xs font-bold text-[#bd9661] mt-0.5">
+                    <span className="font-serif text-base font-bold text-[#15110e]">{(activeTable.name || '').replace(/\s*\([^)]*\)/g, '').trim()}</span>
+                    <span className="text-sm font-bold font-mono text-[#bd9661] mt-0.5">
                       {guestsAtActiveTable.length} / {activeTable.capacity}
-                    </span>
-                    <span className="text-[9.5px] text-[#8b7b6b] uppercase tracking-wider mt-0.5">
-                      {activeTable.shape} Table
                     </span>
                     {dragOverTarget?.type === 'table' && dragOverTarget?.tableId === activeTable.id && (
                       <span className="text-[9px] font-bold text-[#bd9661] mt-1 animate-pulse">
@@ -1119,11 +1095,10 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                     }`}
                     title="Drop any guest here to seat at next vacant place"
                   >
-                    <span className="font-serif text-base font-bold text-[#15110e]">{activeTable.name}</span>
-                    <span className="text-xs font-bold text-[#bd9661]">
-                      {guestsAtActiveTable.length} / {activeTable.capacity} Seated
+                    <span className="font-serif text-lg font-bold text-[#15110e]">{(activeTable.name || '').replace(/\s*\([^)]*\)/g, '').trim()}</span>
+                    <span className="text-sm font-bold font-mono text-[#bd9661] mt-1">
+                      {guestsAtActiveTable.length} / {activeTable.capacity}
                     </span>
-                    <span className="text-[10px] text-[#8b7b6b] uppercase tracking-wider">Rectangular Table</span>
                     {dragOverTarget?.type === 'table' && dragOverTarget?.tableId === activeTable.id && (
                       <span className="text-[9px] font-bold text-[#bd9661] mt-1 animate-pulse">
                         Drop to Seat
@@ -1212,11 +1187,11 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
               {activeTable.shape === 'king' && (
                 <div className="w-full space-y-4">
                   <div className="bg-[#15110e] text-white p-3 rounded-xl border border-[#bd9661] text-center shadow-md flex items-center justify-between">
-                    <span className="font-serif text-sm font-bold text-[#dfc194] flex items-center gap-1.5">
-                      <span>👑</span> {activeTable.name} &bull; Long King Banquet Table ({activeTable.capacity} Seats)
+                    <span className="font-serif text-base font-bold text-[#dfc194]">
+                      {(activeTable.name || '').replace(/\s*\([^)]*\)/g, '').trim()}
                     </span>
-                    <span className="text-xs text-[#d9cbb8]">
-                      {guestsAtActiveTable.length} of {activeTable.capacity} places filled
+                    <span className="text-sm font-bold font-mono text-[#dfc194]">
+                      {guestsAtActiveTable.length} / {activeTable.capacity}
                     </span>
                   </div>
 
@@ -1546,9 +1521,18 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
 
                           <button
                             type="button"
+                            disabled={guestsAtActiveTable.length >= activeTable.capacity}
                             onClick={() => handleAssignGuest(g.id, activeTable.id)}
-                            className="bg-white hover:bg-[#bd9661] text-[#15110e] hover:text-white border border-[#d5c7b5] hover:border-[#bd9661] font-bold text-[11px] px-2.5 py-1 rounded-lg cursor-pointer transition-colors shrink-0 shadow-2xs flex items-center gap-1"
-                            title={`Seat ${g.name} at next vacant position at ${activeTable.name}`}
+                            className={
+                              guestsAtActiveTable.length >= activeTable.capacity
+                                ? "bg-[#ede5d8] text-[#8b7b6b] border border-[#d5c7b5] font-bold text-[11px] px-2.5 py-1 rounded-lg cursor-not-allowed opacity-50 shrink-0 shadow-2xs flex items-center gap-1"
+                                : "bg-white hover:bg-[#bd9661] text-[#15110e] hover:text-white border border-[#d5c7b5] hover:border-[#bd9661] font-bold text-[11px] px-2.5 py-1 rounded-lg cursor-pointer transition-colors shrink-0 shadow-2xs flex items-center gap-1"
+                            }
+                            title={
+                              guestsAtActiveTable.length >= activeTable.capacity
+                                ? `${activeTable.name} has reached maximum capacity (${activeTable.capacity}/${activeTable.capacity})`
+                                : `Seat ${g.name} at next vacant position at ${activeTable.name}`
+                            }
                           >
                             <span>+</span> Seat
                           </button>
@@ -1797,11 +1781,11 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                         top: `${tbl.y}%`,
                       }}
                       className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center select-none ${shapeGeometryClass} ${shapeThemeClass} hover:scale-110 hover:shadow-xl`}
-                      title={`Click to open Level 2 Table View for ${tbl.name} (${tbl.shape} table)`}
+                      title={`${(tbl.name || '').replace(/\s*\([^)]*\)/g, '').trim()} • ${seatedCount} / ${tbl.capacity} Seated`}
                     >
-                      {/* Clean minimalist table label: Table Name and Occupancy only */}
-                      <div className="text-[11px] sm:text-xs font-bold font-serif leading-tight truncate max-w-[90%] px-1">
-                        {tbl.name}
+                      {/* Clean minimalist table label: Clean Table Name and Occupancy only */}
+                      <div className="text-xs sm:text-sm font-bold font-serif leading-tight truncate max-w-[92%] px-1">
+                        {(tbl.name || '').replace(/\s*\([^)]*\)/g, '').trim()}
                       </div>
                       <div className="text-xs sm:text-[13px] font-bold font-mono mt-1">
                         {seatedCount} / {tbl.capacity}
