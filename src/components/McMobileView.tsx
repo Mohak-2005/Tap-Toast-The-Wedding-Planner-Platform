@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAppState, showToast, getWeddingCountdown } from '../lib/state';
-import { Table, TableShape, PrivateRunSheetItem } from '../lib/types';
+import { Table, TableShape, PrivateRunSheetItem, SavedSeatingArrangement, AuditLogEntry } from '../lib/types';
 
 interface McMobileViewProps {
   onSelectView?: (view: string) => void;
@@ -19,8 +19,8 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
   const activeWedding = (state.weddings || []).find(w => w.id === normalizedId) || (state.weddings || [])[0];
   const currentWeddingId = activeWedding.id;
 
-  // Home Bottom Navigation ('weddings' | 'calendar' | 'referrals' | 'invoice' | 'team' | 'settings')
-  const [homeTab, setHomeTab] = useState<'weddings' | 'calendar' | 'referrals' | 'invoice' | 'team' | 'settings'>('weddings');
+  // Home Bottom Navigation ('weddings' | 'calendar' | 'referrals' | 'team' | 'settings')
+  const [homeTab, setHomeTab] = useState<'weddings' | 'calendar' | 'referrals' | 'team' | 'settings'>('weddings');
 
   // Live Console Navigation ('overview' | 'runsheet' | 'seating' | 'catering' | 'guests' | 'venue')
   const [consoleTab, setConsoleTab] = useState<'overview' | 'runsheet' | 'seating' | 'catering' | 'guests' | 'venue'>('overview');
@@ -29,6 +29,37 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
   const [seatingSubTab, setSeatingSubTab] = useState<'canvas' | 'tables' | 'unseated'>('canvas');
   const [selectedMobileTableId, setSelectedMobileTableId] = useState<string | null>(null);
   const [draggingTableId, setDraggingTableId] = useState<string | null>(null);
+
+  // Saved Seating Arrangements (Synchronized with Couple & MC Pro)
+  const savedArrangements: SavedSeatingArrangement[] = (activeWedding as any)?.savedSeatingArrangements || [];
+  const [activeArrangementId, setActiveArrangementId] = useState<string>(
+    savedArrangements[0]?.id || 'arr_1'
+  );
+  const [activeArrangementName, setActiveArrangementName] = useState<string>(
+    savedArrangements[0]?.name || 'Seating Arrangement 1 (Classic Ballroom)'
+  );
+  const [showSaveArrangementModal, setShowSaveArrangementModal] = useState<boolean>(false);
+  const [showCompareArrangementsModal, setShowCompareArrangementsModal] = useState<boolean>(false);
+  const [newArrangementName, setNewArrangementName] = useState<string>('');
+  const [newArrangementNotes, setNewArrangementNotes] = useState<string>('');
+
+  // Dance Floor Position & Dragging State
+  const [danceFloorPos, setDanceFloorPos] = useState<{ x: number; y: number }>(() => {
+    return (activeWedding as any)?.danceFloorPos || { x: 50, y: 50 };
+  });
+  const [isDraggingDanceFloor, setIsDraggingDanceFloor] = useState<boolean>(false);
+
+  // Sync dance floor and active arrangement when active wedding changes
+  useEffect(() => {
+    if ((activeWedding as any)?.danceFloorPos) {
+      setDanceFloorPos((activeWedding as any).danceFloorPos);
+    }
+    if ((activeWedding as any)?.savedSeatingArrangements?.length) {
+      const arr = (activeWedding as any).savedSeatingArrangements[0];
+      setActiveArrangementId(arr.id);
+      setActiveArrangementName(arr.name);
+    }
+  }, [currentWeddingId]);
 
   // Filter & Search states
   const [runSheetFilter, setRunSheetFilter] = useState<'all' | 'upcoming' | 'done'>('all');
@@ -66,14 +97,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
     uplighting: false,
   });
 
-  // Invoice statuses
-  const [invoiceStatuses, setInvoiceStatuses] = useState<Record<string, 'Paid' | 'Pending' | 'Draft'>>({
-    'INV-1081': 'Paid',
-    'INV-1082': 'Pending',
-    'INV-1083': 'Draft',
-    'INV-1084': 'Draft',
-  });
-  const [openInvoiceDropdown, setOpenInvoiceDropdown] = useState<string | null>(null);
+
 
   // Dynamic Calendar State
   const [calendarDate, setCalendarDate] = useState<Date>(new Date(2026, 10, 1));
@@ -217,6 +241,128 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
       t.id === tblId ? { ...t, mobileX: clampedX, mobileY: clampedY } : t
     );
     setState({ ...state, tables: updatedTables });
+  };
+
+  const handleTouchMoveDanceFloor = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const el = document.getElementById('mobile_canvas_container');
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const relX = ((touch.clientX - rect.left) / rect.width) * 100;
+    const relY = ((touch.clientY - rect.top) / rect.height) * 100;
+    const clampedX = Math.max(22, Math.min(78, Math.round(relX)));
+    const clampedY = Math.max(25, Math.min(75, Math.round(relY)));
+    setDanceFloorPos({ x: clampedX, y: clampedY });
+  };
+
+  const handleLoadArrangement = (arrId: string) => {
+    const arr = savedArrangements.find((a) => a.id === arrId);
+    if (!arr) return;
+
+    const updatedTables = arr.tables && arr.tables.length > 0 ? arr.tables.map(t => ({ ...t })) : state.tables;
+    const updatedGuests = (state.guests || []).map((g) => {
+      const match = arr.guestAssignments?.find((a) => a.guestId === g.id);
+      if (match) {
+        return { ...g, tableId: match.tableId || null, seatIndex: match.seatIndex || null };
+      }
+      return g;
+    });
+
+    if (arr.danceFloorPos) {
+      setDanceFloorPos(arr.danceFloorPos);
+    }
+
+    const auditEntry: AuditLogEntry = {
+      id: `aud_${Date.now()}`,
+      timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      action: 'Seating Arrangement Switched',
+      user: 'Robert Galati (MC)',
+      role: 'mc',
+      category: 'Seating',
+      details: `Switched active floor plan to "${arr.name}" in MC Mobile Console. Synchronized with couple console.`,
+    };
+
+    const updatedWeddings = (state.weddings || []).map((w) => {
+      if (w.id === currentWeddingId) {
+        return {
+          ...w,
+          danceFloorPos: arr.danceFloorPos ? { ...arr.danceFloorPos } : (w as any).danceFloorPos,
+        };
+      }
+      return w;
+    });
+
+    setState({
+      ...state,
+      tables: updatedTables,
+      guests: updatedGuests,
+      weddings: updatedWeddings,
+      auditLog: [auditEntry, ...(state.auditLog || [])],
+    });
+
+    setActiveArrangementId(arr.id);
+    setActiveArrangementName(arr.name);
+    if (showCompareArrangementsModal) setShowCompareArrangementsModal(false);
+    showToast(`Loaded "${arr.name}"`, 'info');
+  };
+
+  const handleSaveArrangement = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const defaultName = `Seating Arrangement ${savedArrangements.length + 1}`;
+    const finalName = newArrangementName.trim() || defaultName;
+
+    const newArr: SavedSeatingArrangement = {
+      id: `arr_${Date.now()}`,
+      weddingId: currentWeddingId,
+      name: finalName,
+      savedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      savedBy: 'Robert Galati (MC)',
+      role: 'mc',
+      danceFloorPos: { ...danceFloorPos },
+      notes: newArrangementNotes.trim() || `Mobile snapshot with ${weddingTables.length} tables and ${seatedGuestsCount} seated guests.`,
+      tables: weddingTables.map(t => ({ ...t })),
+      guestAssignments: weddingGuests.map(g => ({
+        guestId: g.id,
+        tableId: g.tableId || null,
+        seatIndex: g.seatIndex || null,
+      })),
+    };
+
+    const auditEntry: AuditLogEntry = {
+      id: `aud_${Date.now()}`,
+      timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      action: 'Seating Arrangement Saved',
+      user: 'Robert Galati (MC)',
+      role: 'mc',
+      category: 'Seating',
+      details: `Saved seating layout "${newArr.name}" via MC Mobile Console for ${activeWedding.couple}. Synced with Couple console.`,
+    };
+
+    const updatedWeddings = (state.weddings || []).map((w) => {
+      if (w.id === currentWeddingId) {
+        const existing = (w as any).savedSeatingArrangements || [];
+        return {
+          ...w,
+          danceFloorPos: { ...danceFloorPos },
+          savedSeatingArrangements: [newArr, ...existing],
+        };
+      }
+      return w;
+    });
+
+    setState({
+      ...state,
+      weddings: updatedWeddings,
+      auditLog: [auditEntry, ...(state.auditLog || [])],
+    });
+
+    setActiveArrangementId(newArr.id);
+    setActiveArrangementName(newArr.name);
+    setShowSaveArrangementModal(false);
+    setNewArrangementName('');
+    setNewArrangementNotes('');
+    showToast(`✓ Seating layout "${newArr.name}" saved!`, 'success');
   };
 
   // Helper for responsive mobile table coordinates around the dance floor
@@ -937,83 +1083,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
             );
           })()}
 
-          {/* ------------------------------------------------------------ */}
-          {/* HOME MODE: TAB 3 - INVOICE                                  */}
-          {/* ------------------------------------------------------------ */}
-          {!selectedWeddingId && homeTab === 'invoice' && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between px-1">
-                <div>
-                  <h1 className="font-serif text-[20px] font-bold text-[#15110e]">
-                    Invoices &amp; Earnings
-                  </h1>
-                  <p className="text-[11px] text-[#8b7b6b]">
-                    Payment milestones, contracts &amp; receipts
-                  </p>
-                </div>
-                <span className="bg-[#faf6f0] border border-[#ebd3a8] text-[#916c3d] font-bold text-[11px] px-2.5 py-0.5 rounded-full">
-                  Total: $7,400 AUD
-                </span>
-              </div>
 
-              <div className="space-y-2.5 pt-1">
-                {[
-                  { id: 'INV-1081', couple: 'Sophie & James', date: '08 Oct 2026', amount: '$1850 AUD' },
-                  { id: 'INV-1082', couple: 'Aisha & Marcus', date: '15 Oct 2026', amount: '$1650 AUD' },
-                  { id: 'INV-1083', couple: 'Emma & Tom', date: '01 Nov 2026', amount: '$1950 AUD' },
-                  { id: 'INV-1084', couple: 'Katie & Rob', date: '12 Nov 2026', amount: '$1750 AUD' },
-                ].map((inv) => (
-                  <div key={inv.id} className="bg-white border border-[#e8ded0] rounded-2xl p-3.5 shadow-xs flex items-center justify-between relative">
-                    <div>
-                      <h3 className="font-serif text-sm font-bold text-[#15110e]">{inv.couple}</h3>
-                      <div className="text-[11px] text-[#8b7b6b] mt-0.5">{inv.id} &bull; {inv.date}</div>
-                    </div>
-
-                    <div className="flex flex-col items-end gap-1">
-                      <span className="font-bold text-sm text-[#15110e]">{inv.amount}</span>
-                      
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={() => setOpenInvoiceDropdown(openInvoiceDropdown === inv.id ? null : inv.id)}
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 cursor-pointer ${
-                            invoiceStatuses[inv.id] === 'Paid'
-                              ? 'bg-[#e8eee4] text-[#3c6a42] border-[#c9dcc3]'
-                              : invoiceStatuses[inv.id] === 'Pending'
-                              ? 'bg-[#faf6f0] text-[#916c3d] border-[#ebd3a8]'
-                              : 'bg-[#15110e] text-white border-[#3d2e24]'
-                          }`}
-                        >
-                          {invoiceStatuses[inv.id]} &#9662;
-                        </button>
-
-                        {openInvoiceDropdown === inv.id && (
-                          <div className="absolute right-0 top-6 bg-white border border-[#e8ded0] rounded-xl shadow-lg p-1 z-30 min-w-[90px] flex flex-col gap-1">
-                            {(['Paid', 'Pending', 'Draft'] as const).map((st) => (
-                              <button
-                                key={st}
-                                type="button"
-                                onClick={() => {
-                                  setInvoiceStatuses({ ...invoiceStatuses, [inv.id]: st });
-                                  setOpenInvoiceDropdown(null);
-                                  showToast(`Status updated to ${st}`, 'success');
-                                }}
-                                className={`text-[10px] font-bold px-2 py-1 rounded text-left cursor-pointer hover:bg-[#faf8f5] ${
-                                  st === 'Paid' ? 'text-[#3c6a42]' : st === 'Pending' ? 'text-[#916c3d]' : 'text-[#15110e]'
-                                }`}
-                              >
-                                {st}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* ------------------------------------------------------------ */}
           {/* HOME MODE: TAB 4 - TEAM                                     */}
@@ -1309,16 +1379,16 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                   </div>
                 </div>
 
-                {/* KPI 2: Wishing Well */}
-                <div className="bg-white border border-[#e8ded0] border-t-2 border-t-emerald-600 p-3 rounded-2xl shadow-2xs">
+                {/* KPI 2: Run Sheet Cues */}
+                <div className="bg-white border border-[#e8ded0] border-t-2 border-t-[#bd9661] p-3 rounded-2xl shadow-2xs">
                   <div className="text-[10px] uppercase font-bold text-[#8b7b6b] flex items-center gap-1">
-                    <span>🎁</span> Wishing Well
+                    <span>📋</span> Run Sheet Cues
                   </div>
                   <div className="font-serif text-lg font-bold text-[#15110e] mt-1">
-                    ${(activeWedding.giftsTotal || 4680).toLocaleString()}
+                    {activeWedding.runSheet?.length || 14} Cues
                   </div>
                   <div className="text-[10px] text-[#bd9661] font-semibold mt-0.5">
-                    42 Gifts Received
+                    Live Timing Synced
                   </div>
                 </div>
 
@@ -1410,7 +1480,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 <div className="space-y-2 text-xs">
                   {[
                     { text: 'Priya Sharma updated dietary requirements to Vegetarian', time: '10 mins ago' },
-                    { text: 'The Whitfield family sent $250 AUD to Wishing Well', time: '38 mins ago' },
+                    { text: 'Sophie & James confirmed entrance music cue', time: '38 mins ago' },
                     { text: 'Robert Galati synced 14:00 ceremony cue sheet', time: '1 hour ago' },
                     { text: 'Michael Chen confirmed RSVP attendance', time: '2 hours ago' },
                   ].map((act, i) => (
@@ -1567,20 +1637,20 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
             <div className="space-y-3 animate-in fade-in duration-150">
               {/* Clean Mobile Seating Header & Actions */}
               <div className="bg-white border border-[#e8ded0] rounded-2xl p-3.5 shadow-2xs space-y-2.5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-serif text-base font-bold text-[#15110e]">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="font-serif text-base font-bold text-[#15110e] truncate">
                       Seating Studio
                     </h3>
-                    <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                    <div className="text-[11px] text-[#8b7b6b] mt-0.5 truncate">
                       {weddingTables.length} Tables &bull; {weddingGuests.length} Total Guests
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10.5px] font-bold text-[#3c6a42] bg-[#e8eee4] px-2 py-0.5 rounded-full">
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[10.5px] font-bold text-[#3c6a42] bg-[#e8eee4] px-2 py-0.5 rounded-full whitespace-nowrap">
                       {seatedGuestsCount} Seated
                     </span>
-                    <span className="text-[10.5px] font-bold text-[#bd9661] bg-[#faf5ed] border border-[#ebd3a8] px-2 py-0.5 rounded-full">
+                    <span className="text-[10.5px] font-bold text-[#bd9661] bg-[#faf5ed] border border-[#ebd3a8] px-2 py-0.5 rounded-full whitespace-nowrap">
                       {unassignedGuests.length} Unseated
                     </span>
                   </div>
@@ -1590,10 +1660,10 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                   <button
                     type="button"
                     onClick={() => handleRunCheersAiSeating('households')}
-                    className="flex-1 bg-gradient-to-r from-[#15110e] to-[#251e18] hover:to-[#15110e] text-[#dfc194] border border-[#bd9661]/40 rounded-xl py-2 px-2.5 text-xs font-bold cursor-pointer shadow-2xs flex items-center justify-center gap-1.5 transition-all"
+                    className="flex-1 min-w-0 bg-gradient-to-r from-[#15110e] to-[#251e18] hover:to-[#15110e] text-[#dfc194] border border-[#bd9661]/40 rounded-xl py-2 px-2.5 text-xs font-bold cursor-pointer shadow-2xs flex items-center justify-center gap-1.5 transition-all"
                   >
                     <span>✨</span>
-                    <span>Cheers AI Auto-Seat</span>
+                    <span className="truncate">Cheers AI Auto-Seat</span>
                   </button>
                   <button
                     type="button"
@@ -1604,6 +1674,61 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                     <span>Add Table</span>
                   </button>
                 </div>
+              </div>
+
+              {/* Saved Seating Layouts Bar (Synchronized with Couple & MC Pro) */}
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-3 shadow-2xs space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-sm shrink-0">📐</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661] truncate">
+                      Seating Layouts
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setShowCompareArrangementsModal(true)}
+                      className="bg-[#faf8f5] hover:bg-[#f0ede4] text-[#15110e] border border-[#d5c7b5] font-bold px-2.5 py-1 rounded-lg text-[10.5px] cursor-pointer transition-all flex items-center gap-1 shadow-2xs"
+                      title="Compare saved seating layouts"
+                    >
+                      <span>⚖️</span>
+                      <span>Compare</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewArrangementName(`Seating Arrangement ${savedArrangements.length + 1}`);
+                        setNewArrangementNotes('');
+                        setShowSaveArrangementModal(true);
+                      }}
+                      className="bg-[#15110e] hover:bg-[#251e18] text-[#dfc194] border border-[#bd9661] font-bold px-2.5 py-1 rounded-lg text-[10.5px] cursor-pointer transition-all flex items-center gap-1 shadow-2xs"
+                      title="Save current layout"
+                    >
+                      <span>💾</span>
+                      <span>Save</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Dropdown Layout Switcher */}
+                {savedArrangements.length > 0 && (
+                  <div className="pt-1.5 border-t border-[#f5f2eb]">
+                    <div className="relative">
+                      <select
+                        value={activeArrangementId}
+                        onChange={(e) => handleLoadArrangement(e.target.value)}
+                        className="w-full bg-[#faf8f5] hover:bg-[#f5ede2] border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] font-semibold outline-none cursor-pointer truncate pr-7 transition-colors shadow-2xs"
+                      >
+                        {savedArrangements.map((arr) => (
+                          <option key={arr.id} value={arr.id}>
+                            {arr.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 3-Segment View Switcher */}
@@ -1665,10 +1790,31 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                       <span>👑</span> BRIDAL STAGE &bull; HEAD TABLE
                     </div>
 
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-44 h-32 rounded-3xl border-2 border-dashed border-[#bd9661]/35 bg-[#bd9661]/5 flex flex-col items-center justify-center text-center pointer-events-none">
+                    {/* Draggable Main Dance Floor */}
+                    <div
+                      id="mobile_main_dance_floor"
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', 'dancefloor');
+                        setIsDraggingDanceFloor(true);
+                      }}
+                      onDragEnd={() => setIsDraggingDanceFloor(false)}
+                      onTouchMove={handleTouchMoveDanceFloor}
+                      style={{
+                        left: `${danceFloorPos.x}%`,
+                        top: `${danceFloorPos.y}%`,
+                      }}
+                      className={`absolute -translate-x-1/2 -translate-y-1/2 w-40 h-28 rounded-3xl border-2 border-dashed border-[#bd9661]/60 bg-[#bd9661]/10 flex flex-col items-center justify-center text-center cursor-grab active:cursor-grabbing hover:border-[#bd9661] hover:bg-[#bd9661]/15 transition-shadow shadow-2xs select-none z-10 ${
+                        isDraggingDanceFloor ? 'opacity-60 ring-2 ring-[#bd9661]' : ''
+                      }`}
+                      title="Drag to reposition Main Dance Floor"
+                    >
                       <span className="text-lg">💃</span>
-                      <span className="font-serif text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mt-0.5">
+                      <span className="font-serif text-[10px] font-bold text-[#6b5847] uppercase tracking-wider mt-0.5">
                         Main Dance Floor
+                      </span>
+                      <span className="text-[8px] text-[#8b7b6b] opacity-80 font-sans mt-0.5">
+                        Drag to move
                       </span>
                     </div>
 
@@ -1699,7 +1845,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                           }}
                           className={`absolute -translate-x-1/2 -translate-y-1/2 transition-transform active:scale-110 cursor-pointer shadow-md select-none flex flex-col items-center justify-center text-center ${
                             tbl.isHead || tbl.shape === 'king'
-                              ? 'w-28 h-12 bg-gradient-to-r from-[#1c1511] via-[#2a1f16] to-[#1c1511] text-white border-2 border-[#bd9661] rounded-xl'
+                              ? 'w-28 h-12 bg-gradient-to-r from-[#1c1511] via-[#2a1f16] to-[#1c1511] text-[#dfc194] border-2 border-[#bd9661] rounded-xl'
                               : tbl.shape === 'rectangular'
                               ? 'w-20 h-11 bg-white text-[#15110e] border-2 border-[#bd9661] rounded-lg'
                               : 'w-14 h-14 bg-white text-[#15110e] border-2 border-[#bd9661] rounded-full'
@@ -1709,10 +1855,8 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                           <span className="font-serif text-[10px] font-bold leading-tight truncate max-w-[90%] px-1">
                             {tbl.name}
                           </span>
-                          <span className={`text-[9px] font-bold mt-0.5 px-1.5 py-0.2 rounded-full ${
-                            isFull ? 'bg-emerald-100 text-emerald-800' : 'bg-[#faf5ed] text-[#bd9661]'
-                          }`}>
-                            {seated.length}/{tbl.capacity}
+                          <span className="font-mono text-[9.5px] font-bold mt-0.5 text-[#15110e]">
+                            {seated.length} / {tbl.capacity}
                           </span>
                         </div>
                       );
@@ -2056,20 +2200,20 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                   .map(g => {
                     const tbl = weddingTables.find(t => t.id === g.tableId);
                     return (
-                      <div key={g.id} className="bg-white border border-[#e8ded0] rounded-2xl p-3 flex items-center justify-between shadow-2xs">
-                        <div className="flex items-center gap-2.5">
+                      <div key={g.id} className="bg-white border border-[#e8ded0] rounded-2xl p-3 flex items-center justify-between shadow-2xs gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
                           <div className="w-8 h-8 rounded-full bg-[#15110e] text-[#dfc194] font-bold text-xs flex items-center justify-center shrink-0">
                             {g.initials || g.name.slice(0, 2).toUpperCase()}
                           </div>
-                          <div>
-                            <div className="font-bold text-[#15110e]">{g.name}</div>
-                            <div className="text-[10px] text-[#8b7b6b]">
+                          <div className="min-w-0">
+                            <div className="font-bold text-[#15110e] truncate">{g.name}</div>
+                            <div className="text-[10px] text-[#8b7b6b] truncate">
                               {g.household || 'Individual'}{g.dietary && g.dietary !== 'None' ? ` · ${g.dietary}` : ''}
                             </div>
                           </div>
                         </div>
 
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                           tbl ? 'bg-[#15110e] text-[#dfc194]' : 'bg-[#faf5ed] text-[#916c3d] border border-[#ebd3a8]'
                         }`}>
                           {tbl ? tbl.name : 'Unassigned'}
@@ -2400,21 +2544,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
               <span className="text-[10px] mt-0.5">Team</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setHomeTab('invoice')}
-              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
-                homeTab === 'invoice' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
-              }`}
-            >
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-              </svg>
-              <span className="text-[10px] mt-0.5">Invoice</span>
-            </button>
+
 
             <button
               type="button"
@@ -3039,6 +3169,205 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                   type="button"
                   onClick={() => setIsCreateReferralOpen(false)}
                   className="bg-[#f0ede4] hover:bg-[#e4dfd5] text-[#15110e] font-bold px-3 py-2.5 rounded-xl text-xs cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* MODAL: COMPARE SAVED SEATING ARRANGEMENTS                      */}
+        {/* ============================================================== */}
+        {showCompareArrangementsModal && (
+          <div
+            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150"
+            onClick={() => setShowCompareArrangementsModal(false)}
+          >
+            <div
+              className="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-[#e8ded0] overflow-hidden flex flex-col max-h-[82vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-4 py-3 bg-[#15110e] text-white flex justify-between items-center border-b border-[#29211a]">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">⚖️</span>
+                  <div>
+                    <div className="text-[9px] tracking-wider text-[#bd9661] uppercase font-bold">
+                      SEATING COMPARISON
+                    </div>
+                    <h3 className="font-serif text-sm font-bold text-white">
+                      Compare Saved Layouts
+                    </h3>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowCompareArrangementsModal(false)}
+                  className="text-white/70 hover:text-[#bd9661] text-base font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="p-3.5 overflow-y-auto space-y-3 text-xs flex-1">
+                {savedArrangements.length === 0 ? (
+                  <div className="text-center py-6 text-[#8b7b6b]">
+                    No saved arrangements found. Save one to compare!
+                  </div>
+                ) : (
+                  savedArrangements.map((arr) => {
+                    const isActive = arr.id === activeArrangementId;
+                    const roundCount = arr.tables.filter((t) => t.shape === 'round').length;
+                    const rectCount = arr.tables.filter((t) => t.shape === 'rectangular').length;
+                    const kingCount = arr.tables.filter((t) => t.shape === 'king' || t.isHead).length;
+                    const seatedCount = arr.guestAssignments.filter((a) => a.tableId).length;
+
+                    return (
+                      <div
+                        key={arr.id}
+                        className={`border-2 rounded-xl p-3 space-y-2 transition-all ${
+                          isActive
+                            ? 'border-[#bd9661] bg-[#faf8f5] shadow-xs ring-1 ring-[#bd9661]/20'
+                            : 'border-[#e8ded0] bg-white'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-1.5">
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="font-serif text-xs font-bold text-[#15110e]">
+                                {arr.name}
+                              </h4>
+                              {isActive && (
+                                <span className="bg-emerald-50 text-emerald-800 border border-emerald-300 text-[8px] font-black uppercase px-1.5 py-0.2 rounded-full">
+                                  Active
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[9.5px] text-[#8b7b6b] mt-0.5">
+                              Saved by <strong>{arr.savedBy}</strong>
+                            </div>
+                          </div>
+                          <span className={`text-[8.5px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                            arr.role === 'mc' ? 'bg-[#15110e] text-[#dfc194]' : 'bg-[#faf0e1] text-[#7d5e38]'
+                          }`}>
+                            {arr.role === 'mc' ? 'MC' : 'Couple'}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-1.5 text-[9.5px]">
+                          <div className="bg-[#fcfaf7] p-1.5 rounded border border-[#f0ede6]">
+                            <span className="text-[#8b7b6b] block text-[8.5px]">Geometry:</span>
+                            <span className="font-semibold text-[#15110e]">
+                              {roundCount}R &bull; {rectCount}Rect &bull; {kingCount}Head
+                            </span>
+                          </div>
+                          <div className="bg-[#fcfaf7] p-1.5 rounded border border-[#f0ede6]">
+                            <span className="text-[#8b7b6b] block text-[8.5px]">Seated:</span>
+                            <span className="font-bold text-emerald-700">
+                              {seatedCount} guests
+                            </span>
+                          </div>
+                        </div>
+
+                        {isActive ? (
+                          <div className="text-emerald-700 font-bold text-[10.5px] flex items-center justify-center gap-1 pt-1">
+                            <span>✓</span> Current Active Layout
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleLoadArrangement(arr.id)}
+                            className="w-full bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold py-1.5 rounded-lg text-[10.5px] cursor-pointer shadow-2xs text-center"
+                          >
+                            Load This Layout →
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="px-3.5 py-2.5 bg-[#faf8f5] border-t border-[#e8ded0] flex items-center justify-between">
+                <span className="text-[10px] text-[#8b7b6b]">
+                  {savedArrangements.length} total layouts saved
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowCompareArrangementsModal(false)}
+                  className="px-3 py-1 bg-white border border-[#d5c7b5] text-[#15110e] font-bold text-[10.5px] rounded-lg cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* MODAL: SAVE SEATING ARRANGEMENT                                */}
+        {/* ============================================================== */}
+        {showSaveArrangementModal && (
+          <div
+            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150"
+            onClick={() => setShowSaveArrangementModal(false)}
+          >
+            <div
+              className="bg-white rounded-2xl max-w-xs w-full shadow-2xl border border-[#e8ded0] p-4 space-y-3"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-2 border-b border-[#f0ede4]">
+                <h3 className="font-serif text-sm font-bold text-[#15110e]">
+                  Save Seating Arrangement
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowSaveArrangementModal(false)}
+                  className="text-gray-400 hover:text-black font-bold text-xs cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                  Arrangement Name
+                </label>
+                <input
+                  type="text"
+                  value={newArrangementName}
+                  onChange={(e) => setNewArrangementName(e.target.value)}
+                  placeholder="e.g. Seating Arrangement 2"
+                  className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                  Notes (optional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={newArrangementNotes}
+                  onChange={(e) => setNewArrangementNotes(e.target.value)}
+                  placeholder="e.g. Optimized dance floor clearance for entrance"
+                  className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleSaveArrangement}
+                  className="flex-1 bg-[#15110e] text-[#dfc194] hover:text-white font-bold py-2 rounded-lg text-xs cursor-pointer"
+                >
+                  Save Layout
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSaveArrangementModal(false)}
+                  className="px-3 py-2 bg-[#f0ede4] text-[#15110e] font-bold rounded-lg text-xs cursor-pointer"
                 >
                   Cancel
                 </button>

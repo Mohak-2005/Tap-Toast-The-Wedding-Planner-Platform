@@ -288,10 +288,10 @@ export default function McView({ onSelectView }: McViewProps) {
   const { session, setSession, clearSession } = useSession();
 
   // Navigation state
-  const [activeTab, setActiveTab] = useState<'weddings' | 'calendar' | 'clients' | 'invoicing' | 'team' | 'referrals' | 'gifts' | 'settings'>('weddings');
+  const [activeTab, setActiveTab] = useState<'weddings' | 'calendar' | 'clients' | 'team' | 'referrals' | 'settings'>('weddings');
   const [selectedWeddingId, setSelectedWeddingId] = useState<string | null>(null);
   const [mcInitialTab, setMcInitialTab] = useState<CoupleTab>('overview');
-  const [detailSubTab, setDetailSubTab] = useState<'runsheet' | 'seating' | 'guests' | 'venue' | 'gifts'>('runsheet');
+  const [detailSubTab, setDetailSubTab] = useState<'runsheet' | 'seating' | 'guests' | 'venue'>('runsheet');
 
   // MC Gift Ledger State
   const [mcGiftSearch, setMcGiftSearch] = useState('');
@@ -819,21 +819,7 @@ export default function McView({ onSelectView }: McViewProps) {
                   </svg>
                 ),
               },
-
-              {
-                id: 'invoicing',
-                label: 'Invoicing',
-                icon: (
-                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <line x1="16" y1="13" x2="8" y2="13" />
-                    <line x1="16" y1="17" x2="8" y2="17" />
-                    <polyline points="10 9 9 9 8 9" />
-                  </svg>
-                ),
-              },
-              {
+{
                 id: 'team',
                 label: 'Team & Crew',
                 icon: (
@@ -1084,7 +1070,6 @@ export default function McView({ onSelectView }: McViewProps) {
                 { id: 'seating', label: 'Seating Floor Plan' },
                 { id: 'guests', label: 'Guest & Catering Summary' },
                 { id: 'venue', label: 'Venue & Travel' },
-                { id: 'gifts', label: '🎁 Gift & Wishing Well Ledger' },
               ].map(sub => (
                 <button
                   key={sub.id}
@@ -1247,7 +1232,7 @@ export default function McView({ onSelectView }: McViewProps) {
 
             {/* Sub-pane 2: Seating Floor Plan */}
             {detailSubTab === 'seating' && (
-              <SeatingPlannerSection weddingId={activeWedding.id} onSelectView={onSelectView} />
+              <SeatingPlannerSection weddingId={activeWedding.id} onSelectView={onSelectView} isMcView={true} />
             )}
 
             {/* Sub-pane 3: Catering & Dietaries */}
@@ -1434,20 +1419,7 @@ export default function McView({ onSelectView }: McViewProps) {
               </div>
             )}
 
-            {/* Sub-pane 5: Gift & Wishing Well Ledger */}
-            {detailSubTab === 'gifts' && (
-              <McGiftLedgerSection
-                state={state}
-                setState={setState}
-                weddingName={activeWedding?.couple}
-                onAddGiftClick={() => setShowMcAddGiftModal(true)}
-                mcGiftSearch={mcGiftSearch}
-                setMcGiftSearch={setMcGiftSearch}
-                mcGiftTypeFilter={mcGiftTypeFilter}
-                setMcGiftTypeFilter={setMcGiftTypeFilter}
-              />
-            )}
-          </section>
+            </section>
         )}
 
         {/* ==================================================================== */}
@@ -1596,100 +1568,6 @@ export default function McView({ onSelectView }: McViewProps) {
                         >
                           View Contact
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-
-        {/* ==================================================================== */}
-        {/* TAB 4: INVOICING (Screenshot 37)                                     */}
-        {/* ==================================================================== */}
-        {activeTab === 'invoicing' && !selectedWeddingId && (
-          <section className="space-y-6">
-            {/* Ambassador Referral Payout Banner */}
-            <div className="bg-[#faf8f5] border border-[#ebd3a8] rounded-xl p-4 flex items-center justify-between flex-wrap gap-3 shadow-xs">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🎁</span>
-                <div>
-                  <div className="text-xs font-bold text-[#15110e] flex items-center gap-2">
-                    <span>Ambassador Referral Earnings:</span>
-                    <span className="text-emerald-700 font-bold">$1,800 AUD</span>
-                    <span className="bg-[#241a13] text-[#dfc194] px-2 py-0.5 rounded text-[10px] font-mono">ROBERT-VIP-15</span>
-                  </div>
-                  <div className="text-[11px] text-[#8b7b6b] mt-0.5">
-                    12 couples confirmed using your 15% discount code &bull; $600 AUD currently available for payout.
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveTab('referrals')}
-                className="bg-[#15110e] hover:bg-[#231c17] text-[#dfc194] text-xs font-bold px-3.5 py-1.5 rounded-lg cursor-pointer transition-colors shadow-xs"
-              >
-                Open Referral Hub &rarr;
-              </button>
-            </div>
-
-            <div className="flex items-start justify-between flex-wrap gap-4">
-              <div>
-                <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1">
-                  FINANCIALS
-                </div>
-                <h1 className="font-serif text-3xl font-bold text-[#15110e]">
-                  Invoicing
-                </h1>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowNewInvoiceModal(true)}
-                className="btn btn-gold btn-sm"
-              >
-                + New Invoice
-              </button>
-            </div>
-
-            <div className="bg-white border border-[#e8ded0] rounded-[6px] shadow-sm overflow-hidden">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Invoice #</th>
-                    <th>Couple Client</th>
-                    <th>Issue Date</th>
-                    <th>Venue</th>
-                    <th>Amount (AUD)</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(state.invoices || []).map(inv => (
-                    <tr key={inv.id} className="hover:bg-[#faf7f2] transition-colors">
-                      <td><strong className="text-xs font-mono text-[#15110e]">{inv.id}</strong></td>
-                      <td className="text-xs font-serif font-bold text-[#15110e]">{inv.couple}</td>
-                      <td className="text-xs text-[#8b7b6b]">{inv.date}</td>
-                      <td className="text-xs text-[#8b7b6b]">{inv.venue}</td>
-                      <td><strong className="text-xs font-semibold text-[#15110e]">${inv.amount.toLocaleString()} AUD</strong></td>
-                      <td>
-                        <span className={`tt-pill ${inv.status === 'Paid' ? 'green' : inv.status === 'Pending' ? 'warm' : 'lavender'}`}>
-                          {inv.status}
-                        </span>
-                      </td>
-                      <td>
-                        {inv.status !== 'Paid' ? (
-                          <button
-                            type="button"
-                            onClick={() => handleMarkInvoicePaid(inv.id)}
-                            className="btn btn-outline btn-xs"
-                          >
-                            Mark Paid
-                          </button>
-                        ) : (
-                          <span className="text-xs text-[#8b7b6b]">Settled</span>
-                        )}
                       </td>
                     </tr>
                   ))}
@@ -2468,81 +2346,6 @@ export default function McView({ onSelectView }: McViewProps) {
 
       {/* ==================================================================== */}
       {/* MODAL 4: NEW INVOICE MODAL                                           */}
-      {/* ==================================================================== */}
-      {showNewInvoiceModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-          <div className="bg-white border border-[#d5c7b5] rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="font-serif text-xl font-bold text-[#15110e]">
-                Create Invoice
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowNewInvoiceModal(false)}
-                className="text-[#8b7b6b] hover:text-[#15110e] text-lg font-bold"
-              >
-                ✕
-              </button>
-            </div>
-            <form onSubmit={handleCreateInvoice} className="space-y-3">
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
-                  Couple Client
-                </label>
-                <select
-                  value={niCouple}
-                  onChange={(e) => setNiCouple(e.target.value)}
-                  className="text-input"
-                >
-                  <option value="Sophie & James">Sophie &amp; James (Fernwood Estate)</option>
-                  <option value="Aisha & Marcus">Aisha &amp; Marcus (Doltone House)</option>
-                  <option value="Emma & Tom">Emma &amp; Tom (Dunbar House)</option>
-                  <option value="Katie & Rob">Katie &amp; Rob (Bendooley Estate)</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
-                  Amount in AUD
-                </label>
-                <input
-                  type="number"
-                  required
-                  value={niAmount}
-                  onChange={(e) => setNiAmount(Number(e.target.value))}
-                  className="text-input"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
-                  Status
-                </label>
-                <select
-                  value={niStatus}
-                  onChange={(e) => setNiStatus(e.target.value as any)}
-                  className="text-input"
-                >
-                  <option value="Pending">Pending Payment</option>
-                  <option value="Paid">Paid</option>
-                  <option value="Draft">Draft</option>
-                </select>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowNewInvoiceModal(false)}
-                  className="btn btn-outline btn-sm"
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-gold btn-sm">
-                  Generate Invoice
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* ==================================================================== */}
       {/* SLIDE DRAWER: CLIENT FILE CONTACT DRAWER                             */}
       {/* ==================================================================== */}

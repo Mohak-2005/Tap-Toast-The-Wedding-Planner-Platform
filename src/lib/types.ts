@@ -52,6 +52,56 @@ export interface Wedding {
   tenantId?: string;
   tablesTotal?: number;
   giftsTotal?: number;
+  selectedMc?: {
+    id: string;
+    name: string;
+    businessName?: string;
+    business?: string;
+    email?: string;
+    phone?: string;
+    rate?: number;
+    rating?: string;
+    status?: string;
+    avatar?: string;
+    style?: string;
+  };
+  subscriptionPlan?: {
+    id: string;
+    name: string;
+    price: number;
+    billing?: string;
+    status?: string;
+    paymentMethod?: string;
+    features?: string[];
+    activatedAt?: string;
+  };
+  aiOnboardingAnswers?: Array<{
+    questionId: string;
+    question: string;
+    answer: string;
+    category: string;
+    audited: boolean;
+  }> | Record<string, any>;
+  giftingPresets?: number[];
+  savedSeatingArrangements?: SavedSeatingArrangement[];
+  danceFloorPos?: { x: number; y: number };
+}
+
+export interface SavedSeatingArrangement {
+  id: string;
+  weddingId: string;
+  name: string;
+  savedAt: string;
+  savedBy: string;
+  role: 'couple' | 'mc';
+  notes?: string;
+  danceFloorPos?: { x: number; y: number };
+  tables: Table[];
+  guestAssignments: Array<{
+    guestId: string;
+    tableId: string | null;
+    seatIndex?: number | null;
+  }>;
 }
 
 export type TableShape = 'round' | 'rectangular' | 'king';
@@ -82,6 +132,8 @@ export interface Guest {
   rsvpStatus: 'confirmed' | 'declined' | 'awaiting';
   guestCount?: number;
   partySize?: number;
+  adults?: number;
+  kids?: number;
   dietary: string;
   song?: string;
   plusOne?: boolean;

@@ -27,9 +27,13 @@ export function getStoredState(): DemoState {
             const seedW = (SEED_DATA.weddings || []).find((sw: Wedding) => sw.id === w.id);
             return {
               ...w,
+              danceFloorPos: w.danceFloorPos || seedW?.danceFloorPos || { x: 50, y: 50 },
               privateRunSheet: (Array.isArray(w.privateRunSheet) && w.privateRunSheet.length > 0)
                 ? w.privateRunSheet
-                : (seedW?.privateRunSheet || [])
+                : (seedW?.privateRunSheet || []),
+              savedSeatingArrangements: (Array.isArray(w.savedSeatingArrangements) && w.savedSeatingArrangements.length > 0)
+                ? w.savedSeatingArrangements
+                : (seedW?.savedSeatingArrangements || [])
             };
           }) : SEED_DATA.weddings,
           guests: Array.isArray(parsed.guests) ? (() => {

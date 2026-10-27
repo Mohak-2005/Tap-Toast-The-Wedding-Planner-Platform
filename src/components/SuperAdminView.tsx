@@ -213,6 +213,44 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
   const [invEmail, setInvEmail] = useState('');
   const [invPlan, setInvPlan] = useState('Pro');
 
+  // Couple Invitation States (Requirement: Super Admin can invite couple to register)
+  const [showInviteCoupleModal, setShowInviteCoupleModal] = useState(false);
+  const [couplePartner1, setCouplePartner1] = useState('James Wilson');
+  const [couplePartner2, setCouplePartner2] = useState('Sophie Carter');
+  const [coupleEmail, setCoupleEmail] = useState('sophie.carter@example.com');
+  const [coupleMobile, setCoupleMobile] = useState('0412 345 678');
+  const [coupleWeddingDate, setCoupleWeddingDate] = useState('2026-11-14');
+  const [coupleVenue, setCoupleVenue] = useState('Fernwood Estate, Hunter Valley');
+  const [coupleAssignedMc, setCoupleAssignedMc] = useState('Robert Galati (Galati MC Services)');
+  const [couplePlanTier, setCouplePlanTier] = useState('Signature Pro Wedding Suite ($299 AUD)');
+  const [showInviteCoupleLinkModal, setShowInviteCoupleLinkModal] = useState(false);
+  const [generatedInviteLink, setGeneratedInviteLink] = useState('');
+
+  const handleInviteCoupleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const link = `${window.location.origin}${window.location.pathname}#register`;
+    setGeneratedInviteLink(link);
+
+    const auditEntry = {
+      id: 'aud_' + Date.now(),
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16),
+      user: 'Super Admin',
+      role: 'superadmin' as const,
+      action: 'Couple Registration Invitation Sent',
+      category: 'Tenants',
+      details: `Dispatched registration invite link to ${couplePartner1} & ${couplePartner2} (${coupleEmail}) with assigned host ${coupleAssignedMc}`,
+    };
+
+    setState({
+      ...state,
+      auditLog: [auditEntry, ...(state.auditLog || [])],
+    });
+
+    setShowInviteCoupleModal(false);
+    setShowInviteCoupleLinkModal(true);
+    showToast(`Invitation dispatched to ${coupleEmail}! Link ready.`, 'success');
+  };
+
   const featureFlags = state.featureFlags || {
     digitalGifting: true,
     aiSeating: true,
@@ -477,7 +515,6 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
               {
                 id: 'tenants',
                 label: 'MC Tenants',
-                badge: tenants.length,
                 icon: (
                   <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -510,7 +547,6 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
               {
                 id: 'audit',
                 label: 'Audit Logs',
-                badge: auditLog.length,
                 icon: (
                   <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -524,7 +560,6 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
               {
                 id: 'support',
                 label: 'Support Tickets',
-                badge: supportTickets.filter(t => t.status !== 'Resolved').length,
                 icon: (
                   <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -560,11 +595,6 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                     </span>
                     <span>{item.label}</span>
                   </div>
-                  {item.badge !== undefined && (
-                    <span className="text-[10px] font-semibold bg-[#2a2119] text-[#dfc194] px-1.5 py-0.5 rounded">
-                      {item.badge}
-                    </span>
-                  )}
                 </button>
               );
             })}
@@ -696,13 +726,23 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                     Manage active multi-tenant instances
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowInviteModal(true)}
-                  className="btn btn-gold btn-sm"
-                >
-                  + Invite MC
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowInviteCoupleModal(true)}
+                    className="btn btn-outline btn-sm font-bold flex items-center gap-1.5 border-[#bd9661] text-[#bd9661] hover:bg-[#bd9661] hover:text-[#15110e] cursor-pointer"
+                  >
+                    <span>💍</span>
+                    <span>Invite Couple</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowInviteModal(true)}
+                    className="btn btn-gold btn-sm"
+                  >
+                    + Invite MC
+                  </button>
+                </div>
               </div>
 
               <div className="overflow-x-auto">
@@ -787,13 +827,23 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                   MC Tenants
                 </h1>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowInviteModal(true)}
-                className="btn btn-gold btn-sm"
-              >
-                + Invite MC
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowInviteCoupleModal(true)}
+                  className="btn btn-outline btn-sm font-bold flex items-center gap-1.5 border-[#bd9661] text-[#bd9661] hover:bg-[#bd9661] hover:text-[#15110e] cursor-pointer"
+                >
+                  <span>💍</span>
+                  <span>Invite Couple</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowInviteModal(true)}
+                  className="btn btn-gold btn-sm"
+                >
+                  + Invite MC
+                </button>
+              </div>
             </div>
 
             <div className="bg-white border border-[#e8ded0] rounded-[6px] p-6 shadow-sm space-y-4">
@@ -1657,6 +1707,8 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                   className="text-input max-w-[180px]"
                 >
                   <option value="all">All Categories</option>
+                  <option value="Onboarding">Onboarding</option>
+                  <option value="Billing">Billing</option>
                   <option value="RSVP">RSVP</option>
                   <option value="Seating">Seating</option>
                   <option value="Gifting">Gifting</option>
@@ -2232,6 +2284,212 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
       )}
 
       {/* ================================================================== */}
+      {/* ================================================================== */}
+      {/* INVITE COUPLE TO REGISTER MODAL                                      */}
+      {/* ================================================================== */}
+      {showInviteCoupleModal && (
+        <div
+          className="fixed inset-0 bg-black/65 z-50 flex items-center justify-center p-4 backdrop-blur-xs"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowInviteCoupleModal(false);
+          }}
+        >
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-[#e8ded0] overflow-hidden max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 bg-[#15110e] text-white flex justify-between items-center border-b border-[#29211a]">
+              <div>
+                <div className="text-[10px] tracking-[2px] text-[#bd9661] uppercase font-bold">
+                  COUPLE INVITATION &bull; SUPER ADMIN
+                </div>
+                <h3 className="font-serif text-xl font-bold text-white">
+                  Invite Couple
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowInviteCoupleModal(false)}
+                className="text-white/70 hover:text-[#bd9661] text-xl font-bold cursor-pointer transition-colors p-1"
+                aria-label="Close dialog"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleInviteCoupleSubmit} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-6 overflow-y-auto space-y-4 flex-1">
+                <p className="text-xs text-[#8b7b6b]">
+                  Send a dedicated onboarding invite to the couple. They will be directed to register their wedding details, select a SaaS subscription, and collaborate with their MC.
+                </p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="field-group">
+                    <label className="field-label">Groom / Partner 1 Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. James Wilson"
+                      value={couplePartner1}
+                      onChange={(e) => setCouplePartner1(e.target.value)}
+                      className="text-input"
+                    />
+                  </div>
+                  <div className="field-group">
+                    <label className="field-label">Bride / Partner 2 Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Sophie Carter"
+                      value={couplePartner2}
+                      onChange={(e) => setCouplePartner2(e.target.value)}
+                      className="text-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="field-group">
+                    <label className="field-label">Primary Contact Email *</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="sophie.carter@example.com"
+                      value={coupleEmail}
+                      onChange={(e) => setCoupleEmail(e.target.value)}
+                      className="text-input"
+                    />
+                  </div>
+                  <div className="field-group">
+                    <label className="field-label">Australian Mobile *</label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="0412 345 678"
+                      value={coupleMobile}
+                      onChange={(e) => setCoupleMobile(e.target.value)}
+                      className="text-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="field-group">
+                    <label className="field-label">Wedding Date</label>
+                    <input
+                      type="date"
+                      value={coupleWeddingDate}
+                      onChange={(e) => setCoupleWeddingDate(e.target.value)}
+                      className="text-input"
+                    />
+                  </div>
+                  <div className="field-group">
+                    <label className="field-label">Preferred / Assigned MC</label>
+                    <select
+                      value={coupleAssignedMc}
+                      onChange={(e) => setCoupleAssignedMc(e.target.value)}
+                      className="text-input"
+                    >
+                      <option value="Robert Galati (Galati MC Services)">Robert Galati ($1,850 · 5.0 ⭐)</option>
+                      <option value="Marcus Thorne (Thorne Signature Hosts)">Marcus Thorne ($1,650 · 4.9 ⭐)</option>
+                      <option value="Elena Rostova (Artisan Wedding MCs)">Elena Rostova ($1,750 · 5.0 ⭐)</option>
+                      <option value="Open / Let Couple Choose">Open / Let Couple Choose via Joey AI</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="field-group">
+                  <label className="field-label">Venue Location (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Fernwood Estate, Hunter Valley"
+                    value={coupleVenue}
+                    onChange={(e) => setCoupleVenue(e.target.value)}
+                    className="text-input"
+                  />
+                </div>
+
+                <div className="field-group">
+                  <label className="field-label">Recommended Couple SaaS Tier</label>
+                  <select
+                    value={couplePlanTier}
+                    onChange={(e) => setCouplePlanTier(e.target.value)}
+                    className="text-input"
+                  >
+                    <option value="Signature Pro Wedding Suite ($299 AUD)">Signature Pro Wedding Suite ($299 AUD - Most Popular)</option>
+                    <option value="Essential Wedding Pass ($149 AUD)">Essential Wedding Pass ($149 AUD)</option>
+                    <option value="Couture Luxury Tier ($499 AUD)">Couture Luxury Tier ($499 AUD)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="px-6 py-4 bg-[#faf8f5] border-t border-[#e8ded0] flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowInviteCoupleModal(false)}
+                  className="btn btn-outline btn-sm cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-gold btn-sm cursor-pointer flex items-center gap-2">
+                  <span>Send Onboarding Invitation &rarr;</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* INVITATION LINK READY MODAL */}
+      {showInviteCoupleLinkModal && (
+        <div className="fixed inset-0 bg-black/65 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-[#e8ded0] p-6 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-700 flex items-center justify-center text-xl">
+                ✓
+              </div>
+              <div>
+                <h3 className="font-serif text-lg font-bold text-[#15110e]">
+                  Couple Invitation Dispatched!
+                </h3>
+                <p className="text-xs text-[#8b7b6b]">
+                  Onboarding link generated for <strong>{couplePartner1} &amp; {couplePartner2}</strong>.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#e8ded0] space-y-2">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b]">
+                DIRECT ONBOARDING LINK:
+              </label>
+              <input
+                type="text"
+                readOnly
+                value={generatedInviteLink}
+                className="w-full bg-white border border-[#d5c7b5] rounded-lg p-2 text-xs text-[#15110e] font-mono outline-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#f0ede6]">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard?.writeText(generatedInviteLink);
+                  showToast('Invitation link copied to clipboard!', 'success');
+                }}
+                className="btn btn-gold btn-sm cursor-pointer"
+              >
+                Copy Link 📋
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowInviteCoupleLinkModal(false)}
+                className="btn btn-outline btn-sm cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* INVITE MC MODAL                                                    */}
       {/* ================================================================== */}
       {showInviteModal && (

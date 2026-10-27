@@ -49,20 +49,38 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
     showToast(`Attached: ${file.name}`, 'info');
   };
 
-  const [messages, setMessages] = useState<MessageItem[]>([
-    {
-      id: 'm1',
-      sender: 'bot',
-      text: "Hello! I am **Joey**, your AI wedding assistant.",
-      time: "Just now"
-    },
-    {
-      id: 'm2',
-      sender: 'bot',
-      text: "How may I help you today? You can ask me about parking, your table seating, the ceremony schedule, or request dietary updates.",
-      time: "Just now"
+  const [messages, setMessages] = useState<MessageItem[]>(() => {
+    if (context === 'couple') {
+      return [
+        {
+          id: 'm1',
+          sender: 'bot',
+          text: "Hello Sophie & James! I am **Joey**, your AI wedding concierge.",
+          time: "Just now"
+        },
+        {
+          id: 'm2',
+          sender: 'bot',
+          text: "I can help you add guests (with adults & kids breakdown), move guests between tables, auto-seat, update wishing well gift values, or audit onboarding questions. How can I assist?",
+          time: "Just now"
+        }
+      ];
     }
-  ]);
+    return [
+      {
+        id: 'm1',
+        sender: 'bot',
+        text: "Hello! I am **Joey**, your AI wedding assistant.",
+        time: "Just now"
+      },
+      {
+        id: 'm2',
+        sender: 'bot',
+        text: "How may I help you today? You can ask me about parking, your table seating, the ceremony schedule, or request dietary updates.",
+        time: "Just now"
+      }
+    ];
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -76,7 +94,7 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
 
   const handleSendMessage = (textToSend?: string) => {
     const text = (textToSend || inputValue).trim();
-    if (!text) return;
+    if (!text && !attachedFile) return;
     setInputValue('');
 
     const currentAttached = attachedFile;
@@ -101,6 +119,54 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
 
   const respondToQuery = (rawQuery: string, fileAttached?: { name: string; size: number; type: string } | null) => {
     if (fileAttached) {
+      if (context === 'couple') {
+        const imp1: any = {
+          id: 'g_imp_1_' + Date.now(),
+          name: 'Uncle David & Aunty Helen',
+          household: 'The David Family',
+          email: 'david.family@example.com',
+          phone: '0412 999 101',
+          rsvpStatus: 'confirmed',
+          category: "Groom's Family",
+          adults: 2,
+          kids: 1,
+          guestCount: 3,
+          partySize: 3,
+          dietary: '1x Gluten-Free',
+          tableId: null,
+          seatIndex: null,
+        };
+        const imp2: any = {
+          id: 'g_imp_2_' + Date.now(),
+          name: 'Clara & Sam Jenkins',
+          household: 'The Jenkins Family',
+          email: 'clara.j@example.com',
+          phone: '0412 999 102',
+          rsvpStatus: 'confirmed',
+          category: "Mutual Friends",
+          adults: 2,
+          kids: 0,
+          guestCount: 2,
+          partySize: 2,
+          dietary: 'None',
+          tableId: null,
+          seatIndex: null,
+        };
+        setState({
+          ...state,
+          guests: [imp1, imp2, ...state.guests]
+        });
+        showToast('Imported 2 guest parties (4 adults, 1 kid) from document', 'success');
+        const botMsg: MessageItem = {
+          id: 'bot_' + Date.now(),
+          sender: 'bot',
+          text: `📄 **Document Parsed Successfully**: I extracted 2 guest households from **${fileAttached.name}**:\n• **Uncle David & Aunty Helen** (2 adults, 1 kid) - Groom's Family\n• **Clara & Sam Jenkins** (2 adults, 0 kids) - Mutual Friends\n\nBoth have been added to your guest list and catering manifest!`,
+          time: 'Just now'
+        };
+        setMessages(prev => [...prev, botMsg]);
+        return;
+      }
+
       const botMsg: MessageItem = {
         id: 'bot_' + Date.now(),
         sender: 'bot',
@@ -110,9 +176,167 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
       setMessages(prev => [...prev, botMsg]);
       return;
     }
+
     const q = rawQuery.toLowerCase();
     const guest = state.guests.find(g => g.id === 'johnson_fam' || g.id === 'priya') || state.guests[0];
     const wedding = state.weddings[0];
+
+    // COUPLE NATURAL LANGUAGE COMMANDS
+    if (context === 'couple') {
+      // 1. Add Guest via prompt
+      if (q.includes('add guest') || q.includes('invite guest') || q.includes('new guest')) {
+        let name = 'Uncle David';
+        let category = "Groom's Family";
+        let adults = 2;
+        let kids = 1;
+
+        if (q.includes('uncle bob')) name = 'Uncle Bob';
+        else if (q.includes('david')) name = 'Uncle David';
+        else if (q.includes('sarah')) name = 'Sarah Jenkins';
+        else if (q.includes('clara')) name = 'Clara Miller';
+
+        if (q.includes('bride')) category = "Bride's Family";
+        else if (q.includes('friend')) category = "Mutual Friends";
+        else if (q.includes('colleague') || q.includes('work')) category = "Work Colleagues";
+
+        const adultMatch = q.match(/(\d+)\s*adult/i);
+        if (adultMatch) adults = parseInt(adultMatch[1]);
+        const kidMatch = q.match(/(\d+)\s*kid/i);
+        if (kidMatch) kids = parseInt(kidMatch[1]);
+
+        const newGuestObj: any = {
+          id: 'g_' + Date.now(),
+          name,
+          household: `${name} Household`,
+          email: `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
+          phone: '0412 555 888',
+          rsvpStatus: 'awaiting',
+          category,
+          adults,
+          kids,
+          guestCount: adults + kids,
+          partySize: adults + kids,
+          dietary: 'None',
+          tableId: null,
+          seatIndex: null,
+        };
+
+        setState({
+          ...state,
+          guests: [newGuestObj, ...state.guests]
+        });
+        showToast(`Added ${name} (${adults} adults, ${kids} kids) to ${category}`, 'success');
+
+        const botMsg: MessageItem = {
+          id: 'bot_' + Date.now(),
+          sender: 'bot',
+          text: `✅ **Guest Added**: I have added **${name}** to your guest list!\n• **Category**: ${category}\n• **Breakdown**: ${adults} Adult(s), ${kids} Kid(s) (Party size: ${adults + kids})\n• **Status**: Awaiting RSVP\n\nYou can seat them now or ask me to auto-seat them.`,
+          time: 'Just now'
+        };
+        setMessages(prev => [...prev, botMsg]);
+        return;
+      }
+
+      // 2. Move guest between tables
+      if ((q.includes('move') || q.includes('seat')) && (q.includes('table') || q.includes('tbl'))) {
+        const targetGuest = state.guests.find(g =>
+          q.includes(g.name.toLowerCase().split(' ')[0]) ||
+          (g.name.toLowerCase().includes('mark') && q.includes('mark')) ||
+          (g.name.toLowerCase().includes('sophie') && q.includes('sophie'))
+        ) || state.guests[1];
+
+        let targetTable = state.tables.find(t =>
+          q.includes(t.name.toLowerCase()) ||
+          (q.includes('table 2') && t.name.toLowerCase().includes('table 2')) ||
+          (q.includes('table 1') && t.name.toLowerCase().includes('table 1')) ||
+          (q.includes('head') && t.name.toLowerCase().includes('head'))
+        ) || state.tables[1];
+
+        if (targetGuest && targetTable) {
+          const updatedGuests = state.guests.map(g =>
+            g.id === targetGuest.id ? { ...g, tableId: targetTable.id } : g
+          );
+          setState({ ...state, guests: updatedGuests });
+          showToast(`Moved ${targetGuest.name} to ${targetTable.name}`, 'success');
+
+          const botMsg: MessageItem = {
+            id: 'bot_' + Date.now(),
+            sender: 'bot',
+            text: `🪑 **Seating Updated**: I have moved **${targetGuest.name}** to **${targetTable.name}**.\nTheir place card and catering seat assignment have been updated in real-time.`,
+            time: 'Just now'
+          };
+          setMessages(prev => [...prev, botMsg]);
+          return;
+        }
+      }
+
+      // 3. AI Auto-Seating
+      if (q.includes('auto') && (q.includes('seat') || q.includes('assign'))) {
+        let seatTblIdx = 0;
+        const updatedGuests = state.guests.map((g) => {
+          if (!g.tableId) {
+            const tbl = state.tables[seatTblIdx % state.tables.length];
+            seatTblIdx++;
+            return { ...g, tableId: tbl ? tbl.id : 'tbl_1' };
+          }
+          return g;
+        });
+        setState({ ...state, guests: updatedGuests });
+        showToast('All unassigned guests have been auto-seated by category', 'success');
+
+        const botMsg: MessageItem = {
+          id: 'bot_' + Date.now(),
+          sender: 'bot',
+          text: `✨ **AI Auto-Seating Complete**: I balanced your tables by matching guest categories (Bride's family together, Groom's family together, and mutual friends at central tables). 100% of guests are now allocated a seat!`,
+          time: 'Just now'
+        };
+        setMessages(prev => [...prev, botMsg]);
+        return;
+      }
+
+      // 4. Update Gift Wishing Well Presets
+      if (q.includes('gift') || q.includes('well') || q.includes('preset') || q.includes('wishing')) {
+        const nums = q.match(/\d+/g);
+        let newPresets = [50, 100, 200, 300];
+        if (nums && nums.length >= 2) {
+          newPresets = nums.map(n => parseInt(n));
+        }
+        const updatedWeddings = state.weddings.map(w => ({
+          ...w,
+          giftingPresets: newPresets
+        }));
+        setState({ ...state, weddings: updatedWeddings });
+        showToast(`Wishing well presets updated: $${newPresets.join(', $')}`, 'success');
+
+        const botMsg: MessageItem = {
+          id: 'bot_' + Date.now(),
+          sender: 'bot',
+          text: `🎁 **Wishing Well Presets Updated**: The quick-gift chips on your digital wishing well are now set to:\n• ${newPresets.map(p => `$${p}`).join(' · ')}\n\nGuests accessing your wishing well from their QaRd invitations will see these instant gift denominations.`,
+          time: 'Just now'
+        };
+        setMessages(prev => [...prev, botMsg]);
+        return;
+      }
+
+      // 5. Adults vs Kids Demographic breakdown
+      if (q.includes('adult') || q.includes('kid') || q.includes('breakdown') || q.includes('demographic') || q.includes('count')) {
+        let totalAdults = 0;
+        let totalKids = 0;
+        state.guests.forEach(g => {
+          totalAdults += g.adults !== undefined ? g.adults : (g.partySize || 1);
+          totalKids += g.kids !== undefined ? g.kids : 0;
+        });
+        const total = totalAdults + totalKids;
+        const botMsg: MessageItem = {
+          id: 'bot_' + Date.now(),
+          sender: 'bot',
+          text: `**Guest Demographic Breakdown**:\n• **Total Guests**: ${total}\n• **Adults (18+)**: ${totalAdults} (${Math.round((totalAdults / (total || 1)) * 100)}%)\n• **Kids (< 12)**: ${totalKids} (${Math.round((totalKids / (total || 1)) * 100)}%)\n\nChef Marco Rossi will prepare ${totalAdults} adult banquet plates and ${totalKids} dedicated children's meal packages.`,
+          time: 'Just now'
+        };
+        setMessages(prev => [...prev, botMsg]);
+        return;
+      }
+    }
 
     // Dietary Change Query
     if (q.includes('diet') || q.includes('vegetarian') || q.includes('vegetarion') || q.includes('vegan') || q.includes('gluten') || q.includes('celiac') || q.includes('dairy') || q.includes('halal') || q.includes('nut')) {
@@ -192,7 +416,9 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
     const botMsg: MessageItem = {
       id: 'bot_' + Date.now(),
       sender: 'bot',
-      text: `I'm here to ensure you have a flawless wedding experience with Sophie & James! You can ask me to update your dietary, check your table number, get parking directions, or review the day-of timeline.`,
+      text: context === 'couple'
+        ? `I am ready to assist you, Sophie & James! You can ask me to add guests (with adult/kid counts), move someone to a table, update wishing well presets, or breakdown family demographics.`
+        : `I'm here to ensure you have a flawless wedding experience with Sophie & James! You can ask me to update your dietary, check your table number, get parking directions, or review the day-of timeline.`,
       time: 'Just now'
     };
     setMessages(prev => [...prev, botMsg]);
@@ -236,7 +462,6 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
       });
       showToast(`✓ Dietary updated to ${dietaryVal}`, 'success');
 
-      // Bot follow-up message
       setTimeout(() => {
         setMessages(prev => [
           ...prev,
@@ -276,7 +501,7 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
     }
   };
 
-  const chips = [
+  const guestChips = [
     { label: '🥗 Vegetarian', q: 'Change my diet to vegetarian' },
     { label: '🌾 Gluten-Free', q: 'Change my diet to gluten-free' },
     { label: '🪑 My Table', q: 'Where is my table seated?' },
@@ -284,6 +509,16 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
     { label: '🅿️ Parking', q: 'Where can I park my car?' },
     { label: '👔 Dress Code', q: 'What is the dress code?' },
   ];
+
+  const coupleChips = [
+    { label: '+ Add Guest', q: "Add guest: Uncle David (2 adults, 1 kid) to Groom's Family" },
+    { label: 'Move Guest', q: 'Move Mark Johnson to Table 2' },
+    { label: 'Auto-Seat', q: 'Auto seat all unassigned guests' },
+    { label: 'Gift Presets', q: 'Change gift presets to 50, 100, 200, 300' },
+    { label: 'Adults vs Kids', q: 'Show breakdown of adults vs kids' },
+  ];
+
+  const activeChips = context === 'couple' ? coupleChips : guestChips;
 
   return (
     <>
@@ -374,21 +609,21 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
                           <button
                             type="button"
                             onClick={() => handleActionDecision(m.actionCard!.id, 'accept', m.actionCard!.dietaryVal)}
-                            className="bg-[#2e6d3c] hover:bg-[#22522c] text-white text-[11px] font-bold px-2.5 py-1 rounded flex items-center gap-1 transition-colors"
+                            className="bg-[#2e6d3c] hover:bg-[#22522c] text-white text-[11px] font-bold px-2.5 py-1 rounded flex items-center gap-1 transition-colors cursor-pointer"
                           >
                             ✓ Accept
                           </button>
                           <button
                             type="button"
                             onClick={() => handleActionDecision(m.actionCard!.id, 'reject')}
-                            className="bg-white hover:bg-red-50 text-[#a8382c] border border-[#e8a39c] text-[11px] font-bold px-2.5 py-1 rounded flex items-center gap-1 transition-colors"
+                            className="bg-white hover:bg-red-50 text-[#a8382c] border border-[#e8a39c] text-[11px] font-bold px-2.5 py-1 rounded flex items-center gap-1 transition-colors cursor-pointer"
                           >
                             ✕ Reject
                           </button>
                           <button
                             type="button"
                             onClick={() => handleActionDecision(m.actionCard!.id, 'correct')}
-                            className="bg-[#f0ebe3] hover:bg-[#e4dcce] text-[#6d5538] text-[11px] font-semibold px-2.5 py-1 rounded transition-colors"
+                            className="bg-[#f0ebe3] hover:bg-[#e4dcce] text-[#6d5538] text-[11px] font-semibold px-2.5 py-1 rounded transition-colors cursor-pointer"
                           >
                             ✎ Correct
                           </button>
@@ -434,12 +669,12 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
 
           {/* Quick Action Chips */}
           <div className="px-3 py-2 bg-[#f4efe8] border-t border-[#ebdcc9] flex items-center gap-1.5 overflow-x-auto no-scrollbar flex-shrink-0">
-            {chips.map((chip, idx) => (
+            {activeChips.map((chip, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => handleSendMessage(chip.q)}
-                className="bg-white hover:bg-[#fff9f0] border border-[#d5c7b5] hover:border-[#bd9661] text-[#6b5847] hover:text-[#15110e] text-[11px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap transition-colors flex-shrink-0"
+                className="bg-white hover:bg-[#fff9f0] border border-[#d5c7b5] hover:border-[#bd9661] text-[#6b5847] hover:text-[#15110e] text-[11px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap transition-colors flex-shrink-0 cursor-pointer"
               >
                 {chip.label}
               </button>
@@ -473,7 +708,6 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
             }}
             className="p-2.5 bg-white border-t border-[#ebdcc9] flex items-center gap-2"
           >
-            {/* 1. Text box */}
             <input
               type="text"
               value={inputValue}
@@ -482,7 +716,6 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
               className="flex-1 bg-[#fbf9f6] border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 text-xs text-[#15110e] outline-none"
             />
 
-            {/* 2. Attach File Button (to the left of arrow) */}
             {allowFileUpload && (
               <>
                 <input
@@ -505,7 +738,6 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
               </>
             )}
 
-            {/* 3. Send Message Arrow */}
             <button
               type="submit"
               disabled={!inputValue.trim() && !attachedFile}

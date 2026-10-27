@@ -96,6 +96,8 @@ export default function CoupleView({
   const [newGuestPhone, setNewGuestPhone] = useState('');
   const [newGuestDiet, setNewGuestDiet] = useState('');
   const [newGuestCategory, setNewGuestCategory] = useState<string>('Uncategorised');
+  const [newGuestAdults, setNewGuestAdults] = useState<number>(1);
+  const [newGuestKids, setNewGuestKids] = useState<number>(0);
 
   const GUEST_CATEGORIES = [
     "Bridal Party",
@@ -123,6 +125,9 @@ export default function CoupleView({
   const handleAddNewGuest = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGuestName.trim()) return;
+    const adults = Math.max(1, newGuestAdults);
+    const kids = Math.max(0, newGuestKids);
+    const total = adults + kids;
     const newGuest: Guest = {
       id: 'g_' + Date.now(),
       name: newGuestName.trim(),
@@ -131,8 +136,10 @@ export default function CoupleView({
       email: `${newGuestName.toLowerCase().replace(/\s+/g, '.')}@example.com`,
       phone: newGuestPhone || '0400 000 000',
       rsvpStatus: 'awaiting',
-      guestCount: 1,
-      partySize: 1,
+      guestCount: total,
+      partySize: total,
+      adults,
+      kids,
       dietary: newGuestDiet || 'None',
       tableId: null,
       seatIndex: null,
@@ -148,7 +155,9 @@ export default function CoupleView({
     setNewGuestHousehold('');
     setNewGuestPhone('');
     setNewGuestDiet('');
-    showToast(`Added ${newGuest.name} to Guest List`, 'success');
+    setNewGuestAdults(1);
+    setNewGuestKids(0);
+    showToast(`Added ${newGuest.name} (${adults} adults, ${kids} kids) to Guest List`, 'success');
   };
 
   // Tab 3: Seating State & Actions (Screenshot 24)
@@ -579,6 +588,9 @@ export default function CoupleView({
 
   const confirmedCount = confirmedGuests.length;
   const awaitingCount = awaitingGuests.length;
+  const totalAdultsCount = weddingGuests.reduce((sum, g) => sum + (g.adults !== undefined ? g.adults : (g.partySize || 1)), 0);
+  const totalKidsCount = weddingGuests.reduce((sum, g) => sum + (g.kids !== undefined ? g.kids : 0), 0);
+  const totalPartyCount = totalAdultsCount + totalKidsCount;
   const totalGifts = state.gifts.reduce((sum, g) => sum + Number(g.amount || 0), 0);
   const thankYousDue = state.gifts.filter(g => g.thankYouStatus !== 'Completed' && g.thankYouStatus !== 'Sent').length;
 
@@ -815,19 +827,21 @@ export default function CoupleView({
                   </svg>
                 ),
               },
-              {
-                id: 'gifts',
-                label: isMcView ? 'Gift & Wishing Well Ledger' : 'Gift & Thank-You',
-                icon: (
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <polyline points="20 12 20 22 4 22 4 12" />
-                    <rect x="2" y="7" width="20" height="5" />
-                    <line x1="12" y1="22" x2="12" y2="7" />
-                    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
-                    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
-                  </svg>
-                ),
-              },
+              ...(!isMcView ? [
+                {
+                  id: 'gifts' as const,
+                  label: 'Gift & Thank-You',
+                  icon: (
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="20 12 20 22 4 22 4 12" />
+                      <rect x="2" y="7" width="20" height="5" />
+                      <line x1="12" y1="22" x2="12" y2="7" />
+                      <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                      <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+                    </svg>
+                  ),
+                },
+              ] : []),
               {
                 id: 'feed',
                 label: 'Celebration Feed',
@@ -1159,6 +1173,42 @@ export default function CoupleView({
               </div>
             </div>
 
+            {/* Demographic & Attendance KPI Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div className="bg-white border border-[#e8ded0] rounded-xl p-3 shadow-2xs">
+                <div className="text-[10px] font-bold uppercase text-[#8b7b6b]">TOTAL GUESTS</div>
+                <div className="font-serif text-2xl font-bold text-[#15110e] mt-0.5">{totalPartyCount}</div>
+                <div className="text-[10px] text-[#8b7b6b]">Across {weddingGuests.length} parties</div>
+              </div>
+              <div className="bg-white border border-[#e8ded0] rounded-xl p-3 shadow-2xs">
+                <div className="text-[10px] font-bold uppercase text-[#8b7b6b] ">ADULTS (18+)</div>
+                <div className="font-serif text-2xl font-bold text-[#15110e] mt-0.5">{totalAdultsCount}</div>
+                <div className="text-[10px] text-emerald-700 font-semibold">{Math.round((totalAdultsCount / (totalPartyCount || 1)) * 100)}% of reception</div>
+              </div>
+              <div className="bg-white border border-[#e8ded0] rounded-xl p-3 shadow-2xs">
+                <div className="text-[10px] font-bold uppercase text-[#8b7b6b]">KIDS (&lt;12)</div>
+                <div className="font-serif text-2xl font-bold text-[#15110e] mt-0.5">{totalKidsCount}</div>
+                <div className="text-[10px] text-sky-700 font-semibold">{totalKidsCount} children meals</div>
+              </div>
+              <div className="bg-white border border-[#e8ded0] rounded-xl p-3 shadow-2xs">
+                <div className="text-[10px] font-bold uppercase text-[#8b7b6b]">CONFIRMED</div>
+                <div className="font-serif text-2xl font-bold text-emerald-700 mt-0.5">{confirmedCount}</div>
+                <div className="text-[10px] text-[#8b7b6b]">RSVPs accepted</div>
+              </div>
+              <div className="bg-white border border-[#e8ded0] rounded-xl p-3 shadow-2xs">
+                <div className="text-[10px] font-bold uppercase text-[#8b7b6b]">AWAITING</div>
+                <div className="font-serif text-2xl font-bold text-[#bd9661] mt-0.5">{awaitingCount}</div>
+                <div className="text-[10px] text-[#8b7b6b]">Pending response</div>
+              </div>
+              <div className="bg-white border border-[#e8ded0] rounded-xl p-3 shadow-2xs">
+                <div className="text-[10px] font-bold uppercase text-[#8b7b6b]">CATEGORISED</div>
+                <div className="font-serif text-2xl font-bold text-[#15110e] mt-0.5">
+                  {weddingGuests.length - uncategorisedCount} / {weddingGuests.length}
+                </div>
+                <div className="text-[10px] text-[#a8382c] font-semibold">{uncategorisedCount} need category</div>
+              </div>
+            </div>
+
             {/* Filter Bar */}
             <div className="bg-white border border-[#e8ded0] rounded-xl p-4 shadow-sm space-y-4">
               <div className="flex gap-3 flex-wrap items-center justify-between">
@@ -1213,7 +1263,7 @@ export default function CoupleView({
                         : 'bg-[#faf7f2] text-[#6b5a4a] border border-[#e8ded0] hover:bg-[#ede5d8]'
                     }`}
                   >
-                    ⚠️ Needs Category ({uncategorisedCount})
+                    Needs Category ({uncategorisedCount})
                   </button>
                 </div>
 
@@ -1244,7 +1294,9 @@ export default function CoupleView({
                       <th className="py-2.5 px-3">CATEGORY</th>
                       <th className="py-2.5 px-3">CONTACT</th>
                       <th className="py-2.5 px-3">STATUS</th>
-                      <th className="py-2.5 px-3">PARTY</th>
+                      <th className="py-2.5 px-3 text-center">ADULTS</th>
+                      <th className="py-2.5 px-3 text-center">KIDS</th>
+                      <th className="py-2.5 px-3 text-center">PARTY TOTAL</th>
                       <th className="py-2.5 px-3">DIETARY</th>
                       <th className="py-2.5 px-3">TABLE</th>
                       <th className="py-2.5 px-3">ACTIONS</th>
@@ -1276,19 +1328,7 @@ export default function CoupleView({
                               <select
                                 value={g.category}
                                 onChange={(e) => handleUpdateGuestCategory(g.id, e.target.value)}
-                                className={`text-[10.5px] rounded-md px-2 py-0.5 border cursor-pointer outline-none transition-colors ${
-                                  g.category === 'Bridal Party'
-                                    ? 'bg-amber-100 text-amber-900 border-[#bd9661] font-bold'
-                                    : g.category === "Bride's Family"
-                                    ? 'bg-rose-50 text-rose-800 border-rose-200 font-semibold'
-                                    : g.category === "Groom's Family"
-                                    ? 'bg-blue-50 text-blue-800 border-blue-200 font-semibold'
-                                    : g.category === 'Mutual Friends' || g.category === 'Friends'
-                                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 font-semibold'
-                                    : g.category === 'Work Colleagues' || g.category === 'Colleagues'
-                                    ? 'bg-purple-50 text-purple-800 border-purple-200 font-semibold'
-                                    : 'bg-stone-50 text-stone-700 border-stone-200 font-semibold'
-                                }`}
+                                className="text-[11px] font-medium text-[#15110e] bg-[#fbf9f6] border border-[#d5c7b5] hover:border-[#bd9661] focus:border-[#bd9661] rounded px-2.5 py-1 outline-none cursor-pointer transition-colors shadow-2xs"
                               >
                                 {GUEST_CATEGORIES.map(c => (
                                   <option key={c} value={c}>{c}</option>
@@ -1309,8 +1349,27 @@ export default function CoupleView({
                             {g.rsvpStatus === 'confirmed' ? 'Confirmed' : g.rsvpStatus === 'declined' ? 'Declined' : 'Awaiting'}
                           </span>
                         </td>
-                        <td className="py-3 px-3 font-semibold text-[#15110e]">
-                          {g.partySize || 1}
+                        {/* ADULTS */}
+                        <td className="py-2.5 px-3 text-center">
+                          <span className="inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded text-xs font-semibold text-[#15110e] bg-[#f5ede2] border border-[#e2d5c5]">
+                            {g.adults !== undefined ? g.adults : (g.partySize || 1)}
+                          </span>
+                        </td>
+
+                        {/* KIDS */}
+                        <td className="py-2.5 px-3 text-center">
+                          <span className={`inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded text-xs font-semibold ${
+                            (g.kids || 0) > 0
+                              ? 'text-[#6b5847] bg-[#f5ede2] border border-[#e2d5c5]'
+                              : 'text-[#8b7b6b] bg-[#faf8f5] border border-[#e8ded0]'
+                          }`}>
+                            {g.kids || 0}
+                          </span>
+                        </td>
+
+                        {/* PARTY TOTAL */}
+                        <td className="py-2.5 px-3 text-center font-bold text-xs text-[#15110e]">
+                          {(g.adults !== undefined ? g.adults : (g.partySize || 1)) + (g.kids || 0)}
                         </td>
                         <td className="py-3 px-3">
                           {g.dietary && g.dietary !== 'None' ? (
@@ -1393,6 +1452,35 @@ export default function CoupleView({
                         ))}
                       </select>
                     </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                          Adults (18+)
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={newGuestAdults}
+                          onChange={(e) => setNewGuestAdults(Math.max(1, parseInt(e.target.value) || 1))}
+                          className="w-full bg-white border border-[#e8ded0] rounded-lg p-2 outline-none focus:border-[#bd9661] text-xs font-semibold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                          Kids (&lt;12)
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={10}
+                          value={newGuestKids}
+                          onChange={(e) => setNewGuestKids(Math.max(0, parseInt(e.target.value) || 0))}
+                          className="w-full bg-white border border-[#e8ded0] rounded-lg p-2 outline-none focus:border-[#bd9661] text-xs font-semibold"
+                        />
+                      </div>
+                    </div>
+
                     <div>
                       <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">Dietary Requirements</label>
                       <input
@@ -1419,7 +1507,7 @@ export default function CoupleView({
         {/* ================================================================ */}
         {activeTab === 'seating' && (
           <section className="space-y-4">
-            <SeatingPlannerSection weddingId={wedding.id} onSelectView={onSelectView} />
+            <SeatingPlannerSection weddingId={wedding.id} onSelectView={onSelectView} isMcView={isMcView} />
           </section>
         )}
 
@@ -1623,7 +1711,7 @@ export default function CoupleView({
         {/* ================================================================ */}
         {/* TAB 6: GIFT & THANK-YOU (Screenshot 27: 172928.png)              */}
         {/* ================================================================ */}
-        {activeTab === 'gifts' && (
+        {activeTab === 'gifts' && !isMcView && (
           <section className="space-y-6">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>

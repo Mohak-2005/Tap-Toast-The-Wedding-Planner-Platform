@@ -2,58 +2,49 @@ import { DemoState, SaaSPlan, McTransaction } from './types';
 
 export const initialPlans: SaaSPlan[] = [
   {
-    id: "plan_starter",
-    key: "Starter",
-    tagline: "Independent Host",
+    id: "plan_couple_essential",
+    key: "Essential",
+    tagline: "Smart Wedding Essentials",
     price: 149,
-    billingCycle: "AUD / mo",
+    billingCycle: "AUD / one-time pass",
     features: [
-      "1 active wedding at a time",
-      "Digital RSVPs & basic seating",
-      "Digital wishing well",
-      "Standard community support",
+      "Guest list manager with Adults & Kids RSVP counts",
+      "Digital QaRd mobile invitations & dietary tracking",
+      "Gift & Wishing Well ledger (0% platform fee)",
+      "Standard seating table builder",
+      "Email RSVP reminders",
     ],
   },
   {
-    id: "plan_standard",
-    key: "Standard",
-    tagline: "Boutique Host",
-    price: 199,
-    billingCycle: "AUD / mo",
-    features: [
-      "Up to 3 active weddings",
-      "Custom guest QR links",
-      "Drag-and-drop seating studio",
-      "Standard email & chat support",
-    ],
-  },
-  {
-    id: "plan_pro",
-    key: "Pro",
-    tagline: "Master of Ceremonies",
+    id: "plan_couple_signature",
+    key: "Signature Pro",
+    tagline: "Complete Couple & MC Experience",
     price: 299,
-    billingCycle: "AUD / mo",
-    features: [
-      "Unlimited active weddings",
-      "QaRd physical QR generation",
-      "AI Seating Optimization Assistant",
-      "Live interactive run sheets & cues",
-      "Collaborative coordinator logins",
-    ],
+    billingCycle: "AUD / one-time pass",
     badge: "MOST POPULAR",
     featured: true,
+    features: [
+      "Everything in Essential",
+      "Joey AI Wedding Concierge & Prompting Assistant",
+      "Smart Seating Planner with AI auto-seat solver",
+      "MC Matchmaker & Live Run-Sheet Collaboration",
+      "Live Celebration Feed & Photo Sharing for guests",
+      "Digital Wedding Vault & post-wedding keepsake",
+    ],
   },
   {
-    id: "plan_enterprise",
-    key: "Enterprise",
-    tagline: "Multi-Host Agency",
-    price: 599,
-    billingCycle: "AUD / mo",
+    id: "plan_couple_couture",
+    key: "Couture Luxury",
+    tagline: "VIP Concierge & Full-Service Suite",
+    price: 499,
+    billingCycle: "AUD / one-time pass",
     features: [
-      "Up to 10 MC performers",
-      "Custom domain & white-label branding",
-      "Priority 24/7 Australian telephone concierge",
-      "Dedicated account manager",
+      "Everything in Signature Pro",
+      "VIP MC Concierge Matchmaking & custom contract",
+      "Multi-Event Run Sheets (Rehearsal, Reception, Recovery Brunch)",
+      "Custom domain & personalized couple branding",
+      "Priority 24/7 Australian wedding support concierge",
+      "Full export package (CSV, PDF run sheets, table cards)",
     ],
   },
 ];
@@ -265,6 +256,128 @@ export const SEED_DATA: DemoState = {
       registry: "Digital wishing well via Gift & Go",
       invited: 118,
       status: "Finalising",
+      selectedMc: {
+        id: "mc_robert_galati",
+        name: "Robert Galati",
+        businessName: "Galati MC & Entertainment",
+        email: "robert@galati.demo",
+        phone: "0418 223 901",
+        rate: 1850,
+        style: "Premier Luxury & High Energy"
+      },
+      subscriptionPlan: {
+        id: "plan_couple_signature",
+        name: "Signature Pro Couple Plan",
+        price: 299,
+        billing: "AUD / one-time pass",
+        status: "active",
+        paymentMethod: "Stripe (Mastercard •••• 4242)",
+        features: [
+          "Joey AI Wedding Concierge",
+          "AI Seating Optimization",
+          "MC Live Run-Sheet Collaboration",
+          "Adults & Kids RSVP Tracker",
+          "0% Fee Digital Wishing Well"
+        ]
+      },
+      giftingPresets: [50, 100, 150, 250],
+      danceFloorPos: { x: 50, y: 50 },
+      savedSeatingArrangements: [
+        {
+          id: 'arr_1',
+          weddingId: 'w1',
+          name: 'Seating Arrangement 1 (Classic Ballroom)',
+          savedAt: '2026-10-25 11:30',
+          savedBy: 'Sophie & James (Couple)',
+          role: 'couple',
+          danceFloorPos: { x: 50, y: 50 },
+          notes: 'Classic banquet layout with central dance floor and balanced round/rectangle tables',
+          tables: [
+            { id: 'head', weddingId: 'w1', name: 'HEAD TABLE', capacity: 8, isHead: true, shape: 'king', category: 'Bridal Party', zone: 'Stage & VIP Wing', x: 50, y: 15 },
+            { id: 'table_1', weddingId: 'w1', name: 'Table 1', capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Center Ballroom', x: 25, y: 35 },
+            { id: 'table_2', weddingId: 'w1', name: 'Table 2', capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'Left Terrace', x: 40, y: 35 },
+            { id: 'table_3', weddingId: 'w1', name: 'Table 3', capacity: 8, isHead: false, shape: 'rectangular', category: 'Friends', zone: 'Right Garden', x: 60, y: 35 },
+            { id: 'table_4', weddingId: 'w1', name: 'Table 4', capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'Right Garden', x: 75, y: 35 },
+            { id: 'table_5', weddingId: 'w1', name: 'Table 5', capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Left Terrace', x: 25, y: 65 },
+            { id: 'table_6', weddingId: 'w1', name: 'Table 6', capacity: 8, isHead: false, shape: 'rectangular', category: 'Family', zone: 'Center Ballroom', x: 40, y: 65 },
+            { id: 'table_7', weddingId: 'w1', name: 'Table 7', capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Center Ballroom', x: 60, y: 65 }
+          ],
+          guestAssignments: [
+            { guestId: 'g1', tableId: 'head', seatIndex: 0 },
+            { guestId: 'g2', tableId: 'head', seatIndex: 1 },
+            { guestId: 'g3', tableId: 'head', seatIndex: 2 },
+            { guestId: 'g4', tableId: 'head', seatIndex: 3 },
+            { guestId: 'g5', tableId: 'table_1', seatIndex: 0 },
+            { guestId: 'g6', tableId: 'table_1', seatIndex: 1 },
+            { guestId: 'g7', tableId: 'table_2', seatIndex: 0 },
+            { guestId: 'g8', tableId: 'table_2', seatIndex: 1 },
+            { guestId: 'g9', tableId: 'table_3', seatIndex: 0 },
+            { guestId: 'g10', tableId: 'table_4', seatIndex: 0 }
+          ]
+        },
+        {
+          id: 'arr_2',
+          weddingId: 'w1',
+          name: 'Arrangement 2 (MC Pacing Optimized)',
+          savedAt: '2026-10-25 16:45',
+          savedBy: 'Robert Galati (MC)',
+          role: 'mc',
+          danceFloorPos: { x: 50, y: 50 },
+          notes: 'VIP family tables closer to bridal stage for smooth microphone handover during speeches',
+          tables: [
+            { id: 'head', weddingId: 'w1', name: 'HEAD TABLE', capacity: 8, isHead: true, shape: 'king', category: 'Bridal Party', zone: 'Stage & VIP Wing', x: 50, y: 12 },
+            { id: 'table_2', weddingId: 'w1', name: 'Table 2 (Family VIP)', capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'VIP Stage Left', x: 28, y: 28 },
+            { id: 'table_4', weddingId: 'w1', name: 'Table 4 (Family VIP)', capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'VIP Stage Right', x: 72, y: 28 },
+            { id: 'table_1', weddingId: 'w1', name: 'Table 1', capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Center Ballroom', x: 22, y: 48 },
+            { id: 'table_3', weddingId: 'w1', name: 'Table 3', capacity: 8, isHead: false, shape: 'rectangular', category: 'Friends', zone: 'Right Garden', x: 78, y: 48 },
+            { id: 'table_5', weddingId: 'w1', name: 'Table 5', capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Left Terrace', x: 28, y: 72 },
+            { id: 'table_6', weddingId: 'w1', name: 'Table 6', capacity: 8, isHead: false, shape: 'rectangular', category: 'Family', zone: 'Center Ballroom', x: 50, y: 74 },
+            { id: 'table_7', weddingId: 'w1', name: 'Table 7', capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Center Ballroom', x: 72, y: 72 }
+          ],
+          guestAssignments: [
+            { guestId: 'g1', tableId: 'head', seatIndex: 0 },
+            { guestId: 'g2', tableId: 'head', seatIndex: 1 },
+            { guestId: 'g3', tableId: 'head', seatIndex: 2 },
+            { guestId: 'g4', tableId: 'head', seatIndex: 3 },
+            { guestId: 'g7', tableId: 'table_2', seatIndex: 0 },
+            { guestId: 'g8', tableId: 'table_2', seatIndex: 1 },
+            { guestId: 'g10', tableId: 'table_4', seatIndex: 0 },
+            { guestId: 'g5', tableId: 'table_1', seatIndex: 0 },
+            { guestId: 'g6', tableId: 'table_1', seatIndex: 1 },
+            { guestId: 'g9', tableId: 'table_3', seatIndex: 0 }
+          ]
+        }
+      ],
+      aiOnboardingAnswers: [
+        {
+          questionId: "vibe",
+          question: "What overall vibe and energy do you envision for your reception?",
+          answer: "High-energy celebration with sophisticated black-tie elegance and full dance floor participation.",
+          category: "Atmosphere & Energy",
+          audited: true
+        },
+        {
+          questionId: "mc_role",
+          question: "How involved should your MC be during the evening formalities?",
+          answer: "Active host: engaging crowd during games, keeping speeches strictly on time, and leading high-energy grand entrance.",
+          category: "MC Responsibilities",
+          audited: true
+        },
+        {
+          questionId: "traditions",
+          question: "Are there any bilingual requirements or special cultural traditions?",
+          answer: "Bilingual Italian-Australian welcome remarks, tarantella group dance, and traditional wedding cake toast.",
+          category: "Culture & Formality",
+          audited: true
+        },
+        {
+          questionId: "guests_mix",
+          question: "What is your anticipated mix of adult vs children attendees?",
+          answer: "Predominantly adults (approx. 90%) with 8-10 kids seated at designated family-friendly tables with activity packs.",
+          category: "Guest Demographics",
+          audited: true
+        }
+      ],
       tasks: [
         { id: "t1", text: "Send save-the-dates", completed: true, due: "" },
         { id: "t2", text: "Finalise table 9 & 10 seating", completed: false, due: "Due Fri" },
@@ -404,9 +517,9 @@ export const SEED_DATA: DemoState = {
   ],
   guests: [
     // Mark & Sarah Johnson (Guest Mobile persona at Table 4, seats 1 & 2)
-    { id: "johnson_fam", name: "Mark & Sarah Johnson", initials: "MJ", household: "The Johnson Family", email: "mark.johnson@example.com", phone: "0412 884 991", rsvpStatus: "confirmed", guestCount: 2, dietary: "1x Vegetarian, 1x Gluten-Free", song: "Signed, Sealed, Delivered - Stevie Wonder", reminderSent: false, tableId: "table_4", seatIndex: 1 },
+    { id: "johnson_fam", name: "Mark & Sarah Johnson", initials: "MJ", household: "The Johnson Family", email: "mark.johnson@example.com", phone: "0412 884 991", rsvpStatus: "confirmed", guestCount: 2, adults: 2, kids: 0, dietary: "1x Vegetarian, 1x Gluten-Free", song: "Signed, Sealed, Delivered - Stevie Wonder", reminderSent: false, tableId: "table_4", seatIndex: 1 },
     // Priya Sharma (Table 4, Seat 3)
-    { id: "priya", name: "Priya Sharma", initials: "PS", household: "The Sharma Family", email: "priya.sharma@example.com.au", phone: "0412 884 992", rsvpStatus: "confirmed", guestCount: 2, dietary: "Vegetarian", song: "September - Earth, Wind & Fire", reminderSent: false, tableId: "table_4", seatIndex: 3 },
+    { id: "priya", name: "Priya Sharma", initials: "PS", household: "The Sharma Family", email: "priya.sharma@example.com.au", phone: "0412 884 992", rsvpStatus: "confirmed", guestCount: 2, adults: 2, kids: 0, dietary: "Vegetarian", song: "September - Earth, Wind & Fire", reminderSent: false, tableId: "table_4", seatIndex: 3 },
     
     // Head Table (8 seats)
     { id: "g_ht1", name: "Sophie Bell", initials: "SB", household: "Sophie Bell", email: "sophie.bell@example.com", phone: "0400 111 222", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "At Last - Etta James", reminderSent: false, tableId: "head", seatIndex: 0, category: "Bridal Party" },
@@ -456,11 +569,11 @@ export const SEED_DATA: DemoState = {
     { id: "g_t5_3", name: "Chloe Lin", initials: "CL", household: "Chloe Lin", email: "chloe.l@example.com", phone: "0415 667 003", rsvpStatus: "confirmed", guestCount: 1, dietary: "Gluten-free", song: "Roar", reminderSent: false, tableId: "table_5", seatIndex: 2 },
 
     // Unassigned guests (32 confirmed guests matching Screenshot 24)
-    { id: "g_rchen", name: "Robert Chen", initials: "RC", household: "The Chen Family", email: "robert.c@example.com", phone: "0421 991 223", rsvpStatus: "confirmed", guestCount: 2, dietary: "Vegetarian", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_rchen", name: "Robert & Lisa Chen", initials: "RC", household: "The Chen Family", email: "robert.c@example.com", phone: "0421 991 223", rsvpStatus: "confirmed", guestCount: 3, adults: 2, kids: 1, dietary: "Vegetarian", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_slee", name: "Sarah Lee", initials: "SL", household: "Sarah Lee", email: "sarah.lee@example.com", phone: "0433 112 445", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
-    { id: "g_dwhitfield", name: "David Whitfield", initials: "DW", household: "The Whitfield family", email: "david.w@example.com", phone: "0414 556 778", rsvpStatus: "confirmed", guestCount: 2, dietary: "None", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_dwhitfield", name: "David Whitfield & Family", initials: "DW", household: "The Whitfield Family", email: "david.w@example.com", phone: "0414 556 778", rsvpStatus: "confirmed", guestCount: 4, adults: 2, kids: 2, dietary: "None", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_mkapoor", name: "Maya Kapoor", initials: "MK", household: "Maya Kapoor", email: "maya.k@example.com", phone: "0400 334 556", rsvpStatus: "confirmed", guestCount: 1, dietary: "Gluten-free", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
-    { id: "g_toneill", name: "Thomas O'Neill", initials: "TO", household: "Thomas O'Neill", email: "thomas.o@example.com", phone: "0418 776 554", rsvpStatus: "confirmed", guestCount: 2, dietary: "None", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_toneill", name: "Thomas O'Neill & Family", initials: "TO", household: "The O'Neill Family", email: "thomas.o@example.com", phone: "0418 776 554", rsvpStatus: "confirmed", guestCount: 3, adults: 2, kids: 1, dietary: "None", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_jbrown", name: "Jessica Brown", initials: "JB", household: "Jessica Brown", email: "jessica.b@example.com", phone: "0422 998 112", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_lscott", name: "Liam Scott", initials: "LS", household: "Liam Scott", email: "liam.s@example.com", phone: "0411 223 344", rsvpStatus: "confirmed", guestCount: 2, dietary: "None", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_ctaylor", name: "Chloe Taylor", initials: "CT", household: "Chloe Taylor", email: "chloe.t@example.com", phone: "0422 334 455", rsvpStatus: "confirmed", guestCount: 1, dietary: "Vegan", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
@@ -468,11 +581,11 @@ export const SEED_DATA: DemoState = {
     { id: "g_u10", name: "Emily Davis", initials: "ED", household: "Emily Davis", email: "emily.d@example.com", phone: "0411 001 010", rsvpStatus: "confirmed", guestCount: 1, dietary: "Gluten-free", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_u11", name: "Lucas Wilson", initials: "LW", household: "Lucas Wilson", email: "lucas.w@example.com", phone: "0411 001 011", rsvpStatus: "confirmed", guestCount: 2, dietary: "None", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_u12", name: "Sophia Martinez", initials: "SM", household: "Sophia Martinez", email: "sophia.m@example.com", phone: "0411 001 012", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
-    { id: "g_u13", name: "Noah Anderson", initials: "NA", household: "Noah Anderson", email: "noah.a@example.com", phone: "0411 001 013", rsvpStatus: "confirmed", guestCount: 2, dietary: "Vegetarian", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u13", name: "Noah Anderson & Family", initials: "NA", household: "The Anderson Family", email: "noah.a@example.com", phone: "0411 001 013", rsvpStatus: "confirmed", guestCount: 4, adults: 2, kids: 2, dietary: "Vegetarian", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_u14", name: "Ava Thomas", initials: "AT", household: "Ava Thomas", email: "ava.t@example.com", phone: "0411 001 014", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_u15", name: "Mason Taylor", initials: "MT", household: "Mason Taylor", email: "mason.t@example.com", phone: "0411 001 015", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_u16", name: "Isabella Moore", initials: "IM", household: "Isabella Moore", email: "isabella.m@example.com", phone: "0411 001 016", rsvpStatus: "confirmed", guestCount: 1, dietary: "Nut allergy", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
-    { id: "g_u17", name: "Ethan Jackson", initials: "EJ", household: "Ethan Jackson", email: "ethan.j@example.com", phone: "0411 001 017", rsvpStatus: "confirmed", guestCount: 2, dietary: "None", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
+    { id: "g_u17", name: "Ethan Jackson & Family", initials: "EJ", household: "The Jackson Family", email: "ethan.j@example.com", phone: "0411 001 017", rsvpStatus: "confirmed", guestCount: 3, adults: 2, kids: 1, dietary: "None", plusOne: true, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_u18", name: "Mia Martin", initials: "MM", household: "Mia Martin", email: "mia.m@example.com", phone: "0411 001 018", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_u19", name: "Aiden Lee", initials: "AL", household: "Aiden Lee", email: "aiden.l@example.com", phone: "0411 001 019", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
     { id: "g_u20", name: "Harper Perez", initials: "HP", household: "Harper Perez", email: "harper.p@example.com", phone: "0411 001 020", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
@@ -527,6 +640,9 @@ export const SEED_DATA: DemoState = {
     { id: "ten4", businessName: "Melbourne Elite Hosts", contactName: "Julian Brooks", email: "julian@melbourneelite.com.au", plan: "Starter ($99/mo)", status: "Suspended", weddingsCount: 1, mrr: 99, createdAt: "01 Aug 2025" }
   ],
   auditLog: [
+    { id: "aud_onboard_1", timestamp: "2026-10-26 14:30", action: "Couple Onboarding Audited", user: "Sophie & James", role: "couple", details: "Audited reception vision (High-Energy Dance Party), speeches (Grouped before mains), grand entrance fanfare, and demographics with MC Robert Galati", category: "Onboarding" },
+    { id: "aud_onboard_2", timestamp: "2026-10-26 14:28", action: "MC Selection & Booking", user: "Sophie & James", role: "couple", details: "Selected and confirmed MC Robert Galati (Galati MC & Entertainment) for Signature Pro Wedding Suite", category: "Onboarding" },
+    { id: "aud_onboard_3", timestamp: "2026-10-26 14:25", action: "Subscription Payment Processed", user: "Sophie & James", role: "couple", details: "Paid $299 AUD for Signature Pro Wedding Suite via Stripe", category: "Billing" },
     { id: "aud1", timestamp: "2026-10-15 14:15", action: "RSVP Confirmed", user: "Michael Chen", role: "guest", details: "Confirmed attendance (+1 guest, vegetarian)", category: "RSVP" },
     { id: "aud2", timestamp: "2026-10-15 13:42", action: "Gift & Go Received", user: "The Whitfield family", role: "guest", details: "Sent $250 AUD gift with message", category: "Gifting" },
     { id: "aud3", timestamp: "2026-10-15 12:10", action: "Feed Note Posted", user: "Aunty Carol", role: "guest", details: "Posted a Love Note on celebration feed", category: "Feed" },
