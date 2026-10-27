@@ -71,13 +71,22 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
   const [promoCode, setPromoCode] = useState('');
   const [discountPercent, setDiscountPercent] = useState(0);
 
-  // MC Selection Dropdown state
+  // MC Selection Dropdown state & Preferred MC mode
+  const [mcChoiceMode, setMcChoiceMode] = useState<'certified' | 'own'>('certified');
   const [selectedMcId, setSelectedMcId] = useState<string>('mc_robert');
   const [isMcDropdownOpen, setIsMcDropdownOpen] = useState(false);
   const [showMcInfoModal, setShowMcInfoModal] = useState(false);
   const [customMcEmail, setCustomMcEmail] = useState('');
 
-  // MC Matchmaker Concierge Chatbot State for Joey AI
+  // Couple's Own Preferred MC info (SuperAdmin will send invite to this email)
+  const [ownMcName, setOwnMcName] = useState('');
+  const [ownMcEmail, setOwnMcEmail] = useState('');
+  const [ownMcPhone, setOwnMcPhone] = useState('');
+  const [ownMcAgency, setOwnMcAgency] = useState('');
+  const [ownMcNotes, setOwnMcNotes] = useState('');
+
+  // MC Matchmaker Concierge Floating Chatbot State for Joey AI
+  const [isFloatingChatOpen, setIsFloatingChatOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{ id: string; sender: 'joey' | 'couple'; text: string; time: string }>>([
     {
       id: 'm1',
@@ -548,7 +557,17 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
           status: 'Active',
           activatedAt: new Date().toISOString(),
         },
-        selectedMc: {
+        selectedMc: mcChoiceMode === 'own' ? {
+          id: 'mc_preferred_own',
+          name: ownMcName.trim() || 'Preferred Wedding MC',
+          email: ownMcEmail.trim(),
+          phone: ownMcPhone.trim(),
+          businessName: ownMcAgency.trim() || 'Couple Preferred MC',
+          rating: '5.0',
+          status: 'Invite Pending from SuperAdmin',
+          isPreferredOwn: true,
+          notes: ownMcNotes.trim(),
+        } : {
           id: chosenMc.id,
           name: chosenMc.id === 'mc_custom' ? (customMcEmail || 'External MC') : chosenMc.name,
           businessName: chosenMc.business,
@@ -564,7 +583,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
         giftingPresets: [50, 100, 200, 300],
         tasks: [
           { id: 't1', text: 'Confirm floral arrangements & ceremony arch', completed: false, due: 'This week' },
-          { id: 't2', text: `Review run sheet with ${chosenMc.name}`, completed: false, due: 'This week' },
+          { id: 't2', text: mcChoiceMode === 'own' ? `Review cue sheet with ${ownMcName || 'your MC'}` : `Review run sheet with ${chosenMc.name}`, completed: false, due: 'This week' },
           { id: 't3', text: 'Finalize dietary requirements for venue catering', completed: false, due: 'Next week' },
           { id: 't4', text: 'Share digital QaRd invitation with wedding party', completed: true, due: 'Done' },
         ],
@@ -577,7 +596,9 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
         user: coupleName,
         role: 'couple' as const,
         category: 'Onboarding',
-        details: `Registered ${coupleName} for ${newWedding.venue}. Selected ${chosenMc.name} ($${chosenMc.price}) with plan ${chosenPlan.name}. Onboarding preferences & questions audited.`,
+        details: mcChoiceMode === 'own'
+          ? `Registered ${coupleName} for ${newWedding.venue}. Requested SuperAdmin to dispatch platform invite to preferred MC: ${ownMcName.trim() || 'MC'} (${ownMcEmail.trim()}). Plan: ${chosenPlan.name}.`
+          : `Registered ${coupleName} for ${newWedding.venue}. Selected ${chosenMc.name} ($${chosenMc.price}) with plan ${chosenPlan.name}. Onboarding preferences & questions audited.`,
       };
 
       setState({
@@ -597,7 +618,11 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
         at: Date.now(),
       });
 
-      showToast(`Welcome, ${coupleName}! Your wedding portal is active.`, 'success');
+      if (mcChoiceMode === 'own' && ownMcEmail.trim()) {
+        showToast(`Welcome ${coupleName}! Preferred MC invitation scheduled for SuperAdmin to send to ${ownMcEmail}.`, 'success');
+      } else {
+        showToast(`Welcome, ${coupleName}! Your wedding portal is active.`, 'success');
+      }
       if (onSelectView) onSelectView('couple');
     }, 450);
   };
@@ -798,7 +823,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                     3
                   </div>
                   <span className={`text-xs font-semibold ${coupleStep === 'choose_mc' ? 'text-[#15110e]' : 'text-[#8b7b6b]'}`}>
-                    MC &amp; AI Setup
+                    MC Setup
                   </span>
                 </div>
               </div>
@@ -1677,264 +1702,288 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                   disabled={isSubmitting}
                   className="flex-1 py-2.5 px-4 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-[4px] text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
                 >
-                  <span>{isSubmitting ? 'Processing Payment...' : `Pay $${finalPrice} & Select MC`}</span>
+                  <span>{isSubmitting ? 'Processing Payment...' : `Pay $${finalPrice} & Proceed to MC Setup`}</span>
                   <span>→</span>
                 </button>
               </div>
             </form>
           ) : (
-            /* STEP 3: SELECTING MC (WITH DROPDOWN) & NORMAL CHATBOT WITH AUDIT */
+            /* STEP 3: MC SETUP (CHOOSE CERTIFIED MC OR BRING OWN MC) */
             <div className="space-y-4">
               <div>
                 <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-1">
-                  MC COLLABORATION &amp; AI ONBOARDING
+                  COUPLE ONBOARDING · STEP 3 OF 3
                 </div>
                 <h2 className="font-serif text-[22px] font-bold text-[#15110e] leading-tight mb-1">
-                  Step 3: Select MC &amp; Joey AI Setup
+                  MC Setup
                 </h2>
                 <p className="text-xs text-[#8b7b6b]">
-                  Choose your certified Master of Ceremonies and chat with Joey AI to audit your reception preferences.
+                  Choose from our certified wedding MCs or prefer your own host. SuperAdmin will dispatch platform credentials accordingly.
                 </p>
               </div>
 
-              {/* REQUIREMENT 2: MC DROPDOWN WITH INFO & PRICING */}
-              <div className="space-y-2">
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#15110e]">
-                  SELECT YOUR CERTIFIED WEDDING MC
-                </label>
+              {/* MC CHOICE MODE SELECTOR: CERTIFIED VS PREFER OWN MC */}
+              <div className="grid grid-cols-2 gap-2 bg-[#f4efe8] p-1.5 rounded-xl border border-[#ebdcc9]">
+                <button
+                  type="button"
+                  onClick={() => setMcChoiceMode('certified')}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    mcChoiceMode === 'certified'
+                      ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
+                      : 'text-[#6b5847] hover:text-[#15110e]'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                  <span>Choose Certified MC</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMcChoiceMode('own');
+                    setIsFloatingChatOpen(false);
+                  }}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    mcChoiceMode === 'own'
+                      ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
+                      : 'text-[#6b5847] hover:text-[#15110e]'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <line x1="19" y1="8" x2="19" y2="14" />
+                    <line x1="22" y1="11" x2="16" y2="11" />
+                  </svg>
+                  <span>Prefer / Bring Our Own MC</span>
+                </button>
+              </div>
 
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setIsMcDropdownOpen(!isMcDropdownOpen)}
-                    className="w-full bg-white border border-[#d5c7b5] hover:border-[#bd9661] rounded-xl p-3.5 flex items-center justify-between text-left transition-all cursor-pointer shadow-2xs"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[#15110e] border border-[#bd9661] flex items-center justify-center text-[#dfc194] font-serif font-bold text-xs shrink-0 overflow-hidden">
-                        {selectedMc.image ? (
-                          <img src={selectedMc.image} alt={selectedMc.name} className="w-full h-full object-cover" />
-                        ) : (
-                          selectedMc.name.split(' ').map(n => n[0]).join('')
-                        )}
-                      </div>
-                      <div>
-                        <div className="font-serif font-bold text-sm text-[#15110e]">
-                          {selectedMc.name}
-                        </div>
-                        <div className="text-[11.5px] text-[#7d654c] mt-0.5 flex items-center gap-1.5 font-medium">
-                          <span>{selectedMc.business}</span>
-                          <span className="text-[#c5b5a2]">&bull;</span>
-                          <span className="text-[#bd9661] font-bold">⭐ {selectedMc.rating}</span>
-                        </div>
-                      </div>
-                    </div>
+              {/* OPTION A: CHOOSE FROM CERTIFIED WEDDING MCS */}
+              {mcChoiceMode === 'certified' ? (
+                <div className="space-y-3.5 animate-in fade-in duration-200">
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#15110e]">
+                      SELECT YOUR CERTIFIED WEDDING MC
+                    </label>
 
-                    <div className="flex items-center gap-2 text-xs text-[#8b7b6b]">
+                    <div className="relative">
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowMcInfoModal(true);
-                        }}
-                        title="View MC Details"
-                        aria-label="View MC Info"
-                        className="w-7 h-7 rounded-full bg-[#fbf8f3] hover:bg-[#ebdcc9] text-[#7d654c] hover:text-[#15110e] flex items-center justify-center transition-colors cursor-pointer border border-[#d5c7b5]"
+                        onClick={() => setIsMcDropdownOpen(!isMcDropdownOpen)}
+                        className="w-full bg-white border border-[#d5c7b5] hover:border-[#bd9661] rounded-xl p-3.5 flex items-center justify-between text-left transition-all cursor-pointer shadow-2xs"
                       >
-                        <svg
-                          width="15"
-                          height="15"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                          <circle cx="12" cy="12" r="3" />
-                        </svg>
-                      </button>
-                      <svg
-                        width="15"
-                        height="15"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className={`transition-transform duration-200 ${isMcDropdownOpen ? 'rotate-180 text-[#bd9661]' : ''}`}
-                      >
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </div>
-                  </button>
-
-                  {/* Dropdown Menu List */}
-                  {isMcDropdownOpen && (
-                    <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#e8ded0] rounded-xl shadow-xl z-30 max-h-[300px] overflow-y-auto divide-y divide-[#f5f1eb]">
-                      {availableMcs.map((mc) => (
-                        <div
-                          key={mc.id}
-                          onClick={() => {
-                            setSelectedMcId(mc.id);
-                            setIsMcDropdownOpen(false);
-                            showToast(`Selected MC: ${mc.name}`, 'info');
-                          }}
-                          className={`p-3.5 hover:bg-[#faf7f2] transition-colors cursor-pointer flex items-center justify-between gap-3 ${
-                            selectedMcId === mc.id ? 'bg-[#fdfbf7]' : ''
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-[#15110e] border border-[#bd9661] flex items-center justify-center text-[#dfc194] font-serif font-bold text-xs shrink-0 overflow-hidden">
-                              {mc.image ? (
-                                <img src={mc.image} alt={mc.name} className="w-full h-full object-cover" />
-                              ) : (
-                                mc.name.split(' ').map(n => n[0]).join('')
-                              )}
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-[#15110e] border border-[#bd9661] flex items-center justify-center text-[#dfc194] font-serif font-bold text-xs shrink-0 overflow-hidden">
+                            {selectedMc.image ? (
+                              <img src={selectedMc.image} alt={selectedMc.name} className="w-full h-full object-cover" />
+                            ) : (
+                              selectedMc.name.split(' ').map(n => n[0]).join('')
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-serif font-bold text-sm text-[#15110e]">
+                              {selectedMc.name}
                             </div>
-                            <div>
-                              <div className="font-serif font-bold text-xs text-[#15110e]">
-                                {mc.name}
-                              </div>
-                              <div className="text-[11px] text-[#7d654c] mt-0.5 flex items-center gap-1.5 font-medium">
-                                <span>{mc.business}</span>
-                                <span className="text-[#c5b5a2]">&bull;</span>
-                                <span className="text-[#bd9661] font-bold">⭐ {mc.rating}</span>
-                              </div>
+                            <div className="text-[11.5px] text-[#7d654c] mt-0.5 flex items-center gap-1.5 font-medium">
+                              <span>{selectedMc.business}</span>
+                              <span className="text-[#c5b5a2]">&bull;</span>
+                              <span className="text-[#bd9661] font-bold">⭐ {selectedMc.rating}</span>
                             </div>
                           </div>
-                          {selectedMcId === mc.id ? (
-                            <span className="text-emerald-700 font-bold text-xs shrink-0 flex items-center gap-1">
-                              ✓ Selected
-                            </span>
-                          ) : (
-                            <span className="text-xs text-[#bd9661] hover:underline font-semibold shrink-0">
-                              Select →
-                            </span>
-                          )}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
 
-                {selectedMcId === 'mc_custom' && (
-                  <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-1.5 mt-1.5">
-                    <label className="block text-[10px] font-bold uppercase text-[#8b7b6b]">
-                      Enter Your MC / Coordinator Email Address:
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="mc.coordinator@example.com"
-                      value={customMcEmail}
-                      onChange={(e) => setCustomMcEmail(e.target.value)}
-                      className="w-full bg-white border border-[#d5c7b5] rounded-lg px-3 py-2 text-xs outline-none focus:border-[#bd9661]"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* REQUIREMENT 3 & 4: NORMAL CHATBOT WITH JOEY AI (MC KNOWLEDGE & MATCHMAKING ONLY) */}
-              <div className="bg-[#faf8f5] rounded-xl border border-[#e8ded0] overflow-hidden shadow-2xs">
-                {/* Chat Header */}
-                <div className="bg-[#15110e] text-white p-3 flex items-center justify-between border-b border-[#29211a]">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-full overflow-hidden border border-[#bd9661] bg-[#181310] flex items-center justify-center shrink-0">
-                      <img src="/chatbot-avatar.png" alt="Joey AI" className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                      <h4 className="font-serif text-xs font-semibold text-[#dfc194]">Joey AI · MC Matchmaker Concierge</h4>
-                      <p className="text-[10px] text-[#a8988a]">Ask about MC experience, 5.0 reviews, rates &amp; styles</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Normal Chat Scrollable Messages Area */}
-                <div className="p-3.5 space-y-2.5 max-h-[240px] min-h-[180px] overflow-y-auto text-xs bg-[#fdfbf7]">
-                  {chatMessages.map((m) => (
-                    <div
-                      key={m.id}
-                      className={`flex flex-col ${m.sender === 'couple' ? 'items-end' : 'items-start'}`}
-                    >
-                      <div
-                        className={`max-w-[85%] rounded-xl px-3.5 py-2 leading-relaxed shadow-2xs text-xs ${
-                          m.sender === 'couple'
-                            ? 'bg-[#15110e] text-[#dfc194] rounded-br-xs'
-                            : 'bg-white text-[#15110e] border border-[#ebdcc9] rounded-bl-xs'
-                        }`}
-                      >
-                        <div className="whitespace-pre-line">
-                          {m.text.split('**').map((part, i) =>
-                            i % 2 === 1 ? <strong key={i} className="text-[#bd9661]">{part}</strong> : part
-                          )}
+                        <div className="flex items-center gap-2 text-xs text-[#8b7b6b]">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowMcInfoModal(true);
+                            }}
+                            title="View MC Details"
+                            aria-label="View MC Info"
+                            className="w-7 h-7 rounded-full bg-[#fbf8f3] hover:bg-[#ebdcc9] text-[#7d654c] hover:text-[#15110e] flex items-center justify-center transition-colors cursor-pointer border border-[#d5c7b5]"
+                          >
+                            <svg
+                              width="15"
+                              height="15"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                              <circle cx="12" cy="12" r="3" />
+                            </svg>
+                          </button>
+                          <svg
+                            width="15"
+                            height="15"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className={`transition-transform duration-200 ${isMcDropdownOpen ? 'rotate-180 text-[#bd9661]' : ''}`}
+                          >
+                            <polyline points="6 9 12 15 18 9" />
+                          </svg>
                         </div>
+                      </button>
+
+                      {/* Dropdown Menu List */}
+                      {isMcDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#e8ded0] rounded-xl shadow-xl z-30 max-h-[300px] overflow-y-auto divide-y divide-[#f5f1eb]">
+                          {availableMcs.map((mc) => (
+                            <div
+                              key={mc.id}
+                              onClick={() => {
+                                setSelectedMcId(mc.id);
+                                setIsMcDropdownOpen(false);
+                                showToast(`Selected MC: ${mc.name}`, 'info');
+                              }}
+                              className={`p-3.5 hover:bg-[#faf7f2] transition-colors cursor-pointer flex items-center justify-between gap-3 ${
+                                selectedMcId === mc.id ? 'bg-[#fdfbf7]' : ''
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-full bg-[#15110e] border border-[#bd9661] flex items-center justify-center text-[#dfc194] font-serif font-bold text-xs shrink-0 overflow-hidden">
+                                  {mc.image ? (
+                                    <img src={mc.image} alt={mc.name} className="w-full h-full object-cover" />
+                                  ) : (
+                                    mc.name.split(' ').map(n => n[0]).join('')
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="font-serif font-bold text-xs text-[#15110e]">
+                                    {mc.name}
+                                  </div>
+                                  <div className="text-[11px] text-[#7d654c] mt-0.5 flex items-center gap-1.5 font-medium">
+                                    <span>{mc.business}</span>
+                                    <span className="text-[#c5b5a2]">&bull;</span>
+                                    <span className="text-[#bd9661] font-bold">⭐ {mc.rating}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              {selectedMcId === mc.id ? (
+                                <span className="text-emerald-700 font-bold text-xs shrink-0 flex items-center gap-1">
+                                  ✓ Selected
+                                </span>
+                              ) : (
+                                <span className="text-xs text-[#bd9661] hover:underline font-semibold shrink-0">
+                                  Select →
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* DISTINCT STYLED AI CONCIERGE BANNER (ONLY IN CERTIFIED MC VIEW) */}
+                  <div className="bg-gradient-to-r from-[#fbf6ed] to-[#f6ede0] border-l-4 border-l-[#bd9661] border-y border-r border-[#dfcfb9] rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#bd9661] bg-[#181310] flex items-center justify-center shrink-0 shadow-xs ring-2 ring-[#bd9661]/20">
+                        <img src="/chatbot-avatar.png" alt="Joey AI" className="w-full h-full object-cover" />
                       </div>
-                      <span className="text-[9px] text-[#a69888] mt-0.5 px-1">{m.time}</span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-serif text-xs font-bold text-[#15110e]">
+                            Need help deciding? Ask Joey AI Concierge
+                          </h4>
+                          <span className="text-[9.5px] font-bold uppercase tracking-wider text-[#9e763a] bg-[#ebdcc9]/70 px-1.5 py-0.5 rounded border border-[#dfcca8]">
+                            AI Matchmaker
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#786450] mt-0.5">
+                          Chat live to compare host experience, 5-star reviews, and rates
+                        </p>
+                      </div>
                     </div>
-                  ))}
-
-                  {isChatTyping && (
-                    <div className="flex items-center gap-1.5 text-[11px] text-[#8b7b6b] bg-white border border-[#ebdcc9] w-fit px-2.5 py-1 rounded-xl">
-                      <span>Joey is typing</span>
-                      <span className="flex gap-0.5">
-                        <span className="w-1 h-1 bg-[#bd9661] rounded-full animate-bounce" />
-                        <span className="w-1 h-1 bg-[#bd9661] rounded-full animate-bounce [animation-delay:0.15s]" />
-                        <span className="w-1 h-1 bg-[#bd9661] rounded-full animate-bounce [animation-delay:0.3s]" />
-                      </span>
-                    </div>
-                  )}
-                  <div ref={chatMessagesEndRef} />
-                </div>
-
-                {/* Suggestion Chips: Strictly MC comparison and matchmaking */}
-                <div className="px-3 py-2 bg-[#f4efe8] border-t border-[#ebdcc9] flex items-center gap-1.5 overflow-x-auto no-scrollbar text-xs">
-                  <span className="text-[10px] text-[#8b7b6b] uppercase font-bold shrink-0">Ask Joey:</span>
-                  {[
-                    'Who is available on my date?',
-                    availableMcs.some(m => m.id === 'mc_robert') ? 'Why choose Robert Galati?' : 'Who has the best 5-star reviews?',
-                    'Which available MCs are under $1,800?',
-                    'Can I bring my own MC?',
-                  ].map((chip) => (
                     <button
-                      key={chip}
                       type="button"
-                      onClick={() => handleSendChatMessage(chip)}
-                      className="bg-white hover:bg-[#faf6ee] text-[#6b5847] hover:text-[#15110e] border border-[#d5c7b5] text-[10.5px] px-2.5 py-1 rounded-full shrink-0 transition-colors cursor-pointer shadow-2xs font-medium"
+                      onClick={() => setIsFloatingChatOpen(!isFloatingChatOpen)}
+                      className="px-3.5 py-2 bg-[#15110e] hover:bg-[#2b221a] text-[#dfc194] hover:text-white border border-[#bd9661]/40 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs"
                     >
-                      {chip}
+                      <span>💬</span>
+                      <span>{isFloatingChatOpen ? 'Close Chat' : 'Open Chat'}</span>
                     </button>
-                  ))}
+                  </div>
                 </div>
+              ) : (
+                /* OPTION B: PREFER / BRING OWN MC */
+                <div className="bg-[#faf8f5] border border-[#ebdcc9] rounded-2xl p-4 sm:p-5 space-y-4 shadow-2xs animate-in fade-in duration-200">
+                  <div className="border-b border-[#f0ede4] pb-2.5">
+                    <h3 className="font-serif font-bold text-base text-[#15110e]">
+                      Couple's Preferred Wedding MC
+                    </h3>
+                    <p className="text-xs text-[#8b7b6b] mt-1 leading-relaxed">
+                      Prefer to have your own friend, family member, or professional MC host your wedding? Enter their contact details below.
+                    </p>
+                  </div>
 
-                {/* Normal Chat Input Bar */}
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleSendChatMessage();
-                  }}
-                  className="p-2.5 bg-white border-t border-[#ebdcc9] flex items-center gap-2"
-                >
-                  <input
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Ask Joey about our MCs' experience, reviews, or rates..."
-                    className="flex-1 bg-[#fbf9f6] border border-[#d5c7b5] focus:border-[#bd9661] rounded-lg px-3 py-2 text-xs text-[#15110e] outline-none"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!chatInput.trim()}
-                    className="bg-[#15110e] disabled:opacity-40 hover:bg-[#2b221a] text-[#dfc194] px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
-                  >
-                    <span>Send</span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="22" y1="2" x2="11" y2="13" />
-                      <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                    </svg>
-                  </button>
-                </form>
-              </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                        MC Full Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={ownMcName}
+                        onChange={(e) => setOwnMcName(e.target.value)}
+                        placeholder="e.g. Anthony Rossi"
+                        className="w-full bg-white border border-[#d5c7b5] rounded-lg p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                        MC Mobile / Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        value={ownMcPhone}
+                        onChange={(e) => setOwnMcPhone(e.target.value)}
+                        placeholder="e.g. 0412 888 777"
+                        className="w-full bg-white border border-[#d5c7b5] rounded-lg p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                        MC Email Address <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={ownMcEmail}
+                        onChange={(e) => setOwnMcEmail(e.target.value)}
+                        placeholder="e.g. anthony.rossi@mcservices.com.au"
+                        className="w-full bg-white border border-[#d5c7b5] rounded-lg p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                        Business / Agency Name (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={ownMcAgency}
+                        onChange={(e) => setOwnMcAgency(e.target.value)}
+                        placeholder="e.g. Rossi Event Hosting"
+                        className="w-full bg-white border border-[#d5c7b5] rounded-lg p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Navigation CTA Buttons */}
               <div className="flex items-center gap-3 pt-2">
@@ -1948,10 +1997,16 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                 <button
                   type="button"
                   onClick={handleCompleteCoupleOnboarding}
-                  disabled={isSubmitting}
-                  className="flex-1 py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
+                  disabled={isSubmitting || (mcChoiceMode === 'own' && (!ownMcName.trim() || !ownMcEmail.trim()))}
+                  className="flex-1 py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  <span>{isSubmitting ? 'Launching Dashboard...' : 'Confirm MC & Launch Dashboard'}</span>
+                  <span>
+                    {isSubmitting
+                      ? 'Launching Dashboard...'
+                      : mcChoiceMode === 'own'
+                      ? 'Confirm Preferred MC & Launch Dashboard'
+                      : 'Confirm MC & Launch Dashboard'}
+                  </span>
                   <span>→</span>
                 </button>
               </div>
@@ -2076,6 +2131,117 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
           </div>
         </div>
       )}
-    </div>
-  );
-}
+
+      {/* JOEY AI CHAT MODAL (TRIGGERED ONLY VIA 'OPEN CHAT' IN CERTIFIED MC SETUP) */}
+      {accountType === 'couple' && coupleStep === 'choose_mc' && mcChoiceMode === 'certified' && isFloatingChatOpen && (
+        <div className="fixed bottom-6 right-6 z-50 w-[360px] sm:w-[410px] max-w-[calc(100vw-24px)] bg-white rounded-2xl border border-[#bd9661] shadow-2xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4">
+              {/* Floating Header */}
+              <div className="bg-[#15110e] text-white p-3.5 flex items-center justify-between border-b border-[#29211a]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full overflow-hidden border border-[#bd9661] bg-[#181310] flex items-center justify-center shrink-0">
+                    <img src="/chatbot-avatar.png" alt="Joey AI" className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <h4 className="font-serif text-xs font-bold text-[#dfc194]">Joey AI · MC Matchmaker Concierge</h4>
+                    <p className="text-[10px] text-[#a8988a]">Ask about MC experience, 5.0 reviews, rates &amp; styles</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsFloatingChatOpen(false)}
+                  className="text-[#a8988a] hover:text-white p-1 transition-colors text-lg font-bold leading-none cursor-pointer"
+                  title="Minimize Joey AI"
+                >
+                  &times;
+                </button>
+              </div>
+
+              {/* Messages Area */}
+              <div className="p-3.5 space-y-2.5 max-h-[290px] min-h-[200px] overflow-y-auto text-xs bg-[#fdfbf7]">
+                {chatMessages.map((m) => (
+                  <div
+                    key={m.id}
+                    className={`flex flex-col ${m.sender === 'couple' ? 'items-end' : 'items-start'}`}
+                  >
+                    <div
+                      className={`max-w-[85%] rounded-xl px-3.5 py-2 leading-relaxed shadow-2xs text-xs ${
+                        m.sender === 'couple'
+                          ? 'bg-[#15110e] text-[#dfc194] rounded-br-xs'
+                          : 'bg-white text-[#15110e] border border-[#ebdcc9] rounded-bl-xs'
+                      }`}
+                    >
+                      <div className="whitespace-pre-line">
+                        {m.text.split('**').map((part, i) =>
+                          i % 2 === 1 ? <strong key={i} className="text-[#bd9661]">{part}</strong> : part
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-[9px] text-[#a69888] mt-0.5 px-1">{m.time}</span>
+                  </div>
+                ))}
+
+                {isChatTyping && (
+                  <div className="flex items-center gap-1.5 text-[11px] text-[#8b7b6b] bg-white border border-[#ebdcc9] w-fit px-2.5 py-1 rounded-xl">
+                    <span>Joey is typing</span>
+                    <span className="flex gap-0.5">
+                      <span className="w-1 h-1 bg-[#bd9661] rounded-full animate-bounce" />
+                      <span className="w-1 h-1 bg-[#bd9661] rounded-full animate-bounce [animation-delay:0.15s]" />
+                      <span className="w-1 h-1 bg-[#bd9661] rounded-full animate-bounce [animation-delay:0.3s]" />
+                    </span>
+                  </div>
+                )}
+                <div ref={chatMessagesEndRef} />
+              </div>
+
+              {/* Suggestions */}
+              <div className="px-3 py-2 bg-[#f4efe8] border-t border-[#ebdcc9] flex items-center gap-1.5 overflow-x-auto no-scrollbar text-xs">
+                <span className="text-[10px] text-[#8b7b6b] uppercase font-bold shrink-0">Ask:</span>
+                {[
+                  'Who is available on my date?',
+                  availableMcs.some(m => m.id === 'mc_robert') ? 'Why choose Robert Galati?' : 'Who has the best 5-star reviews?',
+                  'Which available MCs are under $1,800?',
+                  'Can I bring my own MC?',
+                ].map((chip) => (
+                  <button
+                    key={chip}
+                    type="button"
+                    onClick={() => handleSendChatMessage(chip)}
+                    className="bg-white hover:bg-[#faf6ee] text-[#6b5847] hover:text-[#15110e] border border-[#d5c7b5] text-[10px] px-2.5 py-1 rounded-full shrink-0 transition-colors cursor-pointer shadow-2xs font-medium"
+                  >
+                    {chip}
+                  </button>
+                ))}
+              </div>
+
+              {/* Input Form */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSendChatMessage();
+                }}
+                className="p-2.5 bg-white border-t border-[#ebdcc9] flex items-center gap-2"
+              >
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Ask Joey about MCs..."
+                  className="flex-1 bg-[#fbf9f6] border border-[#d5c7b5] focus:border-[#bd9661] rounded-lg px-3 py-2 text-xs text-[#15110e] outline-none"
+                />
+                <button
+                  type="submit"
+                  disabled={!chatInput.trim()}
+                  className="bg-[#15110e] disabled:opacity-40 hover:bg-[#2b221a] text-[#dfc194] px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                >
+                  <span>Send</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13" />
+                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                  </svg>
+                </button>
+              </form>
+            </div>
+          )}
+        </div>
+      );
+    }
