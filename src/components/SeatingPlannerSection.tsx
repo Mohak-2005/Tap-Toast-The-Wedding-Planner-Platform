@@ -1008,10 +1008,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Visual Table Surface & Seat Ring (7 cols) */}
             <div className="lg:col-span-7 bg-[#faf8f5] border border-[#e8ded0] rounded-2xl p-6 min-h-[480px] flex flex-col items-center justify-center relative shadow-inner">
-              <div className="text-[11px] text-[#8b7b6b] mb-4 bg-white border border-[#e8ded0] px-3.5 py-1.5 rounded-full shadow-2xs text-center flex items-center gap-1.5">
-                <span>💡</span>
-                <span>Drag guests directly onto seats, drop on the tabletop to auto-seat, or switch tabs on the right.</span>
-              </div>
+
 
               {/* ROUND TABLE VISUALIZATION */}
               {activeTable.shape === 'round' && (
@@ -1373,49 +1370,9 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
 
               {/* TAB 1: ASSIGNED GUESTS */}
               {drilldownRosterTab === 'assigned' && (
-                <div className="space-y-4 animate-in fade-in duration-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-serif text-sm font-bold text-[#15110e]">
-                        {activeTable.name} Seating Roster
-                      </h4>
-                      <p className="text-[11px] text-[#8b7b6b]">
-                        {guestsAtActiveTable.length} seated &bull; Drag cards to rearrange seats
-                      </p>
-                    </div>
-
-                    {/* Edit Capacity Dropdown & Clear */}
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] text-[#8b7b6b]">Seats:</span>
-                        <select
-                          value={activeTable.capacity}
-                          onChange={(e) => handleUpdateTableDetails(activeTable.id, { capacity: Number(e.target.value) })}
-                          className="bg-[#faf8f5] border border-[#e8ded0] rounded-lg px-2 py-1 text-xs font-bold text-[#15110e] outline-none"
-                        >
-                          {[6, 8, 10, 12, 16, 20, 24, 30, 32, 40].map((num) => (
-                            <option key={num} value={num}>
-                              {num} Seats
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {guestsAtActiveTable.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => handleClearTable(activeTable.id)}
-                          className="text-[10px] text-[#c93b2b] hover:underline cursor-pointer font-semibold"
-                          title="Unseat all guests from this table"
-                        >
-                          Unseat All
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
+                <div className="space-y-3 animate-in fade-in duration-200">
                   {/* Seated Guests List */}
-                  <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+                  <div className="space-y-2 max-h-[430px] overflow-y-auto pr-1">
                     {guestsAtActiveTable.length === 0 ? (
                       <div className="bg-[#faf8f5] border border-dashed border-[#e8ded0] rounded-xl p-8 text-center text-xs text-[#8b7b6b] space-y-2">
                         <div className="text-2xl">🍽️</div>
@@ -1520,23 +1477,6 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
               {/* TAB 2: REMAINING GUEST LIST (DRAGGABLE TO SEATS) */}
               {drilldownRosterTab === 'unassigned' && (
                 <div className="space-y-3 animate-in fade-in duration-200">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-serif text-sm font-bold text-[#15110e]">
-                        Remaining Guest List
-                      </h4>
-                      <span className="text-[10px] font-mono text-[#8b7b6b]">
-                        {filteredDrilldownRemainingGuests.length} unassigned
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-[#8b7b6b] mt-1 bg-[#faf8f5] border border-[#ebdcc9] rounded-xl p-2 flex items-center gap-1.5">
-                      <span>💡</span>
-                      <span>
-                        <strong>Drag &amp; drop</strong> any guest onto a seat on {activeTable.name}, or click <strong>+ Seat</strong>.
-                      </span>
-                    </div>
-                  </div>
-
                   {/* Search Bar for Remaining Guests */}
                   <div className="relative">
                     <input
