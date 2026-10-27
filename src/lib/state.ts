@@ -381,7 +381,11 @@ export function logAudit(
   user: string,
   role: string,
   details: string,
-  category: string
+  category: string,
+  wedding?: string,
+  ipAddress?: string,
+  channel?: string,
+  status?: string
 ) {
   const now = new Date();
   const dateStr = now.toISOString().replace('T', ' ').substring(0, 16);
@@ -392,7 +396,11 @@ export function logAudit(
     user,
     role,
     details,
-    category
+    category,
+    wedding: wedding || (role === 'couple' ? 'Carter & Wilson Wedding' : 'Platform Global'),
+    ipAddress: ipAddress || '101.188.67.21 (Sydney, AU)',
+    channel: channel || 'Web Portal',
+    status: status || 'Success'
   };
   setState({
     ...state,

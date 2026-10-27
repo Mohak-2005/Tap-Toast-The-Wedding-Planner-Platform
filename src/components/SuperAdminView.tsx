@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAppState, useSession, showToast, formatAUD } from '../lib/state';
+import { useAppState, useSession, showToast, formatAUD, logAudit } from '../lib/state';
 import { Tenant, SupportTicket, SaaSPlan, McTransaction } from '../lib/types';
 import { initialPlans, initialMcTransactions } from '../lib/seedData';
 
@@ -10,7 +10,7 @@ interface SuperAdminViewProps {
 export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
   const { state, setState } = useAppState();
   const { clearSession, setSession } = useSession();
-  const [activeTab, setActiveTab] = useState<'platform' | 'tenants' | 'plans' | 'audit' | 'support' | 'settings'>('platform');
+  const [activeTab, setActiveTab] = useState<'platform' | 'tenants' | 'couple_tenants' | 'plans' | 'audit' | 'support' | 'settings'>('platform');
   const [subscriptionSubTab, setSubscriptionSubTab] = useState<'couple' | 'mc'>('couple');
   const [planCategoryFilter, setPlanCategoryFilter] = useState<'all' | 'couple' | 'mc'>('all');
   const [newPlanCategory, setNewPlanCategory] = useState<'couple' | 'mc'>('couple');
@@ -190,6 +190,14 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
 
   // Filters
   const [tenantSearch, setTenantSearch] = useState('');
+  const [coupleSearch, setCoupleSearch] = useState('');
+  const [couplePlanFilter, setCouplePlanFilter] = useState('all');
+  const [coupleStatusFilter, setCoupleStatusFilter] = useState('all');
+  const [selectedCoupleTenant, setSelectedCoupleTenant] = useState<any | null>(null);
+
+  // Expanded Audit Log filters
+  const [auditRoleFilter, setAuditRoleFilter] = useState('all');
+  const [auditWeddingFilter, setAuditWeddingFilter] = useState('all');
   const [planFilter, setPlanFilter] = useState('all');
   const [auditSearch, setAuditSearch] = useState('');
   const [auditCategory, setAuditCategory] = useState('all');
@@ -263,6 +271,21 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
   };
 
   const supportTickets = state.supportTickets || [];
+
+  const handleImpersonateCouple = (w: any) => {
+    const coupleEmail = w.brideEmail || w.groomEmail || `${(w.partner1 || 'couple').toLowerCase()}@demo.test`;
+    setSession({
+      role: 'couple',
+      email: coupleEmail,
+      name: `${w.couple} (Couple)`,
+      keepSignedIn: true,
+      impersonating: true,
+      at: Date.now(),
+    });
+    logAudit(state, setState, 'SuperAdmin Impersonation', 'Platform Admin', 'superadmin', `Impersonating Couple tenancy: ${w.couple}`, 'Security', w.couple);
+    showToast(`Impersonating Couple: ${w.couple}`, 'info');
+    if (onSelectView) onSelectView('couple');
+  };
 
   const handleImpersonate = (tenant: Tenant) => {
     setSession({
@@ -476,12 +499,16 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
   });
 
   const filteredAudit = auditLog.filter(a => {
-    if (!a) return false;
-    const matchSearch = (a.action || '').toLowerCase().includes(auditSearch.toLowerCase()) ||
+    const matchSearch =
       (a.user || '').toLowerCase().includes(auditSearch.toLowerCase()) ||
-      (a.details || '').toLowerCase().includes(auditSearch.toLowerCase());
+      (a.action || '').toLowerCase().includes(auditSearch.toLowerCase()) ||
+      (a.details || '').toLowerCase().includes(auditSearch.toLowerCase()) ||
+      (a.wedding || '').toLowerCase().includes(auditSearch.toLowerCase()) ||
+      (a.ipAddress || '').toLowerCase().includes(auditSearch.toLowerCase());
     const matchCat = auditCategory === 'all' || (a.category || '').toLowerCase() === auditCategory.toLowerCase();
-    return matchSearch && matchCat;
+    const matchRole = auditRoleFilter === 'all' || (a.role || '').toLowerCase() === auditRoleFilter.toLowerCase();
+    const matchWedding = auditWeddingFilter === 'all' || (a.wedding || '').toLowerCase() === auditWeddingFilter.toLowerCase();
+    return matchSearch && matchCat && matchRole && matchWedding;
   });
 
   const activeTenantsCount = tenants.filter(t => t?.status === 'Active').length;
@@ -521,9 +548,21 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                 label: 'MC Tenants',
                 icon: (
                   <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <line x1="12" y1="19" x2="12" y2="22" />
+                    <line x1="8" y1="22" x2="16" y2="22" />
+                  </svg>
+                ),
+              },
+              {
+                id: 'couple_tenants',
+                label: 'Couple Tenants',
+                icon: (
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                     <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
                     <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                   </svg>
                 ),
@@ -727,8 +766,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                     onClick={() => setShowInviteCoupleModal(true)}
                     className="btn btn-outline btn-sm font-bold flex items-center gap-1.5 border-[#bd9661] text-[#bd9661] hover:bg-[#bd9661] hover:text-[#15110e] cursor-pointer"
                   >
-                    <span>💍</span>
-                    <span>Invite Couple</span>
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5"/></svg><span>Invite Couple</span>
                   </button>
                   <button
                     type="button"
@@ -828,8 +866,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                   onClick={() => setShowInviteCoupleModal(true)}
                   className="btn btn-outline btn-sm font-bold flex items-center gap-1.5 border-[#bd9661] text-[#bd9661] hover:bg-[#bd9661] hover:text-[#15110e] cursor-pointer"
                 >
-                  <span>💍</span>
-                  <span>Invite Couple</span>
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5"/></svg><span>Invite Couple</span>
                 </button>
                 <button
                   type="button"
@@ -919,6 +956,214 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                         </td>
                       </tr>
                     ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ================================================================ */}
+        {/* TAB 2B: COUPLE TENANTS                                           */}
+        {/* ================================================================ */}
+        {activeTab === 'couple_tenants' && (
+          <section className="space-y-6">
+            <div className="page-header flex justify-between items-center">
+              <div>
+                <div className="header-eyebrow text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1">
+                  ACCOUNTS &amp; CELEBRATIONS
+                </div>
+                <h1 className="header-title font-serif text-3xl font-bold text-[#15110e]">
+                  Couple Tenants
+                </h1>
+                <p className="text-xs text-[#8b7b6b] mt-0.5">
+                  Manage active couple wedding suites, passes, guest quotas, venue configurations, and linked MCs.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowInviteCoupleModal(true)}
+                  className="btn btn-gold btn-sm flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5"/></svg>
+                  <span>+ Invite Couple</span>
+                </button>
+              </div>
+            </div>
+
+            {/* KPI Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white border border-[#e8ded0] rounded-xl p-4 shadow-2xs">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b]">Total Couple Accounts</div>
+                <div className="text-2xl font-serif font-bold text-[#15110e] mt-1">{(state.weddings || []).length}</div>
+                <div className="text-[11px] text-emerald-700 font-medium mt-0.5">100% Verified Tenancies</div>
+              </div>
+
+              <div className="bg-white border border-[#e8ded0] rounded-xl p-4 shadow-2xs">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b]">Active Planning Suites</div>
+                <div className="text-2xl font-serif font-bold text-[#15110e] mt-1">
+                  {(state.weddings || []).filter((w: any) => w.status !== 'Archived').length}
+                </div>
+                <div className="text-[11px] text-[#8b7b6b] font-medium mt-0.5">Live Run Sheets &amp; RSVP Sync</div>
+              </div>
+
+              <div className="bg-white border border-[#e8ded0] rounded-xl p-4 shadow-2xs">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b]">Total Managed Guests</div>
+                <div className="text-2xl font-serif font-bold text-[#15110e] mt-1">
+                  {(state.weddings || []).reduce((acc: number, w: any) => acc + (w.invited || 0), 0)}
+                </div>
+                <div className="text-[11px] text-[#bd9661] font-medium mt-0.5">Digital RSVPs &amp; Dietaries</div>
+              </div>
+
+              <div className="bg-white border border-[#e8ded0] rounded-xl p-4 shadow-2xs">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b]">Couple Pass Revenue</div>
+                <div className="text-2xl font-serif font-bold text-emerald-700 mt-1">$1,495 AUD</div>
+                <div className="text-[11px] text-[#8b7b6b] font-medium mt-0.5">Stripe Connect One-Time Passes</div>
+              </div>
+            </div>
+
+            {/* Couple Tenants Filter & Table */}
+            <div className="bg-white border border-[#e8ded0] rounded-[6px] p-6 shadow-sm space-y-4">
+              <div className="flex gap-3 flex-wrap">
+                <input
+                  type="text"
+                  placeholder="Search couple, partners, or venue..."
+                  value={coupleSearch}
+                  onChange={(e) => setCoupleSearch(e.target.value)}
+                  className="text-input max-w-[280px]"
+                />
+                <select
+                  value={couplePlanFilter}
+                  onChange={(e) => setCouplePlanFilter(e.target.value)}
+                  className="text-input max-w-[170px]"
+                >
+                  <option value="all">All Plan Tiers</option>
+                  <option value="signature">Signature Pro</option>
+                  <option value="essential">Essential Pass</option>
+                  <option value="couture">Couture Suite</option>
+                </select>
+                <select
+                  value={coupleStatusFilter}
+                  onChange={(e) => setCoupleStatusFilter(e.target.value)}
+                  className="text-input max-w-[150px]"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="Active">Active</option>
+                  <option value="Planning">Planning</option>
+                  <option value="Finalising">Finalising</option>
+                </select>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Couple &amp; Celebration</th>
+                      <th>Wedding Date &amp; Venue</th>
+                      <th>SaaS Pass Tier</th>
+                      <th>Assigned MC / Host</th>
+                      <th>Guests &amp; RSVPs</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(state.weddings || [])
+                      .filter((w: any) => {
+                        const q = coupleSearch.toLowerCase();
+                        const matchSearch =
+                          (w.couple || '').toLowerCase().includes(q) ||
+                          (w.partner1 || '').toLowerCase().includes(q) ||
+                          (w.partner2 || '').toLowerCase().includes(q) ||
+                          (w.venue || '').toLowerCase().includes(q) ||
+                          (w.brideEmail || '').toLowerCase().includes(q);
+                        const planName = (w.subscriptionPlan?.name || 'Signature Pro').toLowerCase();
+                        const matchPlan =
+                          couplePlanFilter === 'all' ||
+                          planName.includes(couplePlanFilter.toLowerCase());
+                        const statusStr = (w.subscriptionPlan?.status || w.status || 'Active').toLowerCase();
+                        const matchStatus =
+                          coupleStatusFilter === 'all' ||
+                          statusStr === coupleStatusFilter.toLowerCase();
+                        return matchSearch && matchPlan && matchStatus;
+                      })
+                      .map((w: any) => {
+                        const planName = w.subscriptionPlan?.name || 'Signature Pro Wedding Suite';
+                        const planPrice = w.subscriptionPlan?.price || 299;
+                        const isCouture = planName.toLowerCase().includes('couture');
+                        const isEssential = planName.toLowerCase().includes('essential');
+                        const confirmedCount = w.confirmed || Math.round(w.invited * 0.75);
+                        const pct = Math.round((confirmedCount / (w.invited || 1)) * 100);
+
+                        return (
+                          <tr key={w.id}>
+                            <td>
+                              <strong className="text-sm font-semibold text-[#15110e] block">{w.couple}</strong>
+                              <span className="text-[11px] text-[#8b7b6b]">
+                                {w.partner1} &amp; {w.partner2} &bull; {w.brideEmail || w.groomEmail || `${w.partner1.toLowerCase()}@demo.test`}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="font-semibold text-[#15110e] text-xs">{w.dateDisplay || w.date}</div>
+                              <span className="text-[11px] text-[#8b7b6b] block truncate max-w-[170px]">{w.venue}</span>
+                            </td>
+                            <td>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-[#15110e] text-xs">{planName}</span>
+                                <span className={`text-[8.5px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded ${
+                                  isCouture ? 'bg-purple-100 text-purple-800' : isEssential ? 'bg-[#e2d8cb] text-[#4a3b2c]' : 'bg-[#bd9661]/15 text-[#8b6528] border border-[#bd9661]/30'
+                                }`}>
+                                  {isCouture ? 'COUTURE' : isEssential ? 'ESSENTIAL' : 'SIGNATURE PRO'}
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-[#bd9661] font-mono mt-0.5">
+                                ${planPrice}.00 AUD (One-Time)
+                              </div>
+                            </td>
+                            <td>
+                              <div className="font-semibold text-[#15110e] text-xs">
+                                {w.selectedMc?.name || 'Robert Galati'}
+                              </div>
+                              <span className="text-[10px] text-[#8b7b6b] block">
+                                {w.selectedMc?.isPreferredOwn ? 'Couple Preferred Host' : 'Certified Platform MC'}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="text-xs font-semibold text-[#15110e]">
+                                {confirmedCount} / {w.invited} confirmed
+                              </div>
+                              <div className="w-24 bg-[#ebdcc9] h-1.5 rounded-full mt-1 overflow-hidden">
+                                <div className="bg-[#bd9661] h-full" style={{ width: `${pct}%` }} />
+                              </div>
+                            </td>
+                            <td>
+                              <span className="tt-pill green">
+                                {w.subscriptionPlan?.status || 'Active'}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="flex gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleImpersonateCouple(w)}
+                                  className="btn btn-outline btn-xs"
+                                  title="Log in to Couple Dashboard as this couple"
+                                >
+                                  Impersonate
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedCoupleTenant(w)}
+                                  className="btn btn-outline btn-xs"
+                                >
+                                  Details
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
@@ -1058,7 +1303,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                     : 'text-[#8b7b6b] hover:text-[#15110e] hover:bg-white'
                 }`}
               >
-                <span>👰 Couple Subscriptions ({(state.weddings || []).length})</span>
+                <span>Couple Subscriptions ({(state.weddings || []).length})</span>
               </button>
               <button
                 type="button"
@@ -1072,7 +1317,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                     : 'text-[#8b7b6b] hover:text-[#15110e] hover:bg-white'
                 }`}
               >
-                <span>🎙️ MC Subscriptions ({tenants.length})</span>
+                <span>MC Subscriptions ({tenants.length})</span>
               </button>
               <button
                 type="button"
@@ -1128,7 +1373,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                           : 'text-[#6b5847] hover:text-[#15110e]'
                       }`}
                     >
-                      <span>👰 Couple Subscriptions</span>
+                      <span>Couple Subscriptions</span>
                       <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#3a2f26] text-[#dfc194]">
                         {(state.weddings || []).length}
                       </span>
@@ -1142,7 +1387,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                           : 'text-[#6b5847] hover:text-[#15110e]'
                       }`}
                     >
-                      <span>🎙️ MC Subscriptions</span>
+                      <span>MC Subscriptions</span>
                       <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#3a2f26] text-[#dfc194]">
                         {tenants.length}
                       </span>
@@ -1575,7 +1820,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                                 <div className="font-medium text-[#15110e] truncate">{txn.description}</div>
                                 {txn.weddingCouple && (
                                   <div className="text-[10.5px] text-[#bd9661] font-semibold mt-0.5 flex items-center gap-1">
-                                    <span>💍</span> {txn.weddingCouple}
+                                    {txn.weddingCouple}
                                   </div>
                                 )}
                               </td>
@@ -1687,7 +1932,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                           planCategoryFilter === 'couple' ? 'bg-[#15110e] text-[#dfc194]' : 'text-[#6b5847]'
                         }`}
                       >
-                        👰 Couple ({plans.filter(p => p.category === 'couple').length})
+                        Couple ({plans.filter(p => p.category === 'couple').length})
                       </button>
                       <button
                         type="button"
@@ -1696,7 +1941,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                           planCategoryFilter === 'mc' ? 'bg-[#15110e] text-[#dfc194]' : 'text-[#6b5847]'
                         }`}
                       >
-                        🎙️ MC ({plans.filter(p => p.category === 'mc').length})
+                        MC ({plans.filter(p => p.category === 'mc').length})
                       </button>
                     </div>
 
@@ -1745,7 +1990,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                                 ? 'bg-[#f4ebe1] text-[#7a5a3a] border border-[#e4d4c2]'
                                 : 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]'
                             }`}>
-                              {planCat === 'couple' ? '👰 Couple Plan' : '🎙️ MC SaaS Tier'}
+                              {planCat === 'couple' ? 'Couple Plan' : 'MC SaaS Tier'}
                             </span>
                             {p.badge && (
                               <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-[#bd9661] text-[#15110e]">
@@ -1801,65 +2046,186 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                 <h1 className="header-title font-serif text-3xl font-bold text-[#15110e]">
                   System Audit Log
                 </h1>
+                <p className="text-xs text-[#8b7b6b] mt-0.5">
+                  Complete tamper-evident record of user roles, affected wedding tenancies, actions executed, parameters, and access channels.
+                </p>
               </div>
-              <button
-                type="button"
-                onClick={handleClearAuditLog}
-                className="btn btn-outline btn-sm"
-              >
-                Clear Log
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const csvContent = "data:text/csv;charset=utf-8," +
+                      ["Timestamp,Actor,Role,Action,Wedding,Category,Details,IP,Channel,Status"]
+                        .concat(filteredAudit.map(e => `"${e.timestamp}","${e.user}","${e.role}","${e.action}","${e.wedding || 'Platform Global'}","${e.category}","${(e.details || '').replace(/"/g, '""')}","${e.ipAddress || ''}","${e.channel || ''}","${e.status || 'Success'}"`))
+                        .join("\n");
+                    const encodedUri = encodeURI(csvContent);
+                    const link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", `system_audit_log_${Date.now()}.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    showToast('Audit log exported to CSV', 'success');
+                  }}
+                  className="btn btn-outline btn-sm font-bold flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <span>Export CSV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearAuditLog}
+                  className="btn btn-outline btn-sm"
+                >
+                  Clear Log
+                </button>
+              </div>
             </div>
 
             <div className="bg-white border border-[#e8ded0] rounded-[6px] p-6 shadow-sm space-y-4">
-              <div className="flex gap-3 flex-wrap">
+              {/* Comprehensive Filter Toolbar */}
+              <div className="flex gap-2.5 flex-wrap items-center">
                 <input
                   type="text"
-                  placeholder="Filter audit trail..."
+                  placeholder="Search actor, action, wedding, details, IP..."
                   value={auditSearch}
                   onChange={(e) => setAuditSearch(e.target.value)}
-                  className="text-input max-w-[280px]"
+                  className="text-input min-w-[260px] flex-1 max-w-[340px]"
                 />
+
+                <select
+                  value={auditRoleFilter}
+                  onChange={(e) => setAuditRoleFilter(e.target.value)}
+                  className="text-input max-w-[150px]"
+                >
+                  <option value="all">All Roles</option>
+                  <option value="couple">Couple</option>
+                  <option value="mc">Certified MC</option>
+                  <option value="superadmin">Super Admin</option>
+                  <option value="guest">Guest</option>
+                </select>
+
+                <select
+                  value={auditWeddingFilter}
+                  onChange={(e) => setAuditWeddingFilter(e.target.value)}
+                  className="text-input max-w-[190px]"
+                >
+                  <option value="all">All Celebrations</option>
+                  <option value="Carter & Wilson Wedding">Carter &amp; Wilson Wedding</option>
+                  <option value="Miller & Davies Wedding">Miller &amp; Davies Wedding</option>
+                  <option value="Platform Global">Platform Global</option>
+                </select>
+
                 <select
                   value={auditCategory}
                   onChange={(e) => setAuditCategory(e.target.value)}
-                  className="text-input max-w-[180px]"
+                  className="text-input max-w-[160px]"
                 >
                   <option value="all">All Categories</option>
                   <option value="Onboarding">Onboarding</option>
                   <option value="Billing">Billing</option>
                   <option value="RSVP">RSVP</option>
                   <option value="Seating">Seating</option>
+                  <option value="Run Sheet">Run Sheet</option>
                   <option value="Gifting">Gifting</option>
                   <option value="Feed">Feed</option>
                   <option value="Tenants">Tenants</option>
-                  <option value="General">General</option>
+                  <option value="Security">Security</option>
                 </select>
+
+                <div className="text-xs text-[#8b7b6b] ml-auto font-medium">
+                  Showing <strong>{filteredAudit.length}</strong> audited events
+                </div>
               </div>
 
+              {/* Multi-Column Audit Table */}
               <div className="overflow-x-auto">
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Timestamp</th>
-                      <th>Actor</th>
-                      <th>Action</th>
+                      <th className="whitespace-nowrap">Timestamp</th>
+                      <th>Actor &amp; User</th>
+                      <th>Role</th>
+                      <th>Action Executed</th>
+                      <th>Target Wedding / Tenancy</th>
                       <th>Category</th>
-                      <th>Details</th>
+                      <th>Action Details / Change Summary</th>
+                      <th>Origin &amp; Channel</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredAudit.map(entry => (
-                      <tr key={entry.id}>
-                        <td className="font-mono text-xs text-[#8b7b6b] whitespace-nowrap">{entry.timestamp}</td>
-                        <td className="font-bold text-[#15110e]">{entry.user}</td>
-                        <td>{entry.action}</td>
-                        <td>
-                          <span className="tt-pill warm">{entry.category || 'General'}</span>
-                        </td>
-                        <td className="text-xs text-[#4c3d31]">{entry.details}</td>
-                      </tr>
-                    ))}
+                    {filteredAudit.map((entry) => {
+                      const roleBadge =
+                        entry.role === 'couple'
+                          ? 'bg-[#f5ede2] text-[#6b5847] border border-[#d5c7b5]'
+                          : entry.role === 'mc'
+                          ? 'bg-[#15110e] text-[#dfc194]'
+                          : entry.role === 'superadmin'
+                          ? 'bg-[#1e293b] text-[#94a3b8]'
+                          : 'bg-[#f0ebe3] text-[#5c4a3b]';
+
+                      const roleLabel =
+                        entry.role === 'couple'
+                          ? 'Couple'
+                          : entry.role === 'mc'
+                          ? 'Certified MC'
+                          : entry.role === 'superadmin'
+                          ? 'Super Admin'
+                          : 'Guest';
+
+                      return (
+                        <tr key={entry.id} className="hover:bg-[#fbf9f6] transition-colors">
+                          <td className="font-mono text-[11px] text-[#8b7b6b] whitespace-nowrap">
+                            {entry.timestamp}
+                          </td>
+                          <td>
+                            <strong className="text-xs font-bold text-[#15110e] block">
+                              {entry.user}
+                            </strong>
+                          </td>
+                          <td>
+                            <span className={`text-[9.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full inline-block ${roleBadge}`}>
+                              {roleLabel}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="font-semibold text-xs text-[#15110e]">
+                              {entry.action}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="text-xs font-semibold text-[#15110e]">
+                              {entry.wedding || 'Carter & Wilson Wedding'}
+                            </div>
+                            <span className="text-[10px] text-[#8b7b6b] block">
+                              {entry.wedding === 'Platform Global' ? 'System Tenancy' : 'Celebration Suite'}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="tt-pill warm">
+                              {entry.category || 'General'}
+                            </span>
+                          </td>
+                          <td className="text-xs text-[#4c3d31] max-w-sm leading-relaxed">
+                            {entry.details}
+                          </td>
+                          <td>
+                            <div className="text-[11px] font-medium text-[#15110e]">
+                              {entry.channel || 'Web Portal'}
+                            </div>
+                            <span className="font-mono text-[10px] text-[#8b7b6b]">
+                              {entry.ipAddress || '101.188.67.21'}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                              {entry.status || 'Success'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1959,7 +2325,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
             {/* Section 1: SaaS Global Environment & Maintenance */}
             <div className="bg-white border border-[#e8ded0] rounded-xl p-6 shadow-sm space-y-4">
               <div className="flex items-center gap-2 pb-2 border-b border-[#f0ede4]">
-                <span className="text-lg">🌐</span>
+                <svg className="w-5 h-5 text-[#bd9661]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                 <h3 className="font-serif text-base font-bold text-[#15110e]">SaaS Infrastructure &amp; Operation Mode</h3>
               </div>
 
@@ -2031,7 +2397,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
             <div className="bg-white border border-[#e8ded0] rounded-xl p-6 shadow-sm space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-[#f0ede4]">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">💳</span>
+                  <svg className="w-5 h-5 text-[#bd9661]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                   <h3 className="font-serif text-base font-bold text-[#15110e]">Stripe Connect &amp; Wishing Well Gateway</h3>
                 </div>
                 <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full font-semibold border border-emerald-200">
@@ -2095,7 +2461,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
             {/* Section 3: AI Joey Assistant Architecture */}
             <div className="bg-white border border-[#e8ded0] rounded-xl p-6 shadow-sm space-y-4">
               <div className="flex items-center gap-2 pb-2 border-b border-[#f0ede4]">
-                <span className="text-lg">🤖</span>
+                <svg className="w-5 h-5 text-[#bd9661]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="16" y1="16" x2="16.01" y2="16"/></svg>
                 <h3 className="font-serif text-base font-bold text-[#15110e]">Joey AI Wedding Assistant Engine</h3>
               </div>
 
@@ -2145,7 +2511,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
             {/* Section 4: Security & Authentication */}
             <div className="bg-white border border-[#e8ded0] rounded-xl p-6 shadow-sm space-y-4">
               <div className="flex items-center gap-2 pb-2 border-b border-[#f0ede4]">
-                <span className="text-lg">🛡️</span>
+                <svg className="w-5 h-5 text-[#bd9661]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 <h3 className="font-serif text-base font-bold text-[#15110e]">Security, Authentication &amp; Audit</h3>
               </div>
 
@@ -2188,7 +2554,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
             <div className="bg-[#faf8f5] border border-[#ebd3a8] rounded-xl p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">💾</span>
+                  <svg className="w-5 h-5 text-[#bd9661]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                   <strong className="font-serif text-base text-[#15110e]">Database Snapshots &amp; Disaster Recovery</strong>
                 </div>
                 <p className="text-xs text-[#8b7b6b] mt-1">
@@ -2204,7 +2570,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                   }}
                   className="btn btn-outline btn-sm"
                 >
-                  📸 Create Snapshot
+                  Create Snapshot
                 </button>
                 <button
                   type="button"
@@ -2224,7 +2590,112 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
       {/* ================================================================== */}
       {/* TENANT DETAIL SLIDE DRAWER (Matches superadmin.html)               */}
       {/* ================================================================== */}
-      {selectedTenant && (
+      {selectedCoupleTenant && (
+          <div
+            className="modal-overlay"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setSelectedCoupleTenant(null);
+            }}
+          >
+            <div className="modal-card max-w-lg">
+              <div className="flex justify-between items-center pb-3 border-b border-[#ebdcc9]">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661]">
+                    COUPLE TENANCY DOSSIER
+                  </div>
+                  <h3 className="font-serif text-xl font-bold text-[#15110e]">
+                    {selectedCoupleTenant.couple}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCoupleTenant(null)}
+                  className="text-gray-400 hover:text-black text-xl font-bold cursor-pointer"
+                >
+                  &times;
+                </button>
+              </div>
+
+              <div className="space-y-3 py-3 text-xs">
+                <div className="grid grid-cols-2 gap-3 p-3 bg-[#faf8f5] rounded-lg border border-[#ebdcc9]">
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-[#8b7b6b]">Partner 1</label>
+                    <div className="font-bold text-[#15110e]">{selectedCoupleTenant.partner1}</div>
+                    <div className="text-[10.5px] text-[#8b7b6b]">{selectedCoupleTenant.brideEmail || `${selectedCoupleTenant.partner1.toLowerCase()}@demo.test`}</div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-[#8b7b6b]">Partner 2</label>
+                    <div className="font-bold text-[#15110e]">{selectedCoupleTenant.partner2}</div>
+                    <div className="text-[10.5px] text-[#8b7b6b]">{selectedCoupleTenant.groomEmail || `${selectedCoupleTenant.partner2.toLowerCase()}@demo.test`}</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-[#8b7b6b]">Wedding Date</label>
+                    <div className="font-semibold text-[#15110e]">{selectedCoupleTenant.dateDisplay || selectedCoupleTenant.date}</div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-[#8b7b6b]">Venue &amp; Region</label>
+                    <div className="font-semibold text-[#15110e] truncate">{selectedCoupleTenant.venue}</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-[#8b7b6b]">SaaS Subscription Tier</label>
+                    <div className="font-bold text-[#15110e]">{selectedCoupleTenant.subscriptionPlan?.name || 'Signature Pro Wedding Suite'}</div>
+                    <div className="text-[10.5px] text-[#bd9661] font-mono">${selectedCoupleTenant.subscriptionPlan?.price || 299} AUD One-Time</div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase font-bold text-[#8b7b6b]">Assigned MC / Host</label>
+                    <div className="font-bold text-[#15110e]">{selectedCoupleTenant.selectedMc?.name || 'Robert Galati'}</div>
+                    <div className="text-[10.5px] text-[#8b7b6b]">{selectedCoupleTenant.selectedMc?.businessName || 'Certified MC'}</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 p-2.5 bg-[#faf8f5] rounded-lg border border-[#ebdcc9] text-center">
+                  <div>
+                    <div className="text-[10px] text-[#8b7b6b] uppercase">Invited</div>
+                    <div className="font-bold text-sm text-[#15110e]">{selectedCoupleTenant.invited}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-[#8b7b6b] uppercase">Confirmed</div>
+                    <div className="font-bold text-sm text-emerald-700">{selectedCoupleTenant.confirmed || Math.round(selectedCoupleTenant.invited * 0.75)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-[#8b7b6b] uppercase">RSVP Rate</div>
+                    <div className="font-bold text-sm text-[#bd9661]">
+                      {Math.round(((selectedCoupleTenant.confirmed || Math.round(selectedCoupleTenant.invited * 0.75)) / selectedCoupleTenant.invited) * 100)}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-3 border-t border-[#ebdcc9]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleImpersonateCouple(selectedCoupleTenant);
+                    setSelectedCoupleTenant(null);
+                  }}
+                  className="btn btn-gold flex-1 text-xs"
+                >
+                  Impersonate &amp; Launch Couple Dashboard &rarr;
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCoupleTenant(null)}
+                  className="btn btn-outline text-xs"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {selectedTenant && (
         <div
           className="slide-drawer-backdrop"
           onClick={(e) => {
@@ -2456,7 +2927,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                           : 'bg-white text-[#6b5847] border-[#d5c7b5] hover:border-[#bd9661]'
                       }`}
                     >
-                      <span>👰 Couple Wedding Pass</span>
+                      <span>Couple Wedding Pass</span>
                     </button>
                     <button
                       type="button"
@@ -2473,7 +2944,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                           : 'bg-white text-[#6b5847] border-[#d5c7b5] hover:border-[#bd9661]'
                       }`}
                     >
-                      <span>🎙️ MC / Coordinator SaaS</span>
+                      <span>MC / Coordinator SaaS</span>
                     </button>
                   </div>
                   <span className="text-[10.5px] text-[#8b7b6b] block">
@@ -2642,7 +3113,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                 }}
                 className="btn btn-gold btn-sm cursor-pointer"
               >
-                Copy Link 📋
+                Copy Link
               </button>
               <button
                 type="button"

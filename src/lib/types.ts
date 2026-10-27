@@ -178,6 +178,10 @@ export interface AuditLogEntry {
   role: string;
   details: string;
   category: string;
+  wedding?: string;
+  ipAddress?: string;
+  channel?: string;
+  status?: string;
 }
 
 export interface User {
