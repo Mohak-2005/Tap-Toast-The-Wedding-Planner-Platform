@@ -992,38 +992,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
               </div>
             </div>
 
-            {/* KPI Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white border border-[#e8ded0] rounded-xl p-4 shadow-2xs">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b]">Total Couple Accounts</div>
-                <div className="text-2xl font-serif font-bold text-[#15110e] mt-1">{(state.weddings || []).length}</div>
-                <div className="text-[11px] text-emerald-700 font-medium mt-0.5">100% Verified Tenancies</div>
-              </div>
-
-              <div className="bg-white border border-[#e8ded0] rounded-xl p-4 shadow-2xs">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b]">Active Planning Suites</div>
-                <div className="text-2xl font-serif font-bold text-[#15110e] mt-1">
-                  {(state.weddings || []).filter((w: any) => w.status !== 'Archived').length}
-                </div>
-                <div className="text-[11px] text-[#8b7b6b] font-medium mt-0.5">Live Run Sheets &amp; RSVP Sync</div>
-              </div>
-
-              <div className="bg-white border border-[#e8ded0] rounded-xl p-4 shadow-2xs">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b]">Total Managed Guests</div>
-                <div className="text-2xl font-serif font-bold text-[#15110e] mt-1">
-                  {(state.weddings || []).reduce((acc: number, w: any) => acc + (w.invited || 0), 0)}
-                </div>
-                <div className="text-[11px] text-[#bd9661] font-medium mt-0.5">Digital RSVPs &amp; Dietaries</div>
-              </div>
-
-              <div className="bg-white border border-[#e8ded0] rounded-xl p-4 shadow-2xs">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b]">Couple Pass Revenue</div>
-                <div className="text-2xl font-serif font-bold text-emerald-700 mt-1">$1,495 AUD</div>
-                <div className="text-[11px] text-[#8b7b6b] font-medium mt-0.5">Stripe Connect One-Time Passes</div>
-              </div>
-            </div>
-
-            {/* Couple Tenants Filter & Table */}
+            {/* Couple Tenants Filter & Clean Minimal Data Table */}
             <div className="bg-white border border-[#e8ded0] rounded-[6px] p-6 shadow-sm space-y-4">
               <div className="flex gap-3 flex-wrap">
                 <input
@@ -1065,7 +1034,6 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                       <th>Assigned MC / Host</th>
                       <th>Guests &amp; RSVPs</th>
                       <th>Status</th>
-                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1089,77 +1057,52 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                         return matchSearch && matchPlan && matchStatus;
                       })
                       .map((w: any) => {
-                        const planName = w.subscriptionPlan?.name || 'Signature Pro Wedding Suite';
+                        const rawPlanName = w.subscriptionPlan?.name || 'Signature Pro Wedding Suite';
+                        const cleanPlan = rawPlanName.replace(' Wedding Suite', '').replace(' Plan', '');
                         const planPrice = w.subscriptionPlan?.price || 299;
-                        const isCouture = planName.toLowerCase().includes('couture');
-                        const isEssential = planName.toLowerCase().includes('essential');
                         const confirmedCount = w.confirmed || Math.round(w.invited * 0.75);
                         const pct = Math.round((confirmedCount / (w.invited || 1)) * 100);
+                        const coupleEmail = w.brideEmail || w.groomEmail || `${(w.partner1 || 'couple').toLowerCase()}@demo.test`;
 
                         return (
-                          <tr key={w.id}>
+                          <tr
+                            key={w.id}
+                            onClick={() => setSelectedCoupleTenant(w)}
+                            className="cursor-pointer hover:bg-[#faf7f2] transition-colors"
+                            title="Click to view couple tenancy dossier & details"
+                          >
                             <td>
-                              <strong className="text-sm font-semibold text-[#15110e] block">{w.couple}</strong>
-                              <span className="text-[11px] text-[#8b7b6b]">
-                                {w.partner1} &amp; {w.partner2} &bull; {w.brideEmail || w.groomEmail || `${w.partner1.toLowerCase()}@demo.test`}
-                              </span>
+                              <div className="font-serif font-bold text-sm text-[#15110e]">{w.couple}</div>
+                              <div className="text-[11px] text-[#8b7b6b] mt-0.5">{coupleEmail}</div>
                             </td>
                             <td>
-                              <div className="font-semibold text-[#15110e] text-xs">{w.dateDisplay || w.date}</div>
-                              <span className="text-[11px] text-[#8b7b6b] block truncate max-w-[170px]">{w.venue}</span>
+                              <div className="text-xs font-semibold text-[#15110e]">{w.dateDisplay || w.date}</div>
+                              <div className="text-[11px] text-[#8b7b6b] mt-0.5 truncate max-w-[190px]">{w.venue}</div>
                             </td>
                             <td>
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-bold text-[#15110e] text-xs">{planName}</span>
-                                <span className={`text-[8.5px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded ${
-                                  isCouture ? 'bg-purple-100 text-purple-800' : isEssential ? 'bg-[#e2d8cb] text-[#4a3b2c]' : 'bg-[#bd9661]/15 text-[#8b6528] border border-[#bd9661]/30'
-                                }`}>
-                                  {isCouture ? 'COUTURE' : isEssential ? 'ESSENTIAL' : 'SIGNATURE PRO'}
-                                </span>
-                              </div>
-                              <div className="text-[10px] text-[#bd9661] font-mono mt-0.5">
-                                ${planPrice}.00 AUD (One-Time)
-                              </div>
+                              <div className="text-xs font-semibold text-[#15110e]">{cleanPlan}</div>
+                              <div className="text-[11px] text-[#8b7b6b] font-mono mt-0.5">${planPrice} AUD</div>
                             </td>
                             <td>
-                              <div className="font-semibold text-[#15110e] text-xs">
+                              <div className="text-xs font-semibold text-[#15110e]">
                                 {w.selectedMc?.name || 'Robert Galati'}
                               </div>
-                              <span className="text-[10px] text-[#8b7b6b] block">
-                                {w.selectedMc?.isPreferredOwn ? 'Couple Preferred Host' : 'Certified Platform MC'}
-                              </span>
+                              <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                                {w.selectedMc?.isPreferredOwn ? 'Couple Preferred' : 'Platform MC'}
+                              </div>
                             </td>
                             <td>
                               <div className="text-xs font-semibold text-[#15110e]">
                                 {confirmedCount} / {w.invited} confirmed
                               </div>
-                              <div className="w-24 bg-[#ebdcc9] h-1.5 rounded-full mt-1 overflow-hidden">
-                                <div className="bg-[#bd9661] h-full" style={{ width: `${pct}%` }} />
+                              <div className="text-[11px] text-[#bd9661] font-mono mt-0.5">
+                                {pct}% response rate
                               </div>
                             </td>
                             <td>
                               <span className="tt-pill green">
                                 {w.subscriptionPlan?.status || 'Active'}
                               </span>
-                            </td>
-                            <td>
-                              <div className="flex gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => handleImpersonateCouple(w)}
-                                  className="btn btn-outline btn-xs"
-                                  title="Log in to Couple Dashboard as this couple"
-                                >
-                                  Impersonate
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedCoupleTenant(w)}
-                                  className="btn btn-outline btn-xs"
-                                >
-                                  Details
-                                </button>
-                              </div>
                             </td>
                           </tr>
                         );

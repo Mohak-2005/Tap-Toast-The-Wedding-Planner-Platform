@@ -1146,12 +1146,22 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                           className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 pr-14 text-xs text-[#15110e] outline-none shadow-2xs"
                         />
                         <button
-                          type="button"
-                          onClick={() => setMcShowPwd(!mcShowPwd)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#bd9661] font-semibold hover:underline cursor-pointer"
-                        >
-                          {mcShowPwd ? 'Hide' : 'Show'}
-                        </button>
+  type="button"
+  onClick={() => setMcShowPwd(!mcShowPwd)}
+  aria-label={mcShowPwd ? 'Hide password' : 'Show password'}
+  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8b7b6b] hover:text-[#15110e] transition-colors cursor-pointer p-0.5"
+>
+  {mcShowPwd ? (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+    </svg>
+  ) : (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  )}
+</button>
                       </div>
                       <div className="w-full bg-[#e8ded0] h-1.5 rounded-full mt-2 overflow-hidden">
                         <div
@@ -1176,12 +1186,22 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                           className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 pr-14 text-xs text-[#15110e] outline-none shadow-2xs"
                         />
                         <button
-                          type="button"
-                          onClick={() => setMcShowConfirm(!mcShowConfirm)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#bd9661] font-semibold hover:underline cursor-pointer"
-                        >
-                          {mcShowConfirm ? 'Hide' : 'Show'}
-                        </button>
+  type="button"
+  onClick={() => setMcShowConfirm(!mcShowConfirm)}
+  aria-label={mcShowConfirm ? 'Hide password' : 'Show password'}
+  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8b7b6b] hover:text-[#15110e] transition-colors cursor-pointer p-0.5"
+>
+  {mcShowConfirm ? (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+    </svg>
+  ) : (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  )}
+</button>
                       </div>
                       {mcConfirmPassword && (
                         <div className={`text-[10.5px] mt-1 font-semibold ${passwordsMatch ? 'text-emerald-700' : 'text-rose-600'}`}>
@@ -1810,12 +1830,22 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                         className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 pr-14 text-xs text-[#15110e] outline-none shadow-2xs"
                       />
                       <button
-                        type="button"
-                        onClick={() => setCoupleShowPwd(!coupleShowPwd)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#bd9661] font-semibold hover:underline cursor-pointer"
-                      >
-                        {coupleShowPwd ? 'Hide' : 'Show'}
-                      </button>
+  type="button"
+  onClick={() => setCoupleShowPwd(!coupleShowPwd)}
+  aria-label={coupleShowPwd ? 'Hide password' : 'Show password'}
+  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8b7b6b] hover:text-[#15110e] transition-colors cursor-pointer p-0.5"
+>
+  {coupleShowPwd ? (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+    </svg>
+  ) : (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  )}
+</button>
                     </div>
                     <div className="w-full bg-[#e8ded0] h-1.5 rounded-full mt-2 overflow-hidden">
                       <div
@@ -1840,12 +1870,22 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                         className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 pr-14 text-xs text-[#15110e] outline-none shadow-2xs"
                       />
                       <button
-                        type="button"
-                        onClick={() => setCoupleShowConfirm(!coupleShowConfirm)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#bd9661] font-semibold hover:underline cursor-pointer"
-                      >
-                        {coupleShowConfirm ? 'Hide' : 'Show'}
-                      </button>
+  type="button"
+  onClick={() => setCoupleShowConfirm(!coupleShowConfirm)}
+  aria-label={coupleShowConfirm ? 'Hide password' : 'Show password'}
+  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8b7b6b] hover:text-[#15110e] transition-colors cursor-pointer p-0.5"
+>
+  {coupleShowConfirm ? (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+    </svg>
+  ) : (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  )}
+</button>
                     </div>
                     {coupleConfirmPassword && (
                       <div className={`text-[10.5px] mt-1 font-semibold ${couplePasswordsMatch ? 'text-emerald-700' : 'text-rose-600'}`}>

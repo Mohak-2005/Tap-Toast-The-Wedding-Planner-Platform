@@ -124,6 +124,24 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
   const [expandedMcPlanId, setExpandedMcPlanId] = useState<string | null>(null);
   const [mcCardName, setMcCardName] = useState('Robert Galati');
   const [mcCardNumber, setMcCardNumber] = useState('•••• •••• •••• 4242');
+  const [mcCardExpiry, setMcCardExpiry] = useState('12/28');
+  const [mcCardCvc, setMcCardCvc] = useState('888');
+  const [mcPromoCode, setMcPromoCode] = useState('');
+  const [mcDiscountPercent, setMcDiscountPercent] = useState(0);
+
+  const handleApplyMcPromo = () => {
+    const code = mcPromoCode.trim().toUpperCase();
+    if (!code) return;
+    if (code === 'WELCOME10') {
+      setMcDiscountPercent(10);
+      showToast('Promo code applied: 10% discount', 'success');
+    } else if (code === 'VIP20' || code === 'LAUNCH20') {
+      setMcDiscountPercent(20);
+      showToast('VIP promo applied: 20% discount', 'success');
+    } else {
+      showToast('Invalid promo code. Try WELCOME10', 'error');
+    }
+  };
   const [mcBusiness, setMcBusiness] = useState('');
   const [mcEmail, setMcEmail] = useState('');
   const [mcMobile, setMcMobile] = useState('');
@@ -750,12 +768,22 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                       placeholder="Enter password"
                     />
                     <button
-                      type="button"
-                      onClick={() => setLoginShowPwd(!loginShowPwd)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#bd9661] font-semibold hover:underline cursor-pointer"
-                    >
-                      {loginShowPwd ? 'Hide' : 'Show'}
-                    </button>
+  type="button"
+  onClick={() => setLoginShowPwd(!loginShowPwd)}
+  aria-label={loginShowPwd ? 'Hide password' : 'Show password'}
+  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8b7b6b] hover:text-[#15110e] transition-colors cursor-pointer p-0.5"
+>
+  {loginShowPwd ? (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+    </svg>
+  ) : (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  )}
+</button>
                   </div>
                 </div>
 
@@ -1115,12 +1143,22 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                               className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 pr-12 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
                             />
                             <button
-                              type="button"
-                              onClick={() => setCoupleShowPwd(!coupleShowPwd)}
-                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#bd9661] font-bold"
-                            >
-                              {coupleShowPwd ? 'Hide' : 'Show'}
-                            </button>
+  type="button"
+  onClick={() => setCoupleShowPwd(!coupleShowPwd)}
+  aria-label={coupleShowPwd ? 'Hide password' : 'Show password'}
+  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8b7b6b] hover:text-[#15110e] transition-colors cursor-pointer p-0.5"
+>
+  {coupleShowPwd ? (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+    </svg>
+  ) : (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  )}
+</button>
                           </div>
                           <div className="w-full bg-[#e8ded0] h-1 rounded-full mt-1.5 overflow-hidden">
                             <div
@@ -1700,12 +1738,22 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                               className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 pr-12 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
                             />
                             <button
-                              type="button"
-                              onClick={() => setMcShowPwd(!mcShowPwd)}
-                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#bd9661] font-bold"
-                            >
-                              {mcShowPwd ? 'Hide' : 'Show'}
-                            </button>
+  type="button"
+  onClick={() => setMcShowPwd(!mcShowPwd)}
+  aria-label={mcShowPwd ? 'Hide password' : 'Show password'}
+  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8b7b6b] hover:text-[#15110e] transition-colors cursor-pointer p-0.5"
+>
+  {mcShowPwd ? (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+    </svg>
+  ) : (
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+  )}
+</button>
                           </div>
                           <div className="w-full bg-[#e8ded0] h-1 rounded-full mt-1.5 overflow-hidden">
                             <div
@@ -1862,14 +1910,16 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
 
                       {/* Paid Plan Card Simulation */}
                       {selectedMcPlanId !== 'mc_base' && (
-                        <div className="bg-[#faf8f5] p-2.5 rounded-xl border border-[#ebdcc9] space-y-2">
-                          <div className="flex items-center justify-between pb-1 border-b border-[#ebdcc9]">
-                            <span className="text-[10.5px] font-bold text-[#15110e]">Stripe Secure Payment</span>
+                        <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2.5">
+                          <div className="flex items-center justify-between pb-1.5 border-b border-[#ebdcc9]">
+                            <span className="text-[11px] font-bold text-[#15110e]">Stripe Secure Payment</span>
                             <button
                               type="button"
                               onClick={() => {
                                 setMcCardNumber('4242 •••• •••• 4242');
                                 setMcCardName(mcName || 'Robert Galati');
+                                setMcCardExpiry('12/28');
+                                setMcCardCvc('888');
                                 showToast('Test card filled', 'info');
                               }}
                               className="text-[9.5px] text-[#bd9661] font-bold hover:underline cursor-pointer"
@@ -1878,22 +1928,102 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                             </button>
                           </div>
                           <div>
-                            <label className="block text-[9px] font-bold uppercase text-[#8b7b6b] mb-0.5">Cardholder Name</label>
+                            <label className="block text-[9px] font-bold uppercase text-[#8b7b6b] mb-1">Cardholder Name</label>
                             <input
                               type="text"
+                              required
                               value={mcCardName}
                               onChange={(e) => setMcCardName(e.target.value)}
-                              className="w-full bg-white border border-[#d5c7b5] rounded-md px-2 py-1 text-xs"
+                              placeholder="Name on card"
+                              className="w-full bg-white border border-[#d5c7b5] rounded-md px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
                             />
                           </div>
                           <div>
-                            <label className="block text-[9px] font-bold uppercase text-[#8b7b6b] mb-0.5">Card Number</label>
+                            <label className="block text-[9px] font-bold uppercase text-[#8b7b6b] mb-1">Card Number</label>
                             <input
                               type="text"
+                              required
                               value={mcCardNumber}
                               onChange={(e) => setMcCardNumber(e.target.value)}
-                              className="w-full bg-white border border-[#d5c7b5] rounded-md px-2 py-1 text-xs"
+                              placeholder="4242 •••• •••• 4242"
+                              className="w-full bg-white border border-[#d5c7b5] rounded-md px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
                             />
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-[9px] font-bold uppercase text-[#8b7b6b] mb-1">Expiry Date</label>
+                              <input
+                                type="text"
+                                required
+                                value={mcCardExpiry}
+                                onChange={(e) => setMcCardExpiry(e.target.value)}
+                                placeholder="MM/YY"
+                                className="w-full bg-white border border-[#d5c7b5] rounded-md px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[9px] font-bold uppercase text-[#8b7b6b] mb-1">CVC / CVV</label>
+                              <input
+                                type="text"
+                                required
+                                value={mcCardCvc}
+                                onChange={(e) => setMcCardCvc(e.target.value)}
+                                placeholder="123"
+                                className="w-full bg-white border border-[#d5c7b5] rounded-md px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Promo Code Input */}
+                          <div className="pt-0.5">
+                            <label className="block text-[9px] font-bold uppercase text-[#8b7b6b] mb-1">Promo Code</label>
+                            <div className="flex gap-1.5">
+                              <input
+                                type="text"
+                                value={mcPromoCode}
+                                onChange={(e) => setMcPromoCode(e.target.value)}
+                                placeholder="e.g. WELCOME10"
+                                className="flex-1 bg-white border border-[#d5c7b5] rounded-md px-2 py-1 text-xs uppercase outline-none focus:border-[#bd9661]"
+                              />
+                              <button
+                                type="button"
+                                onClick={handleApplyMcPromo}
+                                className="bg-[#15110e] text-[#dfc194] px-2.5 py-1 rounded-md text-[11px] font-bold hover:bg-[#2b221a] cursor-pointer whitespace-nowrap"
+                              >
+                                Apply
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Price Breakdown */}
+                          <div className="bg-white p-2 rounded-lg border border-[#ebdcc9] text-[11px] space-y-1">
+                            {(() => {
+                              const plan = MC_PLANS.find(p => p.id === selectedMcPlanId) || MC_PLANS[1];
+                              const discount = Math.round((plan.price * mcDiscountPercent) / 100);
+                              const finalPrice = Math.max(0, plan.price - discount);
+                              return (
+                                <>
+                                  <div className="flex justify-between text-[#8b7b6b]">
+                                    <span>{plan.name}</span>
+                                    <span>${plan.price}.00 AUD</span>
+                                  </div>
+                                  {mcDiscountPercent > 0 && (
+                                    <div className="flex justify-between text-emerald-600 font-semibold">
+                                      <span>Promo Discount ({mcDiscountPercent}%)</span>
+                                      <span>-${discount}.00 AUD</span>
+                                    </div>
+                                  )}
+                                  <div className="flex justify-between text-[#8b7b6b]">
+                                    <span>Australian GST (10%)</span>
+                                    <span>Included</span>
+                                  </div>
+                                  <div className="flex justify-between text-xs font-bold text-[#15110e] pt-1 border-t border-[#f0ede6]">
+                                    <span>Total Due Today:</span>
+                                    <span className="text-[#bd9661] font-serif">${finalPrice}.00 AUD</span>
+                                  </div>
+                                </>
+                              );
+                            })()}
                           </div>
                         </div>
                       )}
@@ -1902,20 +2032,23 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                         <button
                           type="button"
                           onClick={() => setMcRegStep('details')}
-                          className="px-3 py-2 bg-[#f0ede4] hover:bg-[#e5ded2] text-[#15110e] font-bold text-xs rounded-lg cursor-pointer"
+                          className="px-3 py-2.5 bg-[#f0ede4] hover:bg-[#e5ded2] text-[#15110e] font-bold text-xs rounded-lg cursor-pointer whitespace-nowrap"
                         >
                           ← Back
                         </button>
                         <button
                           type="submit"
                           disabled={isRegistering}
-                          className="flex-1 py-2.5 px-3 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm text-center"
+                          className="flex-1 py-2.5 px-2 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm text-center flex items-center justify-center gap-1.5"
                         >
-                          {isRegistering
-                            ? 'Activating Plan...'
-                            : selectedMcPlanId === 'mc_base'
-                            ? 'Activate Free Plan & Launch MC Portal →'
-                            : 'Pay & Launch MC Portal →'}
+                          <span className="whitespace-nowrap">
+                            {isRegistering
+                              ? 'Activating Plan...'
+                              : selectedMcPlanId === 'mc_base'
+                              ? 'Activate Free Plan & Launch'
+                              : 'Pay & Launch MC Portal'}
+                          </span>
+                          {!isRegistering && <span className="inline-block">→</span>}
                         </button>
                       </div>
                     </form>
