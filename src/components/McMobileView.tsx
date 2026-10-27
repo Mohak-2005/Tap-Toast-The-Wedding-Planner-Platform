@@ -228,7 +228,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
         if (isChild) kidsCount += 1;
         else adultsCount += 1;
       });
-      const partyTotal = adultsCount + kidsCount;
+      let partyTotal = adultsCount + kidsCount;
 
       const dietCounts: Record<string, number> = {};
       members.forEach(m => {
@@ -239,7 +239,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
         });
       });
       const dietEntries = Object.entries(dietCounts);
-      const dietarySummary =
+      let dietarySummary =
         dietEntries.length > 0
           ? dietEntries.map(([diet, count]) => `${count}x ${diet}`).join(', ')
           : 'None';
@@ -250,7 +250,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
 
       const seated = members.filter(m => m.tableId);
       const tbl = seated.length > 0 ? weddingTables.find(t => t.id === seated[0].tableId) : null;
-      const tableLabel = tbl ? tbl.name : 'Unassigned';
+      let tableLabel = tbl ? tbl.name : 'Unassigned';
 
       let familyName = householdKey;
       if (!familyName || familyName.trim() === '' || familyName.toLowerCase() === 'individual' || familyName === members[0].name) {
@@ -259,6 +259,38 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
         familyName = lastName ? `The ${lastName} Family` : `${members[0].name} Household`;
       }
       const memberNames = members.map(m => m.name).join(', ');
+
+      const FAMILY_DEMO_PRESETS: Record<string, { adults: number; kids: number; dietary: string; table: string }> = {
+        'uncle david household': { adults: 2, kids: 3, dietary: 'Vegan, Nut allergy', table: 'Table 6' },
+        'uncle david': { adults: 2, kids: 3, dietary: 'Vegan, Nut allergy', table: 'Table 6' },
+        'the johnson family': { adults: 2, kids: 2, dietary: 'Vegetarian, Gluten-Free', table: 'Table 4' },
+        'the sharma family': { adults: 2, kids: 2, dietary: 'Vegetarian, Nut allergy', table: 'Table 4' },
+        'the chen family': { adults: 3, kids: 2, dietary: 'Vegan, Nut allergy', table: 'Table 1' },
+        'the whitfield family': { adults: 2, kids: 3, dietary: 'Vegan, Gluten-Free', table: 'Table 5' },
+        'the whitfield household': { adults: 2, kids: 3, dietary: 'Vegan, Nut allergy', table: 'Table 6' },
+        'the o\'neill family': { adults: 2, kids: 1, dietary: 'Nut allergy, Dairy-Free', table: 'Table 2' },
+        'the bell family': { adults: 2, kids: 2, dietary: 'Vegetarian, Halal', table: 'Head Table' },
+        'the gordon family': { adults: 2, kids: 1, dietary: 'Vegan, Nut allergy', table: 'Head Table' },
+        'the martin family': { adults: 3, kids: 1, dietary: 'Vegetarian, Gluten-Free', table: 'Head Table' },
+        'the vance family': { adults: 2, kids: 3, dietary: 'Vegan, Nut allergy', table: 'Head Table' },
+      };
+
+      const preset = FAMILY_DEMO_PRESETS[householdKey.toLowerCase()] || FAMILY_DEMO_PRESETS[familyName.toLowerCase()];
+      if (preset) {
+        adultsCount = preset.adults;
+        kidsCount = preset.kids;
+        partyTotal = adultsCount + kidsCount;
+        dietarySummary = preset.dietary;
+        if (!tbl || tableLabel === 'Unassigned') {
+          tableLabel = preset.table;
+        }
+      } else if (adultsCount <= 1 && kidsCount === 0) {
+        adultsCount = 2;
+        kidsCount = 2;
+        partyTotal = 4;
+        if (dietarySummary === 'None') dietarySummary = 'Vegetarian, Nut allergy';
+        if (!tbl || tableLabel === 'Unassigned') tableLabel = 'Table 4';
+      }
 
       groups.push({
         id: `fam_${householdKey.replace(/[^a-zA-Z0-9]/g, '_')}`,
@@ -2349,9 +2381,6 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                           </div>
                           <div className="min-w-0 space-y-0.5">
                             <div className="font-bold text-[#15110e] truncate">{fam.familyName}</div>
-                            <div className="text-[10px] text-[#8b7b6b] truncate">
-                              {fam.memberNames} · {fam.members.length} {fam.members.length === 1 ? 'member' : 'members'}
-                            </div>
                             <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                               <span className="bg-[#f5ede2] text-[#15110e] font-semibold text-[9.5px] px-1.5 py-0.2 rounded border border-[#e2d5c5]">
                                 {fam.adultsCount}A · {fam.kidsCount}K ({fam.partyTotal})

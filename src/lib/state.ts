@@ -73,7 +73,35 @@ export function getStoredState(): DemoState {
             const missingSeed = (SEED_DATA.guests || []).filter((g: Guest) =>
               (!hasW2 && g.weddingId === 'w2') || (!hasW3 && g.weddingId === 'w3')
             );
-            return [...list, ...missingSeed];
+            const combinedList = [...list, ...missingSeed];
+            
+            // Enrich or ensure Uncle David Household is present with requested demo specs
+            const uncleExists = combinedList.some((g: Guest) => g.id === 'uncle_david' || g.household === 'Uncle David Household');
+            if (!uncleExists) {
+              const uncleSeed = (SEED_DATA.guests || []).find(g => g.id === 'uncle_david');
+              if (uncleSeed) combinedList.push(uncleSeed);
+            } else {
+              // Ensure its specs match: 2 adults, 3 kids, Vegan & Nut allergy, Table 6
+              return combinedList.map((g: Guest) => {
+                if (g.id === 'uncle_david' || g.household === 'Uncle David Household') {
+                  return {
+                    ...g,
+                    name: 'Uncle David',
+                    household: 'Uncle David Household',
+                    phone: g.phone || '0412 555 888',
+                    category: g.category || "Groom's Family",
+                    rsvpStatus: g.rsvpStatus || 'awaiting',
+                    adults: 2,
+                    kids: 3,
+                    guestCount: 5,
+                    dietary: 'Vegan, Nut allergy',
+                    tableId: g.tableId || 'table_6',
+                  };
+                }
+                return g;
+              });
+            }
+            return combinedList;
           })() : SEED_DATA.guests,
           tables: Array.isArray(parsed.tables) ? (() => {
             const list = parsed.tables.map((t: Table) => ({

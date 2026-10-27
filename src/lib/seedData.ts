@@ -578,6 +578,9 @@ export const SEED_DATA: DemoState = {
 
     { id: "g_slee", name: "Sarah Lee", initials: "SL", household: "Sarah Lee", email: "sarah.lee@example.com", phone: "0433 112 445", rsvpStatus: "confirmed", guestCount: 1, adults: 1, kids: 0, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null },
 
+    // Uncle David Household (5 members demo: 2 adults, 3 kids, Vegan & Nut allergy, Table 6)
+    { id: "uncle_david", name: "Uncle David", initials: "UD", household: "Uncle David Household", email: "uncle.david@example.com", phone: "0412 555 888", rsvpStatus: "awaiting", guestCount: 5, adults: 2, kids: 3, dietary: "Vegan, Nut allergy", plusOne: false, reminderSent: false, tableId: "table_6", seatIndex: null, category: "Groom's Family" },
+
     // The Whitfield Family (4 members: David, Claire, Sam, Emma)
     { id: "david_whitfield", name: "David Whitfield", initials: "DW", household: "The Whitfield Family", email: "david.w@example.com", phone: "0414 556 778", rsvpStatus: "confirmed", guestCount: 1, adults: 1, kids: 0, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null, category: "Groom's Family" },
     { id: "claire_whitfield", name: "Claire Whitfield", initials: "CW", household: "The Whitfield Family", email: "claire.w@example.com", phone: "0414 556 778", rsvpStatus: "confirmed", guestCount: 1, adults: 1, kids: 0, dietary: "None", plusOne: false, reminderSent: false, tableId: null, seatIndex: null, category: "Groom's Family" },
