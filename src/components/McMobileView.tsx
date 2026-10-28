@@ -329,6 +329,16 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
   // -------------------------------------------------------------
   const handleTableCanvasDrop = (e: React.DragEvent, containerRect: DOMRect) => {
     e.preventDefault();
+    if (isDraggingDanceFloor) {
+      const relX = Math.round(((e.clientX - containerRect.left) / containerRect.width) * 100);
+      const relY = Math.round(((e.clientY - containerRect.top) / containerRect.height) * 100);
+      const clampedX = Math.max(16, Math.min(84, relX));
+      const clampedY = Math.max(18, Math.min(82, relY));
+      setDanceFloorPos({ x: clampedX, y: clampedY });
+      setIsDraggingDanceFloor(false);
+      showToast('Dance Floor repositioned', 'info');
+      return;
+    }
     if (!draggingTableId) return;
 
     const relX = Math.round(((e.clientX - containerRect.left) / containerRect.width) * 100);
@@ -362,17 +372,57 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
     setState({ ...state, tables: updatedTables });
   };
 
+  const handleTouchStartDanceFloor = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    setIsDraggingDanceFloor(true);
+  };
+
   const handleTouchMoveDanceFloor = (e: React.TouchEvent) => {
     if (e.touches.length !== 1) return;
+    e.preventDefault();
+    e.stopPropagation();
     const touch = e.touches[0];
     const el = document.getElementById('mobile_canvas_container');
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const relX = ((touch.clientX - rect.left) / rect.width) * 100;
     const relY = ((touch.clientY - rect.top) / rect.height) * 100;
-    const clampedX = Math.max(22, Math.min(78, Math.round(relX)));
-    const clampedY = Math.max(25, Math.min(75, Math.round(relY)));
+    const clampedX = Math.max(16, Math.min(84, Math.round(relX)));
+    const clampedY = Math.max(18, Math.min(82, Math.round(relY)));
     setDanceFloorPos({ x: clampedX, y: clampedY });
+  };
+
+  const handleTouchEndDanceFloor = () => {
+    setIsDraggingDanceFloor(false);
+  };
+
+  const handlePointerDownDanceFloor = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    try {
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
+    setIsDraggingDanceFloor(true);
+  };
+
+  const handlePointerMoveDanceFloor = (e: React.PointerEvent) => {
+    if (!isDraggingDanceFloor) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const el = document.getElementById('mobile_canvas_container');
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const relX = ((e.clientX - rect.left) / rect.width) * 100;
+    const relY = ((e.clientY - rect.top) / rect.height) * 100;
+    const clampedX = Math.max(16, Math.min(84, Math.round(relX)));
+    const clampedY = Math.max(18, Math.min(82, Math.round(relY)));
+    setDanceFloorPos({ x: clampedX, y: clampedY });
+  };
+
+  const handlePointerUpDanceFloor = (e: React.PointerEvent) => {
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+    setIsDraggingDanceFloor(false);
   };
 
   const handleLoadArrangement = (arrId: string) => {
@@ -1780,21 +1830,13 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-1 border-t border-[#f5f2eb]">
-                  <button
-                    type="button"
-                    onClick={() => handleRunCheersAiSeating('households')}
-                    className="flex-1 min-w-0 bg-gradient-to-r from-[#15110e] to-[#251e18] hover:to-[#15110e] text-[#dfc194] border border-[#bd9661]/40 rounded-xl py-2 px-2.5 text-xs font-bold cursor-pointer shadow-2xs flex items-center justify-center gap-1.5 transition-all"
-                  >
-                    <span>✨</span>
-                    <span className="truncate">Cheers AI Auto-Seat</span>
-                  </button>
+                <div className="pt-1 border-t border-[#f5f2eb]">
                   <button
                     type="button"
                     onClick={() => setShowAddTableModal(true)}
-                    className="bg-white hover:bg-[#faf8f5] text-[#15110e] border border-[#d5c7b5] rounded-xl py-2 px-3 text-xs font-bold cursor-pointer shadow-2xs flex items-center justify-center gap-1 transition-all shrink-0"
+                    className="w-full bg-white hover:bg-[#faf8f5] text-[#15110e] border border-[#d5c7b5] rounded-xl py-2 px-3 text-xs font-bold cursor-pointer shadow-2xs flex items-center justify-center gap-1.5 transition-all"
                   >
-                    <span>+</span>
+                    <span className="text-sm font-bold text-[#bd9661]">+</span>
                     <span>Add Table</span>
                   </button>
                 </div>
@@ -1923,13 +1965,21 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                         setIsDraggingDanceFloor(true);
                       }}
                       onDragEnd={() => setIsDraggingDanceFloor(false)}
+                      onPointerDown={handlePointerDownDanceFloor}
+                      onPointerMove={handlePointerMoveDanceFloor}
+                      onPointerUp={handlePointerUpDanceFloor}
+                      onPointerCancel={handlePointerUpDanceFloor}
+                      onTouchStart={handleTouchStartDanceFloor}
                       onTouchMove={handleTouchMoveDanceFloor}
+                      onTouchEnd={handleTouchEndDanceFloor}
+                      onTouchCancel={handleTouchEndDanceFloor}
                       style={{
                         left: `${danceFloorPos.x}%`,
                         top: `${danceFloorPos.y}%`,
+                        touchAction: 'none',
                       }}
-                      className={`absolute -translate-x-1/2 -translate-y-1/2 w-40 h-28 rounded-3xl border-2 border-dashed border-[#bd9661]/60 bg-[#bd9661]/10 flex flex-col items-center justify-center text-center cursor-grab active:cursor-grabbing hover:border-[#bd9661] hover:bg-[#bd9661]/15 transition-shadow shadow-2xs select-none z-10 ${
-                        isDraggingDanceFloor ? 'opacity-60 ring-2 ring-[#bd9661]' : ''
+                      className={`absolute -translate-x-1/2 -translate-y-1/2 w-40 h-28 rounded-3xl border-2 border-dashed border-[#bd9661]/60 bg-[#bd9661]/10 flex flex-col items-center justify-center text-center cursor-grab active:cursor-grabbing hover:border-[#bd9661] hover:bg-[#bd9661]/15 transition-all shadow-2xs select-none z-10 touch-none ${
+                        isDraggingDanceFloor ? 'opacity-70 ring-2 ring-[#bd9661] shadow-lg scale-105' : ''
                       }`}
                       title="Drag to reposition Main Dance Floor"
                     >
@@ -2510,16 +2560,34 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
         </div>
 
         {/* ============================================================== */}
-        {/* JOEY CHATBOT FLOATING BUTTON & MODAL                          */}
+        {/* FLOATING ACTION BUTTON: CHEERS AI (SEATING) / JOEY (OTHER)     */}
         {/* ============================================================== */}
-        <button
-          type="button"
-          onClick={() => setShowJoey(!showJoey)}
-          className="absolute bottom-18 right-4 w-12 h-12 rounded-full bg-[#dfc194] border-2 border-white shadow-lg flex items-center justify-center cursor-pointer hover:scale-105 transition-transform z-30 overflow-hidden p-0"
-          title="Ask Joey"
-        >
-          <img src="/chatbot-avatar.png" alt="Joey AI Assistant" className="w-full h-full object-cover" />
-        </button>
+        {consoleTab === 'seating' ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (!aiProposal) {
+                handleRunCheersAiSeating('households');
+              } else {
+                setShowCheersAiModal(true);
+              }
+            }}
+            className="absolute bottom-20 right-4 px-3.5 py-2.5 rounded-full bg-gradient-to-r from-[#15110e] to-[#251e18] text-[#dfc194] border-2 border-[#bd9661] shadow-2xl flex items-center gap-2 cursor-pointer hover:scale-105 active:scale-95 transition-all z-30"
+            title="Open Cheers AI"
+          >
+            <span className="text-base">🥂</span>
+            <span className="text-xs font-serif font-bold text-white tracking-wide">Cheers AI</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowJoey(!showJoey)}
+            className="absolute bottom-20 right-4 w-12 h-12 rounded-full bg-[#dfc194] border-2 border-white shadow-lg flex items-center justify-center cursor-pointer hover:scale-105 transition-transform z-30 overflow-hidden p-0"
+            title="Ask Joey"
+          >
+            <img src="/chatbot-avatar.png" alt="Joey AI Assistant" className="w-full h-full object-cover" />
+          </button>
+        )}
 
         {showJoey && (
           <div className="absolute inset-x-3 bottom-16 top-16 bg-white rounded-3xl border border-[#d5c7b5] shadow-2xl flex flex-col overflow-hidden z-40 animate-in fade-in zoom-in-95">
@@ -3168,20 +3236,23 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
         {showCheersAiModal && (
           <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 animate-in fade-in">
             <div className="bg-white rounded-3xl p-4 max-w-[340px] w-full space-y-3 shadow-2xl border border-[#ebd3a8] max-h-[92%] flex flex-col">
-              <div className="flex items-center justify-between border-b pb-2 flex-shrink-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">✨</span>
+              {/* Caviar & Gold Header matching Web View */}
+              <div className="bg-[#15110e] text-white p-3.5 px-4 flex items-center justify-between border-b border-[#bd9661]/40 shrink-0 rounded-t-3xl -mx-4 -mt-4 mb-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#dfc194] to-[#bd9661] text-[#15110e] flex items-center justify-center font-bold text-xs shadow-xs">
+                    🥂
+                  </div>
                   <div>
-                    <h3 className="font-serif text-sm font-bold text-[#15110e]">
-                      Cheers AI Seating Recommendation
+                    <h3 className="font-serif text-sm font-bold text-[#dfc194] leading-tight">
+                      Cheers AI
                     </h3>
-                    <div className="text-[10px] text-[#bd9661] font-semibold">{aiProposal?.title || 'Smart Seating'}</div>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowCheersAiModal(false)}
-                  className="text-gray-400 hover:text-gray-600 text-base font-bold p-1 cursor-pointer leading-none"
+                  className="w-7 h-7 rounded-lg text-[#dfc194] hover:text-white hover:bg-white/10 flex items-center justify-center text-lg cursor-pointer transition-colors"
+                  title="Close Cheers AI"
                 >
                   &times;
                 </button>
