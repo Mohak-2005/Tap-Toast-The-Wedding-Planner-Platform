@@ -51,6 +51,39 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
   const [aiProposal, setAiProposal] = useState<{ title: string; desc: string; count: number; changes: { guestId: string; tableId: string }[] } | null>(null);
   const [activeAiScenario, setActiveAiScenario] = useState<'households' | 'vips' | 'dietary' | 'fill'>('households');
 
+  // Interactive Cheers AI Chatbot State
+  const [isCheersChatOpen, setIsCheersChatOpen] = useState<boolean>(false);
+  const [cheersChatInput, setCheersChatInput] = useState<string>('');
+  const [cheersMessages, setCheersMessages] = useState<Array<{
+    id: string;
+    sender: 'user' | 'cheers';
+    text: string;
+    timestamp: string;
+    proposal?: {
+      title: string;
+      desc: string;
+      count: number;
+      changes: { guestId: string; tableId: string }[];
+    };
+    isApplied?: boolean;
+  }>>([
+    {
+      id: 'msg_welcome',
+      sender: 'cheers',
+      text: "Hello! I'm Cheers AI, your dedicated seating & floor plan concierge. I can analyze your guest list, pair households together, arrange dietary preferences, seat VIPs at the head table, or help you seed new tables for your venue. How would you like to arrange your tables today?",
+      timestamp: 'Just now',
+    },
+  ]);
+
+  // Table Seeding & Inventory Wizard State
+  const [showSeedTablesModal, setShowSeedTablesModal] = useState<boolean>(false);
+  const [seedTablePrefix, setSeedTablePrefix] = useState<string>('Table ');
+  const [seedTableCount, setSeedTableCount] = useState<number>(6);
+  const [seedTableShape, setSeedTableShape] = useState<TableShape>('round');
+  const [seedTableCapacity, setSeedTableCapacity] = useState<number>(10);
+  const [seedTableCategory, setSeedTableCategory] = useState<string>('Family');
+  const [seedTableZone, setSeedTableZone] = useState<string>('Main Ballroom');
+
   // New Table Form State
   const [newTableName, setNewTableName] = useState<string>('');
   const [newTableShape, setNewTableShape] = useState<TableShape>('round');
@@ -746,6 +779,319 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
     showToast(`✨ Cheers AI successfully applied ${aiProposal.changes.length} seating recommendations!`, 'success');
   };
 
+  // -------------------------------------------------------------
+  // CHEERS AI CHATBOT ENGINE
+  // -------------------------------------------------------------
+  const executeAiScenario = (scenario: 'households' | 'vips' | 'fill' | 'dietary') => {
+    setActiveAiScenario(scenario);
+    let title = '';
+    let desc = '';
+    const proposedChanges: { guestId: string; tableId: string }[] = [];
+
+    if (scenario === 'vips') {
+      title = 'Seat VIPs & Bridal Party at Head Table';
+      desc = 'Placed the bridal party and immediate family at the Head Table with premier visibility for speeches and photography.';
+      const headTbl = tables.find((t) => t.isHead) || tables.find((t) => t.name.toLowerCase().includes('head')) || tables[0];
+      if (headTbl) {
+        const vipNames = ['Sophie Bell', 'James Gordon', 'Hannah Martin', 'Oliver Vance', 'Charlotte Evans', 'Liam Fletcher', 'Grace Kelly', 'Alexander White'];
+        const matchedVips = weddingGuests.filter((g) =>
+          vipNames.some((vn) => g.name.toLowerCase().includes(vn.toLowerCase())) ||
+          g.household.toLowerCase().includes('bell') ||
+          g.household.toLowerCase().includes('gordon') ||
+          g.category === 'Bridal Party'
+        );
+        const candidates = matchedVips.length > 0 ? matchedVips : weddingGuests.slice(0, headTbl.capacity);
+        candidates.slice(0, headTbl.capacity).forEach((g) => {
+          proposedChanges.push({ guestId: g.id, tableId: headTbl.id });
+        });
+      }
+    } else if (scenario === 'dietary') {
+      title = 'Group Dietary Requirements for Catering';
+      desc = 'Clustered guests with special dietary preferences (Gluten-Free, Vegan, Vegetarian, Nut allergy) at Table 4 for synchronized kitchen service.';
+      const dietaryTbl = tables.find((t) => t.name.toLowerCase().includes('table 4')) || tables.find((t) => t.name.toLowerCase().includes('table 2')) || tables[1] || tables[0];
+      if (dietaryTbl) {
+        const dietaryGuests = weddingGuests.filter((g) => g.dietary && g.dietary !== 'None' && g.dietary.trim() !== '');
+        const candidates = dietaryGuests.length > 0 ? dietaryGuests : weddingGuests.slice(0, dietaryTbl.capacity);
+        candidates.slice(0, dietaryTbl.capacity).forEach((g) => {
+          proposedChanges.push({ guestId: g.id, tableId: dietaryTbl.id });
+        });
+      }
+    } else if (scenario === 'households') {
+      title = 'Group Households & Families Together';
+      desc = 'Paired family members and immediate relatives together into dedicated family tables so households remain seated together.';
+      const familyTbl1 = tables.find((t) => t.name.toLowerCase().includes('table 1')) || tables[0];
+      const familyTbl2 = tables.find((t) => t.name.toLowerCase().includes('table 3')) || tables[1];
+      const bellFamily = weddingGuests.filter((g) => g.household.toLowerCase().includes('bell'));
+      const gordonFamily = weddingGuests.filter((g) => g.household.toLowerCase().includes('gordon') || g.household.toLowerCase().includes('kelly'));
+
+      if (familyTbl1 && bellFamily.length > 0) {
+        bellFamily.slice(0, familyTbl1.capacity).forEach((g) => {
+          proposedChanges.push({ guestId: g.id, tableId: familyTbl1.id });
+        });
+      }
+      if (familyTbl2 && gordonFamily.length > 0) {
+        gordonFamily.slice(0, familyTbl2.capacity).forEach((g) => {
+          proposedChanges.push({ guestId: g.id, tableId: familyTbl2.id });
+        });
+      }
+      if (proposedChanges.length === 0) {
+        weddingGuests.slice(0, 8).forEach((g) => {
+          proposedChanges.push({ guestId: g.id, tableId: (familyTbl1 || tables[0]).id });
+        });
+      }
+    } else {
+      title = 'Balanced Room & Vacancy Optimization';
+      desc = 'Distributed unassigned guests evenly across all tables to balance ballroom capacity and guest flow.';
+      const unassigned = weddingGuests.filter((g) => !g.tableId);
+      const candidates = unassigned.length > 0 ? unassigned : weddingGuests.slice(0, 8);
+      candidates.forEach((g, idx) => {
+        const targetTbl = tables[idx % tables.length];
+        if (targetTbl) {
+          proposedChanges.push({ guestId: g.id, tableId: targetTbl.id });
+        }
+      });
+    }
+
+    return {
+      title,
+      desc,
+      count: proposedChanges.length,
+      changes: proposedChanges,
+    };
+  };
+
+  const handleCheersChatAction = (action: 'households' | 'vips' | 'fill' | 'dietary' | 'audit' | 'seed' | 'reset') => {
+    if (action === 'seed') {
+      setCheersMessages((prev) => [
+        ...prev,
+        { id: 'usr_' + Date.now(), sender: 'user', text: '🌱 Open Table Seeding & Inventory Wizard', timestamp: 'Just now' },
+        { id: 'ch_' + Date.now(), sender: 'cheers', text: 'Opening the Table Seeding & Inventory Wizard for you to configure table numbers, shapes, and seating capacities.', timestamp: 'Just now' },
+      ]);
+      setShowSeedTablesModal(true);
+      return;
+    }
+
+    if (action === 'audit') {
+      const seatedCount = weddingGuests.filter((g) => g.tableId).length;
+      const unassignedCount = weddingGuests.filter((g) => !g.tableId).length;
+      const totalCapacity = tables.reduce((acc, t) => acc + t.capacity, 0);
+      const dietaryCount = weddingGuests.filter((g) => g.dietary && g.dietary !== 'None' && g.dietary !== '').length;
+
+      setCheersMessages((prev) => [
+        ...prev,
+        { id: 'usr_' + Date.now(), sender: 'user', text: '📊 Audit room capacity & seating balance', timestamp: 'Just now' },
+        {
+          id: 'ch_' + Date.now(),
+          sender: 'cheers',
+          text: `Room Audit Summary for ${currentWedding.couple}:\n• Total Confirmed Guests: ${weddingGuests.length}\n• Currently Seated: ${seatedCount} / ${totalCapacity} seats (${Math.round((seatedCount / (totalCapacity || 1)) * 100)}% capacity)\n• Unallocated Guests: ${unassignedCount}\n• Active Tables: ${tables.length}\n• Special Dietary Requirements: ${dietaryCount} guests`,
+          timestamp: 'Just now',
+        },
+      ]);
+      return;
+    }
+
+    if (action === 'reset') {
+      const updatedGuests = (state.guests || []).map((g) =>
+        (g.weddingId || 'w1') === currentWeddingId ? { ...g, tableId: null, seatIndex: null } : g
+      );
+      setState({ ...state, guests: updatedGuests });
+      showToast('All guest table assignments have been reset', 'info');
+      setCheersMessages((prev) => [
+        ...prev,
+        { id: 'usr_' + Date.now(), sender: 'user', text: '🧹 Reset all table assignments', timestamp: 'Just now' },
+        { id: 'ch_' + Date.now(), sender: 'cheers', text: 'All seating assignments have been cleared. All guests are now in the unallocated list ready for fresh organization.', timestamp: 'Just now' },
+      ]);
+      return;
+    }
+
+    const proposal = executeAiScenario(action);
+    const actionLabel = action === 'households' ? 'Group households & families' : action === 'vips' ? 'Seat VIPs at Head Table' : action === 'dietary' ? 'Cluster dietary requirements' : 'Auto-fill vacant seats';
+
+    let introText = '';
+    if (action === 'vips') {
+      introText = `👑 VIP & Head Table Recommendation:\nI've analyzed the floor plan and prepared ${proposal.count} seating allocations for the bridal party and immediate family at the Head Table. This guarantees prime visibility for toasts and speeches.\n\nReview the proposed allocations below and click 'Apply This Seating Plan to Canvas' to update your layout.`;
+    } else if (action === 'dietary') {
+      introText = `🥗 Catering & Dietary Cluster Recommendation:\nI've grouped ${proposal.count} guests with special dietary preferences (Gluten-Free, Vegetarian, Vegan, Nut allergy) at Table 4 for synchronized catering service.\n\nClick 'Apply This Seating Plan to Canvas' to apply these changes.`;
+    } else if (action === 'households') {
+      introText = `👨‍👩‍👧‍👦 Family & Household Placement:\nI've grouped family units together (${proposal.count} guests across family tables) so relatives remain seated together without splitting up parties.\n\nClick 'Apply This Seating Plan to Canvas' to update.`;
+    } else {
+      introText = `⚡ Room Density & Vacancy Balancing:\nI've prepared ${proposal.count} recommendations to balance ballroom capacity and maintain smooth guest circulation.`;
+    }
+
+    setCheersMessages((prev) => [
+      ...prev,
+      { id: 'usr_' + Date.now(), sender: 'user', text: actionLabel, timestamp: 'Just now' },
+      {
+        id: 'ch_' + Date.now(),
+        sender: 'cheers',
+        text: introText,
+        proposal: proposal.count > 0 ? proposal : undefined,
+        timestamp: 'Just now',
+      },
+    ]);
+  };
+
+  const handleSendCheersMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    const query = cheersChatInput.trim();
+    if (!query) return;
+
+    setCheersChatInput('');
+    const lower = query.toLowerCase();
+
+    if (lower.includes('vip') || lower.includes('head')) {
+      handleCheersChatAction('vips');
+    } else if (lower.includes('diet') || lower.includes('vegan') || lower.includes('veg') || lower.includes('halal') || lower.includes('gluten')) {
+      handleCheersChatAction('dietary');
+    } else if (lower.includes('fill') || lower.includes('vacan') || lower.includes('empty') || lower.includes('auto')) {
+      handleCheersChatAction('fill');
+    } else if (lower.includes('seed') || lower.includes('inventory') || lower.includes('create table') || lower.includes('preset')) {
+      handleCheersChatAction('seed');
+    } else if (lower.includes('audit') || lower.includes('stat') || lower.includes('capacity') || lower.includes('count') || lower.includes('balance')) {
+      handleCheersChatAction('audit');
+    } else if (lower.includes('reset') || lower.includes('clear')) {
+      handleCheersChatAction('reset');
+    } else {
+      handleCheersChatAction('households');
+    }
+  };
+
+  const handleApplyChatProposal = (msgId: string, proposal?: { changes: { guestId: string; tableId: string }[] }) => {
+    if (!proposal || proposal.changes.length === 0) return;
+    const changeMap = new Map(proposal.changes.map((c) => [c.guestId, c.tableId]));
+    const updatedGuests = (state.guests || []).map((g) => {
+      if (changeMap.has(g.id)) {
+        return { ...g, tableId: changeMap.get(g.id)!, seatIndex: 0 };
+      }
+      return g;
+    });
+
+    setState({ ...state, guests: updatedGuests });
+    setCheersMessages((prev) =>
+      prev.map((m) => (m.id === msgId ? { ...m, isApplied: true } : m))
+    );
+    showToast(`✨ Cheers AI successfully applied ${proposal.changes.length} seating recommendations to canvas!`, 'success');
+  };
+
+  // -------------------------------------------------------------
+  // TABLE SEEDING & INVENTORY ENGINE
+  // -------------------------------------------------------------
+  const handleSeedPreset = (presetKey: 'ballroom_80' | 'intimate_80' | 'banquet_68' | 'king_64') => {
+    let seededTables: Table[] = [];
+
+    if (presetKey === 'ballroom_80') {
+      // 8 Round Tables x 10 Seats (80 capacity)
+      seededTables = [
+        { id: `tbl_${currentWeddingId}_1`, weddingId: currentWeddingId, name: 'Table 1', capacity: 10, shape: 'round', isHead: false, category: 'Friends', zone: 'West Wing', x: 20, y: 30 },
+        { id: `tbl_${currentWeddingId}_2`, weddingId: currentWeddingId, name: 'Table 2', capacity: 10, shape: 'round', isHead: false, category: 'Family', zone: 'West Wing', x: 40, y: 30 },
+        { id: `tbl_${currentWeddingId}_3`, weddingId: currentWeddingId, name: 'Table 3', capacity: 10, shape: 'round', isHead: false, category: 'Friends', zone: 'East Wing', x: 60, y: 30 },
+        { id: `tbl_${currentWeddingId}_4`, weddingId: currentWeddingId, name: 'Table 4', capacity: 10, shape: 'round', isHead: false, category: 'Family', zone: 'East Wing', x: 80, y: 30 },
+        { id: `tbl_${currentWeddingId}_5`, weddingId: currentWeddingId, name: 'Table 5', capacity: 10, shape: 'round', isHead: false, category: 'Friends', zone: 'South Terrace', x: 20, y: 70 },
+        { id: `tbl_${currentWeddingId}_6`, weddingId: currentWeddingId, name: 'Table 6', capacity: 10, shape: 'round', isHead: false, category: 'Family', zone: 'Center Ballroom', x: 40, y: 70 },
+        { id: `tbl_${currentWeddingId}_7`, weddingId: currentWeddingId, name: 'Table 7', capacity: 10, shape: 'round', isHead: false, category: 'Friends', zone: 'Center Ballroom', x: 60, y: 70 },
+        { id: `tbl_${currentWeddingId}_8`, weddingId: currentWeddingId, name: 'Table 8', capacity: 10, shape: 'round', isHead: false, category: 'VIP', zone: 'South Terrace', x: 80, y: 70 },
+      ];
+    } else if (presetKey === 'intimate_80') {
+      // 10 Round Tables x 8 Seats (80 capacity)
+      seededTables = Array.from({ length: 10 }).map((_, idx) => ({
+        id: `tbl_${currentWeddingId}_${idx + 1}`,
+        weddingId: currentWeddingId,
+        name: `Table ${idx + 1}`,
+        capacity: 8,
+        shape: 'round',
+        isHead: false,
+        category: idx % 2 === 0 ? 'Family' : 'Friends',
+        zone: idx < 5 ? 'North Pavilion' : 'South Lawn',
+        x: 18 + (idx % 5) * 16,
+        y: idx < 5 ? 32 : 68,
+      }));
+    } else if (presetKey === 'banquet_68') {
+      // 1 Head Table (8) + 6 Rectangular (10) (68 capacity)
+      seededTables = [
+        { id: `tbl_${currentWeddingId}_head`, weddingId: currentWeddingId, name: 'Head Table', capacity: 8, shape: 'king', isHead: true, category: 'Bridal Party', zone: 'Stage & VIP Wing', x: 50, y: 15 },
+        { id: `tbl_${currentWeddingId}_1`, weddingId: currentWeddingId, name: 'Table 1', capacity: 10, shape: 'rectangular', isHead: false, category: 'Family', zone: 'Left Terrace', x: 25, y: 38 },
+        { id: `tbl_${currentWeddingId}_2`, weddingId: currentWeddingId, name: 'Table 2', capacity: 10, shape: 'rectangular', isHead: false, category: 'Family', zone: 'Center Ballroom', x: 50, y: 38 },
+        { id: `tbl_${currentWeddingId}_3`, weddingId: currentWeddingId, name: 'Table 3', capacity: 10, shape: 'rectangular', isHead: false, category: 'Friends', zone: 'Right Garden', x: 75, y: 38 },
+        { id: `tbl_${currentWeddingId}_4`, weddingId: currentWeddingId, name: 'Table 4', capacity: 10, shape: 'rectangular', isHead: false, category: 'Friends', zone: 'Left Terrace', x: 25, y: 65 },
+        { id: `tbl_${currentWeddingId}_5`, weddingId: currentWeddingId, name: 'Table 5', capacity: 10, shape: 'rectangular', isHead: false, category: 'Family', zone: 'Center Ballroom', x: 50, y: 65 },
+        { id: `tbl_${currentWeddingId}_6`, weddingId: currentWeddingId, name: 'Table 6', capacity: 10, shape: 'rectangular', isHead: false, category: 'Colleagues', zone: 'Right Garden', x: 75, y: 65 },
+      ];
+    } else {
+      // 4 King Banquet Tables x 16 Seats (64 capacity)
+      seededTables = [
+        { id: `tbl_${currentWeddingId}_k1`, weddingId: currentWeddingId, name: 'Royal Long Table 1', capacity: 16, shape: 'king', isHead: true, category: 'Bridal Party', zone: 'North Hall', x: 30, y: 28 },
+        { id: `tbl_${currentWeddingId}_k2`, weddingId: currentWeddingId, name: 'Royal Long Table 2', capacity: 16, shape: 'king', isHead: false, category: 'Family', zone: 'North Hall', x: 70, y: 28 },
+        { id: `tbl_${currentWeddingId}_k3`, weddingId: currentWeddingId, name: 'Royal Long Table 3', capacity: 16, shape: 'king', isHead: false, category: 'Friends', zone: 'South Hall', x: 30, y: 70 },
+        { id: `tbl_${currentWeddingId}_k4`, weddingId: currentWeddingId, name: 'Royal Long Table 4', capacity: 16, shape: 'king', isHead: false, category: 'Friends', zone: 'South Hall', x: 70, y: 70 },
+      ];
+    }
+
+    // Unseat guests from removed tables safely
+    const newTableIds = new Set(seededTables.map((t) => t.id));
+    const updatedGuests = (state.guests || []).map((g) => {
+      if ((g.weddingId || 'w1') === currentWeddingId && g.tableId && !newTableIds.has(g.tableId)) {
+        return { ...g, tableId: null, seatIndex: null };
+      }
+      return g;
+    });
+
+    const otherTables = (state.tables || []).filter((t) => (t.weddingId || 'w1') !== currentWeddingId);
+    setState({ ...state, tables: [...otherTables, ...seededTables], guests: updatedGuests });
+    setShowSeedTablesModal(false);
+    setIsCheersChatOpen(true);
+    showToast(`Seeded ${seededTables.length} tables (${seededTables.reduce((a, b) => a + b.capacity, 0)} seats) for ${currentWedding.couple}!`, 'success');
+
+    setCheersMessages((prev) => [
+      ...prev,
+      {
+        id: 'ch_' + Date.now(),
+        sender: 'cheers',
+        text: `Successfully seeded ${seededTables.length} tables with ${seededTables.reduce((a, b) => a + b.capacity, 0)} total seats on your canvas! Click 'Group households & families' below to let me organize your guests into these newly created tables.`,
+        timestamp: 'Just now',
+      },
+    ]);
+  };
+
+  const handleCustomBatchSeed = (e: React.FormEvent) => {
+    e.preventDefault();
+    const count = Math.max(1, Math.min(20, seedTableCount));
+    const cap = Math.max(2, Math.min(40, seedTableCapacity));
+    const prefix = seedTablePrefix.trim() || 'Table ';
+
+    const newTables: Table[] = Array.from({ length: count }).map((_, i) => {
+      const idx = tables.length + i + 1;
+      const col = i % 4;
+      const row = Math.floor(i / 4);
+      return {
+        id: `tbl_${currentWeddingId}_${Date.now()}_${i}`,
+        weddingId: currentWeddingId,
+        name: `${prefix}${idx}`,
+        capacity: cap,
+        shape: seedTableShape,
+        isHead: false,
+        category: seedTableCategory,
+        zone: seedTableZone,
+        x: 20 + col * 20,
+        y: 35 + row * 20,
+      };
+    });
+
+    setState({ ...state, tables: [...(state.tables || []), ...newTables] });
+    setShowSeedTablesModal(false);
+    setIsCheersChatOpen(true);
+    showToast(`Added ${count} new tables (${count * cap} seats) to canvas!`, 'success');
+
+    setCheersMessages((prev) => [
+      ...prev,
+      {
+        id: 'ch_' + Date.now(),
+        sender: 'cheers',
+        text: `Added ${count} new tables (${count * cap} total seats) with ${seedTableShape} geometry to the canvas. Cheers AI is ready to assign guests!`,
+        timestamp: 'Just now',
+      },
+    ]);
+  };
+
   // Export CSV
   const handleDownloadCsv = () => {
     const rows = [['Table Name', 'Shape', 'Capacity', 'Guest Name', 'Household', 'Seat #', 'Dietary', 'RSVP Status']];
@@ -815,15 +1161,15 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
 
         {/* Global Toolbar Actions */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Cheers AI Assistance */}
+          {/* Seed Tables Wizard */}
           <button
             type="button"
-            onClick={() => handleRunCheersAiSeating('households')}
-            className="bg-gradient-to-r from-[#dfc194] via-[#bd9661] to-[#916c3d] text-[#15110e] font-bold px-3.5 py-2 rounded-xl text-xs cursor-pointer shadow-md hover:brightness-110 transition-all flex items-center gap-1.5"
-            title="Get intelligent seating suggestions based on households & VIP preferences"
+            onClick={() => setShowSeedTablesModal(true)}
+            className="bg-white hover:bg-[#faf7f2] text-[#15110e] border border-[#d5c7b5] font-bold px-3 py-2 rounded-xl text-xs cursor-pointer shadow-xs transition-colors flex items-center gap-1.5"
+            title="Seed table numbers, table types & capacity for AI seating organization"
           >
-            <span>✨</span>
-            <span>Cheers AI Assist</span>
+            <span>🌱</span>
+            <span>Seed Tables</span>
           </button>
 
 
@@ -928,18 +1274,18 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                 Table Shape
               </label>
               <div className="flex bg-white border border-[#e8ded0] rounded-xl p-1 shadow-2xs">
-                {(['round', 'rectangular', 'king'] as TableShape[]).map((shp) => (
+                {(['round', 'rectangular'] as TableShape[]).map((shp) => (
                   <button
                     key={shp}
                     type="button"
                     onClick={() => handleUpdateTableDetails(activeTable.id, { shape: shp })}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold capitalize cursor-pointer transition-colors ${
-                      activeTable.shape === shp
+                    className={`px-3.5 py-1.5 rounded-lg text-xs font-bold capitalize cursor-pointer transition-colors ${
+                      (activeTable.shape === shp || (shp === 'rectangular' && activeTable.shape === 'king'))
                         ? 'bg-[#15110e] text-[#dfc194]'
                         : 'text-[#8b7b6b] hover:text-[#15110e]'
                     }`}
                   >
-                    {shp === 'king' ? '👑 King Banquet' : shp}
+                    {shp}
                   </button>
                 ))}
               </div>
@@ -1077,37 +1423,11 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                 </div>
               )}
 
-              {/* RECTANGULAR TABLE VISUALIZATION */}
-              {activeTable.shape === 'rectangular' && (
-                <div className="relative w-full max-w-[480px] p-8 flex flex-col items-center">
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.dataTransfer.dropEffect = 'move';
-                      setDragOverTarget({ type: 'table', tableId: activeTable.id });
-                    }}
-                    onDragLeave={() => setDragOverTarget(null)}
-                    onDrop={(e) => handleDropOnTable(e, activeTable.id)}
-                    className={`w-[320px] h-[120px] rounded-2xl bg-white border-2 shadow-lg flex flex-col items-center justify-center text-center z-10 select-none transition-all cursor-pointer ${
-                      dragOverTarget?.type === 'table' && dragOverTarget?.tableId === activeTable.id
-                        ? 'border-[#bd9661] ring-4 ring-[#bd9661]/40 bg-[#faf5ee] scale-105'
-                        : 'border-[#bd9661]'
-                    }`}
-                    title="Drop any guest here to seat at next vacant place"
-                  >
-                    <span className="font-serif text-lg font-bold text-[#15110e]">{(activeTable.name || '').replace(/\s*\([^)]*\)/g, '').trim()}</span>
-                    <span className="text-sm font-bold font-mono text-[#bd9661] mt-1">
-                      {guestsAtActiveTable.length} / {activeTable.capacity}
-                    </span>
-                    {dragOverTarget?.type === 'table' && dragOverTarget?.tableId === activeTable.id && (
-                      <span className="text-[9px] font-bold text-[#bd9661] mt-1 animate-pulse">
-                        Drop to Seat
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Top Seat row */}
-                  <div className="flex justify-between w-[320px] -mt-16 mb-4 z-20">
+              {/* RECTANGULAR TABLE VISUALIZATION (Rectangular, King & Head Table) */}
+              {(activeTable.shape === 'rectangular' || activeTable.shape === 'king') && (
+                <div className="relative w-full max-w-[500px] p-6 flex flex-col items-center">
+                  {/* Top Seat row - cleanly outside and above table */}
+                  <div className="flex justify-between items-center w-[360px] max-w-full mb-3 z-20">
                     {Array.from({ length: Math.ceil(activeTable.capacity / 2) }).map((_, sIdx) => {
                       const occupant = guestsAtActiveTable.find((g) => g.seatIndex === sIdx);
                       const isOver = dragOverTarget?.type === 'seat' && dragOverTarget?.seatIndex === sIdx;
@@ -1143,8 +1463,35 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                     })}
                   </div>
 
-                  {/* Bottom Seat row */}
-                  <div className="flex justify-between w-[320px] mt-16 z-20">
+                  {/* Center Table Surface */}
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      setDragOverTarget({ type: 'table', tableId: activeTable.id });
+                    }}
+                    onDragLeave={() => setDragOverTarget(null)}
+                    onDrop={(e) => handleDropOnTable(e, activeTable.id)}
+                    className={`w-[360px] max-w-full h-[100px] rounded-2xl bg-white border-2 shadow-lg flex flex-col items-center justify-center text-center z-10 select-none transition-all cursor-pointer ${
+                      dragOverTarget?.type === 'table' && dragOverTarget?.tableId === activeTable.id
+                        ? 'border-[#bd9661] ring-4 ring-[#bd9661]/40 bg-[#faf5ee] scale-105'
+                        : 'border-[#bd9661]'
+                    }`}
+                    title="Drop any guest here to seat at next vacant place"
+                  >
+                    <span className="font-serif text-lg font-bold text-[#15110e]">{(activeTable.name || '').replace(/\s*\([^)]*\)/g, '').trim()}</span>
+                    <span className="text-sm font-bold font-mono text-[#bd9661] mt-1">
+                      {guestsAtActiveTable.length} / {activeTable.capacity}
+                    </span>
+                    {dragOverTarget?.type === 'table' && dragOverTarget?.tableId === activeTable.id && (
+                      <span className="text-[9px] font-bold text-[#bd9661] mt-1 animate-pulse">
+                        Drop to Seat
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Bottom Seat row - cleanly outside and below table */}
+                  <div className="flex justify-between items-center w-[360px] max-w-full mt-3 z-20">
                     {Array.from({ length: Math.floor(activeTable.capacity / 2) }).map((_, idx) => {
                       const sIdx = Math.ceil(activeTable.capacity / 2) + idx;
                       const occupant = guestsAtActiveTable.find((g) => g.seatIndex === sIdx);
@@ -1183,117 +1530,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                 </div>
               )}
 
-              {/* KING / LONG BANQUET TABLE VISUALIZATION (30-40 SEATS) */}
-              {activeTable.shape === 'king' && (
-                <div className="w-full space-y-4">
-                  <div className="bg-[#15110e] text-white p-3 rounded-xl border border-[#bd9661] text-center shadow-md flex items-center justify-between">
-                    <span className="font-serif text-base font-bold text-[#dfc194]">
-                      {(activeTable.name || '').replace(/\s*\([^)]*\)/g, '').trim()}
-                    </span>
-                    <span className="text-sm font-bold font-mono text-[#dfc194]">
-                      {guestsAtActiveTable.length} / {activeTable.capacity}
-                    </span>
-                  </div>
-
-                  <div className="overflow-x-auto p-4 bg-white border border-[#e8ded0] rounded-2xl shadow-inner">
-                    <div className="min-w-[680px] space-y-3">
-                      {/* Top Row Seats */}
-                      <div className="flex justify-between gap-2">
-                        {Array.from({ length: Math.ceil(activeTable.capacity / 2) }).map((_, sIdx) => {
-                          const occupant = guestsAtActiveTable.find((g) => g.seatIndex === sIdx);
-                          const isOver = dragOverTarget?.type === 'seat' && dragOverTarget?.seatIndex === sIdx;
-                          return (
-                            <div
-                              key={sIdx}
-                              draggable={!!occupant}
-                              onDragStart={(e) => {
-                                if (occupant) handleGuestDragStart(e, occupant.id);
-                              }}
-                              onDragEnd={handleGuestDragEnd}
-                              onDragOver={(e) => {
-                                e.preventDefault();
-                                e.dataTransfer.dropEffect = 'move';
-                                setDragOverTarget({ type: 'seat', tableId: activeTable.id, seatIndex: sIdx });
-                              }}
-                              onDragLeave={() => setDragOverTarget(null)}
-                              onDrop={(e) => handleDropOnSeat(e, activeTable.id, sIdx)}
-                              className={`flex-1 min-w-[36px] h-10 rounded-xl flex flex-col items-center justify-center text-[10px] font-bold shadow-xs cursor-pointer transition-all select-none ${
-                                isOver
-                                  ? 'bg-[#bd9661] text-white border-2 border-white scale-125 ring-4 ring-[#bd9661]/50 z-30 shadow-xl'
-                                  : occupant
-                                  ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661] cursor-grab active:cursor-grabbing hover:scale-105'
-                                  : draggedGuestId
-                                  ? 'bg-amber-50 border border-dashed border-[#bd9661] text-[#bd9661] animate-pulse hover:bg-[#faf5ee]'
-                                  : 'bg-[#faf8f5] border border-dashed border-[#bd9661]/50 text-[#8b7b6b] hover:bg-[#faf5ee]'
-                              }`}
-                              title={occupant ? `${occupant.name} (#${sIdx + 1}) - Drag to move or swap` : `Seat #${sIdx + 1} (Empty) - Drop guest here`}
-                            >
-                              <span>{occupant ? occupant.initials || occupant.name.slice(0, 2) : `#${sIdx + 1}`}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Long Wooden Table Board */}
-                      <div
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          e.dataTransfer.dropEffect = 'move';
-                          setDragOverTarget({ type: 'table', tableId: activeTable.id });
-                        }}
-                        onDragLeave={() => setDragOverTarget(null)}
-                        onDrop={(e) => handleDropOnTable(e, activeTable.id)}
-                        className={`h-11 rounded-xl bg-gradient-to-r from-[#291f17] via-[#3d2e24] to-[#291f17] border-2 text-white flex items-center justify-center text-xs font-serif font-bold tracking-widest shadow-md transition-all select-none cursor-pointer ${
-                          dragOverTarget?.type === 'table' && dragOverTarget?.tableId === activeTable.id
-                            ? 'border-white ring-4 ring-[#bd9661]/50 scale-[1.02]'
-                            : 'border-[#bd9661]'
-                        }`}
-                        title="Drop any guest here to seat at next vacant place"
-                      >
-                        ROYAL BANQUET RUNNER &bull; {activeTable.capacity} PLACES
-                      </div>
-
-                      {/* Bottom Row Seats */}
-                      <div className="flex justify-between gap-2">
-                        {Array.from({ length: Math.floor(activeTable.capacity / 2) }).map((_, idx) => {
-                          const sIdx = Math.ceil(activeTable.capacity / 2) + idx;
-                          const occupant = guestsAtActiveTable.find((g) => g.seatIndex === sIdx);
-                          const isOver = dragOverTarget?.type === 'seat' && dragOverTarget?.seatIndex === sIdx;
-                          return (
-                            <div
-                              key={sIdx}
-                              draggable={!!occupant}
-                              onDragStart={(e) => {
-                                if (occupant) handleGuestDragStart(e, occupant.id);
-                              }}
-                              onDragEnd={handleGuestDragEnd}
-                              onDragOver={(e) => {
-                                e.preventDefault();
-                                e.dataTransfer.dropEffect = 'move';
-                                setDragOverTarget({ type: 'seat', tableId: activeTable.id, seatIndex: sIdx });
-                              }}
-                              onDragLeave={() => setDragOverTarget(null)}
-                              onDrop={(e) => handleDropOnSeat(e, activeTable.id, sIdx)}
-                              className={`flex-1 min-w-[36px] h-10 rounded-xl flex flex-col items-center justify-center text-[10px] font-bold shadow-xs cursor-pointer transition-all select-none ${
-                                isOver
-                                  ? 'bg-[#bd9661] text-white border-2 border-white scale-125 ring-4 ring-[#bd9661]/50 z-30 shadow-xl'
-                                  : occupant
-                                  ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661] cursor-grab active:cursor-grabbing hover:scale-105'
-                                  : draggedGuestId
-                                  ? 'bg-amber-50 border border-dashed border-[#bd9661] text-[#bd9661] animate-pulse hover:bg-[#faf5ee]'
-                                  : 'bg-[#faf8f5] border border-dashed border-[#bd9661]/50 text-[#8b7b6b] hover:bg-[#faf5ee]'
-                              }`}
-                              title={occupant ? `${occupant.name} (#${sIdx + 1}) - Drag to move or swap` : `Seat #${sIdx + 1} (Empty) - Drop guest here`}
-                            >
-                              <span>{occupant ? occupant.initials || occupant.name.slice(0, 2) : `#${sIdx + 1}`}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              
             </div>
 
             {/* Table Roster & Seat Assignment List (5 cols) with 2 Tabs */}
@@ -1746,7 +1983,8 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                   const isFull = seatedCount >= tbl.capacity;
                   const isEmpty = seatedCount === 0;
                   const isRound = tbl.shape === 'round';
-                  const isKing = tbl.shape === 'king' || tbl.isHead;
+                  const isKing = tbl.shape === 'king';
+                  const isRect = tbl.shape === 'rectangular';
 
                   // Shape-specific card geometries
                   const shapeGeometryClass = isKing
@@ -1755,7 +1993,9 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                     ? 'w-[98px] h-[98px] sm:w-[106px] sm:h-[106px] rounded-full aspect-square p-2.5'
                     : 'min-w-[130px] sm:min-w-[145px] h-[72px] sm:h-[76px] rounded-lg px-3.5 py-1.5';
 
-                  const shapeThemeClass = isKing
+                  const shapeThemeClass = tbl.isHead
+                    ? 'bg-[#15110e] text-[#dfc194] border-2 border-[#bd9661] ring-2 ring-[#bd9661]/40'
+                    : isKing
                     ? 'bg-gradient-to-r from-[#1c1611] via-[#2b1f16] to-[#1c1611] text-[#dfc194] border-2 border-[#bd9661]'
                     : isFull
                     ? 'bg-[#15110e] text-[#dfc194] border-2 border-[#bd9661]'
@@ -2292,98 +2532,424 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
       )}
 
       {/* ============================================================== */}
-      {/* MODAL: CHEERS AI ASSISTANCE SUGGESTIONS                        */}
+      {/* 🥂 CHEERS AI INTERACTIVE SEATING CHATBOT CONCIERGE             */}
       {/* ============================================================== */}
-      {showCheersAiModal && aiProposal && (
+      {isCheersChatOpen && (
+        <div className="fixed bottom-4 right-4 z-50 w-[420px] max-w-[calc(100vw-2rem)] h-[590px] max-h-[85vh] bg-white rounded-3xl shadow-2xl border-2 border-[#bd9661] flex flex-col overflow-hidden animate-in slide-in-from-bottom-6 duration-200">
+          {/* Caviar & Gold Header */}
+          <div className="bg-[#15110e] text-white p-3.5 px-4 flex items-center justify-between border-b border-[#bd9661]/40 shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#dfc194] to-[#bd9661] text-[#15110e] flex items-center justify-center font-bold text-sm shadow-xs">
+                🥂
+              </div>
+              <div>
+                <h3 className="font-serif text-sm font-bold text-[#dfc194] leading-tight">
+                  Cheers AI
+                </h3>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setIsCheersChatOpen(false)}
+                className="w-7 h-7 rounded-lg text-[#dfc194] hover:text-white hover:bg-white/10 flex items-center justify-center text-lg cursor-pointer transition-colors"
+                title="Close Cheers AI"
+              >
+                &times;
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Action Prompt Chips (Scrollable Bar) */}
+          <div className="bg-[#faf8f5] p-2 border-b border-[#ebdcc9] shrink-0 overflow-x-auto flex items-center gap-1.5 text-[11px] font-semibold no-scrollbar">
+            <button
+              type="button"
+              onClick={() => handleCheersChatAction('households')}
+              className="px-2.5 py-1 rounded-full bg-white hover:bg-[#15110e] hover:text-[#dfc194] text-[#15110e] border border-[#d5c7b5] shrink-0 cursor-pointer transition-colors shadow-2xs"
+            >
+              👨‍👩‍👧‍👦 Households
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCheersChatAction('vips')}
+              className="px-2.5 py-1 rounded-full bg-white hover:bg-[#15110e] hover:text-[#dfc194] text-[#15110e] border border-[#d5c7b5] shrink-0 cursor-pointer transition-colors shadow-2xs"
+            >
+              👑 VIP &amp; Head Table
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCheersChatAction('dietary')}
+              className="px-2.5 py-1 rounded-full bg-white hover:bg-[#15110e] hover:text-[#dfc194] text-[#15110e] border border-[#d5c7b5] shrink-0 cursor-pointer transition-colors shadow-2xs"
+            >
+              🥗 Dietary Cluster
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCheersChatAction('fill')}
+              className="px-2.5 py-1 rounded-full bg-white hover:bg-[#15110e] hover:text-[#dfc194] text-[#15110e] border border-[#d5c7b5] shrink-0 cursor-pointer transition-colors shadow-2xs"
+            >
+              ⚡ Auto-Fill
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCheersChatAction('seed')}
+              className="px-2.5 py-1 rounded-full bg-[#f4ecd8] hover:bg-[#15110e] hover:text-[#dfc194] text-[#6b5847] border border-[#bd9661] shrink-0 cursor-pointer transition-colors shadow-2xs font-bold"
+            >
+              🌱 Seed Tables
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCheersChatAction('audit')}
+              className="px-2.5 py-1 rounded-full bg-white hover:bg-[#15110e] hover:text-[#dfc194] text-[#15110e] border border-[#d5c7b5] shrink-0 cursor-pointer transition-colors shadow-2xs"
+            >
+              📊 Audit Room
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCheersChatAction('reset')}
+              className="px-2.5 py-1 rounded-full bg-white hover:bg-rose-50 hover:text-rose-700 text-[#8b7b6b] border border-[#d5c7b5] shrink-0 cursor-pointer transition-colors shadow-2xs"
+            >
+              🧹 Reset
+            </button>
+          </div>
+
+          {/* Chat Messages Stream */}
+          <div className="flex-1 p-3.5 overflow-y-auto space-y-3 bg-[#fdfbf7]">
+            {cheersMessages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
+              >
+                <div
+                  className={`rounded-2xl px-3.5 py-2.5 text-xs max-w-[92%] leading-relaxed shadow-2xs ${
+                    msg.sender === 'user'
+                      ? 'bg-[#15110e] text-[#dfc194] rounded-tr-none'
+                      : 'bg-white border border-[#ebdcc9] text-[#15110e] rounded-tl-none space-y-2'
+                  }`}
+                >
+                  <div className="whitespace-pre-line">{msg.text}</div>
+
+                  {/* Interactive Proposed Seating Card */}
+                  {msg.proposal && msg.proposal.changes.length > 0 && (
+                    <div className="bg-[#faf5ee] border border-[#ebd3a8] rounded-xl p-2.5 space-y-2 mt-2">
+                      <div className="flex items-center justify-between border-b border-[#ebd3a8] pb-1.5">
+                        <span className="font-bold text-[#15110e] text-[11px]">{msg.proposal.title}</span>
+                        <span className="bg-[#bd9661] text-[#15110e] px-2 py-0.5 rounded-full text-[10px] font-bold">
+                          {msg.proposal.count} Guests
+                        </span>
+                      </div>
+
+                      {/* Allocations Scrollable List */}
+                      <div className="max-h-36 overflow-y-auto space-y-1 pr-1 text-[11px]">
+                        {msg.proposal.changes.map(({ guestId, tableId }, i) => {
+                          const g = state.guests.find((x) => x.id === guestId);
+                          const t = tables.find((x) => x.id === tableId);
+                          return (
+                            <div
+                              key={i}
+                              className="bg-white border border-[#e8ded0] p-1.5 px-2 rounded-lg flex items-center justify-between"
+                            >
+                              <span className="font-semibold text-[#15110e] truncate max-w-[130px]">
+                                {g?.name || 'Guest'}
+                              </span>
+                              <span className="text-[#8b7b6b] text-[10px]">&rarr;</span>
+                              <span className="font-bold text-[#bd9661] truncate max-w-[120px]">
+                                {t?.name || 'Table'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* 1-Click Apply Button */}
+                      {msg.isApplied ? (
+                        <div className="w-full text-center py-1.5 bg-emerald-50 text-emerald-800 rounded-lg font-bold text-[11px] border border-emerald-200">
+                          ✓ Applied to Seating Canvas
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleApplyChatProposal(msg.id, msg.proposal)}
+                          className="w-full py-2 bg-gradient-to-r from-[#dfc194] to-[#bd9661] hover:brightness-105 text-[#15110e] rounded-lg font-bold text-xs shadow-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all"
+                        >
+                          <span>✓</span>
+                          <span>Apply This Seating Plan to Canvas</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <span className="text-[9.5px] text-[#8b7b6b] mt-0.5 px-1 font-mono">
+                  {msg.timestamp}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Chat Input Bar */}
+          <form
+            onSubmit={handleSendCheersMessage}
+            className="p-2.5 bg-white border-t border-[#e8ded0] flex items-center gap-2 shrink-0"
+          >
+            <input
+              type="text"
+              placeholder="Ask Cheers AI (e.g. 'Group families', 'Seat VIPs', 'Audit')..."
+              value={cheersChatInput}
+              onChange={(e) => setCheersChatInput(e.target.value)}
+              className="flex-1 bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] font-medium"
+            />
+            <button
+              type="submit"
+              disabled={!cheersChatInput.trim()}
+              className="bg-[#15110e] hover:bg-[#251b14] disabled:opacity-40 text-[#dfc194] px-3 py-2 rounded-xl text-xs font-bold cursor-pointer transition-colors shrink-0 flex items-center gap-1"
+            >
+              <span>Send</span>
+              <span>&rarr;</span>
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Floating Bottom-Right Launcher (When Chat is Closed) */}
+      {!isCheersChatOpen && (
+        <button
+          type="button"
+          onClick={() => setIsCheersChatOpen(true)}
+          className="fixed bottom-6 right-6 z-40 bg-[#15110e] text-[#dfc194] hover:text-white border-2 border-[#bd9661] hover:border-[#dfc194] px-5 py-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center gap-2.5 cursor-pointer font-serif font-bold text-sm tracking-wide"
+          title="Open interactive Cheers AI"
+        >
+          <span className="text-lg">🥂</span>
+          <span>Cheers AI</span>
+        </button>
+      )}
+
+      {/* ============================================================== */}
+      {/* 🌱 MODAL: TABLE SEEDING & INVENTORY WIZARD                     */}
+      {/* ============================================================== */}
+      {showSeedTablesModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-[#ebd3a8] space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xl">✨</span>
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border-2 border-[#bd9661] space-y-5 max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[#ebdcc9] pb-3 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl">🌱</span>
                 <div>
                   <h3 className="font-serif text-lg font-bold text-[#15110e]">
-                    Cheers AI Seating Recommendation
+                    Table Inventory &amp; Seeding Wizard
                   </h3>
-                  <div className="text-[11px] text-[#bd9661] font-semibold">{aiProposal.title}</div>
+                  <div className="text-[11px] text-[#bd9661] font-semibold">
+                    Configure table numbers, shapes &amp; capacities so Cheers AI can organize your seats
+                  </div>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => setShowCheersAiModal(false)}
-                className="text-gray-400 hover:text-gray-600 text-lg cursor-pointer"
+                onClick={() => setShowSeedTablesModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-xl cursor-pointer"
               >
                 &times;
               </button>
             </div>
 
-            {/* Strategy Selector Tabs */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-[#faf8f5] p-1.5 rounded-2xl border border-[#ebd3a8]">
-              {[
-                { id: 'households', label: 'Households', icon: '🏠' },
-                { id: 'vips', label: 'VIP & Head', icon: '👑' },
-                { id: 'dietary', label: 'Dietary', icon: '🥗' },
-                { id: 'fill', label: 'Auto-Fill', icon: '⚡' },
-              ].map((st) => (
-                <button
-                  key={st.id}
-                  type="button"
-                  onClick={() => handleRunCheersAiSeating(st.id as any)}
-                  className={`px-2 py-1.5 rounded-xl font-bold text-[11px] cursor-pointer transition-all flex items-center justify-center gap-1 ${
-                    activeAiScenario === st.id
-                      ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
-                      : 'text-[#8b7b6b] hover:text-[#15110e] hover:bg-white'
-                  }`}
-                >
-                  <span>{st.icon}</span>
-                  <span>{st.label}</span>
-                </button>
-              ))}
-            </div>
-
-            <p className="text-xs text-[#5a4d41] leading-relaxed">
-              {aiProposal.desc}
-            </p>
-
-            <div className="bg-[#faf5ee] border border-[#ebd3a8] rounded-2xl p-4 space-y-2 text-xs">
-              <div className="font-bold text-[#15110e] flex items-center justify-between">
-                <span>Proposed Allocations</span>
-                <span className="bg-[#bd9661] text-[#15110e] px-2 py-0.5 rounded-full text-[10px] font-bold">
-                  {aiProposal.count} Guests
-                </span>
-              </div>
-              <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
-                {aiProposal.changes.map(({ guestId, tableId }, i) => {
-                  const g = state.guests.find((x) => x.id === guestId);
-                  const t = tables.find((x) => x.id === tableId);
-                  return (
-                    <div key={i} className="bg-white border border-[#e8ded0] p-2 rounded-lg flex items-center justify-between text-[11px]">
-                      <span className="font-semibold text-[#15110e]">{g?.name || 'Guest'}</span>
-                      <span className="text-[#8b7b6b]">&rarr;</span>
-                      <span className="font-bold text-[#bd9661]">{t?.name || 'Table'}</span>
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto space-y-5 pr-1 text-xs">
+              {/* SECTION 1: INSTANT VENUE PRESETS (1-CLICK SEEDING) */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold uppercase text-[10px] text-[#8b7b6b] tracking-wider">
+                    Option 1: 1-Click Ballroom Presets
+                  </span>
+                  <span className="text-[10px] text-[#bd9661] font-semibold">Instant Floor Setup</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {[
+                    {
+                      key: 'ballroom_80',
+                      title: 'Classic Round Ballroom',
+                      desc: '8 Round Tables × 10 Seats each',
+                      cap: 80,
+                      shape: '8 Round Tables',
+                    },
+                    {
+                      key: 'intimate_80',
+                      title: 'Intimate Round Layout',
+                      desc: '10 Round Tables × 8 Seats each',
+                      cap: 80,
+                      shape: '10 Round Tables',
+                    },
+                    {
+                      key: 'banquet_68',
+                      title: 'Head Table & Banquets',
+                      desc: '1 Royal Head (8) + 6 Rectangular (10)',
+                      cap: 68,
+                      shape: '1 King + 6 Rectangular',
+                    },
+                    {
+                      key: 'king_64',
+                      title: 'Grand Royal Banquets',
+                      desc: '4 Long King Banquet Tables × 16 Seats',
+                      cap: 64,
+                      shape: '4 Royal King Tables',
+                    },
+                  ].map((preset) => (
+                    <div
+                      key={preset.key}
+                      className="bg-[#faf8f5] hover:bg-[#faf5ee] border border-[#e8ded0] hover:border-[#bd9661] rounded-2xl p-3.5 space-y-2 transition-all flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-[#15110e] text-xs font-serif">{preset.title}</span>
+                          <span className="bg-[#bd9661] text-[#15110e] px-2 py-0.5 rounded-full text-[10px] font-bold">
+                            {preset.cap} Seats
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#6b5847] mt-0.5">{preset.desc}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleSeedPreset(preset.key as any)}
+                        className="w-full py-2 bg-[#15110e] hover:bg-[#251b14] text-[#dfc194] rounded-xl font-bold text-xs cursor-pointer shadow-xs transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <span>🚀</span>
+                        <span>Seed This Preset</span>
+                      </button>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div className="text-[10px] text-[#8b7b6b] italic">
-              AI recommendations are suggestions only. You can modify or override any table or seat assignment afterwards.
-            </div>
+              {/* SECTION 2: CUSTOM BATCH TABLE GENERATOR */}
+              <div className="bg-[#faf8f5] border border-[#ebdcc9] rounded-2xl p-4 space-y-3">
+                <span className="font-bold uppercase text-[10px] text-[#8b7b6b] tracking-wider block">
+                  Option 2: Custom Batch Table Generator
+                </span>
 
-            <div className="flex gap-2.5 pt-2">
+                <form onSubmit={handleCustomBatchSeed} className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block font-bold text-[#8b7b6b] uppercase text-[10px] mb-1">
+                        Table Name Prefix
+                      </label>
+                      <input
+                        type="text"
+                        value={seedTablePrefix}
+                        onChange={(e) => setSeedTablePrefix(e.target.value)}
+                        placeholder="e.g. Table, Estate "
+                        className="w-full bg-white border border-[#e8ded0] rounded-xl p-2 outline-none text-xs font-semibold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-[#8b7b6b] uppercase text-[10px] mb-1">
+                        How Many Tables?
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={seedTableCount}
+                        onChange={(e) => setSeedTableCount(Number(e.target.value))}
+                        className="w-full bg-white border border-[#e8ded0] rounded-xl p-2 outline-none text-xs font-semibold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-[#8b7b6b] uppercase text-[10px] mb-1">
+                        Seats per Table
+                      </label>
+                      <input
+                        type="number"
+                        min="2"
+                        max="30"
+                        value={seedTableCapacity}
+                        onChange={(e) => setSeedTableCapacity(Number(e.target.value))}
+                        className="w-full bg-white border border-[#e8ded0] rounded-xl p-2 outline-none text-xs font-semibold"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block font-bold text-[#8b7b6b] uppercase text-[10px] mb-1">
+                        Table Shape
+                      </label>
+                      <select
+                        value={seedTableShape}
+                        onChange={(e) => setSeedTableShape(e.target.value as TableShape)}
+                        className="w-full bg-white border border-[#e8ded0] rounded-xl p-2 outline-none text-xs font-semibold"
+                      >
+                        <option value="round">Round Banquet (Circular)</option>
+                        <option value="rectangular">Rectangular (Double-Sided)</option>
+                        <option value="king">Long King Banquet (Royal)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-[#8b7b6b] uppercase text-[10px] mb-1">
+                        Category
+                      </label>
+                      <select
+                        value={seedTableCategory}
+                        onChange={(e) => setSeedTableCategory(e.target.value)}
+                        className="w-full bg-white border border-[#e8ded0] rounded-xl p-2 outline-none text-xs font-semibold"
+                      >
+                        <option value="Family">Family</option>
+                        <option value="Friends">Friends</option>
+                        <option value="Bridal Party">Bridal Party</option>
+                        <option value="VIP">VIP</option>
+                        <option value="Colleagues">Colleagues</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-[#8b7b6b] uppercase text-[10px] mb-1">
+                        Placement Zone
+                      </label>
+                      <select
+                        value={seedTableZone}
+                        onChange={(e) => setSeedTableZone(e.target.value)}
+                        className="w-full bg-white border border-[#e8ded0] rounded-xl p-2 outline-none text-xs font-semibold"
+                      >
+                        <option value="Main Ballroom">Main Ballroom</option>
+                        <option value="Left Terrace">Left Terrace</option>
+                        <option value="Right Garden">Right Garden</option>
+                        <option value="Stage & VIP Wing">Stage &amp; VIP Wing</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 bg-gradient-to-r from-[#dfc194] to-[#bd9661] text-[#15110e] rounded-xl font-bold text-xs cursor-pointer shadow-sm hover:brightness-105 transition-all flex items-center justify-center gap-2"
+                  >
+                    <span>+</span>
+                    <span>Generate &amp; Add {seedTableCount} Tables ({seedTableCount * seedTableCapacity} Seats) to Floor Plan</span>
+                  </button>
+                </form>
+              </div>
+
+              </div>
+
+            {/* Footer Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#ebdcc9] shrink-0">
               <button
                 type="button"
-                onClick={() => setShowCheersAiModal(false)}
-                className="flex-1 bg-[#faf8f5] hover:bg-[#f0ede4] text-[#15110e] font-bold py-2.5 rounded-xl cursor-pointer"
+                onClick={() => setShowSeedTablesModal(false)}
+                className="px-4 py-2 bg-[#faf8f5] hover:bg-[#f0ede4] text-[#15110e] font-bold rounded-xl text-xs cursor-pointer transition-colors"
               >
-                Dismiss
+                Close
               </button>
               <button
                 type="button"
-                onClick={handleApplyAiProposal}
-                className="flex-1 bg-gradient-to-r from-[#dfc194] to-[#bd9661] text-[#15110e] font-bold py-2.5 rounded-xl cursor-pointer shadow-md hover:brightness-110"
+                onClick={() => {
+                  setShowSeedTablesModal(false);
+                  setIsCheersChatOpen(true);
+                  handleCheersChatAction('households');
+                }}
+                className="px-5 py-2.5 bg-[#15110e] hover:bg-[#251b14] text-[#dfc194] font-bold rounded-xl text-xs cursor-pointer shadow-md transition-colors flex items-center gap-2"
               >
-                Apply Recommendations
+                <span>🥂</span>
+                <span>Open Cheers AI to Organize Seats</span>
               </button>
             </div>
           </div>

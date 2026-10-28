@@ -10,6 +10,7 @@ import SuperAdminView from './components/SuperAdminView';
 import GuestWebView from './components/GuestWebView';
 import LoginView from './components/LoginView';
 import RegisterView from './components/RegisterView';
+import PlannerView from './components/PlannerView';
 
 interface ToastItem {
   id: string;
@@ -98,6 +99,7 @@ export default function App() {
       'mc-mobile',
       'sr-mobile',
       'couple',
+      'planner',
       'mc',
       'superadmin',
       'guest-web',
@@ -167,6 +169,8 @@ export default function App() {
         return <GuestMobileView />;
       case 'couple':
         return <CoupleView onSelectView={handleSelectView} />;
+      case 'planner':
+        return <PlannerView onSelectView={handleSelectView} />;
       case 'mc':
         return <McView onSelectView={handleSelectView} />;
       case 'mc-mobile':

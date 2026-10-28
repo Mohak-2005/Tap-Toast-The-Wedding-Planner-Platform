@@ -49,12 +49,9 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
       tagline: 'Ideal for solo hosts coordinating a private nominated celebration',
       isListed: false,
       features: [
-        '1 Active Wedding coordination at a time',
-        'Interactive live run sheets & timing cues',
-        'Direct runsheet sync with nominated couple',
-        'Private speech timers & prompter access',
-        '⚠️ Unlisted — Does NOT appear in Public MC Directory',
-        'Standard email & community support',
+        '<to be decided>',
+        '<to be decided>',
+        '<to be decided>',
       ],
     },
     {
@@ -67,13 +64,9 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
       tagline: 'Get booked by couples with public directory certification & Joey AI referrals',
       isListed: true,
       features: [
-        '★ Public Certified Directory Listing (Couples can find & book you)',
-        'Up to 5 Active Weddings simultaneously',
-        'Joey AI Matchmaker recommendations to newly registered couples',
-        '5.0 Star verified client review badge & public profile showcase',
-        'Stripe Connect automated client payout split (97.5% net)',
-        'Catering & venue dietary export summaries',
-        'Live run sheet collaboration with wedding coordinators',
+        '<to be decided>',
+        '<to be decided>',
+        '<to be decided>',
       ],
     },
     {
@@ -86,12 +79,9 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
       tagline: 'Top-tier directory placement for luxury MC firms & multi-coordinator agencies',
       isListed: true,
       features: [
-        '★ Priority Top Featured Placement at top of Certified MC Directory',
-        'Unlimited Active Weddings simultaneously',
-        'Multiple Coordinator sub-logins with granular permissions',
-        'Automated Xero accounting sync for all client invoices',
-        'Custom white-label branding on runsheets & client QA packs',
-        'Dedicated VIP Account Concierge & 24/7 phone support',
+        '<to be decided>',
+        '<to be decided>',
+        '<to be decided>',
       ],
     },
   ];
@@ -143,7 +133,9 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
 
   // MC Selection Dropdown state & Preferred MC mode
   const [mcChoiceMode, setMcChoiceMode] = useState<'certified' | 'own'>('certified');
-  const [selectedMcId, setSelectedMcId] = useState<string>('mc_robert');
+  const [selectedMcIds, setSelectedMcIds] = useState<string[]>([]);
+  const selectedMcId = selectedMcIds[0] || '';
+  const setSelectedMcId = (id: string) => setSelectedMcIds(id ? [id] : []);
   const [isMcDropdownOpen, setIsMcDropdownOpen] = useState(false);
   const [showMcInfoModal, setShowMcInfoModal] = useState(false);
   const [customMcEmail, setCustomMcEmail] = useState('');
@@ -232,11 +224,9 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
       monthlyPrice: 29,
       tagline: 'Ideal for intimate weddings & effortless digital RSVPs',
       features: [
-        'Up to 100 Invited Guests',
-        'QaRd NFC / QR Digital Invitations',
-        'Real-time RSVP tracking & dietary collection',
-        'Basic AI Seating Assistant',
-        'Gift & Go Wishing Well',
+        '<to be decided>',
+        '<to be decided>',
+        '<to be decided>',
       ],
     },
     {
@@ -247,13 +237,9 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
       badge: 'MOST POPULAR',
       tagline: 'Complete wedding intelligence with MC sync & Joey AI',
       features: [
-        'Up to 250 Invited Guests',
-        'Dedicated MC & Coordinator Portal Integration',
-        'Live Run Sheet Cues & Audio Timing Sync',
-        'Joey AI Concierge (Adults vs Kids breakdown, auto-seat)',
-        'Gift & Go Wishing Well (0% transaction fee)',
-        'Floor Plan Drag & Drop Table Builder',
-        'Live Speech Prompter for MC',
+        '<to be decided>',
+        '<to be decided>',
+        '<to be decided>',
       ],
     },
     {
@@ -263,12 +249,9 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
       monthlyPrice: 89,
       tagline: 'White-glove concierge for grand luxury celebrations',
       features: [
-        'Unlimited Invited Guests',
-        'Dedicated Tap & Toast White Glove Concierge',
-        '3D Realistic Venue Floor Plan Preview',
-        'Multi-Day Itinerary (Rehearsal + Reception + Brunch)',
-        'Full Change Audit Trail & Live Video Sync',
-        'Priority 24/7 Telephone & In-App Support',
+        '<to be decided>',
+        '<to be decided>',
+        '<to be decided>',
       ],
     },
   ];
@@ -485,12 +468,17 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
     });
   }, [weddingDate]);
 
-  // Keep selectedMcId synced with availableMcs
+  const selectedMcs = useMemo(() => {
+    return availableMcs.filter((m) => selectedMcIds.includes(m.id));
+  }, [availableMcs, selectedMcIds]);
+  const selectedMc = selectedMcs[0] || availableMcs[0] || MC_DIRECTORY[0];
+
+  // Keep selectedMcIds valid
   useEffect(() => {
-    if (availableMcs.length > 0 && !availableMcs.some((m) => m.id === selectedMcId)) {
-      setSelectedMcId(availableMcs[0].id);
+    if (availableMcs.length > 0) {
+      setSelectedMcIds(prev => prev.filter(id => availableMcs.some(m => m.id === id)));
     }
-  }, [availableMcs, selectedMcId]);
+  }, [availableMcs]);
 
   // Step 3: Handle MC Concierge Chatbot Messages (Strictly MC Knowledge & Availability Aware)
   const handleSendChatMessage = (textToSend?: string) => {
@@ -645,7 +633,8 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
 
       const daysCalc = Math.max(1, Math.ceil((new Date(weddingDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
       const chosenPlan = COUPLE_PLANS.find(p => p.id === selectedPlanId) || COUPLE_PLANS[1];
-      const chosenMc = availableMcs.find(m => m.id === selectedMcId) || availableMcs[0] || MC_DIRECTORY[0];
+      const chosenMcs = availableMcs.filter(m => selectedMcIds.includes(m.id));
+      const chosenMc = chosenMcs[0] || availableMcs[0] || MC_DIRECTORY[0];
 
       const newWedding = {
         id: newWeddingId,
@@ -673,7 +662,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
           status: 'Active',
           activatedAt: new Date().toISOString(),
         },
-        selectedMc: mcChoiceMode === 'own' ? {
+        selectedMc: chosenMcs.length === 0 ? null : mcChoiceMode === 'own' ? {
           id: 'mc_preferred_own',
           name: ownMcName.trim() || 'Preferred Wedding MC',
           email: ownMcEmail.trim(),
@@ -756,7 +745,6 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
   };
 
   const activePlan = COUPLE_PLANS.find(p => p.id === selectedPlanId) || COUPLE_PLANS[1];
-  const selectedMc = availableMcs.find(m => m.id === selectedMcId) || availableMcs[0] || MC_DIRECTORY[0];
   const basePrice = billingCycle === 'onetime' ? activePlan.price : activePlan.monthlyPrice;
   const discountAmount = Math.round((basePrice * discountPercent) / 100);
   const finalPrice = Math.max(0, basePrice - discountAmount);
@@ -2268,7 +2256,11 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-[#15110e] border border-[#bd9661] flex items-center justify-center text-[#dfc194] font-serif font-bold text-xs shrink-0 overflow-hidden">
-                            {selectedMc.image ? (
+                            {selectedMcIds.length === 0 ? (
+                              <span>🥂</span>
+                            ) : selectedMcIds.length > 1 ? (
+                              <span>👥</span>
+                            ) : selectedMc.image ? (
                               <img src={selectedMc.image} alt={selectedMc.name} className="w-full h-full object-cover" />
                             ) : (
                               selectedMc.name.split(' ').map(n => n[0]).join('')
@@ -2276,12 +2268,24 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                           </div>
                           <div>
                             <div className="font-serif font-bold text-sm text-[#15110e]">
-                              {selectedMc.name}
+                              {selectedMcIds.length === 0
+                                ? 'No MC Selected (Optional)'
+                                : selectedMcIds.length > 1
+                                ? `${selectedMcIds.length} MCs Selected`
+                                : selectedMc.name}
                             </div>
                             <div className="text-[11.5px] text-[#7d654c] mt-0.5 flex items-center gap-1.5 font-medium">
-                              <span>{selectedMc.business}</span>
-                              <span className="text-[#c5b5a2]">&bull;</span>
-                              <span className="text-[#bd9661] font-bold">⭐ {selectedMc.rating}</span>
+                              {selectedMcIds.length === 0 ? (
+                                <span>Click to choose or proceed without an MC</span>
+                              ) : selectedMcIds.length > 1 ? (
+                                <span>{selectedMcs.map(m => m.name).join(', ')}</span>
+                              ) : (
+                                <>
+                                  <span>{selectedMc.business}</span>
+                                  <span className="text-[#c5b5a2]">&bull;</span>
+                                  <span className="text-[#bd9661] font-bold">⭐ {selectedMc.rating}</span>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -2330,48 +2334,53 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                       {/* Dropdown Menu List */}
                       {isMcDropdownOpen && (
                         <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#e8ded0] rounded-xl shadow-xl z-30 max-h-[300px] overflow-y-auto divide-y divide-[#f5f1eb]">
-                          {availableMcs.map((mc) => (
-                            <div
-                              key={mc.id}
-                              onClick={() => {
-                                setSelectedMcId(mc.id);
-                                setIsMcDropdownOpen(false);
-                                showToast(`Selected MC: ${mc.name}`, 'info');
-                              }}
-                              className={`p-3.5 hover:bg-[#faf7f2] transition-colors cursor-pointer flex items-center justify-between gap-3 ${
-                                selectedMcId === mc.id ? 'bg-[#fdfbf7]' : ''
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-full bg-[#15110e] border border-[#bd9661] flex items-center justify-center text-[#dfc194] font-serif font-bold text-xs shrink-0 overflow-hidden">
-                                  {mc.image ? (
-                                    <img src={mc.image} alt={mc.name} className="w-full h-full object-cover" />
-                                  ) : (
-                                    mc.name.split(' ').map(n => n[0]).join('')
-                                  )}
-                                </div>
-                                <div>
-                                  <div className="font-serif font-bold text-xs text-[#15110e]">
-                                    {mc.name}
+                          {availableMcs.map((mc) => {
+                            const isSelected = selectedMcIds.includes(mc.id);
+                            return (
+                              <div
+                                key={mc.id}
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setSelectedMcIds(selectedMcIds.filter(id => id !== mc.id));
+                                  } else {
+                                    setSelectedMcIds([...selectedMcIds, mc.id]);
+                                  }
+                                }}
+                                className={`p-3.5 hover:bg-[#faf7f2] transition-colors cursor-pointer flex items-center justify-between gap-3 ${
+                                  isSelected ? 'bg-[#fdfbf7]' : ''
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 rounded-full bg-[#15110e] border border-[#bd9661] flex items-center justify-center text-[#dfc194] font-serif font-bold text-xs shrink-0 overflow-hidden">
+                                    {mc.image ? (
+                                      <img src={mc.image} alt={mc.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                      mc.name.split(' ').map(n => n[0]).join('')
+                                    )}
                                   </div>
-                                  <div className="text-[11px] text-[#7d654c] mt-0.5 flex items-center gap-1.5 font-medium">
-                                    <span>{mc.business}</span>
-                                    <span className="text-[#c5b5a2]">&bull;</span>
-                                    <span className="text-[#bd9661] font-bold">⭐ {mc.rating}</span>
+                                  <div>
+                                    <div className="font-serif font-bold text-xs text-[#15110e]">
+                                      {mc.name}
+                                    </div>
+                                    <div className="text-[11px] text-[#7d654c] mt-0.5 flex items-center gap-1.5 font-medium">
+                                      <span>{mc.business}</span>
+                                      <span className="text-[#c5b5a2]">&bull;</span>
+                                      <span className="text-[#bd9661] font-bold">⭐ {mc.rating}</span>
+                                    </div>
                                   </div>
                                 </div>
+                                {isSelected ? (
+                                  <span className="text-emerald-700 font-bold text-xs shrink-0 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                    ✓ Selected
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-[#bd9661] hover:underline font-semibold shrink-0">
+                                    Select →
+                                  </span>
+                                )}
                               </div>
-                              {selectedMcId === mc.id ? (
-                                <span className="text-emerald-700 font-bold text-xs shrink-0 flex items-center gap-1">
-                                  ✓ Selected
-                                </span>
-                              ) : (
-                                <span className="text-xs text-[#bd9661] hover:underline font-semibold shrink-0">
-                                  Select →
-                                </span>
-                              )}
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -2388,9 +2397,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                           <h4 className="font-serif text-xs font-bold text-[#15110e]">
                             Need help deciding? Ask Joey AI Concierge
                           </h4>
-                          <span className="text-[9.5px] font-bold uppercase tracking-wider text-[#9e763a] bg-[#ebdcc9]/70 px-1.5 py-0.5 rounded border border-[#dfcca8]">
-                            AI Matchmaker
-                          </span>
+                          
                         </div>
                         <p className="text-[11px] text-[#786450] mt-0.5">
                           Chat live to compare host experience, 5-star reviews, and rates
@@ -2502,7 +2509,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                       ? 'Launching Dashboard...'
                       : mcChoiceMode === 'own'
                       ? 'Confirm Preferred MC & Launch Dashboard'
-                      : 'Confirm MC & Launch Dashboard'}
+                      : selectedMcIds.length > 1 ? `Confirm ${selectedMcIds.length} MCs & Launch Dashboard` : selectedMcIds.length === 0 ? 'Launch Dashboard' : 'Confirm MC & Launch Dashboard'}
                   </span>
                   <span>→</span>
                 </button>
@@ -2639,7 +2646,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                     <img src="/chatbot-avatar.png" alt="Joey AI" className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <h4 className="font-serif text-xs font-bold text-[#dfc194]">Joey AI · MC Matchmaker Concierge</h4>
+                    <h4 className="font-serif text-xs font-bold text-[#dfc194]">Joey AI · MC Concierge</h4>
                     <p className="text-[10px] text-[#a8988a]">Ask about MC experience, 5.0 reviews, rates &amp; styles</p>
                   </div>
                 </div>

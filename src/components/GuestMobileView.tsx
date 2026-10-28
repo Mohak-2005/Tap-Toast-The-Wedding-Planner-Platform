@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAppState, showToast } from '../lib/state';
+import { useAppState, showToast, getWeddingCountdown } from '../lib/state';
 
 export default function GuestMobileView() {
   const { state, setState } = useAppState();
@@ -14,30 +14,35 @@ export default function GuestMobileView() {
   const [songInput, setSongInput] = useState<string>('September — Earth, Wind & Fire');
 
   // Feed State
-  const [feedPhase, setFeedPhase] = useState<'pre' | 'married'>('pre');
+  const activeWedding = state.weddings?.[0];
+  const countdown = getWeddingCountdown(activeWedding?.date || '2026-11-14T14:00:00');
+  const isPastWedding = countdown.days <= 0 && countdown.hours <= 0 && countdown.minutes <= 0;
+  const autoPhase: 'pre' | 'married' = isPastWedding ? 'married' : 'pre';
+  const [feedPhoto, setFeedPhoto] = useState<string | null>(null);
+  const feedFileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [feedNoteType, setFeedNoteType] = useState<'love' | 'thankyou'>('love');
   const [feedText, setFeedText] = useState<string>('');
-  const [feedPosts, setFeedPosts] = useState([
+  const [feedPosts, setFeedPosts] = useState<Array<{
+    id: string;
+    type: string;
+    title: string;
+    time: string;
+    badge?: string;
+    quote: string;
+    photo?: string;
+    likes: number;
+    comments: number;
+    userLiked: boolean;
+  }>>([
     {
-      id: 'f1',
-      type: 'thankyou',
-      title: 'Thank You, The Whitfield family!',
-      time: 'Just now',
-      badge: 'Digital Thank-You Card sent for $250 wishing well gift',
-      quote: 'Dear The Whitfield family, thank you so much for your wonderful and generous gift of $250! It means the world to have your love and support as we begin our new chapter together. Love, Sophie & James.',
-      likes: 3,
-      comments: 0,
-      userLiked: false,
-    },
-    {
-      id: 'f2',
-      type: 'milestone',
-      title: '50 guests confirmed',
-      time: 'Just now',
-      badge: "You've hit the halfway mark on RSVPs",
+      id: 'f_welcome',
+      type: 'note',
+      title: 'Sophie & James shared a welcome',
+      time: 'Today, 10:00 AM',
+      quote: 'Welcome to our celebration portal! We are so overjoyed to have you all celebrating with us at Fernwood Estate.',
       likes: 24,
-      comments: 0,
-      userLiked: false,
+      comments: 2,
+      userLiked: true,
     },
     {
       id: 'f3',
@@ -140,21 +145,37 @@ export default function GuestMobileView() {
     setCustomGiftAmount('');
   };
 
+  // Handle Feed Photo Attachment
+  const handleAttachFeedPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setFeedPhoto(reader.result as string);
+        showToast('Photo attached to note', 'success');
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
+
   // Handle Post Feed Note
   const handlePostNote = () => {
-    if (!feedText.trim()) return;
+    if (!feedText.trim() && !feedPhoto) return;
     const newPost = {
       id: 'f_' + Date.now(),
       type: 'note',
       title: 'Priya Sharma left a note',
       time: 'Just now',
       quote: feedText,
+      photo: feedPhoto || undefined,
       likes: 1,
       comments: 0,
       userLiked: true,
     };
     setFeedPosts([newPost, ...feedPosts]);
     setFeedText('');
+    setFeedPhoto(null);
     showToast('Love note posted to celebration feed!', 'success');
   };
 
@@ -625,18 +646,10 @@ export default function GuestMobileView() {
                   Sophie <span className="text-[#bd9661] italic font-normal">&amp;</span> James
                 </h2>
                 <div className="inline-block bg-[#231c17] border border-[#3d2e24] text-[#dfc194] text-[11px] font-bold px-3 py-1 rounded-full">
-                  29 days : 20 hrs : 34 mins : 12 secs remaining
+                  {countdown.days > 0 ? `${countdown.days} days : ${countdown.hours} hrs : ${countdown.minutes} mins : ${countdown.seconds} secs remaining` : 'Celebration Day & Married'}
                 </div>
               </div>
 
-              {/* Halfway Milestone Banner */}
-              <div className="bg-[#15110e] text-white p-3.5 rounded-xl border-l-4 border-l-[#bd9661] flex items-center gap-3">
-                <span className="text-xl text-[#bd9661]">⭐</span>
-                <div>
-                  <div className="text-xs font-bold text-white">50 guests confirmed</div>
-                  <div className="text-[11px] text-[#c9bbae]">You've hit the halfway mark on RSVPs</div>
-                </div>
-              </div>
 
               {/* Post a Love Note Card */}
               <div className="bg-white border border-[#e8ded0] rounded-xl p-3.5 shadow-sm space-y-3">
@@ -697,44 +710,47 @@ export default function GuestMobileView() {
                   className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs resize-none"
                 />
 
-                <div className="flex justify-end">
+                {/* Attached Photo Thumbnail Preview */}
+                {feedPhoto && (
+                  <div className="relative inline-block mt-2">
+                    <img
+                      src={feedPhoto}
+                      alt="Attachment preview"
+                      className="w-16 h-16 object-cover rounded-xl border-2 border-[#bd9661] shadow-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFeedPhoto(null)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#15110e] text-[#dfc194] flex items-center justify-center text-[10px] font-bold cursor-pointer shadow-xs"
+                      title="Remove attached photo"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <input
+                    type="file"
+                    ref={feedFileInputRef}
+                    accept="image/*"
+                    onChange={handleAttachFeedPhoto}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => feedFileInputRef.current?.click()}
+                    className="w-9 h-9 rounded-lg bg-[#faf8f5] hover:bg-[#f0ede4] text-[#15110e] border border-[#ebd3a8] cursor-pointer shadow-2xs transition-colors flex items-center justify-center text-sm"
+                    title="Attach photo"
+                  >
+                    🔗
+                  </button>
                   <button
                     type="button"
                     onClick={handlePostNote}
                     className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-4 py-2 rounded-lg text-xs shadow-xs cursor-pointer transition-all"
                   >
                     Post Note
-                  </button>
-                </div>
-              </div>
-
-              {/* Celebration Phase Toggle */}
-              <div className="flex items-center justify-between text-xs pt-1">
-                <span className="text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b]">
-                  Celebration Phase:
-                </span>
-                <div className="flex bg-[#faf8f5] border border-[#ebd3a8] rounded-full p-0.5">
-                  <button
-                    type="button"
-                    onClick={() => setFeedPhase('pre')}
-                    className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
-                      feedPhase === 'pre'
-                        ? 'bg-[#bd9661] text-[#15110e]'
-                        : 'text-[#8b7b6b]'
-                    }`}
-                  >
-                    ⏳ Pre-Wedding
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFeedPhase('married')}
-                    className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
-                      feedPhase === 'married'
-                        ? 'bg-[#bd9661] text-[#15110e]'
-                        : 'text-[#8b7b6b]'
-                    }`}
-                  >
-                    💍 Married &amp; Honeymoon
                   </button>
                 </div>
               </div>
@@ -764,6 +780,12 @@ export default function GuestMobileView() {
                     {post.quote && (
                       <div className="text-xs text-[#6b5849] italic bg-[#faf8f5] p-2.5 rounded-lg border-l-2 border-[#bd9661] leading-relaxed">
                         "{post.quote}"
+                      </div>
+                    )}
+
+                    {post.photo && (
+                      <div className="rounded-xl overflow-hidden border border-[#e8ded0] mt-1.5">
+                        <img src={post.photo} alt="Post attachment" className="w-full max-h-48 object-cover" />
                       </div>
                     )}
 

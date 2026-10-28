@@ -64,7 +64,22 @@ export interface Wedding {
     status?: string;
     avatar?: string;
     style?: string;
-  };
+    isPreferredOwn?: boolean;
+  } | null;
+  selectedMcs?: Array<{
+    id: string;
+    name: string;
+    businessName?: string;
+    business?: string;
+    email?: string;
+    phone?: string;
+    rate?: number;
+    rating?: string;
+    status?: string;
+    avatar?: string;
+    style?: string;
+    isPreferredOwn?: boolean;
+  }>;
   subscriptionPlan?: {
     id: string;
     name: string;
@@ -187,7 +202,7 @@ export interface AuditLogEntry {
 export interface User {
   id: string;
   email: string;
-  role: 'mc' | 'couple' | 'superadmin';
+  role: 'mc' | 'couple' | 'superadmin' | 'planner';
   name: string;
   passwordHash?: string;
   businessName?: string;
@@ -198,7 +213,7 @@ export interface User {
 }
 
 export interface Session {
-  role: 'mc' | 'couple' | 'superadmin';
+  role: 'mc' | 'couple' | 'superadmin' | 'planner';
   email: string;
   name: string;
   businessName?: string;

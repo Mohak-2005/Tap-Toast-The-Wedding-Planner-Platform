@@ -33,7 +33,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
   const [showXeroModal, setShowXeroModal] = useState<boolean>(false);
   const [selectedTxnDetail, setSelectedTxnDetail] = useState<McTransaction | null>(null);
   const [lastXeroSyncTime, setLastXeroSyncTime] = useState<string>('Today at 10:45 AM');
-  const [billingSectionFocus, setBillingSectionFocus] = useState<'all' | 'couple_subs' | 'mc_subs' | 'transactions' | 'plans'>('couple_subs');
+  const [billingSectionFocus, setBillingSectionFocus] = useState<'all' | 'couple_subs' | 'mc_subs' | 'plans'>('couple_subs');
 
   // Filtered MC Transactions
   const filteredMcTransactions = mcTransactions.filter((txn) => {
@@ -53,18 +53,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
   });
 
   // Handler to filter transactions by MC and scroll to table
-  const handleViewTransactionsForMc = (tenantId: string) => {
-    setSelectedMcFilter(tenantId);
-    setBillingSectionFocus('transactions');
-    const tenant = tenants.find((t) => t.id === tenantId);
-    showToast(`Filtered transactions for ${tenant?.contactName || 'MC'}`, 'info');
-    setTimeout(() => {
-      const el = document.getElementById('mc_transactions_ledger_section');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 50);
-  };
+  
 
   // Live fetch latest transactions from MCs and invoices
   const handleFetchMcTransactions = () => {
@@ -548,7 +537,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
               },
               {
                 id: 'tenants',
-                label: 'MC Tenants',
+                label: 'Platform Tenants',
                 icon: (
                   <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
@@ -654,7 +643,8 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-6 md:p-9 overflow-y-auto max-w-[1400px]">
+      <main className="flex-1 p-6 md:p-9 overflow-y-auto w-full min-w-0">
+        <div className="max-w-[1400px] w-full mx-auto space-y-7">
         {/* ================================================================ */}
         {/* TAB 1: PLATFORM OPERATIONS (Matches Screenshot 7 & superadmin.html) */}
         {/* ================================================================ */}
@@ -675,8 +665,8 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
             {/* 4 Metric Cards matching Screenshot 7 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-[6px] p-5 shadow-sm">
-                <div className="text-3xl font-serif font-bold text-[#15110e]">{activeTenantsCount}</div>
-                <div className="text-xs text-[#8b7b6b] font-medium mt-0.5">Active MC Tenants</div>
+                <div className="text-3xl font-serif font-bold text-[#15110e]">{(state.weddings || []).length}</div>
+                <div className="text-xs text-[#8b7b6b] font-medium mt-0.5">Active Couple Tenants</div>
               </div>
 
               <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-[6px] p-5 shadow-sm">
@@ -752,24 +742,24 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
               </div>
             </div>
 
-            {/* Quick Tenant Table */}
+                        {/* Quick Couple Directory Table */}
             <div className="bg-white border border-[#e8ded0] rounded-[6px] p-6 shadow-sm space-y-4">
               <div className="flex justify-between items-center flex-wrap gap-3">
                 <div>
                   <h3 className="font-serif text-lg font-bold text-[#15110e]">
-                    MC Tenant Directory
+                    Couple Directory
                   </h3>
                   <div className="text-xs text-[#8b7b6b]">
-                    Manage active multi-tenant instances
+                    Manage active couple wedding suites &amp; subscriptions
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setShowInviteModal(true)}
+                    onClick={() => setShowInviteCoupleModal(true)}
                     className="btn btn-gold btn-sm"
                   >
-                    + Invite MC
+                    + Invite Couple
                   </button>
                 </div>
               </div>
@@ -778,63 +768,76 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>MC Business &amp; Contact</th>
-                      <th>Plan Tier</th>
-                      <th>Active Weddings</th>
-                      <th>MRR</th>
+                      <th>Couple &amp; Celebration</th>
+                      <th>Wedding Date &amp; Venue</th>
+                      <th>SaaS Pass Tier</th>
+                      <th>Assigned MC / Host</th>
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {tenants.map(t => (
-                      <tr key={t.id}>
-                        <td>
-                          <strong className="text-sm font-semibold text-[#15110e] block">{t.businessName}</strong>
-                          <span className="text-[11px] text-[#8b7b6b]">{t.contactName} &bull; {t.email}{t.phone ? ` &bull; ${t.phone}` : ''}</span>
-                        </td>
-                        <td>
-                          <select
-                            value={getTenantPlanKey(t.plan)}
-                            onChange={(e) => handleChangeTenantPlan(t.id, e.target.value)}
-                            className="text-input py-1 px-2 text-xs max-w-[130px] font-medium"
-                          >
-                            {plans.map(p => (
-                              <option key={p.id} value={p.key}>{p.key} (${p.price}/mo)</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="font-semibold">{t.weddingsCount} weddings</td>
-                        <td className="font-bold text-emerald-700">${t.mrr}/mo</td>
-                        <td>
-                          <span
-                            onClick={() => handleToggleTenantStatus(t.id)}
-                            className={`tt-pill ${t.status === 'Active' ? 'green' : t.status === 'Trial' ? 'warm' : 'danger'} cursor-pointer`}
-                            title="Click to toggle status"
-                          >
-                            {t.status}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="flex gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleTenantStatus(t.id)}
-                              className="btn btn-outline btn-xs"
-                            >
-                              {t.status === 'Active' ? 'Suspend' : 'Activate'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedTenant(t)}
-                              className="btn btn-outline btn-xs"
-                            >
-                              Details
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {(state.weddings || []).map((w: any) => {
+                      const rawPlanName = w.subscriptionPlan?.name || 'Signature Pro Wedding Suite';
+                      const cleanPlan = rawPlanName.replace(' Wedding Suite', '').replace(' Plan', '');
+                      const statusStr = w.subscriptionPlan?.status || w.status || 'Active';
+                      const coupleEmail = w.brideEmail || w.groomEmail || `${(w.partner1 || 'couple').toLowerCase()}@demo.test`;
+
+                      return (
+                        <tr
+                          key={w.id}
+                          onClick={() => setSelectedCoupleTenant(w)}
+                          className="cursor-pointer hover:bg-[#faf7f2] transition-colors"
+                        >
+                          <td>
+                            <strong className="text-sm font-semibold text-[#15110e] block">{w.couple}</strong>
+                            <span className="text-[11px] text-[#8b7b6b]">{coupleEmail}</span>
+                          </td>
+                          <td>
+                            <div className="font-medium text-[#15110e]">
+                              {(() => {
+                                try {
+                                  const d = new Date(w.date);
+                                  if (!isNaN(d.getTime())) {
+                                    return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+                                  }
+                                } catch {}
+                                return w.dateDisplay || w.date;
+                              })()}
+                            </div>
+                            <div className="text-[11px] text-[#8b7b6b]">{w.venue}</div>
+                          </td>
+                          <td>
+                            <span className="bg-[#fcf8f2] text-[#8b6932] border border-[#ebd3a8] px-2 py-0.5 rounded text-xs font-bold">
+                              {cleanPlan}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="font-medium text-[#15110e]">Robert Galati</div>
+                            <div className="text-[11px] text-[#8b7b6b]">Certified MC</div>
+                          </td>
+                          <td>
+                            <span className="tt-pill green">
+                              {statusStr}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="flex gap-1.5">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedCoupleTenant(w);
+                                }}
+                                className="btn btn-outline btn-xs"
+                              >
+                                Details
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -853,7 +856,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                   ACCOUNTS
                 </div>
                 <h1 className="header-title font-serif text-3xl font-bold text-[#15110e]">
-                  MC Tenants
+                  Platform Tenants
                 </h1>
               </div>
               <div className="flex items-center gap-2">
@@ -862,7 +865,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                   onClick={() => setShowInviteModal(true)}
                   className="btn btn-gold btn-sm"
                 >
-                  + Invite MC
+                  + Invite Tenant
                 </button>
               </div>
             </div>
@@ -871,7 +874,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
               <div className="flex gap-3 flex-wrap">
                 <input
                   type="text"
-                  placeholder="Search MC business..."
+                  placeholder="Search platform tenant business..."
                   value={tenantSearch}
                   onChange={(e) => setTenantSearch(e.target.value)}
                   className="text-input max-w-[280px]"
@@ -1166,50 +1169,6 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
               </div>
             </div>
 
-            {/* Quick Financial KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-xl p-4 shadow-2xs">
-                <div className="text-[10.5px] font-bold uppercase text-[#8b7b6b] tracking-wider">Total MC Monthly MRR</div>
-                <div className="text-2xl font-serif font-bold text-[#15110e] mt-1">
-                  $1,496<span className="text-xs font-sans text-[#8b7b6b] font-normal"> / mo AUD</span>
-                </div>
-                <div className="text-[11px] text-emerald-700 font-semibold mt-1 flex items-center gap-1">
-                  <span>&uarr; 18.4%</span> across 4 MC agencies
-                </div>
-              </div>
-
-              <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-xl p-4 shadow-2xs">
-                <div className="text-[10.5px] font-bold uppercase text-[#8b7b6b] tracking-wider">MC Transaction Volume (30D)</div>
-                <div className="text-2xl font-serif font-bold text-[#15110e] mt-1">
-                  $24,850<span className="text-xs font-sans text-[#8b7b6b] font-normal"> .00 AUD</span>
-                </div>
-                <div className="text-[11px] text-[#8b7b6b] mt-1">
-                  {mcTransactions.length} processed wedding &amp; SaaS records
-                </div>
-              </div>
-
-              <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-xl p-4 shadow-2xs">
-                <div className="text-[10.5px] font-bold uppercase text-[#8b7b6b] tracking-wider">Platform Take (2.5%)</div>
-                <div className="text-2xl font-serif font-bold text-[#15110e] mt-1">
-                  $621<span className="text-xs font-sans text-[#8b7b6b] font-normal"> .25 AUD</span>
-                </div>
-                <div className="text-[11px] text-[#8b7b6b] mt-1">
-                  Auto-split via Stripe Connect
-                </div>
-              </div>
-
-              <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-xl p-4 shadow-2xs">
-                <div className="text-[10.5px] font-bold uppercase text-[#8b7b6b] tracking-wider">Xero Sync Health</div>
-                <div className="text-2xl font-serif font-bold text-[#15110e] mt-1 flex items-center gap-1.5">
-                  <span>96.4%</span>
-                  <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-2 py-0.5 rounded-full">Healthy</span>
-                </div>
-                <div className="text-[11px] text-[#8b7b6b] mt-1">
-                  Synced to Chart of Accounts
-                </div>
-              </div>
-            </div>
-
             {/* Sub-Section Filter / Focus Tabs */}
             <div className="flex items-center gap-2 border-b border-[#e8ded0] pb-2 overflow-x-auto">
               <button
@@ -1244,17 +1203,6 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                 }`}
               >
                 <span>MC Subscriptions ({tenants.length})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setBillingSectionFocus('transactions')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0 ${
-                  billingSectionFocus === 'transactions'
-                    ? 'bg-[#15110e] text-[#dfc194]'
-                    : 'text-[#8b7b6b] hover:text-[#15110e] hover:bg-white'
-                }`}
-              >
-                MC Transactions ({filteredMcTransactions.length})
               </button>
               <button
                 type="button"
@@ -1415,7 +1363,6 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                             <th className="py-3 px-3 font-bold">Billing Cycle</th>
                             <th className="py-3 px-3 font-bold">Next Renewal</th>
                             <th className="py-3 px-3 font-bold">Features Entitlements</th>
-                            <th className="py-3 px-3 font-bold text-right">Transactions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-[#f2ede4]">
@@ -1521,276 +1468,13 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                                   </div>
                                 </td>
 
-                                <td className="py-3.5 px-3 text-right">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleViewTransactionsForMc(t.id)}
-                                    className="px-3 py-1.5 rounded-lg bg-[#15110e] hover:bg-[#251e18] text-[#dfc194] hover:text-white font-bold text-[11px] cursor-pointer transition-colors shadow-2xs inline-flex items-center gap-1.5"
-                                  >
-                                    <span>View Transactions</span>
-                                    <span className="bg-[#2a2119] text-[#bd9661] text-[10px] font-bold px-1.5 py-0.2 rounded-full">
-                                      {mcTxnCount}
-                                    </span>
-                                  </button>
-                                </td>
+                                
                               </tr>
                             );
                           })}
                         </tbody>
                       </table>
                     </div>
-              </div>
-            )}
-
-            {/* 2. LIVE MC TRANSACTIONS LEDGER (FETCHED LIVE FROM MCs)         */}
-            {/* ============================================================== */}
-            {(billingSectionFocus === 'all' || billingSectionFocus === 'transactions') && (
-              <div id="mc_transactions_ledger_section" className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-4">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[#f0ede4]">
-                  <div>
-                    <div className="text-[10px] uppercase font-bold tracking-wider text-[#bd9661]">
-                      PAYMENT &amp; BILLING LEDGER
-                    </div>
-                    <h2 className="font-serif text-xl font-bold text-[#15110e] mt-0.5 flex items-center gap-2">
-                      <span>MC Transactions</span>
-                      <span className="text-xs font-sans font-bold bg-[#faf5ed] text-[#bd9661] border border-[#ebd3a8] px-2 py-0.5 rounded-full">
-                        {filteredMcTransactions.length} Records
-                      </span>
-                    </h2>
-                    <p className="text-xs text-[#8b7b6b] mt-0.5">
-                      Live transaction stream fetched across MC SaaS subscription renewals, client wedding invoice bookings, and platform fees.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleFetchMcTransactions}
-                      disabled={isFetchingTxns}
-                      className="px-3 py-1.5 rounded-lg bg-[#faf8f5] hover:bg-[#f0ede4] border border-[#e8ded0] text-xs font-bold text-[#15110e] flex items-center gap-1.5 cursor-pointer transition-colors disabled:opacity-60"
-                    >
-                      <span className={isFetchingTxns ? 'animate-spin' : ''}>⟳</span>
-                      {isFetchingTxns ? 'Fetching...' : 'Fetch Latest MC Txns'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Filter & Search Bar */}
-                <div className="flex flex-col lg:flex-row gap-2.5 items-stretch lg:items-center justify-between">
-                  {/* Search */}
-                  <div className="relative flex-1 max-w-md">
-                    <input
-                      type="text"
-                      placeholder="Search by transaction ID, MC name, couple, or notes..."
-                      value={txnSearch}
-                      onChange={(e) => setTxnSearch(e.target.value)}
-                      className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl pl-8 pr-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] focus:bg-white"
-                    />
-                    <svg className="w-4 h-4 text-[#8b7b6b] absolute left-2.5 top-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="11" cy="11" r="8" />
-                      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                  </div>
-
-                  {/* Dropdown Filters */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {/* Filter by MC Tenant */}
-                    <select
-                      value={selectedMcFilter}
-                      onChange={(e) => setSelectedMcFilter(e.target.value)}
-                      className="bg-[#faf8f5] border border-[#e8ded0] text-xs text-[#15110e] rounded-xl px-2.5 py-2 outline-none cursor-pointer"
-                    >
-                      <option value="all">All MCs ({mcTransactions.length})</option>
-                      {tenants.map(t => (
-                        <option key={t.id} value={t.id}>
-                          {t.contactName} ({t.businessName})
-                        </option>
-                      ))}
-                    </select>
-
-                    {/* Filter by Type */}
-                    <select
-                      value={txnTypeFilter}
-                      onChange={(e) => setTxnTypeFilter(e.target.value)}
-                      className="bg-[#faf8f5] border border-[#e8ded0] text-xs text-[#15110e] rounded-xl px-2.5 py-2 outline-none cursor-pointer"
-                    >
-                      <option value="all">All Transaction Types</option>
-                      <option value="subscription">MC Subscriptions</option>
-                      <option value="client_invoice">Client Invoices</option>
-                      <option value="platform_fee">Platform Fees (2.5%)</option>
-                    </select>
-
-                    {/* Filter by Status */}
-                    <select
-                      value={txnStatusFilter}
-                      onChange={(e) => setTxnStatusFilter(e.target.value)}
-                      className="bg-[#faf8f5] border border-[#e8ded0] text-xs text-[#15110e] rounded-xl px-2.5 py-2 outline-none cursor-pointer"
-                    >
-                      <option value="all">All Statuses</option>
-                      <option value="Settled">Settled</option>
-                      <option value="Paid">Paid</option>
-                      <option value="Pending">Pending</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Active Filter Notification Pill */}
-                {selectedMcFilter !== 'all' && (
-                  <div className="bg-[#faf5ee] border border-[#ebd3a8] px-3 py-1.5 rounded-xl flex items-center justify-between text-xs">
-                    <span className="text-[#544332]">
-                      Filtered by MC: <strong>{tenants.find(t => t.id === selectedMcFilter)?.businessName || selectedMcFilter}</strong> ({filteredMcTransactions.length} transactions)
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedMcFilter('all')}
-                      className="text-[#bd9661] hover:text-[#15110e] font-bold text-xs underline cursor-pointer"
-                    >
-                      ✕ Clear Filter (Show All MCs)
-                    </button>
-                  </div>
-                )}
-
-                {/* Transactions Table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="border-b border-[#e8ded0] text-[10px] uppercase tracking-wider text-[#8b7b6b] bg-[#faf8f5]">
-                        <th className="py-3 px-3 font-bold">Date &amp; Time</th>
-                        <th className="py-3 px-3 font-bold">Transaction ID</th>
-                        <th className="py-3 px-3 font-bold">MC Tenant</th>
-                        <th className="py-3 px-3 font-bold">Type</th>
-                        <th className="py-3 px-3 font-bold">Description &amp; Reference</th>
-                        <th className="py-3 px-3 font-bold">Gross (AUD)</th>
-                        <th className="py-3 px-3 font-bold">Fee (2.5%)</th>
-                        <th className="py-3 px-3 font-bold">Net (AUD)</th>
-                        <th className="py-3 px-3 font-bold">Payment Method</th>
-                        <th className="py-3 px-3 font-bold">Status</th>
-                        <th className="py-3 px-3 font-bold">Xero Sync</th>
-                        <th className="py-3 px-3 font-bold text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#f2ede4]">
-                      {filteredMcTransactions.length === 0 ? (
-                        <tr>
-                          <td colSpan={12} className="text-center py-8 text-xs text-[#8b7b6b] bg-[#faf8f5]">
-                            No MC transactions matched your filter criteria.
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredMcTransactions.map((txn) => {
-                          return (
-                            <tr key={txn.id} className="hover:bg-[#fbf9f6] transition-colors">
-                              {/* Date */}
-                              <td className="py-3 px-3 text-[#8b7b6b] font-medium whitespace-nowrap">
-                                {txn.date}
-                              </td>
-
-                              {/* Transaction ID */}
-                              <td className="py-3 px-3 font-mono font-bold text-[#15110e]">
-                                {txn.id}
-                              </td>
-
-                              {/* MC Tenant */}
-                              <td className="py-3 px-3">
-                                <div className="font-bold text-[#15110e]">{txn.mcName}</div>
-                                <div className="text-[10px] text-[#8b7b6b] truncate max-w-[140px]">{txn.businessName}</div>
-                              </td>
-
-                              {/* Type Badge */}
-                              <td className="py-3 px-3 whitespace-nowrap">
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                  txn.type === 'subscription'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : txn.type === 'client_invoice'
-                                    ? 'bg-purple-100 text-purple-800'
-                                    : 'bg-amber-100 text-amber-800'
-                                }`}>
-                                  {txn.type === 'subscription'
-                                    ? 'Subscription'
-                                    : txn.type === 'client_invoice'
-                                    ? 'Client Invoice'
-                                    : 'Platform Fee'}
-                                </span>
-                              </td>
-
-                              {/* Description & Reference */}
-                              <td className="py-3 px-3 max-w-xs">
-                                <div className="font-medium text-[#15110e] truncate">{txn.description}</div>
-                                {txn.weddingCouple && (
-                                  <div className="text-[10.5px] text-[#bd9661] font-semibold mt-0.5 flex items-center gap-1">
-                                    {txn.weddingCouple}
-                                  </div>
-                                )}
-                              </td>
-
-                              {/* Gross Amount */}
-                              <td className="py-3 px-3 font-mono font-bold text-[#15110e] whitespace-nowrap">
-                                ${txn.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </td>
-
-                              {/* Fee */}
-                              <td className="py-3 px-3 font-mono text-[#8b7b6b] whitespace-nowrap">
-                                ${txn.platformFee.toFixed(2)}
-                              </td>
-
-                              {/* Net Amount */}
-                              <td className="py-3 px-3 font-mono font-bold text-emerald-800 whitespace-nowrap">
-                                ${txn.netAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </td>
-
-                              {/* Payment Method */}
-                              <td className="py-3 px-3 text-[#544332] whitespace-nowrap text-[11px]">
-                                {txn.paymentMethod}
-                              </td>
-
-                              {/* Status */}
-                              <td className="py-3 px-3 whitespace-nowrap">
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                  txn.status === 'Settled'
-                                    ? 'bg-emerald-100 text-emerald-800'
-                                    : txn.status === 'Paid'
-                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-300'
-                                    : 'bg-amber-100 text-amber-800'
-                                }`}>
-                                  {txn.status}
-                                </span>
-                              </td>
-
-                              {/* Xero Sync Status */}
-                              <td className="py-3 px-3 whitespace-nowrap">
-                                {txn.xeroStatus === 'Synced' ? (
-                                  <span className="bg-[#faf6f0] border border-[#ebd3a8] text-[#8e6e42] text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 w-max">
-                                    <span>✓</span> {txn.xeroInvoiceId || 'Xero Synced'}
-                                  </span>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={handleSyncToXero}
-                                    className="bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 cursor-pointer transition-colors"
-                                    title="Click to sync this transaction to Xero"
-                                  >
-                                    <span>⏳</span> Sync to Xero
-                                  </button>
-                                )}
-                              </td>
-
-                              {/* Actions */}
-                              <td className="py-3 px-3 text-right whitespace-nowrap">
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedTxnDetail(txn)}
-                                  className="text-[11px] font-bold text-[#bd9661] hover:text-[#916c3d] underline cursor-pointer"
-                                >
-                                  View Receipt
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
               </div>
             )}
 
@@ -2483,6 +2167,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
             </div>
           </section>
         )}
+      </div>
       </main>
 
       {/* ================================================================== */}
@@ -2629,7 +2314,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
               </div>
               {selectedTenant.phone && (
                 <div>
-                  <label className="field-label">MC Phone No</label>
+                  <label className="field-label">Phone No</label>
                   <div className="text-xs text-[#15110e]">{selectedTenant.phone}</div>
                 </div>
               )}
@@ -2997,7 +2682,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                   TENANT ONBOARDING
                 </div>
                 <h3 className="font-serif text-xl font-bold text-white">
-                  Invite New MC Tenant
+                  Invite Platform Tenant
                 </h3>
               </div>
               <button
@@ -3012,7 +2697,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
             <form onSubmit={handleInviteSubmit} className="flex flex-col flex-1 overflow-hidden">
               <div className="p-6 overflow-y-auto space-y-4 flex-1">
                 <div className="field-group">
-                  <label className="field-label">MC Business Name</label>
+                  <label className="field-label">Business Name</label>
                   <input
                     type="text"
                     required
@@ -3023,7 +2708,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                   />
                 </div>
                 <div className="field-group">
-                  <label className="field-label">Lead MC Name</label>
+                  <label className="field-label">Tenant Name</label>
                   <input
                     type="text"
                     required
@@ -3046,7 +2731,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                     />
                   </div>
                   <div className="field-group">
-                    <label className="field-label">MC Phone No</label>
+                    <label className="field-label">Phone No</label>
                     <div className="flex">
                       <span className="inline-flex items-center px-3 border border-r-0 border-[#d5c7b5] bg-[#f5ede2] text-xs font-bold font-mono text-[#6b5847] rounded-l select-none">
                         +61
@@ -3072,7 +2757,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-gold btn-sm cursor-pointer">
-                  Send Invitation &amp; Create Tenant &rarr;
+                  Create &amp; Send Invitation
                 </button>
               </div>
             </form>
@@ -3359,6 +3044,18 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
             </div>
             <form onSubmit={handleCreatePlan} className="flex flex-col flex-1 overflow-hidden">
               <div className="p-6 overflow-y-auto space-y-4 flex-1">
+                <div className="field-group">
+                  <label className="field-label">Plan Target / Audience *</label>
+                  <select
+                    value={newPlanCategory}
+                    onChange={(e) => setNewPlanCategory(e.target.value as 'couple' | 'mc')}
+                    className="text-input font-medium"
+                  >
+                    <option value="couple">Couple Plan (Wedding Pass / Suite)</option>
+                    <option value="mc">MC Plan (Platform Membership)</option>
+                  </select>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="field-group">
                     <label className="field-label">Plan Name / Tier Key *</label>

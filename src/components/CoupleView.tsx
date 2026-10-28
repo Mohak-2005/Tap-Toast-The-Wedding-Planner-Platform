@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAppState, useSession, getWeddingCountdown, formatAUD, showToast } from '../lib/state';
 import JoeyChatbot from './JoeyChatbot';
 import { Guest, PrivateRunSheetItem } from '../lib/types';
@@ -567,14 +567,19 @@ export default function CoupleView({
   const [thankYouNoteDraft, setThankYouNoteDraft] = useState('');
   const [thankYouStatusChoice, setThankYouStatusChoice] = useState<'Sent' | 'Due' | 'Drafted' | 'Completed'>('Due');
 
-  // Tab 7: Celebration Feed State (Screenshot 28)
+  // Tab 7: Celebration Feed State (Single Stream, Authentic Notes & Photos Only)
   const [officialNoteText, setOfficialNoteText] = useState('');
+  const [officialNotePhoto, setOfficialNotePhoto] = useState<string | null>(null);
+  const officialPhotoInputRef = useRef<HTMLInputElement | null>(null);
+
   interface FeedPost {
     id: string;
     title: string;
     time: string;
+    category?: 'guest' | 'couple';
     tag?: string;
     quote?: string;
+    photo?: string;
     likes: number;
     comments: number;
     expanded?: boolean;
@@ -583,29 +588,35 @@ export default function CoupleView({
   }
   const [feedPosts, setFeedPosts] = useState<FeedPost[]>([
     {
-      id: 'fp1',
-      title: 'Thank You, The Whitfield family!',
-      time: 'Just now',
-      tag: 'Digital Thank-You Card sent for $250 wishing well gift',
-      quote: 'Dear The Whitfield family, thank you so much for your wonderful and generous gift of $250! It means the world to have your love and support as we begin our new chapter together. Love, Sophie & James.',
-      likes: 3,
-      comments: 0,
+      id: 'fp_couple_welcome',
+      category: 'couple',
+      title: 'Welcome Note from Sophie & James',
+      time: 'Today, 10:00 AM',
+      quote: "Welcome to our wedding celebration portal! We are so excited to celebrate our love with all of our dearest friends and family at Fernwood Estate. Please feel free to share love notes and photos here!",
+      likes: 19,
+      comments: 2,
       expanded: true,
-      replies: [],
+      replies: [
+        { author: 'Aunty Carol', text: 'So proud of you both! ❤️', time: '1 hour ago' },
+      ],
     },
     {
-      id: 'fp2',
-      title: '50 guests confirmed',
-      time: 'Just now',
-      pinned: true,
-      tag: "You've hit the halfway mark on RSVPs",
-      likes: 24,
-      comments: 0,
-      expanded: false,
-      replies: [],
+      id: 'fp_photo_moment',
+      category: 'couple',
+      title: 'Sophie & James shared a moment',
+      time: '2 hours ago',
+      quote: 'Our menu tasting session at Fernwood Estate went wonderfully! We cannot wait for everyone to try the autumn banquet menu.',
+      photo: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80',
+      likes: 34,
+      comments: 4,
+      expanded: true,
+      replies: [
+        { author: 'Marcus Sterling', text: 'Looks divine! Can’t wait for November.', time: '1 hour ago' },
+      ],
     },
     {
       id: 'fp3',
+      category: 'guest',
       title: 'Aunty Carol left a note',
       time: '2 minutes ago',
       quote: "So excited for you both — can't wait to celebrate! 💕",
@@ -617,20 +628,11 @@ export default function CoupleView({
       ],
     },
     {
-      id: 'fp4',
-      title: 'The Whitfield family sent a gift',
-      time: '38 minutes ago',
-      tag: '$250 AUD Wishing Well Contribution',
-      likes: 8,
-      comments: 0,
-      expanded: false,
-      replies: [],
-    },
-    {
-      id: 'fp5',
-      title: 'Michael Chen confirmed',
-      time: '1 hour ago',
-      tag: 'Attending (2 guests · Vegetarian)',
+      id: 'fp_guest_toast',
+      category: 'guest',
+      title: 'Liam & Olivia sent congratulations',
+      time: '45 minutes ago',
+      quote: 'Counting down the days! Pack your dancing shoes everyone, this is going to be legendary! 🥂🎉',
       likes: 12,
       comments: 0,
       expanded: false,
@@ -643,6 +645,37 @@ export default function CoupleView({
 
   // Tab 8: Vault State (Screenshot 29)
   const [vaultPermission, setVaultPermission] = useState('couple_mc');
+
+  // Tab 12: Settings - Invite MC / Wedding Planner state
+  const [inviteMcName, setInviteMcName] = useState('');
+  const [inviteMcEmail, setInviteMcEmail] = useState('');
+  const [inviteMcPhone, setInviteMcPhone] = useState('');
+  const [inviteMcCompany, setInviteMcCompany] = useState('');
+  const [hasRequestedMcInvite, setHasRequestedMcInvite] = useState(false);
+  const [isMcUnlinked, setIsMcUnlinked] = useState(false);
+
+  const handleRequestMcInvite = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteMcName.trim() || !inviteMcEmail.trim()) {
+      showToast('Please enter MC/Wedding Planner Name and Email', 'error');
+      return;
+    }
+    const auditEntry = {
+      id: 'aud_' + Date.now(),
+      timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      action: 'MC / Wedding Planner Invite Requested',
+      user: wedding?.couple || 'Sophie & James',
+      role: 'couple' as const,
+      category: 'Onboarding',
+      details: `Couple requested SuperAdmin to send onboarding invite to MC/Wedding Planner: ${inviteMcName.trim()} (${inviteMcEmail.trim()}, Phone: +61 ${inviteMcPhone.trim() || 'N/A'}, Company: ${inviteMcCompany.trim() || 'N/A'})`,
+    };
+    setState({
+      ...state,
+      auditLog: [auditEntry, ...(state.auditLog || [])],
+    });
+    setHasRequestedMcInvite(true);
+    showToast('✓ Invite request sent to SuperAdmin! SuperAdmin will dispatch the onboarding invite link.', 'success');
+  };
 
   // Tab 9: Anniversary State (Screenshots 30-32)
   const [anniversaryMode, setAnniversaryMode] = useState<'countdown' | 'preview'>('countdown');
@@ -1269,7 +1302,8 @@ export default function CoupleView({
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto max-w-[1300px]">
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto w-full min-w-0">
+        <div className="max-w-[1300px] w-full mx-auto space-y-6">
         {/* MC Pro Live Header Banner */}
         {isMcView && (
           <div className="bg-[#1c140e] border border-[#3d2e20] rounded-2xl p-4 mb-6 flex items-center justify-between flex-wrap gap-3 shadow-sm text-xs">
@@ -2942,22 +2976,37 @@ export default function CoupleView({
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left 2 Cols: Live Posts & Moderation */}
+              {/* Left 2 Cols: Single Unified Celebration Stream */}
               <div className="lg:col-span-2 space-y-4">
-                <h2 className="font-serif text-lg font-bold text-[#15110e]">Live Posts &amp; Moderation</h2>
-                
-                <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h2 className="font-serif text-lg font-bold text-[#15110e]">
+                      Live Celebration Feed
+                    </h2>
+                    <p className="text-xs text-[#8b7b6b] mt-0.5">
+                      Love notes, toasts, photos, and announcements shared by the couple and wedding guests.
+                    </p>
+                  </div>
+                  
+                </div>
+
+                <div className="space-y-3.5">
                   {feedPosts.map((post) => (
-                    <div key={post.id} className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-2.5">
+                    <div key={post.id} className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-lg">
-                            {post.pinned ? '🎉' : post.title.includes('Thank') ? '🎁' : post.title.includes('note') ? '💌' : '✅'}
+                            {post.pinned ? '🎉' : post.photo ? '📸' : '💌'}
                           </span>
                           <strong className="text-sm text-[#15110e]">{post.title}</strong>
                           {post.pinned && (
                             <span className="bg-[#faf6f0] border border-[#ebd3a8] text-[#916c3d] text-[10px] font-bold px-2 py-0.5 rounded">
                               Pinned
+                            </span>
+                          )}
+                          {post.category === 'couple' && (
+                            <span className="bg-[#15110e] text-[#dfc194] text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                              Couple
                             </span>
                           )}
                         </div>
@@ -2970,9 +3019,20 @@ export default function CoupleView({
                       </div>
 
                       {post.quote && (
-                        <p className="text-xs italic text-[#6b5849] bg-[#faf8f5] p-3 rounded-xl border-l-2 border-[#bd9661] leading-relaxed">
+                        <p className="text-xs text-[#15110e] bg-[#faf8f5] p-3 rounded-xl border-l-2 border-[#bd9661] leading-relaxed">
                           {post.quote}
                         </p>
+                      )}
+
+                      {/* Photo Attachment if present */}
+                      {post.photo && (
+                        <div className="rounded-xl overflow-hidden border border-[#e8ded0] max-h-72 shadow-xs group">
+                          <img
+                            src={post.photo}
+                            alt="Celebration moment"
+                            className="w-full h-auto max-h-72 object-cover group-hover:scale-102 transition-transform duration-300"
+                          />
+                        </div>
                       )}
 
                       {post.tag && (
@@ -2999,7 +3059,7 @@ export default function CoupleView({
 
                       <div className="flex items-center justify-between pt-1 border-t border-[#f0ede4] text-xs">
                         <span className="text-[11px] text-[#8b7b6b]">
-                          {post.time} &bull; {post.likes} likes &bull; {post.comments} comments
+                          {post.time} &bull; {post.likes} likes &bull; {post.replies?.length || post.comments || 0} replies
                         </span>
                         <div className="flex gap-2">
                           <button
@@ -3028,40 +3088,116 @@ export default function CoupleView({
                 </div>
               </div>
 
-              {/* Right Col: Add Official Note - Aligned horizontally in line with where messages start */}
+              {/* Right Col: Add Official Note with Photo Attachment */}
               <div className="space-y-4 lg:mt-[38px]">
-                <div className="bg-white border border-[#e8ded0] rounded-2xl p-5 shadow-sm space-y-4">
-                  <h3 className="font-serif text-base font-bold text-[#15110e]">Add Official Note</h3>
+                <div className="bg-white border border-[#e8ded0] rounded-2xl p-5 shadow-sm space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-serif text-base font-bold text-[#15110e]">Add Official Note</h3>
+                    <span className="text-[10px] text-[#bd9661] font-bold uppercase tracking-wider">Couple Post</span>
+                  </div>
+
                   <textarea
                     value={officialNoteText}
                     onChange={(e) => setOfficialNoteText(e.target.value)}
-                    placeholder="Post a thank-you or announcement from the couple..."
+                    placeholder="Post a thank-you, photo, or announcement from the couple..."
                     rows={4}
                     className="w-full bg-[#fdfbf7] border border-[#e8ded0] rounded-xl p-3 text-xs outline-none focus:border-[#bd9661] resize-none leading-relaxed"
                   />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!officialNoteText.trim()) return;
-                      const newPost = {
-                        id: 'fp_' + Date.now(),
-                        title: 'Official Note from Sophie & James',
-                        time: 'Just now',
-                        pinned: true,
-                        quote: officialNoteText,
-                        likes: 1,
-                        comments: 0,
-                        expanded: true,
-                        replies: [],
-                      };
-                      setFeedPosts([newPost, ...feedPosts]);
-                      setOfficialNoteText('');
-                      showToast('Announcement posted to feed!', 'success');
-                    }}
-                    className="w-full bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold py-2.5 rounded-xl text-xs transition-colors cursor-pointer shadow-xs"
-                  >
-                    Post to Feed
-                  </button>
+
+                  {/* Photo Preview if selected */}
+                  {officialNotePhoto && (
+                    <div className="relative rounded-xl overflow-hidden border border-[#bd9661] shadow-xs">
+                      <img
+                        src={officialNotePhoto}
+                        alt="Upload preview"
+                        className="w-full h-32 object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setOfficialNotePhoto(null)}
+                        className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/75 text-white font-bold text-xs flex items-center justify-center hover:bg-rose-600 transition-colors cursor-pointer"
+                        title="Remove photo"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      ref={officialPhotoInputRef}
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            if (typeof reader.result === 'string') {
+                              setOfficialNotePhoto(reader.result);
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="hidden"
+                    />
+
+                    {/* Small link icon just left of post button */}
+                    <button
+                      type="button"
+                      onClick={() => officialPhotoInputRef.current?.click()}
+                      className={`h-[42px] w-[42px] rounded-xl border flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                        officialNotePhoto
+                          ? 'bg-[#15110e] text-[#dfc194] border-[#bd9661] ring-2 ring-[#bd9661]/30'
+                          : 'bg-[#faf8f5] hover:bg-[#f0ede4] text-[#6b5847] hover:text-[#15110e] border-[#d5c7b5]'
+                      }`}
+                      title={officialNotePhoto ? 'Photo linked (click to change)' : 'Attach image / photo link'}
+                      aria-label="Attach photo link"
+                    >
+                      <svg
+                        width="17"
+                        height="17"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                      </svg>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!officialNoteText.trim() && !officialNotePhoto) return;
+                        const newPost = {
+                          id: 'fp_' + Date.now(),
+                          category: 'couple' as const,
+                          title: 'Official Note from Sophie & James',
+                          time: 'Just now',
+                          pinned: true,
+                          quote: officialNoteText.trim() || undefined,
+                          photo: officialNotePhoto || undefined,
+                          likes: 1,
+                          comments: 0,
+                          expanded: true,
+                          replies: [],
+                        };
+                        setFeedPosts([newPost, ...feedPosts]);
+                        setOfficialNoteText('');
+                        setOfficialNotePhoto(null);
+                        showToast('Note posted to celebration feed!', 'success');
+                      }}
+                      className="flex-1 h-[42px] px-4 bg-gradient-to-r from-[#dfc194] to-[#bd9661] text-[#15110e] font-bold rounded-xl text-xs transition-all hover:brightness-105 cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+                    >
+                      <span>✨</span>
+                      <span>Post to Celebration Feed</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3919,6 +4055,109 @@ export default function CoupleView({
               </div>
             </div>
 
+            {/* Subsection: Invite MC & Wedding Planner (Visible if no MC selected during registration, hidden if selected) */}
+            {(!wedding?.selectedMc || wedding.selectedMc.id === 'no_mc' || wedding.selectedMc.isPreferredOwn || isMcUnlinked) ? (
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-[#f0ede4]">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🎙️</span>
+                    <h3 className="font-serif text-base font-bold text-[#15110e]">
+                      Invite MC / Wedding Planner
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-bold text-[#bd9661] uppercase tracking-wider bg-[#faf5ee] border border-[#ebd3a8] px-2.5 py-1 rounded-lg">
+                    Host Collaboration
+                  </span>
+                </div>
+
+                {hasRequestedMcInvite ? (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-emerald-900 space-y-1">
+                    <div className="flex items-center gap-2 font-bold text-xs text-emerald-800">
+                      <span>✓</span>
+                      <span>Invite Request Sent to Platform SuperAdmin</span>
+                    </div>
+                    <p className="text-xs text-emerald-700 leading-relaxed">
+                      SuperAdmin has received your request and will dispatch the dedicated onboarding invite link to <strong>{inviteMcName}</strong> ({inviteMcEmail}).
+                    </p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleRequestMcInvite} className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                          MC / WEDDING PLANNER NAME *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Anthony Rossi"
+                          value={inviteMcName}
+                          onChange={(e) => setInviteMcName(e.target.value)}
+                          className="w-full bg-[#fdfbf7] border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                          EMAIL ADDRESS *
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          placeholder="e.g. anthony@rossihosting.com.au"
+                          value={inviteMcEmail}
+                          onChange={(e) => setInviteMcEmail(e.target.value)}
+                          className="w-full bg-[#fdfbf7] border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                          PHONE NO *
+                        </label>
+                        <div className="flex">
+                          <span className="inline-flex items-center px-3 border border-r-0 border-[#e8ded0] bg-[#f5ede2] text-xs font-bold font-mono text-[#6b5847] rounded-l-xl select-none">
+                            +61
+                          </span>
+                          <input
+                            type="tel"
+                            required
+                            placeholder="0412 888 777"
+                            value={inviteMcPhone}
+                            onChange={(e) => setInviteMcPhone(e.target.value)}
+                            className="w-full bg-[#fdfbf7] border border-[#e8ded0] rounded-r-xl rounded-l-none p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                          COMPANY / BUSINESS NAME
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Rossi Event Hosting &amp; Coordination"
+                          value={inviteMcCompany}
+                          onChange={(e) => setInviteMcCompany(e.target.value)}
+                          className="w-full bg-[#fdfbf7] border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-1">
+                      <button
+                        type="submit"
+                        className="py-2.5 px-5 bg-gradient-to-r from-[#dfc194] to-[#bd9661] text-[#15110e] font-bold rounded-xl text-xs shadow-xs hover:brightness-105 transition-all cursor-pointer flex items-center gap-1.5"
+                      >
+                        <span>✉️</span>
+                        <span>Request Invite</span>
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            ) : null}
+
             {/* Section 3: Aesthetics & Dress Code */}
             <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-4">
               <div className="flex items-center gap-2 pb-2 border-b border-[#f0ede4]">
@@ -4597,10 +4836,11 @@ export default function CoupleView({
             </div>
           </section>
         )}
+      </div>
       </main>
 
       {/* Floating Joey AI Assistant */}
-      <JoeyChatbot context="couple" />
+      {activeTab !== 'seating' && <JoeyChatbot context="couple" />}
     </div>
   );
 }

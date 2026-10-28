@@ -260,7 +260,7 @@ export function clearStoredSession() {
   window.dispatchEvent(new CustomEvent('tt_session_updated', { detail: null }));
 }
 
-export function setDemoSessionForRole(role: 'mc' | 'couple' | 'superadmin') {
+export function setDemoSessionForRole(role: 'mc' | 'couple' | 'superadmin' | 'planner') {
   let user: Session;
   if (role === 'mc') {
     user = {
@@ -276,6 +276,15 @@ export function setDemoSessionForRole(role: 'mc' | 'couple' | 'superadmin') {
       role: 'superadmin',
       email: 'admin@tapandtoast.demo',
       name: 'Platform Admin',
+      keepSignedIn: true,
+      at: Date.now()
+    };
+  } else if (role === 'planner') {
+    user = {
+      role: 'planner',
+      email: 'anthony@rossievents.demo',
+      name: 'Anthony Rossi',
+      businessName: 'Rossi Event Management & Planning',
       keepSignedIn: true,
       at: Date.now()
     };

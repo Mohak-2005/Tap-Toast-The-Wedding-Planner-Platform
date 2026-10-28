@@ -819,16 +819,7 @@ export default function McView({ onSelectView }: McViewProps) {
                   </svg>
                 ),
               },
-{
-                id: 'team',
-                label: 'Team & Crew',
-                icon: (
-                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-                  </svg>
-                ),
-              },
+
               {
                 id: 'referrals',
                 label: 'Referrals & Discounts',
@@ -896,7 +887,8 @@ export default function McView({ onSelectView }: McViewProps) {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-6 md:p-9 overflow-y-auto max-w-[1400px]">
+      <main className="flex-1 p-6 md:p-9 overflow-y-auto w-full min-w-0">
+        <div className="max-w-[1400px] w-full mx-auto space-y-6">
         {/* ==================================================================== */}
         {/* TAB 1: ALL WEDDINGS & WEDDING DETAIL                                  */}
         {/* ==================================================================== */}
@@ -2037,6 +2029,7 @@ export default function McView({ onSelectView }: McViewProps) {
             </form>
           </section>
         )}
+      </div>
       </main>
 
       {/* ==================================================================== */}
@@ -2868,7 +2861,7 @@ export default function McView({ onSelectView }: McViewProps) {
       )}
 
       {/* Floating Joey AI Assistant for Desktop MC */}
-      <JoeyChatbot context="mc" />
+      {!(selectedWeddingId && detailSubTab === 'seating') && <JoeyChatbot context="mc" />}
 
 {selectedClient && (
         <div

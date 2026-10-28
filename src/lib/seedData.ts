@@ -9,11 +9,9 @@ export const initialPlans: SaaSPlan[] = [
     billingCycle: "AUD / one-time pass",
     category: "couple",
     features: [
-      "Guest list manager with Adults & Kids RSVP counts",
-      "Digital QaRd mobile invitations & dietary tracking",
-      "Gift & Wishing Well ledger (0% platform fee)",
-      "Standard seating table builder",
-      "Email RSVP reminders",
+      "<to be decided>",
+      "<to be decided>",
+      "<to be decided>",
     ],
   },
   {
@@ -26,12 +24,9 @@ export const initialPlans: SaaSPlan[] = [
     featured: true,
     category: "couple",
     features: [
-      "Everything in Essential",
-      "Joey AI Wedding Concierge & Prompting Assistant",
-      "Smart Seating Planner with AI auto-seat solver",
-      "MC Matchmaker & Live Run-Sheet Collaboration",
-      "Live Celebration Feed & Photo Sharing for guests",
-      "Digital Wedding Vault & post-wedding keepsake",
+      "<to be decided>",
+      "<to be decided>",
+      "<to be decided>",
     ],
   },
   {
@@ -42,12 +37,9 @@ export const initialPlans: SaaSPlan[] = [
     billingCycle: "AUD / one-time pass",
     category: "couple",
     features: [
-      "Everything in Signature Pro",
-      "VIP MC Concierge Matchmaking & custom contract",
-      "Multi-Event Run Sheets (Rehearsal, Reception, Recovery Brunch)",
-      "Custom domain & personalized couple branding",
-      "Priority 24/7 Australian wedding support concierge",
-      "Full export package (CSV, PDF run sheets, table cards)",
+      "<to be decided>",
+      "<to be decided>",
+      "<to be decided>",
     ],
   },
   {
@@ -59,11 +51,9 @@ export const initialPlans: SaaSPlan[] = [
     badge: "BASE PLAN",
     category: "mc",
     features: [
-      "1 active wedding coordination at a time",
-      "Interactive live run sheets & timing cues",
-      "Direct client runsheet sync with nominated couple",
-      "⚠️ Unlisted — Does NOT appear in Public MC Directory",
-      "Standard community support",
+      "<to be decided>",
+      "<to be decided>",
+      "<to be decided>",
     ],
   },
   {
@@ -76,11 +66,9 @@ export const initialPlans: SaaSPlan[] = [
     featured: true,
     category: "mc",
     features: [
-      "★ Certified Public Directory Listing (Bookable by couples)",
-      "Up to 5 active weddings simultaneously",
-      "Joey AI Matchmaker recommendations to couples",
-      "Stripe Connect automated client payout split",
-      "Live interactive run sheets & speech prompter",
+      "<to be decided>",
+      "<to be decided>",
+      "<to be decided>",
     ],
   },
   {
@@ -92,12 +80,9 @@ export const initialPlans: SaaSPlan[] = [
     badge: "ENTERPRISE",
     category: "mc",
     features: [
-      "★ Priority Top Featured Placement in Couple Directory",
-      "Unlimited active weddings simultaneously",
-      "Multi-coordinator staff logins & permissions",
-      "Automated Xero accounting sync for invoices",
-      "Custom white-label branding on runsheets",
-      "Dedicated VIP Account Concierge",
+      "<to be decided>",
+      "<to be decided>",
+      "<to be decided>",
     ],
   },
 ];
@@ -325,14 +310,11 @@ export const SEED_DATA: DemoState = {
         status: "active",
         paymentMethod: "Stripe (Mastercard •••• 4242)",
         features: [
-          "Joey AI Wedding Concierge",
-          "AI Seating Optimization",
-          "MC Live Run-Sheet Collaboration",
-          "Adults & Kids RSVP Tracker",
-          "0% Fee Digital Wishing Well"
-        ]
+      "<to be decided>",
+      "<to be decided>",
+      "<to be decided>",
+    ],
       },
-      giftingPresets: [50, 100, 150, 250],
       danceFloorPos: { x: 50, y: 50 },
       savedSeatingArrangements: [
         {
@@ -345,7 +327,7 @@ export const SEED_DATA: DemoState = {
           danceFloorPos: { x: 50, y: 50 },
           notes: 'Classic banquet layout with central dance floor and balanced round/rectangle tables',
           tables: [
-            { id: 'head', weddingId: 'w1', name: 'HEAD TABLE', capacity: 8, isHead: true, shape: 'king', category: 'Bridal Party', zone: 'Stage & VIP Wing', x: 50, y: 15 },
+            { id: 'head', weddingId: 'w1', name: 'HEAD TABLE', capacity: 8, isHead: true, shape: 'rectangular', category: 'Bridal Party', zone: 'Stage & VIP Wing', x: 50, y: 15 },
             { id: 'table_1', weddingId: 'w1', name: 'Table 1', capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Center Ballroom', x: 25, y: 35 },
             { id: 'table_2', weddingId: 'w1', name: 'Table 2', capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'Left Terrace', x: 40, y: 35 },
             { id: 'table_3', weddingId: 'w1', name: 'Table 3', capacity: 8, isHead: false, shape: 'rectangular', category: 'Friends', zone: 'Right Garden', x: 60, y: 35 },
@@ -377,7 +359,7 @@ export const SEED_DATA: DemoState = {
           danceFloorPos: { x: 50, y: 50 },
           notes: 'VIP family tables closer to bridal stage for smooth microphone handover during speeches',
           tables: [
-            { id: 'head', weddingId: 'w1', name: 'HEAD TABLE', capacity: 8, isHead: true, shape: 'king', category: 'Bridal Party', zone: 'Stage & VIP Wing', x: 50, y: 12 },
+            { id: 'head', weddingId: 'w1', name: 'HEAD TABLE', capacity: 8, isHead: true, shape: 'rectangular', category: 'Bridal Party', zone: 'Stage & VIP Wing', x: 50, y: 12 },
             { id: 'table_2', weddingId: 'w1', name: 'Table 2', capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'VIP Stage Left', x: 28, y: 28 },
             { id: 'table_4', weddingId: 'w1', name: 'Table 4', capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'VIP Stage Right', x: 72, y: 28 },
             { id: 'table_1', weddingId: 'w1', name: 'Table 1', capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Center Ballroom', x: 22, y: 48 },
@@ -547,7 +529,7 @@ export const SEED_DATA: DemoState = {
   ],
   tables: [
     // Wedding 1: Sophie & James (w1)
-    { id: "head", weddingId: "w1", name: "HEAD TABLE", capacity: 8, isHead: true, shape: 'king', category: 'Bridal Party', zone: 'Stage & VIP Wing', x: 50, y: 15 },
+    { id: "head", weddingId: "w1", name: "HEAD TABLE", capacity: 8, isHead: true, shape: 'rectangular', category: 'Bridal Party', zone: 'Stage & VIP Wing', x: 50, y: 15 },
     { id: "table_1", weddingId: "w1", name: "Table 1", capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Center Ballroom', x: 25, y: 35 },
     { id: "table_2", weddingId: "w1", name: "Table 2", capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'Left Terrace', x: 40, y: 35 },
     { id: "table_3", weddingId: "w1", name: "Table 3", capacity: 8, isHead: false, shape: 'rectangular', category: 'Friends', zone: 'Right Garden', x: 60, y: 35 },
@@ -557,13 +539,13 @@ export const SEED_DATA: DemoState = {
     { id: "table_7", weddingId: "w1", name: "Table 7", capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Center Ballroom', x: 60, y: 65 },
 
     // Wedding 2: Aisha & Marcus (w2)
-    { id: "w2_head", weddingId: "w2", name: "HEAD TABLE", capacity: 8, isHead: true, shape: 'king', category: 'Bridal Party', zone: 'Harbour Stage', x: 50, y: 15 },
+    { id: "w2_head", weddingId: "w2", name: "HEAD TABLE", capacity: 8, isHead: true, shape: 'rectangular', category: 'Bridal Party', zone: 'Harbour Stage', x: 50, y: 15 },
     { id: "w2_t1", weddingId: "w2", name: "Table 1", capacity: 10, isHead: false, shape: 'round', category: 'Family', zone: 'Harbour Terrace', x: 25, y: 35 },
     { id: "w2_t2", weddingId: "w2", name: "Table 2", capacity: 10, isHead: false, shape: 'round', category: 'Friends', zone: 'Harbour Terrace', x: 75, y: 35 },
     { id: "w2_t3", weddingId: "w2", name: "Table 3", capacity: 10, isHead: false, shape: 'rectangular', category: 'Colleagues', zone: 'Harbour Terrace', x: 50, y: 75 },
 
     // Wedding 3: Emma & Tom (w3)
-    { id: "w3_head", weddingId: "w3", name: "HEAD TABLE", capacity: 8, isHead: true, shape: 'king', category: 'Bridal Party', zone: 'Lawn Pavilion', x: 50, y: 15 },
+    { id: "w3_head", weddingId: "w3", name: "HEAD TABLE", capacity: 8, isHead: true, shape: 'rectangular', category: 'Bridal Party', zone: 'Lawn Pavilion', x: 50, y: 15 },
     { id: "w3_t1", weddingId: "w3", name: "Table 1", capacity: 12, isHead: false, shape: 'rectangular', category: 'Family', zone: 'Lawn Pavilion', x: 30, y: 35 },
     { id: "w3_t2", weddingId: "w3", name: "Table 2", capacity: 10, isHead: false, shape: 'round', category: 'Friends', zone: 'Lawn Pavilion', x: 70, y: 35 }
   ],
