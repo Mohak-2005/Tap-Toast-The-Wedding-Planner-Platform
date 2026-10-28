@@ -1,13 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useAppState, useSession, getWeddingCountdown, showToast } from '../lib/state';
 import SeatingPlannerSection from './SeatingPlannerSection';
 import { InvitationTemplatesSection } from './InvitationTemplatesSection';
+import { DietaryBadges } from '../lib/dietaryHelper';
 
 interface PlannerViewProps {
   onSelectView: (view: string) => void;
 }
 
-type PlannerTab = 'overview' | 'seating' | 'guest-list' | 'invitations' | 'venue' | 'settings';
+type PlannerTab = 'overview' | 'seating' | 'guest-list' | 'catering' | 'invitations' | 'feed' | 'venue' | 'settings';
 
 export default function PlannerView({ onSelectView }: PlannerViewProps) {
   const { state } = useAppState();
@@ -22,6 +23,86 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
   // Invitations State (Matching CoupleView)
   const [selectedQaRdHousehold, setSelectedQaRdHousehold] = useState<string>('all');
   const [selectedQaRdPalette, setSelectedQaRdPalette] = useState<'obsidian' | 'champagne' | 'merlot' | 'sage'>('obsidian');
+
+  // Catering Summary State & Search Filter
+  const [cateringDietFilter, setCateringDietFilter] = useState<'all' | 'special' | 'vegetarian' | 'gluten' | 'vegan' | 'nut'>('all');
+  const [cateringSearch, setCateringSearch] = useState<string>('');
+
+  // Celebration Feed State & Posts
+  interface FeedPost {
+    id: string;
+    title: string;
+    time: string;
+    category?: 'guest' | 'couple' | 'planner';
+    tag?: string;
+    quote?: string;
+    photo?: string;
+    likes: number;
+    comments: number;
+    expanded?: boolean;
+    pinned?: boolean;
+    replies?: Array<{ author: string; text: string; time: string }>;
+  }
+
+  const [feedPosts, setFeedPosts] = useState<FeedPost[]>([
+    {
+      id: 'fp_couple_welcome',
+      category: 'couple',
+      title: 'Welcome Note from Sophie & James',
+      time: 'Today, 10:00 AM',
+      quote: "Welcome to our wedding celebration portal! We are so excited to celebrate our love with all of our dearest friends and family at Fernwood Estate. Please feel free to share love notes and photos here!",
+      likes: 19,
+      comments: 2,
+      expanded: true,
+      replies: [
+        { author: 'Aunty Carol', text: 'So proud of you both! ❤️', time: '1 hour ago' },
+      ],
+    },
+    {
+      id: 'fp_photo_moment',
+      category: 'couple',
+      title: 'Sophie & James shared a moment',
+      time: '2 hours ago',
+      quote: 'Our menu tasting session at Fernwood Estate went wonderfully! We cannot wait for everyone to try the autumn banquet menu.',
+      photo: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80',
+      likes: 34,
+      comments: 4,
+      expanded: true,
+      replies: [
+        { author: 'Marcus Sterling', text: 'Looks divine! Can’t wait for November.', time: '1 hour ago' },
+      ],
+    },
+    {
+      id: 'fp3',
+      category: 'guest',
+      title: 'Aunty Carol left a note',
+      time: '2 minutes ago',
+      quote: "So excited for you both — can't wait to celebrate! 💕",
+      likes: 5,
+      comments: 1,
+      expanded: false,
+      replies: [
+        { author: 'Sophie & James', text: 'Thank you Aunty Carol! Counting down the days to see you! 💕', time: 'Just now' },
+      ],
+    },
+    {
+      id: 'fp_guest_toast',
+      category: 'guest',
+      title: 'Liam & Olivia sent congratulations',
+      time: '45 minutes ago',
+      quote: 'Counting down the days! Pack your dancing shoes everyone, this is going to be legendary! 🥂🎉',
+      likes: 12,
+      comments: 0,
+      expanded: false,
+      replies: [],
+    },
+  ]);
+
+  const [officialNoteText, setOfficialNoteText] = useState('');
+  const [officialNotePhoto, setOfficialNotePhoto] = useState<string | null>(null);
+  const officialPhotoInputRef = useRef<HTMLInputElement | null>(null);
+  const [replyingPost, setReplyingPost] = useState<FeedPost | null>(null);
+  const [replyText, setReplyText] = useState('');
 
   // Planner Profile & Settings (Matching MC Settings)
   const [plannerName, setPlannerName] = useState<string>('Anthony Rossi');
@@ -60,6 +141,34 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
   const dietaryGuests = weddingGuests.filter((g) => g.dietary && g.dietary !== 'None' && g.dietary.trim() !== '');
   const seatedGuests = weddingGuests.filter((g) => g.tableId);
   const totalCapacity = weddingTables.reduce((acc, t) => acc + t.capacity, 0);
+
+  // Catering dietary totals
+  const vegCount = confirmedGuests.filter(g => (g.dietary || '').toLowerCase().includes('veg') && !(g.dietary || '').toLowerCase().includes('vegan')).length;
+  const veganCount = confirmedGuests.filter(g => (g.dietary || '').toLowerCase().includes('vegan')).length;
+  const gfCount = confirmedGuests.filter(g => (g.dietary || '').toLowerCase().includes('gluten')).length;
+  const nutCount = confirmedGuests.filter(g => (g.dietary || '').toLowerCase().includes('nut')).length;
+  const otherDietCount = confirmedGuests.filter(g => {
+    const d = (g.dietary || '').toLowerCase().trim();
+    return d !== '' && d !== 'none' && d !== 'no' && !d.includes('veg') && !d.includes('gluten') && !d.includes('nut');
+  }).length;
+
+  const filteredCateringGuests = useMemo(() => {
+    return confirmedGuests.filter(g => {
+      const matchesSearch = g.name.toLowerCase().includes(cateringSearch.toLowerCase()) ||
+        (g.dietary || '').toLowerCase().includes(cateringSearch.toLowerCase()) ||
+        (g.household || '').toLowerCase().includes(cateringSearch.toLowerCase());
+
+      const d = (g.dietary || '').toLowerCase();
+      let matchesDiet = true;
+      if (cateringDietFilter === 'special') matchesDiet = d !== '' && d !== 'none' && d !== 'no';
+      else if (cateringDietFilter === 'vegetarian') matchesDiet = d.includes('veg') && !d.includes('vegan');
+      else if (cateringDietFilter === 'vegan') matchesDiet = d.includes('vegan');
+      else if (cateringDietFilter === 'gluten') matchesDiet = d.includes('gluten');
+      else if (cateringDietFilter === 'nut') matchesDiet = d.includes('nut');
+
+      return matchesSearch && matchesDiet;
+    });
+  }, [confirmedGuests, cateringSearch, cateringDietFilter]);
 
   // Filtered guest list for Guest List tab
   const filteredGuests = useMemo(() => {
@@ -118,6 +227,7 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
     {
       id: 'guest-list',
       label: 'Guest List',
+      badge: totalGuests,
       icon: (
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -128,12 +238,34 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
       ),
     },
     {
+      id: 'catering',
+      label: 'Guest & Catering Summary',
+      icon: (
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+          <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+          <line x1="6" y1="1" x2="6" y2="4" />
+          <line x1="10" y1="1" x2="10" y2="4" />
+          <line x1="14" y1="1" x2="14" y2="4" />
+        </svg>
+      ),
+    },
+    {
       id: 'invitations',
       label: 'Invitations & QaRd',
       icon: (
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
           <polyline points="22 6 12 13 2 6" />
+        </svg>
+      ),
+    },
+    {
+      id: 'feed',
+      label: 'Celebration Feed',
+      icon: (
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
       ),
     },
@@ -202,6 +334,11 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
                     </span>
                     <span className="truncate">{tab.label}</span>
                   </div>
+                  {(tab as any).badge !== undefined && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[#291f17] text-[#dfc194] border border-[#bd9661]/30">
+                      {(tab as any).badge}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -629,6 +766,266 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
           )}
 
           {/* ------------------------------------------------------------ */}
+          {/* TAB: GUEST & CATERING SUMMARY (SAME AS MC PRO WEB VIEW)      */}
+          {/* ------------------------------------------------------------ */}
+          {activeTab === 'catering' && (
+            <section className="space-y-6 animate-in fade-in duration-200">
+              {/* Header */}
+              <div className="flex items-start justify-between flex-wrap gap-4">
+                <div>
+                  <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1 flex items-center gap-2">
+                    <span>🍽️ CATERING &amp; HOSPITALITY SUMMARY</span>
+                    <span className="text-[#8b7b6b]">•</span>
+                    <span className="text-[#15110e] font-semibold">{activeWedding.couple}</span>
+                  </div>
+                  <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#15110e]">
+                    Guest &amp; Catering Summary
+                  </h1>
+                  <p className="text-xs text-[#8b7b6b] mt-1">
+                    Full dietary requirements breakdown, meal covers, and table roster for banquet staff &amp; event hosts
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="bg-white border border-[#d5c7b5] hover:bg-[#f5ede0] text-[#15110e] font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                  >
+                    <span>🖨️</span> Print Catering Sheet
+                  </button>
+                </div>
+              </div>
+
+              {/* 5 Dietary Metric Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+                <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-xl p-4 shadow-xs">
+                  <div className="text-xs uppercase text-[#8b7b6b] font-bold">Total Confirmed Covers</div>
+                  <div className="font-serif text-3xl font-bold text-[#15110e] mt-1">
+                    {confirmedGuests.length}
+                  </div>
+                  <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                    Across {weddingTables.length} tables
+                  </div>
+                </div>
+
+                <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-emerald-600 rounded-xl p-4 shadow-xs">
+                  <div className="text-xs uppercase text-emerald-800 font-bold">Vegetarian Meals</div>
+                  <div className="font-serif text-3xl font-bold text-emerald-700 mt-1">
+                    {vegCount}
+                  </div>
+                  <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                    Plant-based &amp; lacto-ovo
+                  </div>
+                </div>
+
+                <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-teal-600 rounded-xl p-4 shadow-xs">
+                  <div className="text-xs uppercase text-teal-800 font-bold">Vegan Meals</div>
+                  <div className="font-serif text-3xl font-bold text-teal-700 mt-1">
+                    {veganCount}
+                  </div>
+                  <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                    Strictly plant-based
+                  </div>
+                </div>
+
+                <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-amber-600 rounded-xl p-4 shadow-xs">
+                  <div className="text-xs uppercase text-amber-800 font-bold">Gluten-Free (Celiac)</div>
+                  <div className="font-serif text-3xl font-bold text-amber-700 mt-1">
+                    {gfCount}
+                  </div>
+                  <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                    Separate preparation
+                  </div>
+                </div>
+
+                <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-rose-600 rounded-xl p-4 shadow-xs col-span-2 sm:col-span-1">
+                  <div className="text-xs uppercase text-rose-800 font-bold">Nut Allergies &amp; Other</div>
+                  <div className="font-serif text-3xl font-bold text-rose-700 mt-1">
+                    {nutCount + otherDietCount}
+                  </div>
+                  <div className="text-[11px] text-[#8b7b6b] mt-0.5">
+                    High-alert kitchen flag
+                  </div>
+                </div>
+              </div>
+
+              {/* Table-by-Table Catering Summary */}
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h2 className="font-serif text-xl font-bold text-[#15110e]">
+                      Table-by-Table Catering Breakdown
+                    </h2>
+                    <p className="text-xs text-[#8b7b6b] mt-0.5">
+                      Specific guest dietary allocations and meal drops organized by banquet table
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-2">
+                  {weddingTables.map((tbl) => {
+                    const seatedGuests = confirmedGuests.filter(g => g.tableId === tbl.id);
+                    const specialGuests = seatedGuests.filter(g => {
+                      const d = (g.dietary || '').toLowerCase().trim();
+                      return d !== '' && d !== 'none' && d !== 'no';
+                    });
+
+                    return (
+                      <div
+                        key={tbl.id}
+                        className="border border-[#e8ded0] rounded-xl p-4 bg-[#fdfbf8] space-y-2 hover:border-[#bd9661] transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <strong className="text-sm font-serif font-bold text-[#15110e]">
+                            {tbl.name} {tbl.isHead ? '👑' : ''}
+                          </strong>
+                          <span className="text-[11px] font-bold text-[#8b7b6b] bg-white border border-[#e8ded0] px-2 py-0.5 rounded">
+                            {seatedGuests.length} / {tbl.capacity} Seated
+                          </span>
+                        </div>
+
+                        {specialGuests.length === 0 ? (
+                          <div className="text-[11px] text-emerald-700 font-medium bg-emerald-50/60 border border-emerald-200/60 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5">
+                            <span>✓</span> Standard estate menu (No special dietaries)
+                          </div>
+                        ) : (
+                          <div className="space-y-1.5 pt-1">
+                            <div className="text-[10px] uppercase font-bold text-amber-800 tracking-wider">
+                              Special Drops ({specialGuests.length}):
+                            </div>
+                            {specialGuests.map(sg => (
+                              <div
+                                key={sg.id}
+                                className="text-xs bg-white border border-amber-200 rounded-lg px-2.5 py-1.5 flex items-center justify-between gap-2"
+                              >
+                                <span className="font-semibold text-[#15110e]">{sg.name}</span>
+                                <DietaryBadges dietary={sg.dietary} size="xs" />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Comprehensive Dietary Guest Roster */}
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <h2 className="font-serif text-xl font-bold text-[#15110e]">
+                      Confirmed Guest Dietary Roster
+                    </h2>
+                    <p className="text-xs text-[#8b7b6b] mt-0.5">
+                      Showing {filteredCateringGuests.length} of {confirmedGuests.length} confirmed guests
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <input
+                      type="text"
+                      placeholder="Search guest or dietary..."
+                      value={cateringSearch}
+                      onChange={(e) => setCateringSearch(e.target.value)}
+                      className="bg-[#faf8f5] border border-[#d5c7b5] rounded-xl px-3.5 py-1.5 text-xs text-[#15110e] placeholder-[#a09080] focus:outline-none focus:border-[#bd9661] w-48 md:w-56"
+                    />
+
+                    <div className="flex items-center gap-1 bg-[#faf8f5] p-1 rounded-xl border border-[#e8ded0] flex-wrap">
+                      {[
+                        { id: 'all', label: 'All' },
+                        { id: 'special', label: 'Dietaries Only' },
+                        { id: 'vegetarian', label: 'Vegetarian' },
+                        { id: 'gluten', label: 'Gluten-Free' },
+                        { id: 'vegan', label: 'Vegan' },
+                        { id: 'nut', label: 'Nut Allergy' },
+                      ].map(f => (
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => setCateringDietFilter(f.id as any)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                            cateringDietFilter === f.id
+                              ? 'bg-[#15110e] text-[#dfc194]'
+                              : 'text-[#8b7b6b] hover:text-[#15110e]'
+                          }`}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto border border-[#e8ded0] rounded-xl">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-[#faf8f5] text-[#8b7b6b] font-bold uppercase tracking-wider border-b border-[#e8ded0]">
+                      <tr>
+                        <th className="p-3">Guest Name</th>
+                        <th className="p-3">Table Assignment</th>
+                        <th className="p-3">Seat #</th>
+                        <th className="p-3">Household / Plus-One</th>
+                        <th className="p-3">Dietary Requirements</th>
+                        <th className="p-3">Catering Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#f0ede6]">
+                      {filteredCateringGuests.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="p-8 text-center text-[#8b7b6b]">
+                            No guests match the selected dietary criteria.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredCateringGuests.map(g => {
+                          const table = weddingTables.find(t => t.id === g.tableId);
+                          const hasSpecialDiet = g.dietary && g.dietary.toLowerCase() !== 'none' && g.dietary.toLowerCase() !== 'no';
+
+                          return (
+                            <tr key={g.id} className="hover:bg-[#fdfbf8] transition-colors">
+                              <td className="p-3 font-semibold text-[#15110e]">
+                                {g.name}
+                              </td>
+                              <td className="p-3">
+                                {table ? (
+                                  <span className="bg-[#faf6f0] border border-[#ebd3a8] text-[#15110e] font-medium px-2 py-0.5 rounded">
+                                    {table.name} {table.isHead ? '👑' : ''}
+                                  </span>
+                                ) : (
+                                  <span className="text-[#8b7b6b] italic">Unassigned</span>
+                                )}
+                              </td>
+                              <td className="p-3 font-mono text-[#8b7b6b]">
+                                {g.seatIndex != null ? `Seat ${g.seatIndex + 1}` : '—'}
+                              </td>
+                              <td className="p-3 text-[#8b7b6b]">
+                                {g.household || 'Individual'}
+                              </td>
+                              <td className="p-3">
+                                {hasSpecialDiet ? (
+                                  <DietaryBadges dietary={g.dietary} size="sm" />
+                                ) : (
+                                  <span className="text-emerald-700 font-medium text-xs">Standard</span>
+                                )}
+                              </td>
+                              <td className="p-3">
+                                <span className="bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded text-[11px]">
+                                  Confirmed Cover
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ------------------------------------------------------------ */}
           {/* TAB 4: INVITATIONS & DIGITAL QARD (SAME AS COUPLE)          */}
           {/* ------------------------------------------------------------ */}
           {activeTab === 'invitations' && (
@@ -641,6 +1038,342 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
                 onSelectView={onSelectView}
               />
             </div>
+          )}
+
+          {/* ------------------------------------------------------------ */}
+          {/* TAB: CELEBRATION FEED (SAME AS MC PRO WEB VIEW)             */}
+          {/* ------------------------------------------------------------ */}
+          {activeTab === 'feed' && (
+            <section className="space-y-6 animate-in fade-in duration-200">
+              <div>
+                <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1">
+                  LIVE EVENT STREAM
+                </div>
+                <h1 className="font-serif text-3xl font-bold text-[#15110e]">
+                  Celebration Feed Moderation
+                </h1>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left 2 Cols: Single Unified Celebration Stream */}
+                <div className="lg:col-span-2 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h2 className="font-serif text-lg font-bold text-[#15110e]">
+                        Live Celebration Feed
+                      </h2>
+                      <p className="text-xs text-[#8b7b6b] mt-0.5">
+                        Love notes, toasts, photos, and announcements shared by the couple, guests &amp; coordination team.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3.5">
+                    {feedPosts.map((post) => (
+                      <div key={post.id} className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">
+                              {post.pinned ? '🎉' : post.photo ? '📸' : '💌'}
+                            </span>
+                            <strong className="text-sm text-[#15110e]">{post.title}</strong>
+                            {post.pinned && (
+                              <span className="bg-[#faf6f0] border border-[#ebd3a8] text-[#916c3d] text-[10px] font-bold px-2 py-0.5 rounded">
+                                Pinned
+                              </span>
+                            )}
+                            {post.category === 'couple' && (
+                              <span className="bg-[#15110e] text-[#dfc194] text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                Couple
+                              </span>
+                            )}
+                            {post.category === 'planner' && (
+                              <span className="bg-[#291f16] text-[#dfc194] border border-[#bd9661]/40 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                Coordinator
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-[#8b7b6b]">{post.time}</span>
+                            <span
+                              onClick={() => {
+                                setFeedPosts(feedPosts.map(p => p.id === post.id ? { ...p, expanded: !p.expanded } : p));
+                              }}
+                              className="text-xs text-[#bd9661] cursor-pointer"
+                            >
+                              {post.expanded ? '▲' : '▼'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {post.quote && (
+                          <p className="text-xs text-[#15110e] bg-[#faf8f5] p-3 rounded-xl border-l-2 border-[#bd9661] leading-relaxed">
+                            {post.quote}
+                          </p>
+                        )}
+
+                        {/* Photo Attachment if present */}
+                        {post.photo && (
+                          <div className="rounded-xl overflow-hidden border border-[#e8ded0] max-h-72 shadow-xs group">
+                            <img
+                              src={post.photo}
+                              alt="Celebration moment"
+                              className="w-full h-auto max-h-72 object-cover group-hover:scale-102 transition-transform duration-300"
+                            />
+                          </div>
+                        )}
+
+                        {post.tag && (
+                          <div className="text-xs text-[#8b7b6b]">{post.tag}</div>
+                        )}
+
+                        {/* Display replies if any */}
+                        {post.replies && post.replies.length > 0 && (
+                          <div className="space-y-1.5 pt-1 border-t border-[#f0ede4]">
+                            {post.replies.map((rep, ri) => (
+                              <div key={ri} className="bg-[#fcf8f2] rounded-xl p-2.5 text-xs border border-[#ebdcc9] flex items-start gap-2">
+                                <span className="text-sm">💍</span>
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between">
+                                    <strong className="text-[11px] text-[#916c3d]">{rep.author}</strong>
+                                    <span className="text-[10px] text-[#8b7b6b]">{rep.time}</span>
+                                  </div>
+                                  <p className="text-[11.5px] text-[#15110e] mt-0.5">{rep.text}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-1 border-t border-[#f0ede4] text-xs">
+                          <span className="text-[11px] text-[#8b7b6b]">
+                            {post.time} &bull; {post.likes} likes &bull; {post.replies?.length || post.comments || 0} replies
+                          </span>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReplyingPost(post);
+                                setReplyText('');
+                              }}
+                              className="bg-[#faf8f5] hover:bg-[#fff7ea] border border-[#ebd3a8] px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                            >
+                              <span>💬</span> Reply
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFeedPosts(feedPosts.map(p => p.id === post.id ? { ...p, likes: p.likes + 1 } : p));
+                              }}
+                              className="bg-white border border-[#e8ded0] px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-pointer hover:bg-red-50 transition-colors"
+                            >
+                              <span>❤️</span> {post.likes}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Right Col: Add Official Note with Photo Attachment */}
+                <div className="space-y-4 lg:mt-[38px]">
+                  <div className="bg-white border border-[#e8ded0] rounded-2xl p-5 shadow-sm space-y-3.5">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-serif text-base font-bold text-[#15110e]">Add Official Note</h3>
+                      <span className="text-[10px] text-[#bd9661] font-bold uppercase tracking-wider">Coordinator Post</span>
+                    </div>
+
+                    <textarea
+                      value={officialNoteText}
+                      onChange={(e) => setOfficialNoteText(e.target.value)}
+                      placeholder="Post a coordination update, toast, photo, or announcement to the celebration feed..."
+                      rows={4}
+                      className="w-full bg-[#fdfbf7] border border-[#e8ded0] rounded-xl p-3 text-xs outline-none focus:border-[#bd9661] resize-none leading-relaxed"
+                    />
+
+                    {/* Photo Preview if selected */}
+                    {officialNotePhoto && (
+                      <div className="relative rounded-xl overflow-hidden border border-[#bd9661] shadow-xs">
+                        <img
+                          src={officialNotePhoto}
+                          alt="Upload preview"
+                          className="w-full h-32 object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setOfficialNotePhoto(null)}
+                          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/75 text-white font-bold text-xs flex items-center justify-center hover:bg-rose-600 transition-colors cursor-pointer"
+                          title="Remove photo"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        ref={officialPhotoInputRef}
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              if (typeof reader.result === 'string') {
+                                setOfficialNotePhoto(reader.result);
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="hidden"
+                      />
+
+                      {/* Small link icon just left of post button */}
+                      <button
+                        type="button"
+                        onClick={() => officialPhotoInputRef.current?.click()}
+                        className={`h-[42px] w-[42px] rounded-xl border flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                          officialNotePhoto
+                            ? 'bg-[#15110e] text-[#dfc194] border-[#bd9661] ring-2 ring-[#bd9661]/30'
+                            : 'bg-[#faf8f5] hover:bg-[#f0ede4] text-[#6b5847] hover:text-[#15110e] border-[#d5c7b5]'
+                        }`}
+                        title={officialNotePhoto ? 'Photo linked (click to change)' : 'Attach image / photo link'}
+                        aria-label="Attach photo link"
+                      >
+                        <svg
+                          width="17"
+                          height="17"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                        </svg>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!officialNoteText.trim() && !officialNotePhoto) return;
+                          const newPost: FeedPost = {
+                            id: 'fp_' + Date.now(),
+                            category: 'planner',
+                            title: `Official Note from ${plannerName}`,
+                            time: 'Just now',
+                            pinned: true,
+                            quote: officialNoteText.trim() || undefined,
+                            photo: officialNotePhoto || undefined,
+                            likes: 1,
+                            comments: 0,
+                            expanded: true,
+                            replies: [],
+                          };
+                          setFeedPosts([newPost, ...feedPosts]);
+                          setOfficialNoteText('');
+                          setOfficialNotePhoto(null);
+                          showToast('Note posted to celebration feed!', 'success');
+                        }}
+                        className="flex-1 h-[42px] px-4 bg-gradient-to-r from-[#dfc194] to-[#bd9661] text-[#15110e] font-bold rounded-xl text-xs transition-all hover:brightness-105 cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+                      >
+                        <span>✨</span>
+                        <span>Post to Celebration Feed</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal: Interactive Reply to Feed Post Pop-up */}
+              {replyingPost && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+                  <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-[#e8ded0]">
+                    <div className="flex justify-between items-center pb-2 border-b border-[#e8ded0]">
+                      <div>
+                        <div className="text-[10px] uppercase font-bold text-[#bd9661] tracking-wider">CELEBRATION FEED REPLY</div>
+                        <h3 className="font-serif text-lg font-bold text-[#15110e]">Reply to {replyingPost.title}</h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setReplyingPost(null)}
+                        className="text-gray-400 hover:text-black font-bold text-xl cursor-pointer"
+                        aria-label="Close dialog"
+                      >
+                        &times;
+                      </button>
+                    </div>
+
+                    {replyingPost.quote && (
+                      <div className="bg-[#faf8f5] p-3 rounded-xl border-l-2 border-[#bd9661] text-xs italic text-[#6b5849]">
+                        "{replyingPost.quote}"
+                      </div>
+                    )}
+
+                    <div className="space-y-1.5">
+                      <label className="block text-[11px] font-bold text-[#8b7b6b] uppercase">{plannerName}'s Reply</label>
+                      <textarea
+                        rows={3}
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        placeholder={`Write a warm coordination reply to ${replyingPost.title}...`}
+                        className="w-full bg-[#fdfbf7] border border-[#e8ded0] rounded-xl p-3 text-xs text-[#15110e] outline-none focus:border-[#bd9661] resize-none"
+                      />
+                      <div className="flex gap-1.5 pt-1 flex-wrap">
+                        {['✓ Briefed with venue & MC', '🥂 Huge congratulations!', '❤️ So happy for you both!', '✨ Everything is on track!'].map((quick, qi) => (
+                          <button
+                            key={qi}
+                            type="button"
+                            onClick={() => setReplyText(quick)}
+                            className="text-[10px] bg-[#faf8f5] border border-[#e8ded0] hover:border-[#bd9661] px-2 py-0.5 rounded-full text-[#6b5849] cursor-pointer"
+                          >
+                            {quick}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2 border-t border-[#e8ded0]">
+                      <button
+                        type="button"
+                        onClick={() => setReplyingPost(null)}
+                        className="bg-white border border-[#d5c7b5] text-[#15110e] font-semibold px-4 py-2 rounded-xl text-xs hover:bg-[#faf8f5] cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!replyText.trim()) return;
+                          const updated = feedPosts.map(p => {
+                            if (p.id === replyingPost.id) {
+                              return {
+                                ...p,
+                                comments: p.comments + 1,
+                                replies: [...(p.replies || []), { author: `${plannerName} (Lead Coordinator)`, text: replyText.trim(), time: 'Just now' }],
+                              };
+                            }
+                            return p;
+                          });
+                          setFeedPosts(updated);
+                          setReplyingPost(null);
+                          setReplyText('');
+                          showToast('Reply added to feed thread', 'success');
+                        }}
+                        className="bg-[#15110e] text-[#dfc194] hover:text-white font-bold px-4 py-2 rounded-xl text-xs border border-[#bd9661] cursor-pointer"
+                      >
+                        Post Reply
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
           )}
 
           {/* ------------------------------------------------------------ */}

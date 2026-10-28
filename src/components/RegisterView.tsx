@@ -421,11 +421,8 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
   // Step 1: Proceed to Payment (Enforces Compulsory Wedding Date)
   const handleProceedToPayment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!weddingDate || !weddingDate.trim()) {
-      setWeddingDateError(true);
-      showToast('Wedding Date is mandatory. Please select your wedding date.', 'error');
-      return;
-    }
+// Wedding date is optional
+    setWeddingDateError(false);
     if (!couplePasswordsMatch) {
       showToast('Passwords do not match', 'error');
       return;
@@ -636,14 +633,17 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
       const chosenMcs = availableMcs.filter(m => selectedMcIds.includes(m.id));
       const chosenMc = chosenMcs[0] || availableMcs[0] || MC_DIRECTORY[0];
 
+      const effectiveDate = weddingDate && weddingDate.trim() ? weddingDate : '2026-11-14';
       const newWedding = {
         id: newWeddingId,
         tenantId: 'tenant_galati',
         couple: coupleName,
         partner1: bName,
         partner2: gName,
-        date: weddingDate,
-        dateDisplay: new Date(weddingDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }),
+        date: effectiveDate,
+        dateDisplay: weddingDate && weddingDate.trim()
+          ? new Date(weddingDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
+          : 'Date to be confirmed',
         venue: venue.trim() || 'Fernwood Estate, Hunter Valley',
         region: 'NSW',
         daysRemaining: isNaN(daysCalc) ? 22 : daysCalc,
@@ -1688,10 +1688,10 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c]">
-                        Wedding Date *
+                        Wedding Date
                       </label>
-                      <span className="text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200/80 px-1.5 py-0.5 rounded">
-                        Mandatory*
+                      <span className="text-[10px] font-medium text-[#8b7b6b] bg-[#faf8f5] border border-[#e8ded0] px-1.5 py-0.5 rounded">
+                        Optional
                       </span>
                     </div>
                     <div className="relative flex items-center">
@@ -1702,24 +1702,13 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                       </span>
                       <input
                         type="date"
-                        required
                         value={weddingDate}
                         onChange={(e) => {
                           setWeddingDate(e.target.value);
-                          if (e.target.value) setWeddingDateError(false);
                         }}
-                        className={`w-full bg-white border ${
-                          weddingDateError
-                            ? 'border-rose-400 focus:border-rose-500 ring-1 ring-rose-200'
-                            : 'border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661]'
-                        } rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs font-semibold`}
+                        className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs font-semibold"
                       />
                     </div>
-                    {weddingDateError && (
-                      <p className="text-[10.5px] text-rose-600 font-semibold mt-1">
-                        ✕ Wedding Date is mandatory. Please choose your wedding date to proceed.
-                      </p>
-                    )}
                   </div>
 
                   <div>

@@ -1289,31 +1289,31 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
           <button
             type="button"
             onClick={() => setShowSeedTablesModal(true)}
-            className="bg-white hover:bg-[#faf7f2] text-[#15110e] border border-[#d5c7b5] font-bold px-3 py-2 rounded-xl text-xs cursor-pointer shadow-xs transition-colors flex items-center gap-1.5"
+            className="h-[34px] bg-white hover:bg-[#faf7f2] text-[#15110e] border border-[#d5c7b5] font-bold px-3 rounded-xl text-xs cursor-pointer shadow-xs transition-colors inline-flex items-center gap-1.5 leading-none"
             title="Configure floor tables, shapes & AI seating rules based on guest list"
           >
-            <span className="text-sm">🌱</span>
+            <span className="text-xs leading-none">🌱</span>
             <span>Seed Table Form</span>
           </button>
-
-
 
           {/* Add Table */}
           <button
             type="button"
             onClick={() => setShowAddTableModal(true)}
-            className="bg-white hover:bg-[#faf7f2] text-[#15110e] font-bold px-3 py-2 rounded-xl text-xs cursor-pointer shadow-xs transition-colors flex items-center gap-1"
+            className="h-[34px] bg-white hover:bg-[#faf7f2] text-[#15110e] border border-[#d5c7b5] font-bold px-3 rounded-xl text-xs cursor-pointer shadow-xs transition-colors inline-flex items-center gap-1 leading-none"
           >
-            <span>+</span> Add Table
+            <span className="text-sm font-bold leading-none text-[#bd9661]">+</span>
+            <span>Add Table</span>
           </button>
 
           {/* Export & Print */}
           <button
             type="button"
             onClick={() => setShowExportModal(true)}
-            className="bg-[#251b14] hover:bg-[#382b20] text-white border border-[#4a3a2d] font-bold px-3 py-2 rounded-xl text-xs cursor-pointer transition-colors flex items-center gap-1.5"
+            className="h-[34px] bg-[#251b14] hover:bg-[#382b20] text-white border border-[#4a3a2d] font-bold px-3 rounded-xl text-xs cursor-pointer transition-colors inline-flex items-center gap-1.5 leading-none"
           >
-            <span>🖨️</span> Export
+            <span className="text-xs leading-none">🖨️</span>
+            <span>Export</span>
           </button>
         </div>
       </div>
