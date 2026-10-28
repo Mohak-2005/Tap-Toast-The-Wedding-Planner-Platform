@@ -141,6 +141,28 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
     count: number;
     changes: { guestId: string; tableId: string }[];
   } | null>(null);
+  const [aiProposalStatus, setAiProposalStatus] = useState<'pending' | 'confirmed' | 'rejected'>('pending');
+
+  // Mobile Seed Table Form State — 4 Essential Sections
+  const [showSeatingConfigModal, setShowSeatingConfigModal] = useState(false);
+  const [configTableCount, setConfigTableCount] = useState(8);
+  const [configSeatsPerTable, setConfigSeatsPerTable] = useState(10);
+  const [configTableShape, setConfigTableShape] = useState<'round' | 'rectangular' | 'king' | 'hybrid'>('round');
+  const [configDietaryStrategy, setConfigDietaryStrategy] = useState<'cluster' | 'distributed' | 'vip_first' | 'standard'>('cluster');
+
+  // Section 2: Guest Groups
+  const [configFamilyGrouping, setConfigFamilyGrouping] = useState<'side_by_side' | 'separate' | 'combined'>('side_by_side');
+  const [configSocialGrouping, setConfigSocialGrouping] = useState<'social_circles' | 'integrated_mix' | 'vip_proximity'>('social_circles');
+  const [configChildrenGrouping, setConfigChildrenGrouping] = useState<'with_parents' | 'kids_table' | 'flexible_pods'>('with_parents');
+
+  // Section 3: Seating Preferences
+  const [configSitTogether, setConfigSitTogether] = useState<'couples_families' | 'households_strict' | 'friend_duos'>('couples_families');
+  const [configSitSeparately, setConfigSitSeparately] = useState<'conflicts_buffer' | 'ex_partners' | 'none'>('conflicts_buffer');
+  const [configFamilyCouplesChildren, setConfigFamilyCouplesChildren] = useState<'strict_family_unit' | 'young_kids_only' | 'standard'>('strict_family_unit');
+
+  // Section 4: Special Seating Rules
+  const [configIncludeHeadTable, setConfigIncludeHeadTable] = useState(true);
+  const [configReserveVipTables, setConfigReserveVipTables] = useState(true);
 
   // Joey Chatbot inside Mobile
   const [showJoey, setShowJoey] = useState(false);
@@ -194,6 +216,10 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
   const declinedGuests = weddingGuests.filter(g => g.rsvpStatus === 'declined');
   const seatedGuestsCount = weddingGuests.filter(g => g.tableId).length;
   const unassignedGuests = weddingGuests.filter(g => !g.tableId && g.rsvpStatus !== 'declined');
+  const confirmedGuestsCount = weddingGuests.filter((g) => g.rsvpStatus !== 'declined').length;
+  const uniqueHouseholdsCount = new Set(weddingGuests.map((g) => g.household).filter(Boolean)).size;
+  const dietaryGuestsCount = weddingGuests.filter((g) => g.dietary && g.dietary !== 'None' && g.dietary.trim() !== '').length;
+  const suggestedMobileTables = Math.max(1, Math.ceil(Math.max(1, confirmedGuestsCount - (configIncludeHeadTable ? 8 : 0)) / configSeatsPerTable));
 
   // Aggregated Family Groups for Mobile Guest List
   const mobileFamilyGroups = React.useMemo(() => {
@@ -793,7 +819,79 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
       count: proposedChanges.length,
       changes: proposedChanges,
     });
+    setAiProposalStatus('pending');
     setShowCheersAiModal(true);
+  };
+
+  const handleConfirmMobileProposal = () => {
+    if (!aiProposal || aiProposal.changes.length === 0) return;
+    const changeMap = new Map(aiProposal.changes.map((c) => [c.guestId, c.tableId]));
+    const updatedGuests = (state.guests || []).map((g) => {
+      if (changeMap.has(g.id)) {
+        return { ...g, tableId: changeMap.get(g.id)!, seatIndex: 0 };
+      }
+      return g;
+    });
+
+    setState({ ...state, guests: updatedGuests });
+    setAiProposalStatus('confirmed');
+    showToast(`✓ Confirmed & seated ${aiProposal.changes.length} guests on canvas!`, 'success');
+  };
+
+  const handleRejectMobileProposal = () => {
+    setAiProposalStatus('rejected');
+    showToast('Proposal rejected. What changes do you suggest?', 'info');
+  };
+
+  const handleApplyMobileSeatingConfig = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const count = Math.max(1, Math.min(16, configTableCount));
+    const cap = Math.max(4, Math.min(24, configSeatsPerTable));
+    const newTables: Table[] = [];
+
+    if (configIncludeHeadTable) {
+      newTables.push({
+        id: `tbl_${currentWeddingId}_head`,
+        weddingId: currentWeddingId,
+        name: 'Head Table',
+        capacity: 8,
+        isHead: true,
+        shape: 'king',
+        mobileX: 50,
+        mobileY: 15,
+        category: 'Bridal Party',
+        zone: 'Main Ballroom',
+      });
+    }
+
+    for (let i = 0; i < count; i++) {
+      const tableNum = i + 1;
+      const shape: TableShape = configTableShape === 'hybrid'
+        ? (i < 2 ? 'rectangular' : 'round')
+        : configTableShape;
+      newTables.push({
+        id: `tbl_${currentWeddingId}_m_${Date.now()}_${i}`,
+        weddingId: currentWeddingId,
+        name: `Table ${tableNum}`,
+        capacity: cap,
+        isHead: false,
+        shape,
+        mobileX: 23 + (i % 2) * 54,
+        mobileY: 34 + Math.floor(i / 2) * 22,
+        category: i % 2 === 0 ? 'Family' : 'Friends',
+        zone: 'Main Ballroom',
+      });
+    }
+
+    const otherTables = (state.tables || []).filter((t) => (t.weddingId || 'w1') !== currentWeddingId);
+    setState({
+      ...state,
+      tables: [...otherTables, ...newTables],
+    });
+
+    setShowSeatingConfigModal(false);
+    handleRunCheersAiSeating(configDietaryStrategy === 'cluster' ? 'dietary' : 'households');
+    showToast(`✓ Generated ${newTables.length} tables based on guest list!`, 'success');
   };
 
   const handleApplyAiProposal = () => {
@@ -1830,11 +1928,23 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                   </div>
                 </div>
 
-                <div className="pt-1 border-t border-[#f5f2eb]">
+                <div className="pt-1 border-t border-[#f5f2eb] flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConfigTableCount(suggestedMobileTables);
+                      setShowSeatingConfigModal(true);
+                    }}
+                    className="flex-1 bg-white hover:bg-[#faf8f5] text-[#15110e] border border-[#d5c7b5] rounded-xl py-2 px-2.5 text-xs font-bold cursor-pointer shadow-2xs flex items-center justify-center gap-1.5 transition-all"
+                    title="Configure floor layout, shapes, and AI seating rules based on guest list"
+                  >
+                    <span>🌱</span>
+                    <span>Seed Table Form</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => setShowAddTableModal(true)}
-                    className="w-full bg-white hover:bg-[#faf8f5] text-[#15110e] border border-[#d5c7b5] rounded-xl py-2 px-3 text-xs font-bold cursor-pointer shadow-2xs flex items-center justify-center gap-1.5 transition-all"
+                    className="bg-white hover:bg-[#faf8f5] text-[#15110e] border border-[#d5c7b5] rounded-xl py-2 px-3 text-xs font-bold cursor-pointer shadow-2xs flex items-center justify-center gap-1.5 transition-all shrink-0"
                   >
                     <span className="text-sm font-bold text-[#bd9661]">+</span>
                     <span>Add Table</span>
@@ -3231,6 +3341,327 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
         )}
 
         {/* ============================================================== */}
+        {/* MOBILE SEATING PLAN CONFIGURATION FORM MODAL                   */}
+        {/* ============================================================== */}
+        {showSeatingConfigModal && (
+          <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 animate-in fade-in">
+            <div className="bg-white rounded-3xl p-4 max-w-[350px] w-full space-y-3 shadow-2xl border-2 border-[#bd9661] max-h-[92%] flex flex-col">
+              {/* Header */}
+              <div className="bg-[#15110e] text-white p-3 px-4 flex items-center justify-between border-b border-[#bd9661]/40 shrink-0 rounded-t-3xl -mx-4 -mt-4 mb-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#dfc194] to-[#bd9661] text-[#15110e] flex items-center justify-center font-bold text-xs shadow-xs">
+                    🌱
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-sm font-bold text-[#dfc194] leading-tight">
+                      Seed Table Form
+                    </h3>
+                    <div className="text-[9.5px] text-[#bd9661] font-medium">Essential Fields Only • 4 Pillars</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSeatingConfigModal(false)}
+                  className="w-7 h-7 rounded-lg text-[#dfc194] hover:text-white hover:bg-white/10 flex items-center justify-center text-lg cursor-pointer transition-colors"
+                >
+                  &times;
+                </button>
+              </div>
+
+              {/* Form Content */}
+              <div className="space-y-3 flex-1 overflow-y-auto pr-0.5 text-xs">
+                {/* Auto-Fetched Guest Telemetry */}
+                <div className="bg-[#faf8f5] border border-[#ebd3a8] rounded-xl p-2.5 space-y-1.5 text-center">
+                  <div className="text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider flex items-center justify-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Auto-Fetched From Guest List
+                  </div>
+                  <div className="grid grid-cols-3 gap-1 text-center">
+                    <div className="bg-white border border-[#e8ded0] p-1.5 rounded-lg">
+                      <div className="font-bold text-sm text-[#15110e]">{confirmedGuestsCount}</div>
+                      <div className="text-[9px] text-[#8b7b6b]">Guests</div>
+                    </div>
+                    <div className="bg-white border border-[#e8ded0] p-1.5 rounded-lg">
+                      <div className="font-bold text-sm text-[#15110e]">{uniqueHouseholdsCount}</div>
+                      <div className="text-[9px] text-[#8b7b6b]">Households</div>
+                    </div>
+                    <div className="bg-white border border-[#e8ded0] p-1.5 rounded-lg">
+                      <div className="font-bold text-sm text-[#bd9661]">{dietaryGuestsCount}</div>
+                      <div className="text-[9px] text-[#8b7b6b]">Dietary</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 1. VENUE & TABLE SETUP */}
+                <div className="bg-[#faf8f5] border border-[#ebd3a8] rounded-xl p-2.5 space-y-2">
+                  <div className="flex items-center justify-between border-b border-[#f0e4d2] pb-1">
+                    <span className="font-bold text-[10px] uppercase text-[#15110e] tracking-wider">
+                      1. Venue &amp; Table Setup
+                    </span>
+                    <span className="text-[9px] text-[#bd9661] font-semibold">Dimensions</span>
+                  </div>
+
+                  {/* Seats per table & Table count */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#6b5847] mb-0.5">
+                        Number of Tables
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setConfigTableCount(Math.max(1, configTableCount - 1))}
+                          className="w-7 h-7 rounded-lg bg-white border border-[#d5c7b5] text-xs font-bold cursor-pointer"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          max="16"
+                          value={configTableCount}
+                          onChange={(e) => setConfigTableCount(Number(e.target.value))}
+                          className="w-10 text-center bg-white border border-[#d5c7b5] rounded-lg py-1 text-xs font-bold outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setConfigTableCount(configTableCount + 1)}
+                          className="w-7 h-7 rounded-lg bg-white border border-[#d5c7b5] text-xs font-bold cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#6b5847] mb-0.5">
+                        Seats Per Table
+                      </label>
+                      <select
+                        value={configSeatsPerTable}
+                        onChange={(e) => setConfigSeatsPerTable(Number(e.target.value))}
+                        className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2 py-1.5 text-xs text-[#15110e] font-semibold outline-none"
+                      >
+                        <option value={8}>8 Seats (Luxury)</option>
+                        <option value={10}>10 Seats (Standard)</option>
+                        <option value={12}>12 Seats (Density)</option>
+                        <option value={14}>14 Seats (Banquet)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Table Shape */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-[#6b5847] mb-0.5">
+                      Table Type
+                    </label>
+                    <select
+                      value={configTableShape}
+                      onChange={(e) => setConfigTableShape(e.target.value as any)}
+                      className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2 py-1.5 text-xs text-[#15110e] font-semibold outline-none"
+                    >
+                      <option value="round">⚪ Round Banquet Tables</option>
+                      <option value="rectangular">▯ Rectangular Tables</option>
+                      <option value="king">👑 Long King Tables</option>
+                      <option value="hybrid">✨ Hybrid (Head + Round)</option>
+                    </select>
+                  </div>
+
+                  {/* Dietary Requirements per table */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-[#6b5847] mb-0.5">
+                      Dietary Requirements per Table
+                    </label>
+                    <select
+                      value={configDietaryStrategy}
+                      onChange={(e) => setConfigDietaryStrategy(e.target.value as any)}
+                      className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2 py-1.5 text-xs text-[#15110e] font-semibold outline-none"
+                    >
+                      <option value="cluster">🥗 Dedicated Dietary Tables (Catering Sync)</option>
+                      <option value="distributed">🍽️ Distribute with Family Units</option>
+                      <option value="vip_first">👑 Head Table &amp; VIP Priority</option>
+                      <option value="standard">✨ Standard / Mixed Tables</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* 2. GUEST GROUPS */}
+                <div className="bg-[#faf8f5] border border-[#ebd3a8] rounded-xl p-2.5 space-y-2">
+                  <div className="flex items-center justify-between border-b border-[#f0e4d2] pb-1">
+                    <span className="font-bold text-[10px] uppercase text-[#15110e] tracking-wider">
+                      2. Guest Groups
+                    </span>
+                    <span className="text-[9px] text-[#bd9661] font-semibold">Clustering</span>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-[#6b5847] mb-0.5">
+                      Bride's &amp; Groom's Family
+                    </label>
+                    <select
+                      value={configFamilyGrouping}
+                      onChange={(e) => setConfigFamilyGrouping(e.target.value as any)}
+                      className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2 py-1.5 text-xs text-[#15110e] font-semibold outline-none"
+                    >
+                      <option value="side_by_side">Side-by-Side Front Ballroom</option>
+                      <option value="separate">Separate Bride &amp; Groom Tables</option>
+                      <option value="combined">Combined Blended Families</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-[#6b5847] mb-0.5">
+                      Friends, Colleagues &amp; VIPs
+                    </label>
+                    <select
+                      value={configSocialGrouping}
+                      onChange={(e) => setConfigSocialGrouping(e.target.value as any)}
+                      className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2 py-1.5 text-xs text-[#15110e] font-semibold outline-none"
+                    >
+                      <option value="social_circles">Group by Social Circles</option>
+                      <option value="integrated_mix">Integrated Social Mix</option>
+                      <option value="vip_proximity">VIP Front Row Proximity</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-[#6b5847] mb-0.5">
+                      Children &amp; Families
+                    </label>
+                    <select
+                      value={configChildrenGrouping}
+                      onChange={(e) => setConfigChildrenGrouping(e.target.value as any)}
+                      className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2 py-1.5 text-xs text-[#15110e] font-semibold outline-none"
+                    >
+                      <option value="with_parents">Keep with Parents &amp; Families</option>
+                      <option value="kids_table">Dedicated Kids Table</option>
+                      <option value="flexible_pods">Flexible Family Pods</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* 3. SEATING PREFERENCES */}
+                <div className="bg-[#faf8f5] border border-[#ebd3a8] rounded-xl p-2.5 space-y-2">
+                  <div className="flex items-center justify-between border-b border-[#f0e4d2] pb-1">
+                    <span className="font-bold text-[10px] uppercase text-[#15110e] tracking-wider">
+                      3. Seating Preferences
+                    </span>
+                    <span className="text-[9px] text-[#bd9661] font-semibold">Rules</span>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-[#6b5847] mb-0.5">
+                      Guests Who Must Sit Together
+                    </label>
+                    <select
+                      value={configSitTogether}
+                      onChange={(e) => setConfigSitTogether(e.target.value as any)}
+                      className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2 py-1.5 text-xs text-[#15110e] font-semibold outline-none"
+                    >
+                      <option value="couples_families">Couples &amp; Family Units Together</option>
+                      <option value="households_strict">Strict Household Cohesion</option>
+                      <option value="friend_duos">Close Friend Duos</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-[#6b5847] mb-0.5">
+                      Guests Who Must Sit Separately
+                    </label>
+                    <select
+                      value={configSitSeparately}
+                      onChange={(e) => setConfigSitSeparately(e.target.value as any)}
+                      className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2 py-1.5 text-xs text-[#15110e] font-semibold outline-none"
+                    >
+                      <option value="conflicts_buffer">Separate Conflicting Groups (Buffer 2+)</option>
+                      <option value="ex_partners">Separate Ex-Partners / Factions</option>
+                      <option value="none">No Separation Constraints</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-[#6b5847] mb-0.5">
+                      Couples &amp; Children With Family
+                    </label>
+                    <select
+                      value={configFamilyCouplesChildren}
+                      onChange={(e) => setConfigFamilyCouplesChildren(e.target.value as any)}
+                      className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2 py-1.5 text-xs text-[#15110e] font-semibold outline-none"
+                    >
+                      <option value="strict_family_unit">Strict: Always Sit with Family</option>
+                      <option value="young_kids_only">Young Kids with Parents Only</option>
+                      <option value="standard">Standard Unit Priority</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* 4. SPECIAL SEATING RULES */}
+                <div className="bg-[#faf8f5] border border-[#ebd3a8] rounded-xl p-2.5 space-y-2">
+                  <div className="flex items-center justify-between border-b border-[#f0e4d2] pb-1">
+                    <span className="font-bold text-[10px] uppercase text-[#15110e] tracking-wider">
+                      4. Special Seating Rules
+                    </span>
+                    <span className="text-[9px] text-[#bd9661] font-semibold">VIP &amp; Head</span>
+                  </div>
+
+                  <label className="flex items-center gap-2 p-1.5 bg-white rounded-lg border border-[#ebd3a8] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={configIncludeHeadTable}
+                      onChange={(e) => setConfigIncludeHeadTable(e.target.checked)}
+                      className="accent-[#bd9661] w-4 h-4 rounded"
+                    />
+                    <span className="font-bold text-[#15110e] text-[10.5px]">
+                      👑 Head Table for the Couple (8 Seats)
+                    </span>
+                  </label>
+
+                  <label className="flex items-center gap-2 p-1.5 bg-white rounded-lg border border-[#ebd3a8] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={configReserveVipTables}
+                      onChange={(e) => setConfigReserveVipTables(e.target.checked)}
+                      className="accent-[#bd9661] w-4 h-4 rounded"
+                    />
+                    <span className="font-bold text-[#15110e] text-[10.5px]">
+                      ⭐ Reserved Tables for VIPs (Tables 1 &amp; 2)
+                    </span>
+                  </label>
+                </div>
+
+                {/* Planned Capacity Pill */}
+                <div className="p-2 bg-[#faf5ed] border border-[#ebd3a8] rounded-xl flex items-center justify-between text-[11px]">
+                  <span className="text-[#544332] font-semibold">
+                    Capacity: <strong>{configTableCount * configSeatsPerTable + (configIncludeHeadTable ? 8 : 0)} Seats</strong> ({configTableCount + (configIncludeHeadTable ? 1 : 0)} Tables)
+                  </span>
+                  <span className="bg-[#bd9661] text-[#15110e] px-2 py-0.5 rounded-full text-[9.5px] font-bold">
+                    {configTableCount * configSeatsPerTable + (configIncludeHeadTable ? 8 : 0) >= confirmedGuestsCount ? '✓ Covered' : '⚠️ Need Seats'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex gap-2 pt-1 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowSeatingConfigModal(false)}
+                  className="flex-1 py-2 rounded-xl border border-[#d5c7b5] bg-[#faf8f5] text-xs font-bold text-[#15110e] cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApplyMobileSeatingConfig}
+                  className="flex-2 py-2 rounded-xl bg-gradient-to-r from-[#dfc194] to-[#bd9661] text-[#15110e] text-xs font-bold cursor-pointer hover:brightness-105 shadow-sm"
+                >
+                  ✨ Apply &amp; Launch Cheers AI
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
         {/* CHEERS AI ASSIST MODAL                                         */}
         {/* ============================================================== */}
         {showCheersAiModal && (
@@ -3311,23 +3742,97 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
                 </div>
               )}
 
-              <div className="flex gap-2 pt-1 flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setShowCheersAiModal(false)}
-                  className="flex-1 py-2 rounded-xl border border-[#e8ded0] bg-[#faf8f5] hover:bg-[#f0ede4] text-xs font-bold text-[#15110e] cursor-pointer transition-colors"
-                >
-                  Dismiss
-                </button>
-                <button
-                  type="button"
-                  disabled={!aiProposal || aiProposal.changes.length === 0}
-                  onClick={handleApplyAiProposal}
-                  className="flex-1 py-2 rounded-xl bg-gradient-to-r from-[#dfc194] to-[#bd9661] text-[#15110e] text-xs font-bold cursor-pointer hover:brightness-105 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
-                >
-                  Apply
-                </button>
+              {/* Telemetry Indicator */}
+              <div className="flex items-center justify-between bg-[#faf8f5] border border-[#ebd3a8] rounded-xl px-2.5 py-1 text-[10px] text-[#544332] shrink-0">
+                <span>👥 <strong>{confirmedGuestsCount}</strong> Guests</span>
+                <span>🏠 <strong>{uniqueHouseholdsCount}</strong> Households</span>
+                <span>🥗 <strong>{dietaryGuestsCount}</strong> Dietary</span>
               </div>
+
+              {/* Confirm / Reject / Suggestion Actions */}
+              {aiProposalStatus === 'confirmed' ? (
+                <div className="space-y-2 pt-1 flex-shrink-0">
+                  <div className="w-full text-center py-2 bg-emerald-50 text-emerald-800 rounded-xl font-bold text-xs border border-emerald-200 shadow-2xs flex items-center justify-center gap-1.5">
+                    <span>✓</span>
+                    <span>Confirmed &amp; Applied to Floor Plan</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowCheersAiModal(false)}
+                    className="w-full py-2 bg-[#15110e] text-[#dfc194] rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : aiProposalStatus === 'rejected' ? (
+                <div className="space-y-2 pt-1 flex-shrink-0">
+                  <div className="w-full text-center py-1.5 bg-[#fbeae8] text-[#a8382c] rounded-xl font-bold text-xs border border-[#f5c2bc] shadow-2xs flex items-center justify-center gap-1.5">
+                    <span>✕</span>
+                    <span>Proposal Declined</span>
+                  </div>
+                  <div className="bg-[#faf8f5] border border-[#ebd3a8] rounded-xl p-2 text-center text-xs text-[#544332] space-y-1">
+                    <div className="font-bold text-[10.5px] text-[#15110e]">What changes do you suggest?</div>
+                    <div className="text-[9.5px] text-[#8b7b6b]">Select an alternative rule below to re-arrange:</div>
+                    <div className="grid grid-cols-2 gap-1 text-[9.5px] pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => handleRunCheersAiSeating('households')}
+                        className="p-1.5 bg-white border border-[#d5c7b5] rounded-lg font-semibold hover:bg-[#faf5ee] text-[#15110e] cursor-pointer"
+                      >
+                        🏠 Families Together
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRunCheersAiSeating('dietary')}
+                        className="p-1.5 bg-white border border-[#d5c7b5] rounded-lg font-semibold hover:bg-[#faf5ee] text-[#15110e] cursor-pointer"
+                      >
+                        🥗 Dedicated Dietary
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRunCheersAiSeating('vips')}
+                        className="p-1.5 bg-white border border-[#d5c7b5] rounded-lg font-semibold hover:bg-[#faf5ee] text-[#15110e] cursor-pointer"
+                      >
+                        👑 Head Table VIPs
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRunCheersAiSeating('fill')}
+                        className="p-1.5 bg-white border border-[#d5c7b5] rounded-lg font-semibold hover:bg-[#faf5ee] text-[#15110e] cursor-pointer"
+                      >
+                        ⚡ Even Density
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowCheersAiModal(false)}
+                    className="w-full py-1 text-xs text-[#8b7b6b] hover:text-[#15110e] font-semibold cursor-pointer text-center"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2 pt-1 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleRejectMobileProposal}
+                    className="flex-1 py-2 rounded-xl border border-[#d5c7b5] bg-white hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 text-xs font-bold text-[#8b7b6b] cursor-pointer transition-colors shadow-2xs flex items-center justify-center gap-1"
+                  >
+                    <span>✕</span>
+                    <span>Reject</span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!aiProposal || aiProposal.changes.length === 0}
+                    onClick={handleConfirmMobileProposal}
+                    className="flex-2 py-2 rounded-xl bg-gradient-to-r from-[#dfc194] to-[#bd9661] text-[#15110e] text-xs font-bold cursor-pointer hover:brightness-105 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm flex items-center justify-center gap-1"
+                  >
+                    <span>✓</span>
+                    <span>Confirm &amp; Auto-Seat</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}

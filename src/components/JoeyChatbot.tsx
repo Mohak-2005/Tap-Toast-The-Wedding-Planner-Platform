@@ -553,11 +553,10 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-[#bd9661] flex items-center justify-center">
                   <img src="/chatbot-avatar.png" alt="Joey AI" className="w-full h-full object-cover" />
                 </div>
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-[#181310]" />
-              </div>
+                              </div>
               <div>
                 <h3 className="font-serif text-base font-semibold leading-tight text-[#dfc194]">Joey</h3>
-                <p className="text-[11px] text-[#a8988a]">AI Wedding Assistant · Online</p>
+                <p className="text-[11px] text-[#a8988a]">AI Wedding Assistant</p>
               </div>
             </div>
             <button

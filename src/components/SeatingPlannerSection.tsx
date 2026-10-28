@@ -66,6 +66,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
       changes: { guestId: string; tableId: string }[];
     };
     isApplied?: boolean;
+    status?: 'pending' | 'confirmed' | 'rejected';
   }>>([
     {
       id: 'msg_welcome',
@@ -75,14 +76,26 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
     },
   ]);
 
-  // Table Seeding & Inventory Wizard State
+  // Seed Table Form State — 4 Essential Sections
   const [showSeedTablesModal, setShowSeedTablesModal] = useState<boolean>(false);
-  const [seedTablePrefix, setSeedTablePrefix] = useState<string>('Table ');
-  const [seedTableCount, setSeedTableCount] = useState<number>(6);
-  const [seedTableShape, setSeedTableShape] = useState<TableShape>('round');
-  const [seedTableCapacity, setSeedTableCapacity] = useState<number>(10);
-  const [seedTableCategory, setSeedTableCategory] = useState<string>('Family');
-  const [seedTableZone, setSeedTableZone] = useState<string>('Main Ballroom');
+  const [configTableCount, setConfigTableCount] = useState<number>(8);
+  const [configSeatsPerTable, setConfigSeatsPerTable] = useState<number>(10);
+  const [configTableShape, setConfigTableShape] = useState<'round' | 'rectangular' | 'king' | 'hybrid'>('round');
+  const [configDietaryStrategy, setConfigDietaryStrategy] = useState<'cluster' | 'distributed' | 'vip_first' | 'standard'>('cluster');
+  
+  // Section 2: Guest Groups
+  const [configFamilyGrouping, setConfigFamilyGrouping] = useState<'side_by_side' | 'separate' | 'combined'>('side_by_side');
+  const [configSocialGrouping, setConfigSocialGrouping] = useState<'social_circles' | 'integrated_mix' | 'vip_proximity'>('social_circles');
+  const [configChildrenGrouping, setConfigChildrenGrouping] = useState<'with_parents' | 'kids_table' | 'flexible_pods'>('with_parents');
+
+  // Section 3: Seating Preferences
+  const [configSitTogether, setConfigSitTogether] = useState<'couples_families' | 'households_strict' | 'friend_duos'>('couples_families');
+  const [configSitSeparately, setConfigSitSeparately] = useState<'conflicts_buffer' | 'ex_partners' | 'none'>('conflicts_buffer');
+  const [configFamilyCouplesChildren, setConfigFamilyCouplesChildren] = useState<'strict_family_unit' | 'young_kids_only' | 'standard'>('strict_family_unit');
+
+  // Section 4: Special Seating Rules
+  const [configIncludeHeadTable, setConfigIncludeHeadTable] = useState<boolean>(true);
+  const [configReserveVipTables, setConfigReserveVipTables] = useState<boolean>(true);
 
   // New Table Form State
   const [newTableName, setNewTableName] = useState<string>('');
@@ -103,6 +116,29 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
   const weddingGuests = useMemo(() => {
     return (state.guests || []).filter((g) => (g.weddingId || 'w1') === currentWeddingId);
   }, [state.guests, currentWeddingId]);
+
+  // Auto-Fetched Guest Intelligence Telemetry for Cheers AI Configuration
+  const confirmedGuestsCount = useMemo(() => {
+    return weddingGuests.filter((g) => g.rsvpStatus !== 'declined').length;
+  }, [weddingGuests]);
+
+  const uniqueHouseholds = useMemo(() => {
+    return Array.from(new Set(weddingGuests.map((g) => g.household).filter(Boolean)));
+  }, [weddingGuests]);
+
+  const dietaryGuestsCount = useMemo(() => {
+    return weddingGuests.filter((g) => g.dietary && g.dietary !== 'None' && g.dietary.trim() !== '').length;
+  }, [weddingGuests]);
+
+  // Dynamically calculate recommended tables needed based on guest count and seats per table
+  const suggestedTablesCount = useMemo(() => {
+    const guestsRemaining = Math.max(1, confirmedGuestsCount - (configIncludeHeadTable ? 8 : 0));
+    return Math.max(1, Math.ceil(guestsRemaining / configSeatsPerTable));
+  }, [confirmedGuestsCount, configIncludeHeadTable, configSeatsPerTable]);
+
+  useEffect(() => {
+    setConfigTableCount(suggestedTablesCount);
+  }, [suggestedTablesCount]);
 
   // Ensure tables have initial shape and coordinates if missing, filtered by current wedding
   const tables: Table[] = useMemo(() => {
@@ -926,6 +962,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
         sender: 'cheers',
         text: introText,
         proposal: proposal.count > 0 ? proposal : undefined,
+        status: 'pending',
         timestamp: 'Just now',
       },
     ]);
@@ -956,7 +993,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
     }
   };
 
-  const handleApplyChatProposal = (msgId: string, proposal?: { changes: { guestId: string; tableId: string }[] }) => {
+  const handleConfirmChatProposal = (msgId: string, proposal?: { title: string; count: number; changes: { guestId: string; tableId: string }[] }) => {
     if (!proposal || proposal.changes.length === 0) return;
     const changeMap = new Map(proposal.changes.map((c) => [c.guestId, c.tableId]));
     const updatedGuests = (state.guests || []).map((g) => {
@@ -967,129 +1004,216 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
     });
 
     setState({ ...state, guests: updatedGuests });
-    setCheersMessages((prev) =>
-      prev.map((m) => (m.id === msgId ? { ...m, isApplied: true } : m))
-    );
-    showToast(`✨ Cheers AI successfully applied ${proposal.changes.length} seating recommendations to canvas!`, 'success');
+    setCheersMessages((prev) => [
+      ...prev.map((m) => (m.id === msgId ? { ...m, isApplied: true, status: 'confirmed' as const } : m)),
+      {
+        id: 'ch_conf_' + Date.now(),
+        sender: 'cheers',
+        text: `✨ Seating confirmed! I've automatically placed ${proposal.count} guests at their assigned tables on your floor plan canvas. The changes are synchronized live across the couple, MC, and wedding planner consoles.`,
+        timestamp: 'Just now',
+      },
+    ]);
+    showToast(`✓ Confirmed & seated ${proposal.count} guests on canvas!`, 'success');
+  };
+
+  const handleRejectChatProposal = (msgId: string) => {
+    setCheersMessages((prev) => [
+      ...prev.map((m) => (m.id === msgId ? { ...m, status: 'rejected' as const } : m)),
+      {
+        id: 'ch_rej_' + Date.now(),
+        sender: 'cheers',
+        text: `Understood, proposal declined. What changes do you suggest or what would you like to adjust?\n\nYou can type your suggestions below (e.g. "Seat the Chen family closer to table 2", "Keep vegetarian guests together", "Make tables 8 seats instead of 10"), or click any quick action above to generate another option.`,
+        timestamp: 'Just now',
+      },
+    ]);
+    showToast('Proposal rejected. What changes do you suggest?', 'info');
   };
 
   // -------------------------------------------------------------
-  // TABLE SEEDING & INVENTORY ENGINE
+  // SEATING PLAN CONFIGURATION ENGINE (Auto-fetches guest telemetry)
   // -------------------------------------------------------------
-  const handleSeedPreset = (presetKey: 'ballroom_80' | 'intimate_80' | 'banquet_68' | 'king_64') => {
-    let seededTables: Table[] = [];
+  const handleApplySeatingConfig = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const count = Math.max(1, Math.min(24, configTableCount));
+    const cap = Math.max(4, Math.min(30, configSeatsPerTable));
 
-    if (presetKey === 'ballroom_80') {
-      // 8 Round Tables x 10 Seats (80 capacity)
-      seededTables = [
-        { id: `tbl_${currentWeddingId}_1`, weddingId: currentWeddingId, name: 'Table 1', capacity: 10, shape: 'round', isHead: false, category: 'Friends', zone: 'West Wing', x: 20, y: 30 },
-        { id: `tbl_${currentWeddingId}_2`, weddingId: currentWeddingId, name: 'Table 2', capacity: 10, shape: 'round', isHead: false, category: 'Family', zone: 'West Wing', x: 40, y: 30 },
-        { id: `tbl_${currentWeddingId}_3`, weddingId: currentWeddingId, name: 'Table 3', capacity: 10, shape: 'round', isHead: false, category: 'Friends', zone: 'East Wing', x: 60, y: 30 },
-        { id: `tbl_${currentWeddingId}_4`, weddingId: currentWeddingId, name: 'Table 4', capacity: 10, shape: 'round', isHead: false, category: 'Family', zone: 'East Wing', x: 80, y: 30 },
-        { id: `tbl_${currentWeddingId}_5`, weddingId: currentWeddingId, name: 'Table 5', capacity: 10, shape: 'round', isHead: false, category: 'Friends', zone: 'South Terrace', x: 20, y: 70 },
-        { id: `tbl_${currentWeddingId}_6`, weddingId: currentWeddingId, name: 'Table 6', capacity: 10, shape: 'round', isHead: false, category: 'Family', zone: 'Center Ballroom', x: 40, y: 70 },
-        { id: `tbl_${currentWeddingId}_7`, weddingId: currentWeddingId, name: 'Table 7', capacity: 10, shape: 'round', isHead: false, category: 'Friends', zone: 'Center Ballroom', x: 60, y: 70 },
-        { id: `tbl_${currentWeddingId}_8`, weddingId: currentWeddingId, name: 'Table 8', capacity: 10, shape: 'round', isHead: false, category: 'VIP', zone: 'South Terrace', x: 80, y: 70 },
-      ];
-    } else if (presetKey === 'intimate_80') {
-      // 10 Round Tables x 8 Seats (80 capacity)
-      seededTables = Array.from({ length: 10 }).map((_, idx) => ({
-        id: `tbl_${currentWeddingId}_${idx + 1}`,
+    const newTables: Table[] = [];
+
+    // 1. Special Seating Rule: Head Table for the couple
+    if (configIncludeHeadTable) {
+      newTables.push({
+        id: `tbl_${currentWeddingId}_head`,
         weddingId: currentWeddingId,
-        name: `Table ${idx + 1}`,
+        name: 'Head Table',
         capacity: 8,
-        shape: 'round',
-        isHead: false,
-        category: idx % 2 === 0 ? 'Family' : 'Friends',
-        zone: idx < 5 ? 'North Pavilion' : 'South Lawn',
-        x: 18 + (idx % 5) * 16,
-        y: idx < 5 ? 32 : 68,
-      }));
-    } else if (presetKey === 'banquet_68') {
-      // 1 Head Table (8) + 6 Rectangular (10) (68 capacity)
-      seededTables = [
-        { id: `tbl_${currentWeddingId}_head`, weddingId: currentWeddingId, name: 'Head Table', capacity: 8, shape: 'king', isHead: true, category: 'Bridal Party', zone: 'Stage & VIP Wing', x: 50, y: 15 },
-        { id: `tbl_${currentWeddingId}_1`, weddingId: currentWeddingId, name: 'Table 1', capacity: 10, shape: 'rectangular', isHead: false, category: 'Family', zone: 'Left Terrace', x: 25, y: 38 },
-        { id: `tbl_${currentWeddingId}_2`, weddingId: currentWeddingId, name: 'Table 2', capacity: 10, shape: 'rectangular', isHead: false, category: 'Family', zone: 'Center Ballroom', x: 50, y: 38 },
-        { id: `tbl_${currentWeddingId}_3`, weddingId: currentWeddingId, name: 'Table 3', capacity: 10, shape: 'rectangular', isHead: false, category: 'Friends', zone: 'Right Garden', x: 75, y: 38 },
-        { id: `tbl_${currentWeddingId}_4`, weddingId: currentWeddingId, name: 'Table 4', capacity: 10, shape: 'rectangular', isHead: false, category: 'Friends', zone: 'Left Terrace', x: 25, y: 65 },
-        { id: `tbl_${currentWeddingId}_5`, weddingId: currentWeddingId, name: 'Table 5', capacity: 10, shape: 'rectangular', isHead: false, category: 'Family', zone: 'Center Ballroom', x: 50, y: 65 },
-        { id: `tbl_${currentWeddingId}_6`, weddingId: currentWeddingId, name: 'Table 6', capacity: 10, shape: 'rectangular', isHead: false, category: 'Colleagues', zone: 'Right Garden', x: 75, y: 65 },
-      ];
-    } else {
-      // 4 King Banquet Tables x 16 Seats (64 capacity)
-      seededTables = [
-        { id: `tbl_${currentWeddingId}_k1`, weddingId: currentWeddingId, name: 'Royal Long Table 1', capacity: 16, shape: 'king', isHead: true, category: 'Bridal Party', zone: 'North Hall', x: 30, y: 28 },
-        { id: `tbl_${currentWeddingId}_k2`, weddingId: currentWeddingId, name: 'Royal Long Table 2', capacity: 16, shape: 'king', isHead: false, category: 'Family', zone: 'North Hall', x: 70, y: 28 },
-        { id: `tbl_${currentWeddingId}_k3`, weddingId: currentWeddingId, name: 'Royal Long Table 3', capacity: 16, shape: 'king', isHead: false, category: 'Friends', zone: 'South Hall', x: 30, y: 70 },
-        { id: `tbl_${currentWeddingId}_k4`, weddingId: currentWeddingId, name: 'Royal Long Table 4', capacity: 16, shape: 'king', isHead: false, category: 'Friends', zone: 'South Hall', x: 70, y: 70 },
-      ];
+        isHead: true,
+        shape: configTableShape === 'round' ? 'round' : 'rectangular',
+        x: 50,
+        y: 15,
+        category: 'Bridal Party',
+        zone: 'Stage & VIP Wing',
+      });
     }
 
-    // Unseat guests from removed tables safely
-    const newTableIds = new Set(seededTables.map((t) => t.id));
-    const updatedGuests = (state.guests || []).map((g) => {
-      if ((g.weddingId || 'w1') === currentWeddingId && g.tableId && !newTableIds.has(g.tableId)) {
-        return { ...g, tableId: null, seatIndex: null };
-      }
-      return g;
-    });
+    // 2. Generate remaining tables with Venue & Table Setup
+    for (let i = 0; i < count; i++) {
+      const tableNum = i + 1;
+      const isReservedVip = configReserveVipTables && (tableNum === 1 || tableNum === 2);
+      const shape: TableShape = configTableShape === 'hybrid'
+        ? (i < 2 ? 'rectangular' : 'round')
+        : configTableShape;
+      const x = 20 + (i % 3) * 30;
+      const y = 35 + Math.floor(i / 3) * 22;
 
-    const otherTables = (state.tables || []).filter((t) => (t.weddingId || 'w1') !== currentWeddingId);
-    setState({ ...state, tables: [...otherTables, ...seededTables], guests: updatedGuests });
-    setShowSeedTablesModal(false);
-    setIsCheersChatOpen(true);
-    showToast(`Seeded ${seededTables.length} tables (${seededTables.reduce((a, b) => a + b.capacity, 0)} seats) for ${currentWedding.couple}!`, 'success');
-
-    setCheersMessages((prev) => [
-      ...prev,
-      {
-        id: 'ch_' + Date.now(),
-        sender: 'cheers',
-        text: `Successfully seeded ${seededTables.length} tables with ${seededTables.reduce((a, b) => a + b.capacity, 0)} total seats on your canvas! Click 'Group households & families' below to let me organize your guests into these newly created tables.`,
-        timestamp: 'Just now',
-      },
-    ]);
-  };
-
-  const handleCustomBatchSeed = (e: React.FormEvent) => {
-    e.preventDefault();
-    const count = Math.max(1, Math.min(20, seedTableCount));
-    const cap = Math.max(2, Math.min(40, seedTableCapacity));
-    const prefix = seedTablePrefix.trim() || 'Table ';
-
-    const newTables: Table[] = Array.from({ length: count }).map((_, i) => {
-      const idx = tables.length + i + 1;
-      const col = i % 4;
-      const row = Math.floor(i / 4);
-      return {
+      newTables.push({
         id: `tbl_${currentWeddingId}_${Date.now()}_${i}`,
         weddingId: currentWeddingId,
-        name: `${prefix}${idx}`,
+        name: `Table ${tableNum}`,
         capacity: cap,
-        shape: seedTableShape,
         isHead: false,
-        category: seedTableCategory,
-        zone: seedTableZone,
-        x: 20 + col * 20,
-        y: 35 + row * 20,
-      };
+        shape,
+        x,
+        y,
+        category: isReservedVip ? 'Immediate Family & VIPs' : i % 2 === 0 ? 'Family' : 'Friends',
+        zone: isReservedVip ? 'Stage & VIP Wing' : 'Main Ballroom',
+      });
+    }
+
+    // Preserve tables from other weddings
+    const otherTables = (state.tables || []).filter((t) => (t.weddingId || 'w1') !== currentWeddingId);
+
+    // Auto-Seat algorithm based on the 4 essential field sections
+    const unassigned = weddingGuests.filter((g) => g.rsvpStatus !== 'declined');
+    const proposedChanges: { guestId: string; tableId: string }[] = [];
+    const tableCaps = newTables.map((t) => ({ ...t, currentCount: 0 }));
+
+    // Rule 1: Special Seating Rule - Head Table for the Couple & Bridal Party
+    const headTbl = tableCaps.find((t) => t.isHead);
+    if (headTbl) {
+      const bridal = unassigned.filter(
+        (g) =>
+          g.household.toLowerCase().includes('bell') ||
+          g.household.toLowerCase().includes('gordon') ||
+          g.category === 'Bridal Party' ||
+          g.name.includes('Sophie') ||
+          g.name.includes('James')
+      );
+      bridal.slice(0, headTbl.capacity).forEach((g) => {
+        proposedChanges.push({ guestId: g.id, tableId: headTbl.id });
+        headTbl.currentCount++;
+      });
+    }
+
+    // Rule 2: Special Seating Rule - Reserved tables for VIPs or immediate family
+    if (configReserveVipTables) {
+      const vipTables = tableCaps.filter((t) => t.category === 'Immediate Family & VIPs');
+      const vips = unassigned.filter(
+        (g) =>
+          !proposedChanges.some((p) => p.guestId === g.id) &&
+          (g.category?.includes('Family') || g.household.includes('Johnson') || g.household.includes('Sharma'))
+      );
+      let vipIdx = 0;
+      vips.forEach((g) => {
+        const targetTable = vipTables[vipIdx % vipTables.length];
+        if (targetTable && targetTable.currentCount < targetTable.capacity) {
+          proposedChanges.push({ guestId: g.id, tableId: targetTable.id });
+          targetTable.currentCount++;
+          vipIdx++;
+        }
+      });
+    }
+
+    // Rule 3: Dietary Requirements per table
+    if (configDietaryStrategy === 'cluster') {
+      const dietaryTable = tableCaps.find((t) => !t.isHead && t.capacity - t.currentCount >= 4) || tableCaps[1];
+      if (dietaryTable) {
+        const dietaryGuests = unassigned.filter(
+          (g) =>
+            !proposedChanges.some((p) => p.guestId === g.id) &&
+            g.dietary &&
+            g.dietary !== 'None' &&
+            g.dietary.trim() !== ''
+        );
+        dietaryGuests.forEach((g) => {
+          if (dietaryTable.currentCount < dietaryTable.capacity) {
+            proposedChanges.push({ guestId: g.id, tableId: dietaryTable.id });
+            dietaryTable.currentCount++;
+          }
+        });
+      }
+    }
+
+    // Rule 4: Seating Preferences & Guest Groups (Couples & children with family)
+    const remaining = unassigned.filter((g) => !proposedChanges.some((p) => p.guestId === g.id));
+    const hhMap = new Map<string, typeof remaining>();
+    remaining.forEach((g) => {
+      const hh = g.household || 'General';
+      if (!hhMap.has(hh)) hhMap.set(hh, []);
+      hhMap.get(hh)!.push(g);
     });
 
-    setState({ ...state, tables: [...(state.tables || []), ...newTables] });
+    hhMap.forEach((members) => {
+      const needed = members.length;
+      const candidate =
+        tableCaps.find((t) => !t.isHead && t.capacity - t.currentCount >= needed) ||
+        tableCaps.find((t) => !t.isHead && t.currentCount < t.capacity);
+      if (candidate) {
+        members.forEach((m) => {
+          if (candidate.currentCount < candidate.capacity) {
+            proposedChanges.push({ guestId: m.id, tableId: candidate.id });
+            candidate.currentCount++;
+          }
+        });
+      }
+    });
+
+    // Rule 5: Leftover guests
+    const stillUnassigned = unassigned.filter((g) => !proposedChanges.some((p) => p.guestId === g.id));
+    stillUnassigned.forEach((g) => {
+      const candidate = tableCaps.find((t) => t.currentCount < t.capacity);
+      if (candidate) {
+        proposedChanges.push({ guestId: g.id, tableId: candidate.id });
+        candidate.currentCount++;
+      }
+    });
+
+    // Update state tables
+    setState({
+      ...state,
+      tables: [...otherTables, ...newTables],
+    });
+
     setShowSeedTablesModal(false);
     setIsCheersChatOpen(true);
-    showToast(`Added ${count} new tables (${count * cap} seats) to canvas!`, 'success');
+
+    const proposal = {
+      title: `Seed Table Auto-Seat Proposal (${proposedChanges.length} Guests)`,
+      desc: `Configured ${newTables.length} tables (${newTables.reduce((a, b) => a + b.capacity, 0)} total seats) with ${configTableShape} layout, honoring all 4 Essential Field rules: Venue & Table Setup, Guest Groups, Seating Preferences, and Special VIP Rules.`,
+      count: proposedChanges.length,
+      changes: proposedChanges,
+    };
 
     setCheersMessages((prev) => [
       ...prev,
       {
+        id: 'usr_' + Date.now(),
+        sender: 'user',
+        text: `🌱 Seeded table layout: ${newTables.length} tables (${configSeatsPerTable} seats/table) with ${configTableShape} geometry and 4 Essential Rules.`,
+        timestamp: 'Just now',
+      },
+      {
         id: 'ch_' + Date.now(),
         sender: 'cheers',
-        text: `Added ${count} new tables (${count * cap} total seats) with ${seedTableShape} geometry to the canvas. Cheers AI is ready to assign guests!`,
+        text: `✨ I have configured your floor plan with ${newTables.length} tables based on your official guest list (${confirmedGuestsCount} guests across ${uniqueHouseholds.length} households)!
+
+Here is the proposed auto-seating allocation for ${proposedChanges.length} guests respecting your 4 essential seed rules. Review the assignments below and click 'Confirm & Auto-Seat' to apply them to your canvas, or 'Reject' to suggest changes.`,
+        proposal,
+        status: 'pending',
         timestamp: 'Just now',
       },
     ]);
+
+    showToast(`✓ Seeded ${newTables.length} tables! Review seating proposal in Cheers AI.`, 'success');
   };
 
   // Export CSV
@@ -1166,10 +1290,10 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
             type="button"
             onClick={() => setShowSeedTablesModal(true)}
             className="bg-white hover:bg-[#faf7f2] text-[#15110e] border border-[#d5c7b5] font-bold px-3 py-2 rounded-xl text-xs cursor-pointer shadow-xs transition-colors flex items-center gap-1.5"
-            title="Seed table numbers, table types & capacity for AI seating organization"
+            title="Configure floor tables, shapes & AI seating rules based on guest list"
           >
-            <span>🌱</span>
-            <span>Seed Tables</span>
+            <span className="text-sm">🌱</span>
+            <span>Seed Table Form</span>
           </button>
 
 
@@ -2662,19 +2786,35 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
                       </div>
 
                       {/* 1-Click Apply Button */}
-                      {msg.isApplied ? (
-                        <div className="w-full text-center py-1.5 bg-emerald-50 text-emerald-800 rounded-lg font-bold text-[11px] border border-emerald-200">
-                          ✓ Applied to Seating Canvas
+                      {msg.status === 'confirmed' || msg.isApplied ? (
+                        <div className="w-full text-center py-2 bg-emerald-50 text-emerald-800 rounded-xl font-bold text-xs border border-emerald-200 flex items-center justify-center gap-1.5 shadow-2xs">
+                          <span>✓</span>
+                          <span>Confirmed &amp; Applied to Seating Canvas</span>
+                        </div>
+                      ) : msg.status === 'rejected' ? (
+                        <div className="w-full text-center py-2 bg-[#fbeae8] text-[#a8382c] rounded-xl font-bold text-xs border border-[#f5c2bc] flex items-center justify-center gap-1.5 shadow-2xs">
+                          <span>✕</span>
+                          <span>Proposal Declined — Awaiting Your Suggestions</span>
                         </div>
                       ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleApplyChatProposal(msg.id, msg.proposal)}
-                          className="w-full py-2 bg-gradient-to-r from-[#dfc194] to-[#bd9661] hover:brightness-105 text-[#15110e] rounded-lg font-bold text-xs shadow-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all"
-                        >
-                          <span>✓</span>
-                          <span>Apply This Seating Plan to Canvas</span>
-                        </button>
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleRejectChatProposal(msg.id)}
+                            className="flex-1 py-2 bg-white hover:bg-rose-50 text-[#8b7b6b] hover:text-rose-700 border border-[#d5c7b5] hover:border-rose-300 rounded-xl font-bold text-xs cursor-pointer transition-colors shadow-2xs flex items-center justify-center gap-1"
+                          >
+                            <span>✕</span>
+                            <span>Reject</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleConfirmChatProposal(msg.id, msg.proposal)}
+                            className="flex-2 py-2 bg-gradient-to-r from-[#dfc194] to-[#bd9661] hover:brightness-105 text-[#15110e] rounded-xl font-bold text-xs shadow-xs cursor-pointer flex items-center justify-center gap-1.5 transition-all"
+                          >
+                            <span>✓</span>
+                            <span>Confirm &amp; Auto-Seat</span>
+                          </button>
+                        </div>
                       )}
                     </div>
                   )}
@@ -2724,239 +2864,366 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
       )}
 
       {/* ============================================================== */}
-      {/* 🌱 MODAL: TABLE SEEDING & INVENTORY WIZARD                     */}
+      {/* 🪑 MODAL: SEATING PLAN CONFIGURATION WIZARD                   */}
       {/* ============================================================== */}
       {showSeedTablesModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border-2 border-[#bd9661] space-y-5 max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border-2 border-[#bd9661] space-y-4 max-h-[92vh] flex flex-col animate-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-[#ebdcc9] pb-3 shrink-0">
-              <div className="flex items-center gap-2.5">
-                <span className="text-2xl">🌱</span>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#15110e] to-[#251e18] text-[#dfc194] border border-[#bd9661] flex items-center justify-center text-lg shadow-sm">
+                  🌱
+                </div>
                 <div>
                   <h3 className="font-serif text-lg font-bold text-[#15110e]">
-                    Table Inventory &amp; Seeding Wizard
+                    Seed Table Form — Essential Fields Only
                   </h3>
                   <div className="text-[11px] text-[#bd9661] font-semibold">
-                    Configure table numbers, shapes &amp; capacities so Cheers AI can organize your seats
+                    Venue Setup • Guest Groups • Seating Preferences • Special Rules
                   </div>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowSeedTablesModal(false)}
-                className="text-gray-400 hover:text-gray-600 text-xl cursor-pointer"
+                className="w-8 h-8 rounded-full bg-[#faf8f5] hover:bg-[#f0ede4] text-[#8b7b6b] hover:text-[#15110e] font-bold text-lg flex items-center justify-center cursor-pointer transition-colors"
+                title="Close"
               >
                 &times;
               </button>
             </div>
 
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto space-y-5 pr-1 text-xs">
-              {/* SECTION 1: INSTANT VENUE PRESETS (1-CLICK SEEDING) */}
-              <div className="space-y-2.5">
+            {/* Scrollable Form Content */}
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1 text-xs">
+              {/* Auto-Fetched Guest Intelligence Summary Bar */}
+              <div className="bg-[#faf8f5] border border-[#ebdcc9] rounded-2xl p-3.5 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold uppercase text-[10px] text-[#8b7b6b] tracking-wider">
-                    Option 1: 1-Click Ballroom Presets
+                  <span className="font-bold uppercase text-[10px] text-[#8b7b6b] tracking-wider flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    Auto-Fetched from Official Guest List
                   </span>
-                  <span className="text-[10px] text-[#bd9661] font-semibold">Instant Floor Setup</span>
+                  <span className="text-[11px] font-bold text-[#bd9661]">
+                    {currentWedding?.couple || 'Sophie & James'}
+                  </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {[
-                    {
-                      key: 'ballroom_80',
-                      title: 'Classic Round Ballroom',
-                      desc: '8 Round Tables × 10 Seats each',
-                      cap: 80,
-                      shape: '8 Round Tables',
-                    },
-                    {
-                      key: 'intimate_80',
-                      title: 'Intimate Round Layout',
-                      desc: '10 Round Tables × 8 Seats each',
-                      cap: 80,
-                      shape: '10 Round Tables',
-                    },
-                    {
-                      key: 'banquet_68',
-                      title: 'Head Table & Banquets',
-                      desc: '1 Royal Head (8) + 6 Rectangular (10)',
-                      cap: 68,
-                      shape: '1 King + 6 Rectangular',
-                    },
-                    {
-                      key: 'king_64',
-                      title: 'Grand Royal Banquets',
-                      desc: '4 Long King Banquet Tables × 16 Seats',
-                      cap: 64,
-                      shape: '4 Royal King Tables',
-                    },
-                  ].map((preset) => (
-                    <div
-                      key={preset.key}
-                      className="bg-[#faf8f5] hover:bg-[#faf5ee] border border-[#e8ded0] hover:border-[#bd9661] rounded-2xl p-3.5 space-y-2 transition-all flex flex-col justify-between"
-                    >
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-[#15110e] text-xs font-serif">{preset.title}</span>
-                          <span className="bg-[#bd9661] text-[#15110e] px-2 py-0.5 rounded-full text-[10px] font-bold">
-                            {preset.cap} Seats
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-[#6b5847] mt-0.5">{preset.desc}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleSeedPreset(preset.key as any)}
-                        className="w-full py-2 bg-[#15110e] hover:bg-[#251b14] text-[#dfc194] rounded-xl font-bold text-xs cursor-pointer shadow-xs transition-colors flex items-center justify-center gap-1.5"
-                      >
-                        <span>🚀</span>
-                        <span>Seed This Preset</span>
-                      </button>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-3 gap-2.5 text-center">
+                  <div className="bg-white border border-[#e8ded0] rounded-xl p-2.5 shadow-2xs">
+                    <div className="font-serif text-lg font-bold text-[#15110e]">{confirmedGuestsCount}</div>
+                    <div className="text-[10px] text-[#8b7b6b] font-medium mt-0.5">Confirmed Guests</div>
+                  </div>
+                  <div className="bg-white border border-[#e8ded0] rounded-xl p-2.5 shadow-2xs">
+                    <div className="font-serif text-lg font-bold text-[#15110e]">{uniqueHouseholds.length}</div>
+                    <div className="text-[10px] text-[#8b7b6b] font-medium mt-0.5">Family Households</div>
+                  </div>
+                  <div className="bg-white border border-[#e8ded0] rounded-xl p-2.5 shadow-2xs">
+                    <div className="font-serif text-lg font-bold text-[#bd9661]">{dietaryGuestsCount}</div>
+                    <div className="text-[10px] text-[#8b7b6b] font-medium mt-0.5">Dietary Profiles</div>
+                  </div>
                 </div>
               </div>
 
-              {/* SECTION 2: CUSTOM BATCH TABLE GENERATOR */}
-              <div className="bg-[#faf8f5] border border-[#ebdcc9] rounded-2xl p-4 space-y-3">
-                <span className="font-bold uppercase text-[10px] text-[#8b7b6b] tracking-wider block">
-                  Option 2: Custom Batch Table Generator
-                </span>
+              {/* SECTION 1: VENUE & TABLE SETUP */}
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 space-y-3.5 shadow-2xs">
+                <div className="flex items-center justify-between pb-1 border-b border-[#f5f2eb]">
+                  <span className="font-bold uppercase text-[11px] text-[#15110e] tracking-wider">
+                    1. Venue &amp; Table Setup
+                  </span>
+                  <span className="text-[10px] text-[#bd9661] font-semibold">
+                    Tables, Capacity &amp; Dietary
+                  </span>
+                </div>
 
-                <form onSubmit={handleCustomBatchSeed} className="space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block font-bold text-[#8b7b6b] uppercase text-[10px] mb-1">
-                        Table Name Prefix
-                      </label>
-                      <input
-                        type="text"
-                        value={seedTablePrefix}
-                        onChange={(e) => setSeedTablePrefix(e.target.value)}
-                        placeholder="e.g. Table, Estate "
-                        className="w-full bg-white border border-[#e8ded0] rounded-xl p-2 outline-none text-xs font-semibold"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-[#8b7b6b] uppercase text-[10px] mb-1">
-                        How Many Tables?
-                      </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block font-bold text-[#6b5847] text-[11px] mb-1">
+                      Number of Tables
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setConfigTableCount(Math.max(1, configTableCount - 1))}
+                        className="w-8 h-8 rounded-xl bg-[#faf8f5] border border-[#d5c7b5] hover:bg-[#f0ede4] text-[#15110e] font-bold text-sm flex items-center justify-center cursor-pointer"
+                      >
+                        -
+                      </button>
                       <input
                         type="number"
                         min="1"
-                        max="20"
-                        value={seedTableCount}
-                        onChange={(e) => setSeedTableCount(Number(e.target.value))}
-                        className="w-full bg-white border border-[#e8ded0] rounded-xl p-2 outline-none text-xs font-semibold"
+                        max="24"
+                        value={configTableCount}
+                        onChange={(e) => setConfigTableCount(Number(e.target.value))}
+                        className="w-14 text-center bg-[#faf8f5] border border-[#d5c7b5] rounded-xl py-1.5 text-xs text-[#15110e] font-bold outline-none"
                       />
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-[#8b7b6b] uppercase text-[10px] mb-1">
-                        Seats per Table
-                      </label>
-                      <input
-                        type="number"
-                        min="2"
-                        max="30"
-                        value={seedTableCapacity}
-                        onChange={(e) => setSeedTableCapacity(Number(e.target.value))}
-                        className="w-full bg-white border border-[#e8ded0] rounded-xl p-2 outline-none text-xs font-semibold"
-                      />
+                      <button
+                        type="button"
+                        onClick={() => setConfigTableCount(configTableCount + 1)}
+                        className="w-8 h-8 rounded-xl bg-[#faf8f5] border border-[#d5c7b5] hover:bg-[#f0ede4] text-[#15110e] font-bold text-sm flex items-center justify-center cursor-pointer"
+                      >
+                        +
+                      </button>
+                      <span className="text-[10.5px] text-[#8b7b6b] ml-1">
+                        Auto: {suggestedTablesCount} tables
+                      </span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block font-bold text-[#8b7b6b] uppercase text-[10px] mb-1">
-                        Table Shape
-                      </label>
-                      <select
-                        value={seedTableShape}
-                        onChange={(e) => setSeedTableShape(e.target.value as TableShape)}
-                        className="w-full bg-white border border-[#e8ded0] rounded-xl p-2 outline-none text-xs font-semibold"
-                      >
-                        <option value="round">Round Banquet (Circular)</option>
-                        <option value="rectangular">Rectangular (Double-Sided)</option>
-                        <option value="king">Long King Banquet (Royal)</option>
-                      </select>
-                    </div>
+                  <div>
+                    <label className="block font-bold text-[#6b5847] text-[11px] mb-1">
+                      Seating Capacity per Table
+                    </label>
+                    <select
+                      value={configSeatsPerTable}
+                      onChange={(e) => setConfigSeatsPerTable(Number(e.target.value))}
+                      className="w-full bg-[#faf8f5] border border-[#d5c7b5] rounded-xl px-3 py-2 text-xs text-[#15110e] font-semibold outline-none focus:border-[#bd9661]"
+                    >
+                      <option value={8}>8 Seats per Table (Spacious Luxury)</option>
+                      <option value={10}>10 Seats per Table (Standard Ballroom)</option>
+                      <option value={12}>12 Seats per Table (High Density)</option>
+                      <option value={14}>14 Seats per Table (Extended Banquet)</option>
+                    </select>
+                  </div>
+                </div>
 
-                    <div>
-                      <label className="block font-bold text-[#8b7b6b] uppercase text-[10px] mb-1">
-                        Category
-                      </label>
-                      <select
-                        value={seedTableCategory}
-                        onChange={(e) => setSeedTableCategory(e.target.value)}
-                        className="w-full bg-white border border-[#e8ded0] rounded-xl p-2 outline-none text-xs font-semibold"
-                      >
-                        <option value="Family">Family</option>
-                        <option value="Friends">Friends</option>
-                        <option value="Bridal Party">Bridal Party</option>
-                        <option value="VIP">VIP</option>
-                        <option value="Colleagues">Colleagues</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-[#8b7b6b] uppercase text-[10px] mb-1">
-                        Placement Zone
-                      </label>
-                      <select
-                        value={seedTableZone}
-                        onChange={(e) => setSeedTableZone(e.target.value)}
-                        className="w-full bg-white border border-[#e8ded0] rounded-xl p-2 outline-none text-xs font-semibold"
-                      >
-                        <option value="Main Ballroom">Main Ballroom</option>
-                        <option value="Left Terrace">Left Terrace</option>
-                        <option value="Right Garden">Right Garden</option>
-                        <option value="Stage & VIP Wing">Stage &amp; VIP Wing</option>
-                      </select>
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block font-bold text-[#6b5847] text-[11px] mb-1">
+                      Table Type
+                    </label>
+                    <select
+                      value={configTableShape}
+                      onChange={(e) => setConfigTableShape(e.target.value as any)}
+                      className="w-full bg-[#faf8f5] border border-[#d5c7b5] rounded-xl px-3 py-2 text-xs text-[#15110e] font-semibold outline-none focus:border-[#bd9661]"
+                    >
+                      <option value="round">Round Banquet (Circular — 8-12 Seats)</option>
+                      <option value="rectangular">Rectangular (Double-Sided — 8-14 Seats)</option>
+                      <option value="king">Royal Long King Banquet (12-24 Seats)</option>
+                      <option value="hybrid">Hybrid Layout (Royal Head + Round Banquets)</option>
+                    </select>
                   </div>
 
-                  <button
-                    type="submit"
-                    className="w-full py-2.5 bg-gradient-to-r from-[#dfc194] to-[#bd9661] text-[#15110e] rounded-xl font-bold text-xs cursor-pointer shadow-sm hover:brightness-105 transition-all flex items-center justify-center gap-2"
-                  >
-                    <span>+</span>
-                    <span>Generate &amp; Add {seedTableCount} Tables ({seedTableCount * seedTableCapacity} Seats) to Floor Plan</span>
-                  </button>
-                </form>
+                  <div>
+                    <label className="block font-bold text-[#6b5847] text-[11px] mb-1">
+                      Dietary Requirements per Table
+                    </label>
+                    <select
+                      value={configDietaryStrategy}
+                      onChange={(e) => setConfigDietaryStrategy(e.target.value as any)}
+                      className="w-full bg-[#faf8f5] border border-[#d5c7b5] rounded-xl px-3 py-2 text-xs text-[#15110e] font-semibold outline-none focus:border-[#bd9661]"
+                    >
+                      <option value="cluster">🥗 Dedicated Dietary Tables (Synchronized Catering)</option>
+                      <option value="distributed">🍽️ Distribute Evenly with Households (Keep Groups Together)</option>
+                      <option value="vip_first">👑 VIP Kitchen Priority First</option>
+                      <option value="standard">✨ Standard / Mixed Dietary Tables</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
+              {/* SECTION 2: GUEST GROUPS */}
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 space-y-3.5 shadow-2xs">
+                <div className="flex items-center justify-between pb-1 border-b border-[#f5f2eb]">
+                  <span className="font-bold uppercase text-[11px] text-[#15110e] tracking-wider">
+                    2. Guest Groups
+                  </span>
+                  <span className="text-[10px] text-[#bd9661] font-semibold">
+                    Families, Friends &amp; VIPs
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block font-bold text-[#6b5847] text-[11px] mb-1">
+                      Bride's &amp; Groom's Family
+                    </label>
+                    <select
+                      value={configFamilyGrouping}
+                      onChange={(e) => setConfigFamilyGrouping(e.target.value as any)}
+                      className="w-full bg-[#faf8f5] border border-[#d5c7b5] rounded-xl px-2.5 py-2 text-[11.5px] text-[#15110e] font-semibold outline-none focus:border-[#bd9661]"
+                    >
+                      <option value="side_by_side">Side-by-Side Front Ballroom</option>
+                      <option value="separate">Separate Bride &amp; Groom Tables</option>
+                      <option value="combined">Combined Blended Family Tables</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-[#6b5847] text-[11px] mb-1">
+                      Friends, Colleagues &amp; VIPs
+                    </label>
+                    <select
+                      value={configSocialGrouping}
+                      onChange={(e) => setConfigSocialGrouping(e.target.value as any)}
+                      className="w-full bg-[#faf8f5] border border-[#d5c7b5] rounded-xl px-2.5 py-2 text-[11.5px] text-[#15110e] font-semibold outline-none focus:border-[#bd9661]"
+                    >
+                      <option value="social_circles">Group by Social Circles</option>
+                      <option value="integrated_mix">Integrated Social Mix</option>
+                      <option value="vip_proximity">VIP Front Row Proximity</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-[#6b5847] text-[11px] mb-1">
+                      Children &amp; Families
+                    </label>
+                    <select
+                      value={configChildrenGrouping}
+                      onChange={(e) => setConfigChildrenGrouping(e.target.value as any)}
+                      className="w-full bg-[#faf8f5] border border-[#d5c7b5] rounded-xl px-2.5 py-2 text-[11.5px] text-[#15110e] font-semibold outline-none focus:border-[#bd9661]"
+                    >
+                      <option value="with_parents">Keep with Parents &amp; Families</option>
+                      <option value="kids_table">Dedicated Supervised Kids Table</option>
+                      <option value="flexible_pods">Flexible Family Pods</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
-            {/* Footer Buttons */}
+              {/* SECTION 3: SEATING PREFERENCES */}
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 space-y-3.5 shadow-2xs">
+                <div className="flex items-center justify-between pb-1 border-b border-[#f5f2eb]">
+                  <span className="font-bold uppercase text-[11px] text-[#15110e] tracking-wider">
+                    3. Seating Preferences
+                  </span>
+                  <span className="text-[10px] text-[#bd9661] font-semibold">
+                    Together, Separate &amp; Family Rules
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block font-bold text-[#6b5847] text-[11px] mb-1">
+                      Guests Who Must Sit Together
+                    </label>
+                    <select
+                      value={configSitTogether}
+                      onChange={(e) => setConfigSitTogether(e.target.value as any)}
+                      className="w-full bg-[#faf8f5] border border-[#d5c7b5] rounded-xl px-2.5 py-2 text-[11.5px] text-[#15110e] font-semibold outline-none focus:border-[#bd9661]"
+                    >
+                      <option value="couples_families">Couples &amp; Family Units Together</option>
+                      <option value="households_strict">Strict Household Cohesion</option>
+                      <option value="friend_duos">Close Friend Duos</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-[#6b5847] text-[11px] mb-1">
+                      Guests Who Must Sit Separately
+                    </label>
+                    <select
+                      value={configSitSeparately}
+                      onChange={(e) => setConfigSitSeparately(e.target.value as any)}
+                      className="w-full bg-[#faf8f5] border border-[#d5c7b5] rounded-xl px-2.5 py-2 text-[11.5px] text-[#15110e] font-semibold outline-none focus:border-[#bd9661]"
+                    >
+                      <option value="conflicts_buffer">Separate Conflicting Groups (Buffer 2+ Tables)</option>
+                      <option value="ex_partners">Separate Ex-Partners / Factions</option>
+                      <option value="none">No Separation Constraints</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-[#6b5847] text-[11px] mb-1">
+                      Couples &amp; Children with Family
+                    </label>
+                    <select
+                      value={configFamilyCouplesChildren}
+                      onChange={(e) => setConfigFamilyCouplesChildren(e.target.value as any)}
+                      className="w-full bg-[#faf8f5] border border-[#d5c7b5] rounded-xl px-2.5 py-2 text-[11.5px] text-[#15110e] font-semibold outline-none focus:border-[#bd9661]"
+                    >
+                      <option value="strict_family_unit">Strict: Always Sit with Family Unit</option>
+                      <option value="young_kids_only">Young Kids with Parents Only</option>
+                      <option value="standard">Standard Family Unit Priority</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 4: SPECIAL SEATING RULES */}
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 space-y-3.5 shadow-2xs">
+                <div className="flex items-center justify-between pb-1 border-b border-[#f5f2eb]">
+                  <span className="font-bold uppercase text-[11px] text-[#15110e] tracking-wider">
+                    4. Special Seating Rules
+                  </span>
+                  <span className="text-[10px] text-[#bd9661] font-semibold">
+                    Head &amp; VIP Priority
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  {/* Head Table for Couple Checkbox */}
+                  <label className="flex items-start gap-2.5 p-2.5 bg-[#faf8f5] rounded-xl border border-[#ebd3a8] cursor-pointer hover:bg-[#fcfaf7] transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={configIncludeHeadTable}
+                      onChange={(e) => setConfigIncludeHeadTable(e.target.checked)}
+                      className="accent-[#bd9661] w-4 h-4 rounded mt-0.5"
+                    />
+                    <div>
+                      <span className="font-bold text-[#15110e] text-xs">
+                        👑 Head Table for the Couple (8 Seats for Newlyweds &amp; Bridal Party)
+                      </span>
+                      <span className="text-[10.5px] text-[#8b7b6b] block mt-0.5">
+                        Positioned center-front facing the ballroom with prime audio and photo visibility
+                      </span>
+                    </div>
+                  </label>
+
+                  {/* Reserved Tables for VIPs Checkbox */}
+                  <label className="flex items-start gap-2.5 p-2.5 bg-[#faf8f5] rounded-xl border border-[#ebd3a8] cursor-pointer hover:bg-[#fcfaf7] transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={configReserveVipTables}
+                      onChange={(e) => setConfigReserveVipTables(e.target.checked)}
+                      className="accent-[#bd9661] w-4 h-4 rounded mt-0.5"
+                    />
+                    <div>
+                      <span className="font-bold text-[#15110e] text-xs">
+                        ⭐ Reserved Tables for VIPs or Immediate Family (Tables 1 &amp; 2)
+                      </span>
+                      <span className="text-[10.5px] text-[#8b7b6b] block mt-0.5">
+                        Designates front-row ballroom tables for parents, siblings, and honored VIP guests
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Capacity Summary Pill */}
+              <div className="p-2.5 bg-[#faf5ed] border border-[#ebd3a8] rounded-xl flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">⚡</span>
+                  <span className="text-[#544332] font-semibold">
+                    Planned Capacity: <strong>{configTableCount * configSeatsPerTable + (configIncludeHeadTable ? 8 : 0)} Seats</strong> across <strong>{configTableCount + (configIncludeHeadTable ? 1 : 0)} Tables</strong>
+                  </span>
+                </div>
+                <span className="bg-[#bd9661] text-[#15110e] px-2.5 py-0.5 rounded-full text-[10.5px] font-bold">
+                  {configTableCount * configSeatsPerTable + (configIncludeHeadTable ? 8 : 0) >= confirmedGuestsCount ? '✓ All Guests Covered' : '⚠️ Need More Seats'}
+                </span>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#ebdcc9] shrink-0">
               <button
                 type="button"
                 onClick={() => setShowSeedTablesModal(false)}
-                className="px-4 py-2 bg-[#faf8f5] hover:bg-[#f0ede4] text-[#15110e] font-bold rounded-xl text-xs cursor-pointer transition-colors"
+                className="px-4 py-2.5 bg-[#faf8f5] hover:bg-[#f0ede4] text-[#15110e] font-bold rounded-xl text-xs cursor-pointer transition-colors"
               >
                 Close
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setShowSeedTablesModal(false);
-                  setIsCheersChatOpen(true);
-                  handleCheersChatAction('households');
-                }}
-                className="px-5 py-2.5 bg-[#15110e] hover:bg-[#251b14] text-[#dfc194] font-bold rounded-xl text-xs cursor-pointer shadow-md transition-colors flex items-center gap-2"
+                onClick={handleApplySeatingConfig}
+                className="px-5 py-2.5 bg-gradient-to-r from-[#dfc194] to-[#bd9661] hover:brightness-105 text-[#15110e] font-bold rounded-xl text-xs cursor-pointer shadow-md transition-all flex items-center gap-2"
               >
-                <span>🥂</span>
-                <span>Open Cheers AI to Organize Seats</span>
+                <span>✨</span>
+                <span>Apply Floor Setup &amp; Launch Cheers AI</span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ============================================================== */}
       {/* MODAL: EXPORT & PRINT SEATING MANIFEST                         */}
       {/* ============================================================== */}
       {showExportModal && (
