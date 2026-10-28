@@ -11,7 +11,6 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
   const { state, setState } = useAppState();
   const { clearSession, setSession } = useSession();
   const [activeTab, setActiveTab] = useState<'platform' | 'tenants' | 'couple_tenants' | 'plans' | 'audit' | 'support' | 'settings'>('platform');
-  const [subscriptionSubTab, setSubscriptionSubTab] = useState<'couple' | 'mc'>('couple');
   const [planCategoryFilter, setPlanCategoryFilter] = useState<'all' | 'couple' | 'mc'>('all');
   const [newPlanCategory, setNewPlanCategory] = useState<'couple' | 'mc'>('couple');
 
@@ -34,7 +33,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
   const [showXeroModal, setShowXeroModal] = useState<boolean>(false);
   const [selectedTxnDetail, setSelectedTxnDetail] = useState<McTransaction | null>(null);
   const [lastXeroSyncTime, setLastXeroSyncTime] = useState<string>('Today at 10:45 AM');
-  const [billingSectionFocus, setBillingSectionFocus] = useState<'all' | 'couple_subs' | 'mc_subs' | 'transactions' | 'plans'>('all');
+  const [billingSectionFocus, setBillingSectionFocus] = useState<'all' | 'couple_subs' | 'mc_subs' | 'transactions' | 'plans'>('couple_subs');
 
   // Filtered MC Transactions
   const filteredMcTransactions = mcTransactions.filter((txn) => {
@@ -1226,12 +1225,9 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setBillingSectionFocus('couple_subs');
-                  setSubscriptionSubTab('couple');
-                }}
+                onClick={() => setBillingSectionFocus('couple_subs')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
-                  billingSectionFocus === 'couple_subs' || (billingSectionFocus === 'all' && subscriptionSubTab === 'couple')
+                  billingSectionFocus === 'couple_subs'
                     ? 'bg-[#15110e] text-[#dfc194]'
                     : 'text-[#8b7b6b] hover:text-[#15110e] hover:bg-white'
                 }`}
@@ -1240,12 +1236,9 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setBillingSectionFocus('mc_subs');
-                  setSubscriptionSubTab('mc');
-                }}
+                onClick={() => setBillingSectionFocus('mc_subs')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
-                  billingSectionFocus === 'mc_subs' || (billingSectionFocus === 'all' && subscriptionSubTab === 'mc')
+                  billingSectionFocus === 'mc_subs'
                     ? 'bg-[#15110e] text-[#dfc194]'
                     : 'text-[#8b7b6b] hover:text-[#15110e] hover:bg-white'
                 }`}
@@ -1277,68 +1270,29 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
             </div>
 
             {/* ============================================================== */}
-            {/* 1. DUAL SUBSCRIPTION MANAGEMENT (COUPLE VS MC SUBSCRIPTIONS)   */}
+            {/* 1A. COUPLE SUBSCRIPTIONS TABLE                                 */}
             {/* ============================================================== */}
-            {(billingSectionFocus === 'all' || billingSectionFocus === 'couple_subs' || billingSectionFocus === 'mc_subs') && (
-              <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-5">
-                {/* Header & Segmented Switcher */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#f0ede4]">
+            {(billingSectionFocus === 'all' || billingSectionFocus === 'couple_subs') && (
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-4">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#f0ede4]">
                   <div>
                     <div className="text-[10px] uppercase font-bold tracking-wider text-[#bd9661]">
-                      SUBSCRIPTION INTELLIGENCE
+                      COUPLE WEDDING PASSES
                     </div>
-                    <h2 className="font-serif text-xl font-bold text-[#15110e] mt-0.5">
-                      Platform Subscriptions &amp; Feature Entitlements
+                    <h2 className="font-serif text-xl font-bold text-[#15110e] mt-0.5 flex items-center gap-2">
+                      <span>Couple Subscriptions</span>
+                      <span className="text-xs font-sans font-bold bg-[#faf5ed] text-[#bd9661] border border-[#ebd3a8] px-2 py-0.5 rounded-full">
+                        {(state.weddings || []).length} Passes
+                      </span>
                     </h2>
                     <p className="text-xs text-[#8b7b6b] mt-0.5">
-                      Monitor active wedding passes purchased by couples and recurring SaaS memberships paid by MCs.
+                      Active wedding passes purchased by couples, celebration tiers, and feature entitlements.
                     </p>
-                  </div>
-
-                  {/* 2 Subscriptions Switcher */}
-                  <div className="grid grid-cols-2 gap-1.5 bg-[#f5ede2] p-1 rounded-xl border border-[#ebdcc9] self-start sm:self-auto shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setSubscriptionSubTab('couple')}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                        subscriptionSubTab === 'couple'
-                          ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
-                          : 'text-[#6b5847] hover:text-[#15110e]'
-                      }`}
-                    >
-                      <span>Couple Subscriptions</span>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#3a2f26] text-[#dfc194]">
-                        {(state.weddings || []).length}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSubscriptionSubTab('mc')}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                        subscriptionSubTab === 'mc'
-                          ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
-                          : 'text-[#6b5847] hover:text-[#15110e]'
-                      }`}
-                    >
-                      <span>MC Subscriptions</span>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#3a2f26] text-[#dfc194]">
-                        {tenants.length}
-                      </span>
-                    </button>
                   </div>
                 </div>
 
-                {/* VIEW A: COUPLE SUBSCRIPTIONS TABLE */}
-                {subscriptionSubTab === 'couple' && (
-                  <div className="space-y-3 animate-in fade-in duration-150">
-                    <div className="flex items-center justify-between text-xs text-[#8b7b6b]">
-                      <span>Showing active couple passes and celebration subscriptions</span>
-                      <span className="font-bold text-[#15110e] bg-[#faf6f0] border border-[#ebd3a8] px-2.5 py-0.5 rounded-full">
-                        {(state.weddings || []).length} Couple Pass Accounts
-                      </span>
-                    </div>
-
-                    <div className="overflow-x-auto">
+                <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs border-collapse">
                         <thead>
                           <tr className="border-b border-[#e8ded0] text-[10px] uppercase tracking-wider text-[#8b7b6b] bg-[#faf8f5]">
@@ -1424,20 +1378,33 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                         </tbody>
                       </table>
                     </div>
-                  </div>
-                )}
+              </div>
+            )}
 
-                {/* VIEW B: MC / COORDINATOR SUBSCRIPTIONS TABLE */}
-                {subscriptionSubTab === 'mc' && (
-                  <div className="space-y-3 animate-in fade-in duration-150">
-                    <div className="flex items-center justify-between text-xs text-[#8b7b6b]">
-                      <span>Showing active MC memberships, public directory listing status, and billing</span>
-                      <span className="font-bold text-[#15110e] bg-[#faf6f0] border border-[#ebd3a8] px-2.5 py-0.5 rounded-full">
-                        {tenants.length} Registered MC Accounts
-                      </span>
+            {/* ============================================================== */}
+            {/* 1B. MC / COORDINATOR SUBSCRIPTIONS TABLE                       */}
+            {/* ============================================================== */}
+            {(billingSectionFocus === 'all' || billingSectionFocus === 'mc_subs') && (
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-4">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#f0ede4]">
+                  <div>
+                    <div className="text-[10px] uppercase font-bold tracking-wider text-[#bd9661]">
+                      MC SAAS MEMBERSHIPS
                     </div>
+                    <h2 className="font-serif text-xl font-bold text-[#15110e] mt-0.5 flex items-center gap-2">
+                      <span>MC Subscriptions</span>
+                      <span className="text-xs font-sans font-bold bg-[#faf5ed] text-[#bd9661] border border-[#ebd3a8] px-2 py-0.5 rounded-full">
+                        {tenants.length} Accounts
+                      </span>
+                    </h2>
+                    <p className="text-xs text-[#8b7b6b] mt-0.5">
+                      Active MC memberships, public directory listing status, and recurring SaaS billing.
+                    </p>
+                  </div>
+                </div>
 
-                    <div className="overflow-x-auto">
+                <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs border-collapse">
                         <thead>
                           <tr className="border-b border-[#e8ded0] text-[10px] uppercase tracking-wider text-[#8b7b6b] bg-[#faf8f5]">
@@ -1572,8 +1539,6 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                         </tbody>
                       </table>
                     </div>
-                  </div>
-                )}
               </div>
             )}
 
