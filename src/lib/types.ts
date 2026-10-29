@@ -31,7 +31,7 @@ export interface WeddingVendor {
   phone: string;
   website?: string;
   instagram?: string;
-  status: 'Booked' | 'Deposit Paid' | 'In Discussion' | 'Final Payment Due' | 'Paid in Full';
+  status?: 'Booked' | 'Deposit Paid' | 'In Discussion' | 'Final Payment Due' | 'Paid in Full' | string;
   cost?: number;
   paidAmount?: number;
   notes?: string;

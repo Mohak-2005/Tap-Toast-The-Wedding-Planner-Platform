@@ -39,6 +39,12 @@ export default function GuestMobileView() {
   const [latestPostId, setLatestPostId] = useState<string | null>(null);
   const [showCelebrationBurst, setShowCelebrationBurst] = useState<boolean>(false);
 
+  useEffect(() => {
+    if (activeTab !== 'rsvp') {
+      setShowAcceptAnimation(false);
+    }
+  }, [activeTab]);
+
   // Feed State
   const activeWedding = state.weddings?.[0];
   const countdown = getWeddingCountdown(activeWedding?.date || '2026-11-14T14:00:00');
@@ -237,6 +243,12 @@ export default function GuestMobileView() {
       });
     } else if (prompt.toLowerCase().includes('accept')) {
       setRsvpAttending(true);
+      setShowAcceptAnimation(true);
+      setShowJoey(false);
+      setActiveTab('rsvp');
+      setTimeout(() => {
+        setShowAcceptAnimation(false);
+      }, 4000);
       newMsgs.push({
         id: 'j_' + (Date.now() + 1),
         sender: 'joey' as const,
@@ -710,6 +722,10 @@ export default function GuestMobileView() {
                 type="button"
                 onClick={() => {
                   setIsRsvpSaved(true);
+                  if (rsvpAttending) {
+                    setShowAcceptAnimation(true);
+                    setTimeout(() => setShowAcceptAnimation(false), 4000);
+                  }
                   showToast(
                     rsvpAttending
                       ? 'RSVP confirmed! See you at Fernwood Estate.'
@@ -730,7 +746,7 @@ export default function GuestMobileView() {
                     <span>RSVP Response Recorded &amp; Saved</span>
                   </div>
                 ) : (
-                  <span>Update &amp; Confirm RSVP</span>
+                  <span>{rsvpAttending ? 'Accept & Confirm RSVP' : 'Confirm RSVP (Decline)'}</span>
                 )}
               </button>
             </div>
