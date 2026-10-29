@@ -3009,7 +3009,7 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                       1. Table Configuration
                     </span>
                     <p className="text-[10.5px] text-[#8b7b6b] mt-0.5">
-                      Configure geometry, zone locations, and reserved assignments
+                      Configure geometry and reserved assignments
                     </p>
                   </div>
                   <span className="text-[10px] text-[#bd9661] font-bold uppercase tracking-wider bg-[#faf5ed] border border-[#ebd3a8] px-2 py-0.5 rounded">
@@ -3017,7 +3017,7 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {/* Table Type */}
                   <div>
                     <label className="block font-bold text-[#6b5847] text-[11px] mb-1">
@@ -3079,35 +3079,6 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                         +
                       </button>
                     </div>
-                  </div>
-
-                  {/* Table Location / Zone */}
-                  <div>
-                    <label className="block font-bold text-[#6b5847] text-[11px] mb-1">
-                      Table Location / Zone
-                    </label>
-                    <select
-                      value={configTableLocation}
-                      onChange={(e) => setConfigTableLocation(e.target.value)}
-                      className="w-full bg-[#faf8f5] border border-[#d5c7b5] rounded-xl px-3 py-2 text-xs text-[#15110e] font-semibold outline-none focus:border-[#bd9661]"
-                    >
-                      <option value="Near Stage">Near Stage (VIP Sightline)</option>
-                      <option value="Dance Floor">Dance Floor (High Energy)</option>
-                      <option value="Entrance">Entrance (Easy Arrival Access)</option>
-                      <option value="Kitchen/Service Area">Kitchen/Service Area (Fast Banquet Drop)</option>
-                      <option value="Quiet Area">Quiet Area (Acoustic Buffer)</option>
-                      <option value="Accessible Area">Accessible Area (Zero Step Access)</option>
-                      <option value="Custom Location">Custom Location...</option>
-                    </select>
-                    {configTableLocation === 'Custom Location' && (
-                      <input
-                        type="text"
-                        placeholder="Enter custom zone (e.g. Garden Terrace)..."
-                        value={configCustomLocation}
-                        onChange={(e) => setConfigCustomLocation(e.target.value)}
-                        className="mt-1.5 w-full bg-white border border-[#bd9661] rounded-xl px-3 py-1.5 text-xs text-[#15110e] outline-none"
-                      />
-                    )}
                   </div>
 
                   {/* Use */}
@@ -3237,7 +3208,6 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                         <th className="py-3 px-4">Table Name</th>
                         <th className="py-3 px-3">Table Type</th>
                         <th className="py-3 px-3 text-center">No. of Seats</th>
-                        <th className="py-3 px-3">Location of Table</th>
                         <th className="py-3 px-4">Table Assigned To</th>
                         <th className="py-3 px-4 text-right">Actions</th>
                       </tr>
@@ -3287,23 +3257,6 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                                   onChange={(e) => handleUpdateTableGroup(grp.tableIds, { seats: Number(e.target.value) || 2 })}
                                   className="w-16 mx-auto text-center bg-white border border-[#d5c7b5] rounded-lg px-2 py-1 text-xs font-bold text-[#15110e] outline-none"
                                 />
-                              </td>
-
-                              {/* Location of Table */}
-                              <td className="py-2.5 px-3">
-                                <select
-                                  value={grp.location}
-                                  onChange={(e) => handleUpdateTableGroup(grp.tableIds, { location: e.target.value })}
-                                  className="w-full min-w-[130px] bg-white border border-[#d5c7b5] rounded-lg px-2 py-1 text-xs text-[#15110e] outline-none font-medium"
-                                >
-                                  <option value="Near Stage">Near Stage</option>
-                                  <option value="Dance Floor">Dance Floor</option>
-                                  <option value="Entrance">Entrance</option>
-                                  <option value="Kitchen/Service Area">Kitchen/Service Area</option>
-                                  <option value="Quiet Area">Quiet Area</option>
-                                  <option value="Accessible Area">Accessible Area</option>
-                                  <option value="Custom Location">Custom Location...</option>
-                                </select>
                               </td>
 
                               {/* Table Assigned To */}
@@ -3396,17 +3349,6 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                             <td className="py-3 px-3 text-center whitespace-nowrap">
                               <span className="font-bold text-[#15110e] bg-white border border-[#d5c7b5] px-2.5 py-0.5 rounded-md text-[11px]">
                                 {grp.seats}
-                              </span>
-                            </td>
-
-                            {/* Location of Table */}
-                            <td className="py-3 px-3 text-[#544332] whitespace-nowrap">
-                              <span className="text-[11.5px] text-[#2c5270] font-medium flex items-center gap-1.5">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2c5270" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                                  <circle cx="12" cy="10" r="3" />
-                                </svg>
-                                <span>{displayLoc}</span>
                               </span>
                             </td>
 

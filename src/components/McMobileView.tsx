@@ -4026,63 +4026,33 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                     </div>
                   </div>
 
-                  {/* Location & Use */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-[10px] font-bold text-[#6b5847] mb-0.5">
-                        Location / Zone
-                      </label>
-                      <select
-                        value={configTableLocation}
-                        onChange={(e) => setConfigTableLocation(e.target.value)}
-                        className="w-full bg-white border border-[#d5c7b5] rounded-lg px-1.5 py-1.5 text-[11px] text-[#15110e] font-semibold outline-none"
-                      >
-                        <option value="Near Stage">Near Stage</option>
-                        <option value="Dance Floor">Dance Floor</option>
-                        <option value="Entrance">Entrance</option>
-                        <option value="Kitchen/Service Area">Kitchen</option>
-                        <option value="Quiet Area">Quiet Area</option>
-                        <option value="Accessible Area">Accessible</option>
-                        <option value="Custom Location">Custom...</option>
-                      </select>
-                      {configTableLocation === 'Custom Location' && (
-                        <input
-                          type="text"
-                          placeholder="Zone..."
-                          value={configCustomLocation}
-                          onChange={(e) => setConfigCustomLocation(e.target.value)}
-                          className="mt-1 w-full bg-white border border-[#bd9661] rounded-lg px-1.5 py-1 text-[11px]"
-                        />
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-[#6b5847] mb-0.5">
-                        Use
-                      </label>
-                      <select
-                        value={configReservedUse}
-                        onChange={(e) => setConfigReservedUse(e.target.value)}
-                        className="w-full bg-white border border-[#d5c7b5] rounded-lg px-1.5 py-1.5 text-[11px] text-[#15110e] font-semibold outline-none"
-                      >
-                        <option value="General Seating">General</option>
-                        <option value="Head Table">Head Table</option>
-                        <option value="VIP Table">VIP Table</option>
-                        <option value="Bride's Family">Bride Family</option>
-                        <option value="Groom's Family">Groom Family</option>
-                        <option value="Accessible Seating">Accessible</option>
-                        <option value="Custom">Custom...</option>
-                      </select>
-                      {configReservedUse === 'Custom' && (
-                        <input
-                          type="text"
-                          placeholder="Reserved..."
-                          value={configCustomReservedUse}
-                          onChange={(e) => setConfigCustomReservedUse(e.target.value)}
-                          className="mt-1 w-full bg-white border border-[#bd9661] rounded-lg px-1.5 py-1 text-[11px]"
-                        />
-                      )}
-                    </div>
+                  {/* Use */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-[#6b5847] mb-0.5">
+                      Use
+                    </label>
+                    <select
+                      value={configReservedUse}
+                      onChange={(e) => setConfigReservedUse(e.target.value)}
+                      className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-[11px] text-[#15110e] font-semibold outline-none"
+                    >
+                      <option value="General Seating">General Seating</option>
+                      <option value="Head Table">Head Table</option>
+                      <option value="VIP Table">VIP Table</option>
+                      <option value="Bride's Family">Bride Family</option>
+                      <option value="Groom's Family">Groom Family</option>
+                      <option value="Accessible Seating">Accessible</option>
+                      <option value="Custom">Custom...</option>
+                    </select>
+                    {configReservedUse === 'Custom' && (
+                      <input
+                        type="text"
+                        placeholder="Reserved..."
+                        value={configCustomReservedUse}
+                        onChange={(e) => setConfigCustomReservedUse(e.target.value)}
+                        className="mt-1 w-full bg-white border border-[#bd9661] rounded-lg px-2 py-1 text-[11px]"
+                      />
+                    )}
                   </div>
 
                   {/* Add Table Button (Placed below Location & Use) */}
@@ -4137,7 +4107,6 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                           <th className="py-2 px-2.5 whitespace-nowrap">Table Name</th>
                           <th className="py-2 px-2 whitespace-nowrap">Table Type</th>
                           <th className="py-2 px-1 text-center whitespace-nowrap">No of Seats</th>
-                          <th className="py-2 px-2 whitespace-nowrap">Location of Table</th>
                           <th className="py-2 px-2.5 whitespace-nowrap">Table Assigned To</th>
                           <th className="py-2 px-2 text-right whitespace-nowrap">Actions</th>
                         </tr>
@@ -4176,20 +4145,6 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                                     onChange={(e) => handleUpdateMobileTableGroup(grp.tableIds, { seats: Number(e.target.value) || 2 })}
                                     className="w-10 text-center bg-white border border-[#d5c7b5] rounded px-1 py-0.5 text-[10px] font-bold"
                                   />
-                                </td>
-                                <td className="py-1.5 px-1.5">
-                                  <select
-                                    value={grp.location}
-                                    onChange={(e) => handleUpdateMobileTableGroup(grp.tableIds, { location: e.target.value })}
-                                    className="bg-white border border-[#d5c7b5] rounded px-1 py-0.5 text-[10px]"
-                                  >
-                                    <option value="Near Stage">Stage</option>
-                                    <option value="Dance Floor">Dance</option>
-                                    <option value="Entrance">Entrance</option>
-                                    <option value="Kitchen/Service Area">Kitchen</option>
-                                    <option value="Quiet Area">Quiet</option>
-                                    <option value="Accessible Area">Access</option>
-                                  </select>
                                 </td>
                                 <td className="py-1.5 px-2">
                                   <select
@@ -4266,15 +4221,6 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                               </td>
                               <td className="py-2 px-1 text-center whitespace-nowrap font-bold text-[#15110e]">
                                 {grp.seats}
-                              </td>
-                              <td className="py-2 px-2 text-[#2c5270] whitespace-nowrap">
-                                <span className="flex items-center gap-1">
-                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#2c5270" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-                                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                                    <circle cx="12" cy="10" r="3" />
-                                  </svg>
-                                  <span>{displayLoc}</span>
-                                </span>
                               </td>
                               <td className="py-2 px-2.5 whitespace-nowrap">
                                 <span className="bg-[#faf8f5] text-[#15110e] border border-[#e8ded0] px-1.5 py-0.5 rounded text-[10px] font-medium">

@@ -380,6 +380,35 @@ export const SEED_DATA: DemoState = {
             { guestId: 'g6', tableId: 'table_1', seatIndex: 1 },
             { guestId: 'g9', tableId: 'table_3', seatIndex: 0 }
           ]
+        },
+        {
+          id: 'arr_3',
+          weddingId: 'w1',
+          name: 'Arrangement 3 (Open Dance Floor & Wide Lanes)',
+          savedAt: '2026-10-26 14:15',
+          savedBy: 'Sophie & James (Couple)',
+          role: 'couple',
+          danceFloorPos: { x: 50, y: 50 },
+          notes: 'Spacious central aisle for dramatic entrance and peripheral banquet layout',
+          tables: [
+            { id: 'head', weddingId: 'w1', name: 'HEAD TABLE', capacity: 8, isHead: true, shape: 'rectangular', category: 'Bridal Party', zone: 'Bridal Stage', x: 50, y: 14 },
+            { id: 'table_1', weddingId: 'w1', name: 'Table 1', capacity: 10, isHead: false, shape: 'round', category: 'Friends', zone: 'West Wing', x: 22, y: 32 },
+            { id: 'table_2', weddingId: 'w1', name: 'Table 2', capacity: 10, isHead: false, shape: 'round', category: 'Family', zone: 'West Wing', x: 22, y: 64 },
+            { id: 'table_3', weddingId: 'w1', name: 'Table 3', capacity: 12, isHead: false, shape: 'rectangular', category: 'Friends', zone: 'East Wing', x: 78, y: 32 },
+            { id: 'table_4', weddingId: 'w1', name: 'Table 4', capacity: 10, isHead: false, shape: 'round', category: 'Family', zone: 'East Wing', x: 78, y: 64 },
+            { id: 'table_5', weddingId: 'w1', name: 'Table 5', capacity: 8, isHead: false, shape: 'round', category: 'Colleagues', zone: 'South Terrace', x: 35, y: 82 },
+            { id: 'table_6', weddingId: 'w1', name: 'Table 6', capacity: 8, isHead: false, shape: 'round', category: 'University Friends', zone: 'South Terrace', x: 65, y: 82 }
+          ],
+          guestAssignments: [
+            { guestId: 'g1', tableId: 'head', seatIndex: 0 },
+            { guestId: 'g2', tableId: 'head', seatIndex: 1 },
+            { guestId: 'g3', tableId: 'head', seatIndex: 2 },
+            { guestId: 'g4', tableId: 'head', seatIndex: 3 },
+            { guestId: 'g5', tableId: 'table_1', seatIndex: 0 },
+            { guestId: 'g6', tableId: 'table_1', seatIndex: 1 },
+            { guestId: 'g7', tableId: 'table_2', seatIndex: 0 },
+            { guestId: 'g8', tableId: 'table_2', seatIndex: 1 }
+          ]
         }
       ],
       aiOnboardingAnswers: [
