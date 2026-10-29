@@ -224,7 +224,6 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
     {
       id: 'guest-list',
       label: 'Guest List',
-      badge: totalGuests,
       icon: (
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
