@@ -476,6 +476,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
   const [compareGuestSearch, setCompareGuestSearch] = useState<string>('');
   const [compareViewingTable, setCompareViewingTable] = useState<{ arrId: string; tableId: string } | null>(null);
   const [compareDraggingTable, setCompareDraggingTable] = useState<{ arrId: string; tableId: string } | null>(null);
+  const [addTableTargetArrangementId, setAddTableTargetArrangementId] = useState<string | null>(null);
 
   const [activeArrangementId, setActiveArrangementId] = useState<string>(
     savedArrangements[0]?.id || 'arr_1'
@@ -643,6 +644,36 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
       ...currentArr,
       tables: currentArr.tables.map((t) => (t.id === tableId ? { ...t, x: clampedX, y: clampedY } : t)),
     }));
+  };
+
+  // Open Level 2 table view directly from comparison mode
+  const handleOpenTableFromComparison = (arrId: string, tableId: string) => {
+    const targetArr = savedArrangements.find((a) => a.id === arrId);
+    if (targetArr) {
+      const otherTables = (state.tables || []).filter((t) => t.weddingId !== currentWeddingId);
+      const updatedTables = [...otherTables, ...targetArr.tables.map((t) => ({ ...t }))];
+
+      const updatedGuests = (state.guests || []).map((g) => {
+        if (g.weddingId === currentWeddingId) {
+          const assign = targetArr.guestAssignments.find((a) => a.guestId === g.id);
+          return {
+            ...g,
+            tableId: assign ? assign.tableId : null,
+            seatIndex: assign ? (assign.seatIndex ?? null) : null,
+          };
+        }
+        return g;
+      });
+
+      setActiveArrangementId(targetArr.id);
+      setActiveArrangementName(targetArr.name);
+      setState({
+        ...state,
+        tables: updatedTables,
+        guests: updatedGuests,
+      });
+    }
+    setSelectedTableId(tableId);
   };
 
   // Add a new table to an arrangement in comparison mode
@@ -1207,6 +1238,19 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
       x: 20 + (tables.length % 4) * 20,
       y: 35 + Math.floor(tables.length / 4) * 16,
     };
+
+    if (addTableTargetArrangementId) {
+      const targetArr = savedArrangements.find((a) => a.id === addTableTargetArrangementId);
+      updateSavedArrangement(addTableTargetArrangementId, (currentArr) => ({
+        ...currentArr,
+        tables: [...currentArr.tables, newTable],
+      }));
+      setAddTableTargetArrangementId(null);
+      setShowAddTableModal(false);
+      setNewTableName('');
+      showToast(`Added ${newTable.name} (${newTableCapacity} seats, ${newTableShape}) to ${targetArr?.name || 'arrangement'}`, 'success');
+      return;
+    }
 
     setState({ ...state, tables: [...(state.tables || []), newTable] });
     setShowAddTableModal(false);
@@ -1874,10 +1918,27 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
             <div className="flex items-center gap-4">
               <button
                 type="button"
-                onClick={() => setSelectedTableId(null)}
+                onClick={() => {
+                  if (isComparing) {
+                    updateSavedArrangement(activeArrangementId, (currentArr) => {
+                      const curTables = (state.tables || []).filter((t) => t.weddingId === currentWeddingId);
+                      const curGuests = (state.guests || []).filter((g) => g.weddingId === currentWeddingId);
+                      return {
+                        ...currentArr,
+                        tables: curTables.map((t) => ({ ...t })),
+                        guestAssignments: curGuests.map((g) => ({
+                          guestId: g.id,
+                          tableId: g.tableId || null,
+                          seatIndex: g.seatIndex ?? null,
+                        })),
+                      };
+                    });
+                  }
+                  setSelectedTableId(null);
+                }}
                 className="bg-[#15110e] hover:bg-[#2b1f16] text-[#dfc194] font-bold px-4 py-2.5 rounded-2xl text-xs cursor-pointer transition-all flex items-center gap-2 shadow-md"
               >
-                <span>&larr;</span> Return to Overall Room Layout
+                <span>&larr;</span> {isComparing ? 'Return to Comparison Mode' : 'Return to Overall Room Layout'}
               </button>
 
               <div>
@@ -2657,7 +2718,14 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
 
                         <button
                           type="button"
-                          onClick={() => handleCompareAddTable(arr.id)}
+                          onClick={() => {
+                            setAddTableTargetArrangementId(arr.id);
+                            const nextNum = arr.tables.filter((t) => !t.isHead).length + 1;
+                            setNewTableName(`Table ${nextNum}`);
+                            setNewTableShape('round');
+                            setNewTableCapacity(8);
+                            setShowAddTableModal(true);
+                          }}
                           className="px-2.5 py-1.5 bg-[#faf8f5] hover:bg-[#f2ede4] border border-[#d5c7b5] text-[#15110e] font-bold text-xs rounded-xl cursor-pointer transition-colors shrink-0 flex items-center gap-1 shadow-2xs"
                           title={`Add table to ${arr.name}`}
                         >
@@ -2746,7 +2814,7 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                                   handleSeatGuestInArrangement(arr.id, guestId, tbl.id);
                                 }
                               }}
-                              onClick={() => setCompareViewingTable({ arrId: arr.id, tableId: tbl.id })}
+                              onClick={() => handleOpenTableFromComparison(arr.id, tbl.id)}
                               style={{
                                 left: `${tbl.x}%`,
                                 top: `${tbl.y}%`,
@@ -3205,9 +3273,8 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                 Select any saved layout to instantly compare table configurations, capacities, and seating distributions. Both Couple and MC can switch arrangements anytime.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 items-stretch">
                 {savedArrangements.map((arr) => {
-                  const isActive = activeArrangementId === arr.id;
                   const isSelected = selectedCompareArrangementIds.includes(arr.id);
                   const roundCount = arr.tables.filter((t) => t.shape === 'round').length;
                   const rectCount = arr.tables.filter((t) => t.shape === 'rectangular').length;
@@ -3218,74 +3285,46 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                     <div
                       key={arr.id}
                       onClick={() => handleToggleSelectCompareArrangement(arr.id)}
-                      className={`border-2 rounded-2xl p-4 space-y-3 transition-all cursor-pointer relative ${
+                      className={`border-2 rounded-2xl p-4 transition-all cursor-pointer relative flex flex-col justify-between ${
                         isSelected
                           ? 'border-[#bd9661] bg-[#faf8f5] shadow-md ring-2 ring-[#bd9661]'
                           : 'border-[#e8ded0] bg-white hover:border-[#bd9661]/60'
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="font-serif text-sm font-bold text-[#15110e] truncate">
-                              {arr.name}
-                            </h4>
-                            {isActive && (
-                              <span className="bg-emerald-50 text-emerald-800 border border-emerald-300 text-[9px] font-black uppercase px-2 py-0.5 rounded-full shrink-0">
-                                Active
-                              </span>
-                            )}
-                          </div>
+                      <div className="space-y-3">
+                        <div>
+                          <h4 className="font-serif text-sm font-bold text-[#15110e] leading-snug">
+                            {arr.name}
+                          </h4>
                           <div className="text-[10px] text-[#8b7b6b] mt-0.5">
                             Saved by <strong>{arr.savedBy}</strong>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {isSelected && (
-                            <span className="bg-[#15110e] text-[#dfc194] border border-[#bd9661] text-[9.5px] font-bold px-2 py-0.5 rounded-full shadow-2xs">
-                              ✓ Selected
+                        <div className="grid grid-cols-2 gap-2 text-[10.5px]">
+                          <div className="bg-[#fcfaf7] p-2 rounded-lg border border-[#f0ede6]">
+                            <span className="text-[#8b7b6b] block text-[9.5px]">Table Geometry:</span>
+                            <span className="font-semibold text-[#15110e]">
+                              {roundCount} Round &bull; {rectCount} Rect &bull; {kingCount} King
                             </span>
-                          )}
-                          <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${
-                            arr.role === 'mc'
-                              ? 'bg-[#15110e] text-[#dfc194]'
-                              : 'bg-[#faf0e1] text-[#7d5e38]'
-                          }`}>
-                            {arr.role === 'mc' ? 'MC' : 'Couple'}
-                          </span>
+                          </div>
+                          <div className="bg-[#fcfaf7] p-2 rounded-lg border border-[#f0ede6]">
+                            <span className="text-[#8b7b6b] block text-[9.5px]">Guests Seated:</span>
+                            <span className="font-bold text-emerald-700">
+                              {seatedCount} guests
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      {arr.notes && (
-                        <p className="text-[11px] text-[#554536] italic bg-white/70 p-2 rounded-lg border border-[#f0ede6] line-clamp-2">
-                          "{arr.notes}"
-                        </p>
-                      )}
-
-                      <div className="grid grid-cols-2 gap-2 text-[10.5px]">
-                        <div className="bg-[#fcfaf7] p-2 rounded-lg border border-[#f0ede6]">
-                          <span className="text-[#8b7b6b] block text-[9.5px]">Table Geometry:</span>
-                          <span className="font-semibold text-[#15110e]">
-                            {roundCount} Round &bull; {rectCount} Rect &bull; {kingCount} King
-                          </span>
-                        </div>
-                        <div className="bg-[#fcfaf7] p-2 rounded-lg border border-[#f0ede6]">
-                          <span className="text-[#8b7b6b] block text-[9.5px]">Guest Seated:</span>
-                          <span className="font-bold text-emerald-700">
-                            {seatedCount} guests
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="pt-1">
+                      <div className="pt-3 mt-auto">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleToggleSelectCompareArrangement(arr.id);
                           }}
-                          className={`w-full py-2 px-3 rounded-xl font-bold text-xs cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
+                          className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
                             isSelected
                               ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661] hover:bg-[#251e18]'
                               : 'bg-white hover:bg-[#faf7f2] border border-[#d5c7b5] text-[#15110e]'
@@ -3464,133 +3503,6 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
             <span className="font-bold text-[#15110e]">
               {activeCompareUnassignedGuests.length} left
             </span>
-          </div>
-        </div>
-      )}
-
-      {/* ============================================================== */}
-      {/* TABLE SEATING DRILLDOWN MODAL FOR COMPARISON MODE              */}
-      {/* ============================================================== */}
-      {!isMobileCompact && isComparing && compareViewingTable && (
-        <div
-          className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
-          onClick={() => setCompareViewingTable(null)}
-        >
-          <div
-            className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-[#bd9661] overflow-hidden flex flex-col animate-in zoom-in-95 duration-150"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="px-5 py-3.5 bg-[#15110e] text-white flex justify-between items-center border-b border-[#29211a]">
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[#bd9661] tracking-wider">
-                  {compareViewingArrangement?.name}
-                </span>
-                <h3 className="font-serif text-base font-bold text-white flex items-center gap-2">
-                  <span>{compareViewingTableObj?.name}</span>
-                  <span className="text-xs text-[#dfc194] font-sans font-medium">
-                    ({compareViewingTableObj?.shape})
-                  </span>
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setCompareViewingTable(null)}
-                className="text-white/70 hover:text-white text-lg font-bold p-1 cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-5 space-y-4 text-xs max-h-[70vh] overflow-y-auto">
-              <div className="flex items-center justify-between bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9]">
-                <span className="font-bold text-[#15110e]">Capacity:</span>
-                <span className="font-serif font-bold text-sm text-[#bd9661]">
-                  {compareViewingTableSeatedGuests.length} / {compareViewingTableObj?.capacity} Seats Filled
-                </span>
-              </div>
-
-              {/* Seated Guests List */}
-              <div className="space-y-1.5">
-                <span className="block font-bold text-[#6b5847] text-[11px] uppercase tracking-wider">
-                  Seated Guests at this Table
-                </span>
-                {compareViewingTableSeatedGuests.length === 0 ? (
-                  <div className="text-center py-5 text-gray-500 italic bg-gray-50 rounded-xl border border-gray-200">
-                    No guests currently seated at this table.
-                  </div>
-                ) : (
-                  compareViewingTableSeatedGuests.map((g, idx) => (
-                    <div
-                      key={g.id}
-                      className="bg-white border border-[#e8ded0] p-2.5 rounded-xl flex items-center justify-between gap-2 shadow-2xs"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-[#faf5ed] text-[#8b6528] font-bold text-[10px] flex items-center justify-center border border-[#ebd3a8]">
-                          {idx + 1}
-                        </span>
-                        <div>
-                          <div className="font-bold text-[#15110e]">{g.name}</div>
-                          {g.dietary && g.dietary !== 'None' && (
-                            <span className="text-[#c93b2b] text-[9.5px] font-semibold">
-                              {g.dietary}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => handleSeatGuestInArrangement(compareViewingTable.arrId, g.id, null)}
-                        className="text-xs text-rose-600 hover:text-rose-800 hover:bg-rose-50 px-2 py-1 rounded-lg border border-rose-200 font-semibold cursor-pointer transition-colors"
-                      >
-                        ✕ Unseat
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Quick Seat an unallocated guest to this table */}
-              {compareViewingTableSeatedGuests.length < (compareViewingTableObj?.capacity ?? 10) && (
-                <div className="pt-2 border-t border-[#f2ede4]">
-                  <label className="block font-bold text-[#6b5847] text-[11px] mb-1">
-                    Seat an Unassigned Guest here:
-                  </label>
-                  <select
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        handleSeatGuestInArrangement(compareViewingTable.arrId, e.target.value, compareViewingTable.tableId);
-                        e.target.value = '';
-                      }
-                    }}
-                    defaultValue=""
-                    className="w-full bg-[#faf8f5] border border-[#d5c7b5] focus:border-[#bd9661] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none font-medium cursor-pointer"
-                  >
-                    <option value="" disabled>Select unassigned guest...</option>
-                    {weddingGuests
-                      .filter((g) => !compareViewingArrangement?.guestAssignments.some((a) => a.guestId === g.id && a.tableId))
-                      .map((g) => (
-                        <option key={g.id} value={g.id}>
-                          {g.name} ({g.category || 'Guest'})
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-3.5 px-5 bg-[#faf8f5] border-t border-[#ebdcc9] flex justify-end">
-              <button
-                type="button"
-                onClick={() => setCompareViewingTable(null)}
-                className="btn btn-gold btn-sm cursor-pointer font-bold"
-              >
-                Done
-              </button>
-            </div>
           </div>
         </div>
       )}
