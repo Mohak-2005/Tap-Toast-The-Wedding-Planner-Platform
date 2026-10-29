@@ -18,8 +18,6 @@ export default function GuestMobileView() {
   const countdown = getWeddingCountdown(activeWedding?.date || '2026-11-14T14:00:00');
   const isPastWedding = countdown.days <= 0 && countdown.hours <= 0 && countdown.minutes <= 0;
   const autoPhase: 'pre' | 'married' = isPastWedding ? 'married' : 'pre';
-  const [feedPhoto, setFeedPhoto] = useState<string | null>(null);
-  const feedFileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [feedNoteType, setFeedNoteType] = useState<'love' | 'thankyou'>('love');
   const [feedText, setFeedText] = useState<string>('');
   const [feedPosts, setFeedPosts] = useState<Array<{
@@ -145,37 +143,21 @@ export default function GuestMobileView() {
     setCustomGiftAmount('');
   };
 
-  // Handle Feed Photo Attachment
-  const handleAttachFeedPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setFeedPhoto(reader.result as string);
-        showToast('Photo attached to note', 'success');
-      };
-      reader.readAsDataURL(file);
-    }
-    e.target.value = '';
-  };
-
   // Handle Post Feed Note
   const handlePostNote = () => {
-    if (!feedText.trim() && !feedPhoto) return;
+    if (!feedText.trim()) return;
     const newPost = {
       id: 'f_' + Date.now(),
       type: 'note',
       title: 'Priya Sharma left a note',
       time: 'Just now',
       quote: feedText,
-      photo: feedPhoto || undefined,
       likes: 1,
       comments: 0,
       userLiked: true,
     };
     setFeedPosts([newPost, ...feedPosts]);
     setFeedText('');
-    setFeedPhoto(null);
     showToast('Love note posted to celebration feed!', 'success');
   };
 
@@ -710,41 +692,7 @@ export default function GuestMobileView() {
                   className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs resize-none"
                 />
 
-                {/* Attached Photo Thumbnail Preview */}
-                {feedPhoto && (
-                  <div className="relative inline-block mt-2">
-                    <img
-                      src={feedPhoto}
-                      alt="Attachment preview"
-                      className="w-16 h-16 object-cover rounded-xl border-2 border-[#bd9661] shadow-xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setFeedPhoto(null)}
-                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#15110e] text-[#dfc194] flex items-center justify-center text-[10px] font-bold cursor-pointer shadow-xs"
-                      title="Remove attached photo"
-                    >
-                      &times;
-                    </button>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-end gap-2 pt-1">
-                  <input
-                    type="file"
-                    ref={feedFileInputRef}
-                    accept="image/*"
-                    onChange={handleAttachFeedPhoto}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => feedFileInputRef.current?.click()}
-                    className="w-9 h-9 rounded-lg bg-[#faf8f5] hover:bg-[#f0ede4] text-[#15110e] border border-[#ebd3a8] cursor-pointer shadow-2xs transition-colors flex items-center justify-center text-sm"
-                    title="Attach photo"
-                  >
-                    🔗
-                  </button>
+                <div className="flex items-center justify-end pt-1">
                   <button
                     type="button"
                     onClick={handlePostNote}
@@ -780,12 +728,6 @@ export default function GuestMobileView() {
                     {post.quote && (
                       <div className="text-xs text-[#6b5849] italic bg-[#faf8f5] p-2.5 rounded-lg border-l-2 border-[#bd9661] leading-relaxed">
                         "{post.quote}"
-                      </div>
-                    )}
-
-                    {post.photo && (
-                      <div className="rounded-xl overflow-hidden border border-[#e8ded0] mt-1.5">
-                        <img src={post.photo} alt="Post attachment" className="w-full max-h-48 object-cover" />
                       </div>
                     )}
 

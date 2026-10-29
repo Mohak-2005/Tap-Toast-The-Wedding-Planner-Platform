@@ -567,10 +567,8 @@ export default function CoupleView({
   const [thankYouNoteDraft, setThankYouNoteDraft] = useState('');
   const [thankYouStatusChoice, setThankYouStatusChoice] = useState<'Sent' | 'Due' | 'Drafted' | 'Completed'>('Due');
 
-  // Tab 7: Celebration Feed State (Single Stream, Authentic Notes & Photos Only)
+  // Tab 7: Celebration Feed State (Single Stream, Authentic Notes Only)
   const [officialNoteText, setOfficialNoteText] = useState('');
-  const [officialNotePhoto, setOfficialNotePhoto] = useState<string | null>(null);
-  const officialPhotoInputRef = useRef<HTMLInputElement | null>(null);
 
   interface FeedPost {
     id: string;
@@ -592,7 +590,7 @@ export default function CoupleView({
       category: 'couple',
       title: 'Welcome Note from Sophie & James',
       time: 'Today, 10:00 AM',
-      quote: "Welcome to our wedding celebration portal! We are so excited to celebrate our love with all of our dearest friends and family at Fernwood Estate. Please feel free to share love notes and photos here!",
+      quote: "Welcome to our wedding celebration portal! We are so excited to celebrate our love with all of our dearest friends and family at Fernwood Estate. Please feel free to share love notes and wishes here!",
       likes: 19,
       comments: 2,
       expanded: true,
@@ -603,10 +601,9 @@ export default function CoupleView({
     {
       id: 'fp_photo_moment',
       category: 'couple',
-      title: 'Sophie & James shared a moment',
+      title: 'Sophie & James shared an update',
       time: '2 hours ago',
       quote: 'Our menu tasting session at Fernwood Estate went wonderfully! We cannot wait for everyone to try the autumn banquet menu.',
-      photo: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80',
       likes: 34,
       comments: 4,
       expanded: true,
@@ -2984,7 +2981,7 @@ export default function CoupleView({
                       Live Celebration Feed
                     </h2>
                     <p className="text-xs text-[#8b7b6b] mt-0.5">
-                      Love notes, toasts, photos, and announcements shared by the couple and wedding guests.
+                      Love notes, toasts, and announcements shared by the couple and wedding guests.
                     </p>
                   </div>
                   
@@ -2996,7 +2993,7 @@ export default function CoupleView({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-lg">
-                            {post.pinned ? '🎉' : post.photo ? '📸' : '💌'}
+                            {post.pinned ? '🎉' : '💌'}
                           </span>
                           <strong className="text-sm text-[#15110e]">{post.title}</strong>
                           {post.pinned && (
@@ -3024,16 +3021,6 @@ export default function CoupleView({
                         </p>
                       )}
 
-                      {/* Photo Attachment if present */}
-                      {post.photo && (
-                        <div className="rounded-xl overflow-hidden border border-[#e8ded0] max-h-72 shadow-xs group">
-                          <img
-                            src={post.photo}
-                            alt="Celebration moment"
-                            className="w-full h-auto max-h-72 object-cover group-hover:scale-102 transition-transform duration-300"
-                          />
-                        </div>
-                      )}
 
                       {post.tag && (
                         <div className="text-xs text-[#8b7b6b]">{post.tag}</div>
@@ -3088,7 +3075,7 @@ export default function CoupleView({
                 </div>
               </div>
 
-              {/* Right Col: Add Official Note with Photo Attachment */}
+              {/* Right Col: Add Official Note */}
               <div className="space-y-4 lg:mt-[38px]">
                 <div className="bg-white border border-[#e8ded0] rounded-2xl p-5 shadow-sm space-y-3.5">
                   <div className="flex items-center justify-between">
@@ -3099,105 +3086,36 @@ export default function CoupleView({
                   <textarea
                     value={officialNoteText}
                     onChange={(e) => setOfficialNoteText(e.target.value)}
-                    placeholder="Post a thank-you, photo, or announcement from the couple..."
+                    placeholder="Post a thank-you message or announcement from the couple..."
                     rows={4}
                     className="w-full bg-[#fdfbf7] border border-[#e8ded0] rounded-xl p-3 text-xs outline-none focus:border-[#bd9661] resize-none leading-relaxed"
                   />
 
-                  {/* Photo Preview if selected */}
-                  {officialNotePhoto && (
-                    <div className="relative rounded-xl overflow-hidden border border-[#bd9661] shadow-xs">
-                      <img
-                        src={officialNotePhoto}
-                        alt="Upload preview"
-                        className="w-full h-32 object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setOfficialNotePhoto(null)}
-                        className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/75 text-white font-bold text-xs flex items-center justify-center hover:bg-rose-600 transition-colors cursor-pointer"
-                        title="Remove photo"
-                      >
-                        &times;
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="file"
-                      ref={officialPhotoInputRef}
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = () => {
-                            if (typeof reader.result === 'string') {
-                              setOfficialNotePhoto(reader.result);
-                            }
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                      className="hidden"
-                    />
-
-                    {/* Small link icon just left of post button */}
-                    <button
-                      type="button"
-                      onClick={() => officialPhotoInputRef.current?.click()}
-                      className={`h-[42px] w-[42px] rounded-xl border flex items-center justify-center transition-all cursor-pointer shrink-0 ${
-                        officialNotePhoto
-                          ? 'bg-[#15110e] text-[#dfc194] border-[#bd9661] ring-2 ring-[#bd9661]/30'
-                          : 'bg-[#faf8f5] hover:bg-[#f0ede4] text-[#6b5847] hover:text-[#15110e] border-[#d5c7b5]'
-                      }`}
-                      title={officialNotePhoto ? 'Photo linked (click to change)' : 'Attach image / photo link'}
-                      aria-label="Attach photo link"
-                    >
-                      <svg
-                        width="17"
-                        height="17"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                      </svg>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!officialNoteText.trim() && !officialNotePhoto) return;
-                        const newPost = {
-                          id: 'fp_' + Date.now(),
-                          category: 'couple' as const,
-                          title: 'Official Note from Sophie & James',
-                          time: 'Just now',
-                          pinned: true,
-                          quote: officialNoteText.trim() || undefined,
-                          photo: officialNotePhoto || undefined,
-                          likes: 1,
-                          comments: 0,
-                          expanded: true,
-                          replies: [],
-                        };
-                        setFeedPosts([newPost, ...feedPosts]);
-                        setOfficialNoteText('');
-                        setOfficialNotePhoto(null);
-                        showToast('Note posted to celebration feed!', 'success');
-                      }}
-                      className="flex-1 h-[42px] px-4 bg-gradient-to-r from-[#dfc194] to-[#bd9661] text-[#15110e] font-bold rounded-xl text-xs transition-all hover:brightness-105 cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
-                    >
-                      <span>✨</span>
-                      <span>Post to Celebration Feed</span>
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!officialNoteText.trim()) return;
+                      const newPost = {
+                        id: 'fp_' + Date.now(),
+                        category: 'couple' as const,
+                        title: 'Official Note from Sophie & James',
+                        time: 'Just now',
+                        pinned: true,
+                        quote: officialNoteText.trim(),
+                        likes: 1,
+                        comments: 0,
+                        expanded: true,
+                        replies: [],
+                      };
+                      setFeedPosts([newPost, ...feedPosts]);
+                      setOfficialNoteText('');
+                      showToast('Note posted to celebration feed!', 'success');
+                    }}
+                    className="w-full h-[42px] px-4 bg-gradient-to-r from-[#dfc194] to-[#bd9661] text-[#15110e] font-bold rounded-xl text-xs transition-all hover:brightness-105 cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+                  >
+                    <span>✨</span>
+                    <span>Post to Celebration Feed</span>
+                  </button>
                 </div>
               </div>
             </div>
