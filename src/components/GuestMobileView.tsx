@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAppState, showToast, getWeddingCountdown } from '../lib/state';
+import { useAppState, showToast, getWeddingCountdown, logAudit } from '../lib/state';
 import { WeddingCountdownCard } from './WeddingCountdownCard';
 
 
@@ -649,71 +649,87 @@ export default function GuestMobileView() {
                     </div>
                   )}
 
-                  {/* Guests Attending Counter — capped at 4; link icon opens extra-guest modal */}
+                  {/* Guests Attending Counter — capped at 4; link icon OUTSIDE the box */}
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b]">
                         Guests Attending
                       </label>
                       {additionalGuests.length > 0 && (
-                        <span className="text-[10px] text-[#bd9661] font-semibold">
+                        <span className="text-[10px] text-[#bd9661] font-bold bg-[#faf4ec] border border-[#ebd3a8] px-2 py-0.5 rounded-full">
                           +{additionalGuests.length} extra
                         </span>
                       )}
                     </div>
-                    <div className="bg-white border border-[#e8ded0] rounded-xl p-2.5 flex items-center justify-between shadow-xs">
-                      <button
-                        type="button"
-                        onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
-                        className="w-9 h-9 rounded-full bg-[#f8f6f2] hover:bg-[#e8ded0] active:scale-90 text-[#15110e] font-bold text-lg flex items-center justify-center transition-all cursor-pointer"
-                      >
-                        &minus;
-                      </button>
-                      <span className="font-bold text-sm text-[#15110e]">
-                        {guestCount} {guestCount === 1 ? 'guest' : 'guests'}
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        {guestCount < 4 ? (
+
+                    {guestCount < 4 ? (
+                      <div className="bg-white border border-[#e8ded0] rounded-xl p-2.5 flex items-center justify-between shadow-xs">
+                        <button
+                          type="button"
+                          onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
+                          className="w-9 h-9 rounded-full bg-[#f8f6f2] hover:bg-[#e8ded0] active:scale-90 text-[#15110e] font-bold text-lg flex items-center justify-center transition-all cursor-pointer"
+                        >
+                          &minus;
+                        </button>
+                        <span className="font-bold text-sm text-[#15110e]">
+                          {guestCount} {guestCount === 1 ? 'guest' : 'guests'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setGuestCount(Math.min(4, guestCount + 1))}
+                          className="w-9 h-9 rounded-full bg-[#f8f6f2] hover:bg-[#e8ded0] active:scale-90 text-[#15110e] font-bold text-lg flex items-center justify-center transition-all cursor-pointer"
+                        >
+                          +
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2.5">
+                        {/* Reduced width box holding - 4 + */}
+                        <div className="flex-1 bg-white border border-[#e8ded0] rounded-xl p-2.5 flex items-center justify-between shadow-xs">
                           <button
                             type="button"
-                            onClick={() => setGuestCount(Math.min(4, guestCount + 1))}
+                            onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
                             className="w-9 h-9 rounded-full bg-[#f8f6f2] hover:bg-[#e8ded0] active:scale-90 text-[#15110e] font-bold text-lg flex items-center justify-center transition-all cursor-pointer"
+                          >
+                            &minus;
+                          </button>
+                          <span className="font-bold text-sm text-[#15110e]">
+                            4 guests
+                          </span>
+                          <button
+                            type="button"
+                            className="w-9 h-9 rounded-full bg-[#f8f6f2] text-[#c5b8a6] font-bold text-lg flex items-center justify-center cursor-not-allowed opacity-40"
+                            disabled
+                            title="Maximum 4 guests on primary RSVP"
                           >
                             +
                           </button>
-                        ) : (
-                          <>
-                            <button
-                              type="button"
-                              className="w-9 h-9 rounded-full bg-[#f8f6f2] text-[#c5b8a6] font-bold text-lg flex items-center justify-center cursor-not-allowed opacity-40"
-                              disabled
-                              title="Maximum 4 guests on main RSVP"
-                            >
-                              +
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (additionalGuests.length === 0) {
-                                  setAdditionalGuests([{ id: Date.now().toString(), name: '', household: '', phone: '', type: 'adult', dietary: '', open: true }]);
-                                }
-                                setShowAdditionalGuestsModal(true);
-                              }}
-                              className="w-9 h-9 rounded-full bg-[#faf4ec] hover:bg-[#f5ede2] border border-[#dfc194] active:scale-90 text-[#bd9661] flex items-center justify-center transition-all cursor-pointer"
-                              title="Add more guests (5+)"
-                            >
-                              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                              </svg>
-                            </button>
-                          </>
-                        )}
+                        </div>
+
+                        {/* OUTSIDE THE BOX: Link Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (additionalGuests.length === 0) {
+                              setAdditionalGuests([{ id: Date.now().toString(), name: '', household: '', phone: '', type: 'adult', dietary: '', open: true }]);
+                            }
+                            setShowAdditionalGuestsModal(true);
+                          }}
+                          className="h-[48px] px-3.5 rounded-xl bg-white hover:bg-[#faf4ec] border border-[#dfc194] active:scale-95 text-[#bd9661] shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0"
+                          title="Register additional guests"
+                        >
+                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                          </svg>
+                          <span className="text-xs font-bold">5+</span>
+                        </button>
                       </div>
-                    </div>
+                    )}
+
                     {guestCount === 4 && (
                       <p className="text-[10px] text-[#8b7b6b] mt-1.5 leading-tight">
-                        Maximum of 4 reached. Tap 🔗 to register additional guests.
+                        Maximum of 4 reached. Tap the 🔗 button outside the box to register additional guests.
                       </p>
                     )}
                   </div>
@@ -2036,11 +2052,11 @@ export default function GuestMobileView() {
               <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
                 {additionalGuests.map((guest, idx) => (
                   <div key={guest.id} className="bg-white border border-[#e8ded0] rounded-2xl overflow-hidden shadow-xs">
-                    {/* Accordion Header */}
+                    {/* Accordion Header — NO 'x' mark when closed */}
                     <button
                       type="button"
                       onClick={() => setAdditionalGuests(prev => prev.map((g, i) => i === idx ? { ...g, open: !g.open } : g))}
-                      className="w-full flex items-center justify-between px-4 py-3 cursor-pointer"
+                      className="w-full flex items-center justify-between px-4 py-3 cursor-pointer bg-white hover:bg-[#fcfaf7] transition-colors"
                     >
                       <div className="flex items-center gap-2.5">
                         <div className="w-7 h-7 rounded-full bg-[#f5ede2] text-[#bd9661] font-bold text-xs flex items-center justify-center shrink-0">
@@ -2055,23 +2071,16 @@ export default function GuestMobileView() {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setAdditionalGuests(prev => prev.filter((_, i) => i !== idx)); }}
-                          className="w-6 h-6 rounded-full hover:bg-rose-50 text-rose-400 hover:text-rose-600 flex items-center justify-center text-sm cursor-pointer transition-colors"
-                        >
-                          &times;
-                        </button>
+                      <div className="flex items-center">
                         <svg className={`w-4 h-4 text-[#8b7b6b] transition-transform duration-200 ${guest.open ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                           <polyline points="6 9 12 15 18 9" />
                         </svg>
                       </div>
                     </button>
 
-                    {/* Accordion Body */}
+                    {/* Accordion Body — with Bin icon right to dietary requirement */}
                     {guest.open && (
-                      <div className="px-4 pb-4 space-y-3 border-t border-[#f0ede4] pt-3">
+                      <div className="px-4 pb-4 space-y-3 border-t border-[#f0ede4] pt-3 bg-[#fdfcfb]">
                         <div>
                           <label className="block text-[9.5px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1">Full Name *</label>
                           <input
@@ -2079,7 +2088,7 @@ export default function GuestMobileView() {
                             placeholder="e.g. Anita Sharma"
                             value={guest.name}
                             onChange={(e) => setAdditionalGuests(prev => prev.map((g, i) => i === idx ? { ...g, name: e.target.value } : g))}
-                            className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                            className="w-full bg-white border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
                           />
                         </div>
                         <div>
@@ -2089,13 +2098,13 @@ export default function GuestMobileView() {
                             placeholder="e.g. The Sharma Family"
                             value={guest.household}
                             onChange={(e) => setAdditionalGuests(prev => prev.map((g, i) => i === idx ? { ...g, household: e.target.value } : g))}
-                            className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                            className="w-full bg-white border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
                           />
                         </div>
                         <div>
                           <label className="block text-[9.5px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1">Phone Number (+61)</label>
-                          <div className="flex items-center bg-[#faf8f5] border border-[#e8ded0] rounded-xl overflow-hidden focus-within:border-[#bd9661]">
-                            <span className="px-2.5 text-xs text-[#8b7b6b] font-semibold shrink-0 border-r border-[#e8ded0] py-2">+61</span>
+                          <div className="flex items-center bg-white border border-[#e8ded0] rounded-xl overflow-hidden focus-within:border-[#bd9661]">
+                            <span className="px-2.5 text-xs text-[#8b7b6b] font-semibold shrink-0 border-r border-[#e8ded0] py-2 bg-[#faf8f5]">+61</span>
                             <input
                               type="tel"
                               placeholder="4XX XXX XXX"
@@ -2105,36 +2114,55 @@ export default function GuestMobileView() {
                             />
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div>
                             <label className="block text-[9.5px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1">Guest Type</label>
                             <select
                               value={guest.type}
                               onChange={(e) => setAdditionalGuests(prev => prev.map((g, i) => i === idx ? { ...g, type: e.target.value as 'adult' | 'child' } : g))}
-                              className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] cursor-pointer"
+                              className="w-full bg-white border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] cursor-pointer"
                             >
                               <option value="adult">Adult</option>
                               <option value="child">Child / Kid</option>
                             </select>
                           </div>
+
                           <div>
-                            <label className="block text-[9.5px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1">Dietary</label>
-                            <select
-                              value={guest.dietary}
-                              onChange={(e) => setAdditionalGuests(prev => prev.map((g, i) => i === idx ? { ...g, dietary: e.target.value } : g))}
-                              className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] cursor-pointer"
-                            >
-                              <option value="">None / Standard</option>
-                              <option value="Vegetarian">Vegetarian</option>
-                              <option value="Vegan">Vegan</option>
-                              <option value="Gluten-Free">Gluten-Free</option>
-                              <option value="Halal">Halal</option>
-                              <option value="Kosher">Kosher</option>
-                              <option value="Nut Allergy">Nut Allergy</option>
-                              <option value="Dairy-Free">Dairy-Free</option>
-                              <option value="Pescatarian">Pescatarian</option>
-                              <option value="Kids Meal">Kids Meal</option>
-                            </select>
+                            <label className="block text-[9.5px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1">Dietary Requirement</label>
+                            <div className="flex items-center gap-1.5">
+                              <select
+                                value={guest.dietary}
+                                onChange={(e) => setAdditionalGuests(prev => prev.map((g, i) => i === idx ? { ...g, dietary: e.target.value } : g))}
+                                className="flex-1 bg-white border border-[#e8ded0] rounded-xl px-2.5 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] cursor-pointer"
+                              >
+                                <option value="">None / Standard</option>
+                                <option value="Vegetarian">Vegetarian</option>
+                                <option value="Vegan">Vegan</option>
+                                <option value="Gluten-Free">Gluten-Free</option>
+                                <option value="Halal">Halal</option>
+                                <option value="Kosher">Kosher</option>
+                                <option value="Nut Allergy">Nut Allergy</option>
+                                <option value="Dairy-Free">Dairy-Free</option>
+                                <option value="Pescatarian">Pescatarian</option>
+                                <option value="Kids Meal">Kids Meal</option>
+                              </select>
+
+                              {/* Bin Icon right to Dietary Requirement */}
+                              <button
+                                type="button"
+                                onClick={() => setAdditionalGuests(prev => prev.filter((_, i) => i !== idx))}
+                                className="h-[36px] w-[36px] rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-500 hover:text-rose-700 border border-rose-200 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                                title="Delete this guest"
+                                aria-label="Delete guest"
+                              >
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="3 6 5 6 21 6" />
+                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                  <line x1="10" y1="11" x2="10" y2="17" />
+                                  <line x1="14" y1="11" x2="14" y2="17" />
+                                </svg>
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -2153,7 +2181,7 @@ export default function GuestMobileView() {
                 </button>
               </div>
 
-              {/* Footer Actions */}
+              {/* Footer Actions — sends message to couple */}
               <div className="px-4 pb-5 pt-3 border-t border-[#f0ede4] shrink-0 flex gap-2.5">
                 <button
                   type="button"
@@ -2165,12 +2193,74 @@ export default function GuestMobileView() {
                 <button
                   type="button"
                   onClick={() => {
+                    const extraCount = additionalGuests.length;
+                    const guestNames = additionalGuests
+                      .map(g => g.name.trim() || 'Additional Guest')
+                      .join(', ');
+
+                    // 1. Send as a message to Sophie & James in the celebration feed
+                    if (extraCount > 0) {
+                      const newFeedMessage = {
+                        id: 'f_extra_' + Date.now(),
+                        type: 'note' as const,
+                        title: `Priya Sharma registered ${extraCount} extra guest${extraCount > 1 ? 's' : ''}`,
+                        time: 'Just now',
+                        quote: `Hi Sophie & James — we have registered ${extraCount} additional guest${extraCount > 1 ? 's' : ''} (${guestNames}) for your wedding! Can't wait to celebrate with you both! 🥂💕`,
+                        likes: 1,
+                        comments: 0,
+                        userLiked: true,
+                      };
+                      setFeedPosts(prev => [newFeedMessage, ...prev]);
+
+                      // 2. Log audit event
+                      logAudit(
+                        state,
+                        setState,
+                        'Additional Guests Registered',
+                        'Priya Sharma',
+                        'couple',
+                        `Priya Sharma registered ${extraCount} additional guest(s) (${guestNames}) & sent note to couple`,
+                        'RSVP'
+                      );
+
+                      // 3. Sync into state.guests so couple sees them in Guest List
+                      if (state.guests) {
+                        const newGuestsList = additionalGuests.map((g, i) => ({
+                          id: `extra_g_${Date.now()}_${i}`,
+                          name: g.name.trim() || `Additional Guest ${i + 1}`,
+                          initials: (g.name.trim() ? g.name.trim().split(' ').map(w => w[0]).join('') : 'AG').toUpperCase().slice(0, 2),
+                          household: g.household.trim() || 'The Sharma Family',
+                          email: 'sharma.family@example.com.au',
+                          phone: g.phone.trim() ? `+61 ${g.phone.trim()}` : '0412 884 992',
+                          rsvpStatus: 'confirmed' as const,
+                          guestCount: 1,
+                          adults: g.type === 'adult' ? 1 : 0,
+                          kids: g.type === 'child' ? 1 : 0,
+                          dietary: g.dietary || 'None',
+                          song: '',
+                          reminderSent: false,
+                          tableId: 'unassigned',
+                          seatIndex: 0,
+                          weddingId: 'w1',
+                        }));
+                        setState({
+                          ...state,
+                          guests: [...state.guests, ...newGuestsList],
+                        });
+                      }
+                    }
+
                     setShowAdditionalGuestsModal(false);
-                    showToast(`${additionalGuests.length} additional guest${additionalGuests.length !== 1 ? 's' : ''} registered`, 'success');
+                    showToast(
+                      extraCount > 0
+                        ? `Registered ${extraCount} extra guest${extraCount > 1 ? 's' : ''} & sent message to Sophie & James!`
+                        : 'Guest list updated',
+                      'success'
+                    );
                   }}
                   className="flex-[2] py-2.5 bg-gradient-to-r from-[#dfc194] to-[#bd9661] hover:brightness-105 text-[#15110e] rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer"
                 >
-                  Save Additional Guests
+                  Save &amp; Notify Couple
                 </button>
               </div>
             </div>
