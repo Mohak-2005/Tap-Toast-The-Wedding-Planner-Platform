@@ -476,6 +476,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
   const [compareGuestSearch, setCompareGuestSearch] = useState<string>('');
   const [compareViewingTable, setCompareViewingTable] = useState<{ arrId: string; tableId: string } | null>(null);
   const [compareDraggingTable, setCompareDraggingTable] = useState<{ arrId: string; tableId: string } | null>(null);
+  const [compareDraggingDanceFloor, setCompareDraggingDanceFloor] = useState<string | null>(null);
   const [addTableTargetArrangementId, setAddTableTargetArrangementId] = useState<string | null>(null);
 
   const [activeArrangementId, setActiveArrangementId] = useState<string>(
@@ -624,6 +625,28 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
       showToast(`Seated ${guest.name} at ${targetTbl.name} (${arr.name})`, 'success');
     } else if (guest) {
       showToast(`Unseated ${guest.name} from ${arr.name}`, 'info');
+    }
+  };
+
+  // Reposition dance floor within an arrangement canvas
+  const handleCompareDanceFloorDragEnd = (
+    arrId: string,
+    clientX: number,
+    clientY: number,
+    containerRect: DOMRect
+  ) => {
+    const rawX = ((clientX - containerRect.left) / containerRect.width) * 100;
+    const rawY = ((clientY - containerRect.top) / containerRect.height) * 100;
+    const clampedX = Math.max(16, Math.min(84, Math.round(rawX)));
+    const clampedY = Math.max(18, Math.min(82, Math.round(rawY)));
+
+    updateSavedArrangement(arrId, (currentArr) => ({
+      ...currentArr,
+      danceFloorPos: { x: clampedX, y: clampedY },
+    }));
+
+    if (arrId === activeArrangementId) {
+      setDanceFloorPos({ x: clampedX, y: clampedY });
     }
   };
 
@@ -2742,9 +2765,15 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                           const el = document.getElementById(`compare_canvas_${arr.id}`);
                           if (el) {
                             const rect = el.getBoundingClientRect();
+                            if (compareDraggingDanceFloor === arr.id || e.dataTransfer.getData('compareDanceFloor') === arr.id) {
+                              handleCompareDanceFloorDragEnd(arr.id, e.clientX, e.clientY, rect);
+                              setCompareDraggingDanceFloor(null);
+                              return;
+                            }
                             if (compareDraggingTable && compareDraggingTable.arrId === arr.id) {
                               handleCompareTableDragEnd(arr.id, compareDraggingTable.tableId, e.clientX, e.clientY, rect);
                               setCompareDraggingTable(null);
+                              return;
                             }
                           }
                         }}
@@ -2759,17 +2788,38 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                           <span>👑</span> BRIDAL STAGE
                         </div>
 
-                        {/* Dance Floor */}
+                        {/* Draggable Dance Floor */}
                         <div
+                          id={`compare_dance_floor_${arr.id}`}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('compareDanceFloor', arr.id);
+                            setCompareDraggingDanceFloor(arr.id);
+                          }}
+                          onDragEnd={() => setCompareDraggingDanceFloor(null)}
                           style={{
                             left: `${arr.danceFloorPos?.x ?? 50}%`,
                             top: `${arr.danceFloorPos?.y ?? 50}%`,
                           }}
-                          className="absolute -translate-x-1/2 -translate-y-1/2 w-32 h-24 rounded-2xl border-2 border-dashed border-[#bd9661]/50 bg-[#bd9661]/10 flex flex-col items-center justify-center text-center select-none pointer-events-none"
+                          className={`absolute -translate-x-1/2 -translate-y-1/2 w-32 h-24 rounded-2xl border-2 border-dashed border-[#bd9661]/60 bg-[#bd9661]/10 flex flex-col items-center justify-center text-center cursor-grab active:cursor-grabbing hover:border-[#bd9661] hover:bg-[#bd9661]/20 transition-all select-none shadow-xs hover:shadow-md z-10 group ${
+                            compareDraggingDanceFloor === arr.id ? 'opacity-60 ring-2 ring-[#bd9661]' : ''
+                          }`}
+                          title={`Drag and drop to reposition Dance Floor in ${arr.name}`}
                         >
-                          <span className="text-base">💃</span>
+                          <span className="text-base group-hover:scale-110 transition-transform">💃</span>
                           <span className="font-serif text-[10px] font-bold text-[#6b5847] uppercase tracking-wider mt-0.5">
                             Dance Floor
+                          </span>
+                          <span className="text-[8.5px] text-[#8b7b6b] opacity-80 font-sans flex items-center gap-1">
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <polyline points="5 9 2 12 5 15" />
+                              <polyline points="9 5 12 2 15 5" />
+                              <polyline points="15 19 12 22 9 19" />
+                              <polyline points="19 9 22 12 19 15" />
+                              <line x1="2" y1="12" x2="22" y2="12" />
+                              <line x1="12" y1="2" x2="12" y2="22" />
+                            </svg>
+                            Drag to move
                           </span>
                         </div>
 
