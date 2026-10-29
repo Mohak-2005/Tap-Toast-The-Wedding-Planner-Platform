@@ -5,7 +5,7 @@ export interface LuxuryTheme {
   id: string;
   name: string;
   subtitle: string;
-  category: 'Botanical' | 'Native Floral' | 'Midnight' | 'Coastal Harbor' | 'Vineyard Arch';
+  category: 'Botanical' | 'Native Floral' | 'Midnight' | 'Coastal' | 'Vineyard';
   animationName: string;
   envelopeColor: string;
   envelopeFlapColor: string;
@@ -14,6 +14,7 @@ export interface LuxuryTheme {
   sealBorder: string;
   sealIcon: string;
   stageBg: string;
+  paperName: string;
 }
 
 export const LUXURY_THEMES: LuxuryTheme[] = [
@@ -22,14 +23,15 @@ export const LUXURY_THEMES: LuxuryTheme[] = [
     name: 'Magnolia & Gilded Frame',
     subtitle: 'White gardenia blossoms, eucalyptus foliage & double gold frame',
     category: 'Botanical',
-    animationName: 'Classic 3D Top Flap & Gilded Elevation',
-    envelopeColor: '#1e1812',
-    envelopeFlapColor: '#2b221a',
+    animationName: 'Classic 3D Top Flap Elevation',
+    envelopeColor: '#201812',
+    envelopeFlapColor: '#2c221a',
     linerPattern: 'magnolia-damask',
     sealColor: '#c59a58',
     sealBorder: '#f0d8a8',
     sealIcon: '👑',
     stageBg: 'radial-gradient(circle at 50% 30%, #f7f3ec 0%, #e8dec8 100%)',
+    paperName: '350gsm French Vanilla Cotton',
   },
   {
     id: 'native-wattle',
@@ -44,6 +46,7 @@ export const LUXURY_THEMES: LuxuryTheme[] = [
     sealBorder: '#7bb086',
     sealIcon: '🌿',
     stageBg: 'radial-gradient(circle at 50% 30%, #f0f6f0 0%, #d8e5d9 100%)',
+    paperName: 'Handmade Australian Deckled Linen',
   },
   {
     id: 'midnight-protea',
@@ -52,18 +55,19 @@ export const LUXURY_THEMES: LuxuryTheme[] = [
     category: 'Midnight',
     animationName: 'Velvet Ribbon Slide & Diagonal Sleeve Tilt',
     envelopeColor: '#18191c',
-    envelopeFlapColor: '#22252a',
+    envelopeFlapColor: '#23252a',
     linerPattern: 'protea-garland',
     sealColor: '#8a2337',
     sealBorder: '#e27b91',
     sealIcon: '🌹',
     stageBg: 'radial-gradient(circle at 50% 30%, #2a2d33 0%, #15171a 100%)',
+    paperName: 'Matte Charcoal Slate Cardstock',
   },
   {
     id: 'coastal-harbor',
     name: 'Sydney Harbor & Fairy Lights',
     subtitle: 'Glowing canopy fairy lights, harbor sunset bridge & ocean navy',
-    category: 'Coastal Harbor',
+    category: 'Coastal',
     animationName: 'Pocketfold Elevation & Fairy Light Twinkle',
     envelopeColor: '#0b162c',
     envelopeFlapColor: '#122244',
@@ -72,20 +76,22 @@ export const LUXURY_THEMES: LuxuryTheme[] = [
     sealBorder: '#fae392',
     sealIcon: '✨',
     stageBg: 'radial-gradient(circle at 50% 30%, #1e2e4f 0%, #080d1a 100%)',
+    paperName: 'Starlit Navy Iridescent Shimmer',
   },
   {
     id: 'vineyard-arch',
     name: 'Hunter Valley Vineyard Arch',
     subtitle: 'Modern architectural dome arch, vineyard arbor & champagne palette',
-    category: 'Vineyard Arch',
+    category: 'Vineyard',
     animationName: 'Arched Dome Lid Kinetic Snap & Slide',
-    envelopeColor: '#211913',
-    envelopeFlapColor: '#2f241c',
+    envelopeColor: '#231b14',
+    envelopeFlapColor: '#30251c',
     linerPattern: 'vineyard-linen',
     sealColor: '#96784d',
     sealBorder: '#dfc194',
     sealIcon: '✦',
     stageBg: 'radial-gradient(circle at 50% 30%, #f9f6f0 0%, #e5ddcf 100%)',
+    paperName: 'Curved Die-Cut Champagne Vellux',
   },
 ];
 
@@ -108,29 +114,39 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
   const [isFoilShimmerActive, setIsFoilShimmerActive] = useState<boolean>(true);
 
   // Unboxing Sequence State (Paperless Post interactive unboxing)
-  const [envelopeState, setEnvelopeState] = useState<'sealed' | 'opening' | 'opened'>('sealed');
+  const [envelopeState, setEnvelopeState] = useState<'sealed' | 'opening' | 'opened'>('opened');
 
   const currentTheme = LUXURY_THEMES.find(t => t.id === selectedThemeId) || LUXURY_THEMES[0];
   const recipientName = selectedQaRdHousehold.split(' (')[0] || 'Honoured Guest';
 
-  // Open sequence with theme-specific animation duration
-  const handleOpenEnvelope = () => {
-    if (envelopeState !== 'sealed') return;
+  // Open sequence
+  const executeOpenSequence = (themeId: string) => {
     setEnvelopeState('opening');
+    const targetTheme = LUXURY_THEMES.find(t => t.id === themeId) || currentTheme;
+    const duration = targetTheme.id === 'vineyard-arch' ? 400 : 750;
 
-    const duration = currentTheme.id === 'vineyard-arch' ? 450 : 850;
     setTimeout(() => {
       setEnvelopeState('opened');
-      showToast(`💌 ${currentTheme.name} invitation presented!`, 'success');
+      showToast(`💌 ${targetTheme.name} presented!`, 'success');
     }, duration);
   };
 
-  // Replay sequence
+  // When clicking ANY template, immediately play from the beginning automatically!
+  const handleSelectTheme = (themeId: string) => {
+    setSelectedThemeId(themeId);
+    setEnvelopeState('sealed');
+
+    setTimeout(() => {
+      executeOpenSequence(themeId);
+    }, 280);
+  };
+
+  // Replay sequence manually
   const handleReplaySequence = () => {
     setEnvelopeState('sealed');
     setTimeout(() => {
-      handleOpenEnvelope();
-    }, 200);
+      executeOpenSequence(selectedThemeId);
+    }, 250);
   };
 
   // Dynamic QR Code URL for RSVP
@@ -191,7 +207,7 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
         INVITE YOU TO CELEBRATE THEIR WEDDING
       </div>
 
-      {/* Date Bar: SATURDAY | 12 | APRIL 2026 */}
+      {/* Date Bar: SATURDAY | 14 | NOVEMBER 2026 */}
       <div className="flex items-center justify-center gap-3 my-2 text-[#966d29] font-serif">
         <span className="text-[11px] uppercase tracking-wider font-semibold">SATURDAY</span>
         <span className="text-gray-300">|</span>
@@ -573,7 +589,7 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
   // 5 COMPLETELY DIFFERENT ENVELOPE STRUCTURES & UNBOXING ANIMATIONS
   // ==========================================================================
 
-  // ANIMATION 1: Classic 3D Top Flap & Gilded Rise (Magnolia Gold)
+  // ANIMATION 1: Classic 3D Top Flap & Gilded Elevation (Magnolia Gold)
   const renderClassicTopFlapEnvelope = () => (
     <div
       className={`relative w-full h-[320px] rounded-2xl shadow-2xl transition-all duration-700 flex flex-col justify-end overflow-visible ${
@@ -584,19 +600,16 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
       }}
     >
-      {/* Liner */}
       <div className="absolute inset-x-2 top-2 h-[280px] rounded-t-xl overflow-hidden opacity-90 border-t border-white/20 bg-white">
         <div className="w-full h-full bg-[radial-gradient(#c59a58_1.5px,transparent_1.5px)] [background-size:16px_16px] opacity-40" />
       </div>
 
-      {/* Front Pouch Triangles */}
       <div className="absolute inset-0 z-20 pointer-events-none rounded-2xl overflow-hidden">
         <div className="absolute bottom-0 left-0 w-0 h-0 border-l-[190px] sm:border-l-[220px] border-b-[180px] border-l-transparent" style={{ borderBottomColor: currentTheme.envelopeFlapColor, opacity: 0.95 }} />
         <div className="absolute bottom-0 right-0 w-0 h-0 border-r-[190px] sm:border-r-[220px] border-b-[180px] border-r-transparent" style={{ borderBottomColor: currentTheme.envelopeFlapColor, opacity: 0.95 }} />
         <div className="absolute bottom-0 inset-x-0 h-0 border-x-[190px] sm:border-x-[220px] border-b-[160px] border-x-transparent" style={{ borderBottomColor: currentTheme.envelopeColor }} />
       </div>
 
-      {/* Top Pointed Flap (Folds Open Upwards) */}
       <div
         className={`absolute top-0 inset-x-0 h-[170px] z-30 transition-transform duration-700 origin-top ${
           envelopeState === 'sealed' ? 'rotate-x-0' : '-rotate-x-180'
@@ -610,7 +623,7 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
           {envelopeState === 'sealed' && (
             <button
               type="button"
-              onClick={handleOpenEnvelope}
+              onClick={() => executeOpenSequence(selectedThemeId)}
               className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full flex flex-col items-center justify-center cursor-pointer shadow-2xl transition-transform hover:scale-110 active:scale-95 group pointer-events-auto"
               style={{
                 backgroundColor: currentTheme.sealColor,
@@ -653,12 +666,11 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
         perspective: '1200px',
       }}
     >
-      {/* Inner Foliage Paper Background */}
       <div className="absolute inset-2 rounded-xl overflow-hidden bg-[#fafcf9] border border-[#7bb086]/30 flex items-center justify-center">
         <span className="text-5xl opacity-20">🌿 🕊️ 🌿</span>
       </div>
 
-      {/* Left French Gatefold Door (Swings open to the left) */}
+      {/* Left Door */}
       <div
         className={`absolute inset-y-0 left-0 w-1/2 z-25 rounded-l-2xl border-r border-[#7bb086]/40 transition-transform duration-700 origin-left shadow-lg ${
           envelopeState === 'sealed' ? 'rotate-y-0' : '-rotate-y-120 opacity-70'
@@ -672,7 +684,7 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
         <div className="absolute top-1/2 -translate-y-1/2 right-3 text-xs opacity-60">🌿</div>
       </div>
 
-      {/* Right French Gatefold Door (Swings open to the right) */}
+      {/* Right Door */}
       <div
         className={`absolute inset-y-0 right-0 w-1/2 z-25 rounded-r-2xl border-l border-[#7bb086]/40 transition-transform duration-700 origin-right shadow-lg ${
           envelopeState === 'sealed' ? 'rotate-y-0' : 'rotate-y-120 opacity-70'
@@ -686,11 +698,11 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
         <div className="absolute top-1/2 -translate-y-1/2 left-3 text-xs opacity-60">🌿</div>
       </div>
 
-      {/* Center Wax Seal Medallion holding the two doors together */}
+      {/* Center Wax Seal */}
       {envelopeState === 'sealed' && (
         <button
           type="button"
-          onClick={handleOpenEnvelope}
+          onClick={() => executeOpenSequence(selectedThemeId)}
           className="absolute z-35 left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex flex-col items-center justify-center cursor-pointer shadow-2xl transition-transform hover:scale-110 active:scale-95 group pointer-events-auto"
           style={{
             backgroundColor: currentTheme.sealColor,
@@ -727,7 +739,6 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
       }}
     >
-      {/* Dark Slate Sleeve Interior */}
       <div className="absolute inset-2 rounded-xl bg-[#2b2e35] border border-white/10 flex items-center justify-center">
         <div className="text-center space-y-1 opacity-40">
           <div className="text-sm">🌹</div>
@@ -735,7 +746,7 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
         </div>
       </div>
 
-      {/* Horizontal Velvet Satin Belly-Band Ribbon */}
+      {/* Horizontal Ribbon */}
       <div
         className={`absolute inset-x-0 top-1/2 -translate-y-1/2 h-16 z-25 shadow-xl transition-all duration-700 flex items-center justify-between px-6 ${
           envelopeState === 'sealed' ? 'translate-y-0 opacity-100' : 'translate-y-36 opacity-0 pointer-events-none'
@@ -750,11 +761,10 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
         <span className="text-[9px] font-serif uppercase tracking-[2px] text-[#e89ca7] font-bold">NAPA 2026</span>
       </div>
 
-      {/* Ruby Wax Seal Centered on Belly-Band */}
       {envelopeState === 'sealed' && (
         <button
           type="button"
-          onClick={handleOpenEnvelope}
+          onClick={() => executeOpenSequence(selectedThemeId)}
           className="absolute z-35 left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex flex-col items-center justify-center cursor-pointer shadow-2xl transition-transform hover:scale-110 active:scale-95 group pointer-events-auto"
           style={{
             backgroundColor: currentTheme.sealColor,
@@ -791,12 +801,10 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
       }}
     >
-      {/* Pocketfold Lining with Starlit Galaxy */}
       <div className="absolute inset-x-2 top-2 h-[280px] rounded-t-xl overflow-hidden opacity-90 border-t border-white/20 bg-[#070e1c]">
         <div className="w-full h-full bg-[radial-gradient(#fae392_1px,transparent_1px)] [background-size:14px_14px] opacity-40" />
       </div>
 
-      {/* Front Scalloped Pocket Pocket */}
       <div className="absolute inset-x-0 bottom-0 h-40 z-20 rounded-b-2xl border-t-2 border-[#d4af37]/60 pointer-events-none" style={{ backgroundColor: currentTheme.envelopeFlapColor }}>
         <div className="absolute top-2 inset-x-0 flex items-center justify-center gap-1.5 text-xs text-[#fae392]">
           <span>✨</span>
@@ -816,7 +824,6 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
           borderBottom: '2px solid #d4af37',
         }}
       >
-        {/* Fairy Light String along the flap rim */}
         <div className="absolute bottom-1 inset-x-4 flex justify-between">
           <span className="w-2 h-2 rounded-full bg-[#ffd700] shadow-[0_0_8px_#ffd700] animate-pulse" />
           <span className="w-2 h-2 rounded-full bg-[#fae392] shadow-[0_0_8px_#ffd700]" />
@@ -828,7 +835,7 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
         {envelopeState === 'sealed' && (
           <button
             type="button"
-            onClick={handleOpenEnvelope}
+            onClick={() => executeOpenSequence(selectedThemeId)}
             className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full flex flex-col items-center justify-center cursor-pointer shadow-2xl transition-transform hover:scale-110 active:scale-95 group pointer-events-auto"
             style={{
               backgroundColor: currentTheme.sealColor,
@@ -866,12 +873,10 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
       }}
     >
-      {/* Arched Interior Cavity */}
       <div className="absolute inset-x-2 top-2 h-[280px] rounded-t-[130px] overflow-hidden opacity-90 border-t border-white/20 bg-[#faf7f2]">
         <div className="w-full h-full bg-[linear-gradient(45deg,#dfc194_25%,transparent_25%),linear-gradient(-45deg,#dfc194_25%,transparent_25%)] [background-size:24px_24px] opacity-20" />
       </div>
 
-      {/* Front Arched Pocket */}
       <div className="absolute inset-0 z-20 pointer-events-none rounded-b-2xl overflow-hidden">
         <div className="absolute bottom-0 inset-x-0 h-44 rounded-t-3xl border-t-2 border-[#dfc194]/50" style={{ backgroundColor: currentTheme.envelopeFlapColor }}>
           <div className="pt-2 text-center text-[8.5px] font-mono tracking-widest text-[#dfc194] uppercase font-bold">
@@ -880,7 +885,7 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
         </div>
       </div>
 
-      {/* Rounded Arched Dome Lid (Sharp Kinetic Snap Opening) */}
+      {/* Rounded Arched Dome Lid */}
       <div
         className={`absolute top-0 inset-x-0 h-[140px] rounded-t-[140px] z-30 transition-transform duration-400 ease-out origin-top ${
           envelopeState === 'sealed' ? 'rotate-x-0' : '-rotate-x-180'
@@ -894,7 +899,7 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
         {envelopeState === 'sealed' && (
           <button
             type="button"
-            onClick={handleOpenEnvelope}
+            onClick={() => executeOpenSequence(selectedThemeId)}
             className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full flex flex-col items-center justify-center cursor-pointer shadow-2xl transition-transform hover:scale-110 active:scale-95 group pointer-events-auto"
             style={{
               backgroundColor: currentTheme.sealColor,
@@ -921,7 +926,6 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
     </div>
   );
 
-  // Switch between the 5 distinct envelope unboxing animations
   const renderEnvelopeAnimation = () => {
     switch (currentTheme.id) {
       case 'native-wattle':
@@ -938,32 +942,26 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
     }
   };
 
-  // Switch between the 5 distinct card transition motions
   const getCardTransitionMotion = () => {
     switch (currentTheme.id) {
       case 'native-wattle':
-        // Blossom upward float with gentle rotation
         return envelopeState === 'opened'
           ? 'relative -mt-64 scale-100 translate-y-0 rotate-0 opacity-100'
           : 'absolute top-10 scale-85 translate-y-8 -rotate-1 opacity-0 pointer-events-none';
       case 'midnight-protea':
-        // Dramatic diagonal 3D tilt slide
         return envelopeState === 'opened'
           ? 'relative -mt-64 scale-100 translate-y-0 rotate-0 opacity-100'
           : 'absolute top-10 scale-90 translate-y-12 rotate-[-2deg] opacity-0 pointer-events-none';
       case 'coastal-harbor':
-        // Twilight zoom-up elevation
         return envelopeState === 'opened'
           ? 'relative -mt-64 scale-100 translate-y-0 opacity-100'
           : 'absolute top-10 scale-80 translate-y-10 opacity-0 pointer-events-none';
       case 'vineyard-arch':
-        // Architectural linear snap slide
         return envelopeState === 'opened'
           ? 'relative -mt-64 scale-100 translate-y-0 opacity-100'
           : 'absolute top-10 scale-95 translate-y-6 opacity-0 pointer-events-none';
       case 'magnolia-gold':
       default:
-        // Classic straight vertical rise
         return envelopeState === 'opened'
           ? 'relative -mt-64 scale-100 translate-y-0 opacity-100'
           : 'absolute top-10 scale-90 translate-y-8 opacity-0 pointer-events-none';
@@ -972,22 +970,17 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* 1. Header with Controls & Clean Quick Actions */}
+      {/* 1. Studio Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#e8ded0]">
         <div>
-          <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1 flex items-center gap-2">
-            <span>DIGITAL &amp; PHYSICAL INVITATION SUITE</span>
-            <span className="text-[#8b7b6b]">&bull;</span>
-            <span className="text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 text-[10px]">
-              Active: {currentTheme.name}
-            </span>
+          <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1">
+            DIGITAL &amp; PHYSICAL INVITATION SUITE
           </div>
           <h1 className="font-serif text-3xl font-bold text-[#15110e]">
             Invitation Design Studio
           </h1>
         </div>
 
-        {/* Clean Top Action Bar (Fullscreen Button Removed) */}
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
@@ -1009,92 +1002,107 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
         </div>
       </div>
 
-      {/* 2. Main Studio Grid (Balanced 2-Column Workspace) */}
+      {/* 2. Top Curated Visual Themes Ribbon (Clean 5-Card Gallery Grid) */}
+      <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-xs space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-[10.5px] font-bold text-[#8b7b6b] uppercase tracking-wider">
+            SELECT WEDDING INVITATION THEME
+          </label>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          {LUXURY_THEMES.map((theme) => {
+            const isSelected = selectedThemeId === theme.id;
+            return (
+              <button
+                key={theme.id}
+                type="button"
+                onClick={() => handleSelectTheme(theme.id)}
+                className={`p-3 rounded-xl border text-left transition-all cursor-pointer relative flex flex-col justify-between h-[125px] overflow-hidden ${
+                  isSelected
+                    ? 'border-2 border-[#bd9661] bg-[#faf6f0] shadow-md ring-2 ring-[#bd9661]/25 -translate-y-0.5'
+                    : 'border-[#e8ded0] bg-white hover:bg-[#faf8f5] hover:border-[#bd9661]/60'
+                }`}
+              >
+                {/* Top Swatch Row */}
+                <div className="flex items-center justify-between w-full">
+                  <div
+                    className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 border-2 shadow-xs"
+                    style={{ backgroundColor: theme.envelopeColor, borderColor: theme.sealColor }}
+                  >
+                    <span className="text-xs">{theme.sealIcon}</span>
+                  </div>
+                  {isSelected ? (
+                    <span className="w-5 h-5 rounded-full bg-[#bd9661] text-[#15110e] flex items-center justify-center text-[10px] font-bold shadow-xs">
+                      ✓
+                    </span>
+                  ) : (
+                    <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-black/5 text-[#8b7b6b]">
+                      {theme.category}
+                    </span>
+                  )}
+                </div>
+
+                {/* Theme Name & Subtitle */}
+                <div>
+                  <div className="font-serif font-bold text-xs text-[#15110e] truncate leading-tight">
+                    {theme.name}
+                  </div>
+                  <div className="text-[9.5px] text-[#bd9661] font-semibold mt-1 truncate flex items-center gap-1">
+                    <span>✨</span>
+                    <span className="truncate">{theme.animationName}</span>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. Main Workspace: Personalization Inspector on Left, Live Hero Stage on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-        {/* LEFT COLUMN: Clean Curated Controls (5 cols) */}
-        <div className="lg:col-span-5 space-y-4">
+        {/* LEFT COLUMN: Personalization & Delivery Details (4 cols) */}
+        <div className="lg:col-span-4 space-y-4">
 
-          {/* Theme Selector: 5 Australian & Luxury Curated Themes */}
-          <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
-            <div className="flex items-center justify-between">
+          <div className="bg-white border border-[#e8ded0] rounded-2xl p-5 shadow-xs space-y-4">
+            <div className="border-b border-[#f0ede4] pb-2">
               <label className="text-[10.5px] font-bold text-[#8b7b6b] uppercase tracking-wider">
-                INVITATION THEME (5 DISTINCT STYLES &amp; ANIMATIONS)
+                PERSONALIZATION &amp; RSVP
               </label>
-              <span className="text-[10px] text-[#bd9661] font-bold">5 Available</span>
             </div>
 
-            <div className="space-y-2">
-              {LUXURY_THEMES.map((theme) => {
-                const isSelected = selectedThemeId === theme.id;
-                return (
-                  <button
-                    key={theme.id}
-                    type="button"
-                    onClick={() => setSelectedThemeId(theme.id)}
-                    className={`w-full p-2.5 sm:p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                      isSelected
-                        ? 'border-2 border-[#bd9661] bg-[#faf6f0] shadow-xs'
-                        : 'border-[#e8ded0] bg-white hover:bg-[#faf8f5]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      {/* Swatch Ring */}
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 shadow-xs"
-                        style={{ backgroundColor: theme.envelopeColor, borderColor: theme.sealColor }}
-                      >
-                        <span className="text-xs">{theme.sealIcon}</span>
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <strong className="text-xs text-[#15110e] truncate">{theme.name}</strong>
-                          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-white/80 border text-[#8b7b6b]">
-                            {theme.category}
-                          </span>
-                        </div>
-                        <div className="text-[10px] text-[#8b7b6b] truncate mt-0.5">
-                          {theme.subtitle}
-                        </div>
-                        <div className="text-[9px] text-[#bd9661] font-semibold mt-0.5 flex items-center gap-1">
-                          <span>✨</span>
-                          <span>Animation: {theme.animationName}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {isSelected && (
-                      <span className="w-5 h-5 rounded-full bg-[#bd9661] text-[#15110e] flex items-center justify-center text-xs font-bold shrink-0">
-                        ✓
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Personalization & Delivery Details */}
-          <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 sm:p-5 shadow-xs space-y-3.5">
             <div>
-              <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-1">
-                PERSONALIZED FOR GUEST / HOUSEHOLD
+              <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-1.5">
+                DELIVER TO GUEST / HOUSEHOLD
               </label>
               <select
                 value={selectedQaRdHousehold}
                 onChange={(e) => setSelectedQaRdHousehold(e.target.value)}
-                className="w-full bg-[#faf8f5] border border-[#d5c7b5] rounded-xl p-2.5 text-xs text-[#15110e] font-semibold outline-none focus:border-[#bd9661]"
+                className="w-full bg-[#faf8f5] border border-[#d5c7b5] rounded-xl p-2.5 text-xs text-[#15110e] font-semibold outline-none focus:border-[#bd9661] cursor-pointer"
               >
-                <option value="Priya Sharma (The Sharma Family)">Priya Sharma (The Sharma Family)</option>
-                <option value="Hannah Martin">Hannah Martin (Solo)</option>
-                <option value="The Whitfield family">The Whitfield family (4 Guests)</option>
-                <option value="Michael & Sarah Chen">Michael &amp; Sarah Chen (Couple)</option>
-                <option value="Uncle David & Aunt Carol">Uncle David &amp; Aunt Carol (VIP)</option>
+                <optgroup label="Families &amp; Households">
+                  <option value="The Sharma Family (4 Guests)">The Sharma Family (4 Guests)</option>
+                  <option value="The Whitfield Family (3 Guests)">The Whitfield Family (3 Guests)</option>
+                  <option value="The Chen Household (2 Guests)">The Chen Household (2 Guests)</option>
+                  <option value="The Taylor Family (4 Guests)">The Taylor Family (4 Guests)</option>
+                  <option value="The Galati Family (VIP Household)">The Galati Family (VIP Household)</option>
+                </optgroup>
+                <optgroup label="Individual Guests">
+                  <option value="Priya Sharma">Priya Sharma</option>
+                  <option value="Hannah Martin">Hannah Martin</option>
+                  <option value="Michael Chen">Michael Chen</option>
+                  <option value="Sarah Chen">Sarah Chen</option>
+                  <option value="Uncle David">Uncle David</option>
+                  <option value="Aunt Carol">Aunt Carol</option>
+                  <option value="Marcus Vance">Marcus Vance</option>
+                  <option value="Olivia Smith">Olivia Smith</option>
+                </optgroup>
               </select>
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-1">
+              <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-1.5">
                 INVITATION OPENING PHRASE
               </label>
               <input
@@ -1116,36 +1124,33 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
                 />
                 <span>✨ Metallic Foil Shimmer Sheen</span>
               </label>
-
-              <span className="text-[10px] text-[#8b7b6b] font-medium">
-                QR RSVP Integrated
-              </span>
             </div>
           </div>
+
+
         </div>
 
-        {/* RIGHT COLUMN: The Interactive Presentation Stage (7 cols) */}
-        <div className="lg:col-span-7 flex flex-col items-center">
+        {/* RIGHT COLUMN: The Interactive Hero Presentation Stage (8 cols) */}
+        <div className="lg:col-span-8 flex flex-col items-center">
 
-          {/* Clean Top Bar: Replay Only (Flip Back & Stationery Views removed) */}
-          <div className="w-full max-w-lg flex items-center justify-between pb-2 mb-2">
-            <div className="text-xs font-bold text-[#8b7b6b] uppercase tracking-wider flex items-center gap-1.5">
-              <span>✉️</span>
-              <span>{currentTheme.animationName}</span>
+          {/* Clean Integrated Stage Header Bar: Centered Template Name & Replay Icon on Right */}
+          <div className="w-full max-w-lg relative flex items-center justify-center pb-2 mb-2">
+            <div className="font-serif font-bold text-sm text-[#15110e] tracking-wide text-center">
+              {currentTheme.name}
             </div>
 
             <button
               type="button"
               onClick={handleReplaySequence}
-              className="px-3 py-1.5 rounded-xl border border-[#d5c7b5] bg-white hover:bg-[#faf8f5] text-[#15110e] text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+              className="absolute right-0 w-8 h-8 rounded-full border border-[#d5c7b5] bg-white hover:bg-[#faf8f5] hover:border-[#bd9661] text-[#15110e] hover:text-[#bd9661] transition-all cursor-pointer flex items-center justify-center shadow-xs active:scale-90"
               title="Replay Unboxing Animation"
+              aria-label="Replay Unboxing Sequence"
             >
-              <span>↺</span>
-              <span>Replay Sequence</span>
+              <span className="text-sm">↺</span>
             </button>
           </div>
 
-          {/* THE ANIMATION STAGE CONTAINER */}
+          {/* THE HERO ANIMATION STAGE CONTAINER */}
           <div
             className="w-full max-w-lg min-h-[580px] rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center relative shadow-xl overflow-hidden border border-[#d5c7b5]/60 transition-all duration-700"
             style={{
@@ -1158,22 +1163,22 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
 
             <div className="relative w-full max-w-md flex flex-col items-center select-none">
 
-              {/* The Dedicated Envelope Animation for this Specific Template */}
+              {/* The Dedicated Envelope Structure & Animation for this Theme */}
               {renderEnvelopeAnimation()}
 
-              {/* THE INVITATION CARD (EXTRACTS OUT OF ENVELOPE ACCORDING TO UNIQUE MOTION) */}
+              {/* THE INVITATION CARD (EXTRACTS OUT ACCORDING TO UNIQUE MOTION) */}
               <div
                 className={`w-full max-w-[370px] sm:max-w-[400px] transition-all duration-700 ease-out z-40 ${getCardTransitionMotion()}`}
               >
                 {renderSelectedTemplate()}
               </div>
 
-              {/* Open Instruction Pill (When Sealed) */}
+              {/* Open Instruction Pill (Only shown if user manually leaves it sealed) */}
               {envelopeState === 'sealed' && (
                 <div className="mt-6 text-center">
                   <button
                     type="button"
-                    onClick={handleOpenEnvelope}
+                    onClick={() => executeOpenSequence(selectedThemeId)}
                     className="bg-[#15110e] text-[#dfc194] border border-[#bd9661] px-5 py-2 rounded-full font-serif font-bold text-xs shadow-lg cursor-pointer flex items-center gap-2 hover:bg-[#251e18] hover:scale-105 transition-all"
                   >
                     <span>✉️</span>

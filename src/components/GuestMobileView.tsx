@@ -13,6 +13,9 @@ export default function GuestMobileView() {
   const [guestCount, setGuestCount] = useState<number>(2);
   const [dietaryInput, setDietaryInput] = useState<string>('Vegetarian');
   const [songInput, setSongInput] = useState<string>('September — Earth, Wind & Fire');
+  const [declineNote, setDeclineNote] = useState<string>('');
+  const [isRsvpSaved, setIsRsvpSaved] = useState<boolean>(false);
+  const [latestPostId, setLatestPostId] = useState<string | null>(null);
 
   // Feed State
   const activeWedding = state.weddings?.[0];
@@ -21,6 +24,7 @@ export default function GuestMobileView() {
   const autoPhase: 'pre' | 'married' = isPastWedding ? 'married' : 'pre';
   const [feedNoteType, setFeedNoteType] = useState<'love' | 'thankyou'>('love');
   const [feedText, setFeedText] = useState<string>('');
+  const [justLikedPostId, setJustLikedPostId] = useState<string | null>(null);
   const [feedPosts, setFeedPosts] = useState<Array<{
     id: string;
     type: string;
@@ -147,9 +151,10 @@ export default function GuestMobileView() {
   // Handle Post Feed Note
   const handlePostNote = () => {
     if (!feedText.trim()) return;
+    const newId = 'f_' + Date.now();
     const newPost = {
-      id: 'f_' + Date.now(),
-      type: 'note',
+      id: newId,
+      type: feedNoteType === 'thankyou' ? 'thankyou' : 'note',
       title: 'Priya Sharma left a note',
       time: 'Just now',
       quote: feedText,
@@ -158,12 +163,20 @@ export default function GuestMobileView() {
       userLiked: true,
     };
     setFeedPosts([newPost, ...feedPosts]);
+    setLatestPostId(newId);
     setFeedText('');
     showToast('Love note posted to celebration feed!', 'success');
+
+    // Subtle fade of the highlight glow after 3.5s
+    setTimeout(() => {
+      setLatestPostId(null);
+    }, 3500);
   };
 
   // Toggle Like on feed post
   const toggleLike = (postId: string) => {
+    setJustLikedPostId(postId);
+    setTimeout(() => setJustLikedPostId(null), 500);
     setFeedPosts(feedPosts.map(p => {
       if (p.id === postId) {
         return {
@@ -530,7 +543,7 @@ export default function GuestMobileView() {
                 </p>
               </div>
 
-              {/* Decision Buttons */}
+              {/* Decision Buttons with Interactive Micro-Transitions */}
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
@@ -538,13 +551,16 @@ export default function GuestMobileView() {
                     setRsvpAttending(true);
                     showToast('RSVP: Joyfully Accepted selected', 'success');
                   }}
-                  className={`py-3 px-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                  className={`py-3 px-2 rounded-xl font-bold text-xs transition-all duration-200 cursor-pointer active:scale-95 ${
                     rsvpAttending
-                      ? 'bg-[#15110e] text-white shadow-sm'
+                      ? 'bg-[#15110e] text-white shadow-sm ring-2 ring-[#bd9661]/40'
                       : 'bg-white text-[#15110e] border border-[#e8ded0] hover:bg-[#faf8f5]'
                   }`}
                 >
-                  Joyfully Accepts
+                  <span className="flex items-center justify-center gap-1.5">
+                    <span>🥂</span>
+                    <span>Joyfully Accepts</span>
+                  </span>
                 </button>
                 <button
                   type="button"
@@ -552,77 +568,140 @@ export default function GuestMobileView() {
                     setRsvpAttending(false);
                     showToast('RSVP: Regretfully Declines selected', 'info');
                   }}
-                  className={`py-3 px-2 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                  className={`py-3 px-2 rounded-xl font-bold text-xs transition-all duration-200 cursor-pointer active:scale-95 ${
                     !rsvpAttending
-                      ? 'bg-[#15110e] text-white shadow-sm'
+                      ? 'bg-[#15110e] text-white shadow-sm ring-2 ring-[#bd9661]/40'
                       : 'bg-white text-[#15110e] border border-[#e8ded0] hover:bg-[#faf8f5]'
                   }`}
                 >
-                  Regretfully Declines
+                  <span className="flex items-center justify-center gap-1.5">
+                    <span>💌</span>
+                    <span>Regretfully Declines</span>
+                  </span>
                 </button>
               </div>
 
-              {/* Guests Attending Counter */}
-              <div>
-                <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
-                  Guests Attending
-                </label>
-                <div className="bg-white border border-[#e8ded0] rounded-xl p-2.5 flex items-center justify-between shadow-xs">
-                  <button
-                    type="button"
-                    onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
-                    className="w-9 h-9 rounded-full bg-[#f8f6f2] hover:bg-[#e8ded0] text-[#15110e] font-bold text-lg flex items-center justify-center transition-colors cursor-pointer"
-                  >
-                    &minus;
-                  </button>
-                  <span className="font-bold text-sm text-[#15110e]">
-                    {guestCount} guests
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setGuestCount(guestCount + 1)}
-                    className="w-9 h-9 rounded-full bg-[#f8f6f2] hover:bg-[#e8ded0] text-[#15110e] font-bold text-lg flex items-center justify-center transition-colors cursor-pointer"
-                  >
-                    &#43;
-                  </button>
+              {/* Meaningful Contextual Transitions Based on RSVP Selection */}
+              {rsvpAttending ? (
+                <div key="rsvp-attending-box" className="space-y-4 anim-guest-slide">
+                  {/* Celebratory Acceptance Confirmation Banner */}
+                  <div className="bg-[#f0f9f2] border border-[#a3d9b1] rounded-2xl p-3.5 flex items-center gap-3 shadow-xs anim-guest-pop">
+                    <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 anim-check">
+                      ✓
+                    </div>
+                    <div className="text-left">
+                      <div className="text-xs font-bold text-emerald-950">You're Attending! 🥂</div>
+                      <div className="text-[10.5px] text-emerald-800 leading-tight">We can't wait to celebrate together at Fernwood Estate.</div>
+                    </div>
+                  </div>
+
+                  {/* Guests Attending Counter */}
+                  <div>
+                    <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
+                      Guests Attending
+                    </label>
+                    <div className="bg-white border border-[#e8ded0] rounded-xl p-2.5 flex items-center justify-between shadow-xs">
+                      <button
+                        type="button"
+                        onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
+                        className="w-9 h-9 rounded-full bg-[#f8f6f2] hover:bg-[#e8ded0] active:scale-90 text-[#15110e] font-bold text-lg flex items-center justify-center transition-all cursor-pointer"
+                      >
+                        &minus;
+                      </button>
+                      <span className="font-bold text-sm text-[#15110e]">
+                        {guestCount} guests
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setGuestCount(guestCount + 1)}
+                        className="w-9 h-9 rounded-full bg-[#f8f6f2] hover:bg-[#e8ded0] active:scale-90 text-[#15110e] font-bold text-lg flex items-center justify-center transition-all cursor-pointer"
+                      >
+                        &#43;
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Dietary Requirements */}
+                  <div>
+                    <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
+                      Dietary Requirements
+                    </label>
+                    <input
+                      type="text"
+                      value={dietaryInput}
+                      onChange={(e) => setDietaryInput(e.target.value)}
+                      placeholder="e.g. Vegetarian, Gluten-Free, Nut allergy"
+                      className="w-full bg-white border border-[#e8ded0] rounded-xl p-3 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs transition-colors"
+                    />
+                  </div>
+
+                  {/* Song Request */}
+                  <div>
+                    <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
+                      Song That'll Get You on the Dance Floor
+                    </label>
+                    <input
+                      type="text"
+                      value={songInput}
+                      onChange={(e) => setSongInput(e.target.value)}
+                      placeholder="e.g. September by Earth Wind & Fire"
+                      className="w-full bg-white border border-[#e8ded0] rounded-xl p-3 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs transition-colors"
+                    />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div key="rsvp-declined-box" className="bg-[#faf7f2] border border-[#ebd8c3] rounded-2xl p-4 text-center space-y-3 anim-guest-pop shadow-xs">
+                  <div className="w-10 h-10 mx-auto rounded-full bg-[#f3ecdf] flex items-center justify-center text-xl anim-check">
+                    💌
+                  </div>
+                  <div className="font-serif font-bold text-sm text-[#15110e]">
+                    You Will Be Dearly Missed
+                  </div>
+                  <p className="text-xs text-[#7a6a5b] leading-relaxed max-w-xs mx-auto">
+                    Thank you for letting Sophie &amp; James know. We will raise a glass to you from afar and share photos &amp; highlights in this celebration portal!
+                  </p>
+                  <div className="pt-1 text-left">
+                    <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
+                      Leave a Warm Note for Sophie &amp; James (Optional)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={declineNote}
+                      onChange={(e) => setDeclineNote(e.target.value)}
+                      placeholder="Wishing you both a wonderful wedding day and endless love..."
+                      className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs resize-none"
+                    />
+                  </div>
+                </div>
+              )}
 
-              {/* Dietary Requirements */}
-              <div>
-                <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
-                  Dietary Requirements
-                </label>
-                <input
-                  type="text"
-                  value={dietaryInput}
-                  onChange={(e) => setDietaryInput(e.target.value)}
-                  placeholder="e.g. Vegetarian, Gluten-Free, Nut allergy"
-                  className="w-full bg-white border border-[#e8ded0] rounded-xl p-3 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs"
-                />
-              </div>
-
-              {/* Song Request */}
-              <div>
-                <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
-                  Song That'll Get You on the Dance Floor
-                </label>
-                <input
-                  type="text"
-                  value={songInput}
-                  onChange={(e) => setSongInput(e.target.value)}
-                  placeholder="e.g. September by Earth Wind & Fire"
-                  className="w-full bg-white border border-[#e8ded0] rounded-xl p-3 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs"
-                />
-              </div>
-
-              {/* Save RSVP Button */}
+              {/* Save RSVP Button with Success Confirmation Transition */}
               <button
                 type="button"
-                onClick={() => showToast('RSVP preferences confirmed and saved!', 'success')}
-                className="w-full bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold py-3 rounded-xl text-xs shadow-sm transition-all cursor-pointer"
+                onClick={() => {
+                  setIsRsvpSaved(true);
+                  showToast(
+                    rsvpAttending
+                      ? 'RSVP confirmed! See you at Fernwood Estate.'
+                      : 'RSVP recorded. Sophie & James have received your warm wishes.',
+                    'success'
+                  );
+                  setTimeout(() => setIsRsvpSaved(false), 3000);
+                }}
+                className={`w-full py-3 rounded-xl text-xs font-bold shadow-sm transition-all duration-300 cursor-pointer active:scale-98 flex items-center justify-center gap-2 ${
+                  isRsvpSaved
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e]'
+                }`}
               >
-                Update &amp; Confirm RSVP
+                {isRsvpSaved ? (
+                  <div className="flex items-center gap-2 anim-guest-pop">
+                    <span className="font-bold anim-check">✓</span>
+                    <span>RSVP Response Recorded &amp; Saved</span>
+                  </div>
+                ) : (
+                  <span>Update &amp; Confirm RSVP</span>
+                )}
               </button>
             </div>
           )}
@@ -713,52 +792,70 @@ export default function GuestMobileView() {
                 </div>
               </div>
 
-              {/* Feed Items List */}
+              {/* Feed Items List with Dynamic New Post Transition */}
               <div className="space-y-3 pt-1">
-                {feedPosts.map((post) => (
-                  <div key={post.id} className="bg-white border border-[#e8ded0] rounded-xl p-3.5 shadow-sm space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-[#faf8f5] border border-[#ebd3a8] flex items-center justify-center text-base">
-                          {post.type === 'thankyou' ? '🎁' : post.type === 'milestone' ? '⭐' : '✉️'}
+                {feedPosts.map((post) => {
+                  const isJustPosted = post.id === latestPostId;
+                  return (
+                    <div
+                      key={post.id}
+                      className={`bg-white border rounded-xl p-3.5 shadow-sm space-y-2 transition-all duration-500 ${
+                        isJustPosted
+                          ? 'border-[#bd9661] anim-feed-glow shadow-md'
+                          : 'border-[#e8ded0]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-[#faf8f5] border border-[#ebd3a8] flex items-center justify-center text-base">
+                            {post.type === 'thankyou' ? '🎁' : post.type === 'milestone' ? '⭐' : '✉️'}
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-[#15110e] flex items-center gap-2">
+                              <span>{post.title}</span>
+                              {isJustPosted && (
+                                <span className="text-[9px] font-bold uppercase tracking-wider bg-[#bd9661]/20 text-[#8c5b1e] px-1.5 py-0.5 rounded-full animate-pulse">
+                                  Just Posted
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-[#8b7b6b]">{post.time}</div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="text-xs font-bold text-[#15110e]">{post.title}</div>
-                          <div className="text-[10px] text-[#8b7b6b]">{post.time}</div>
+                      </div>
+
+                      {post.badge && (
+                        <div className="text-[11px] text-[#8b7b6b] font-medium">
+                          {post.badge}
                         </div>
+                      )}
+
+                      {post.quote && (
+                        <div className="text-xs text-[#6b5849] italic bg-[#faf8f5] p-2.5 rounded-lg border-l-2 border-[#bd9661] leading-relaxed">
+                          "{post.quote}"
+                        </div>
+                      )}
+
+                      <div className="pt-1 flex items-center gap-4 text-[11px] text-[#8b7b6b]">
+                        <button
+                          type="button"
+                          onClick={() => toggleLike(post.id)}
+                          className={`flex items-center gap-1.5 cursor-pointer hover:text-[#bd9661] active:scale-125 transition-transform duration-150 ${post.userLiked ? 'text-[#c54b38] font-bold' : ''}`}
+                        >
+                          <span className={`inline-block transition-transform duration-200 ${justLikedPostId === post.id ? 'anim-heart' : ''} ${post.userLiked ? 'scale-110' : ''}`}>❤️</span>
+                          <span>{post.likes} Likes</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => showToast('Comments drawer', 'info')}
+                          className="flex items-center gap-1 cursor-pointer hover:text-[#bd9661] active:scale-95 transition-transform duration-150"
+                        >
+                          💬 {post.comments} Comments
+                        </button>
                       </div>
                     </div>
-
-                    {post.badge && (
-                      <div className="text-[11px] text-[#8b7b6b] font-medium">
-                        {post.badge}
-                      </div>
-                    )}
-
-                    {post.quote && (
-                      <div className="text-xs text-[#6b5849] italic bg-[#faf8f5] p-2.5 rounded-lg border-l-2 border-[#bd9661] leading-relaxed">
-                        "{post.quote}"
-                      </div>
-                    )}
-
-                    <div className="pt-1 flex items-center gap-4 text-[11px] text-[#8b7b6b]">
-                      <button
-                        type="button"
-                        onClick={() => toggleLike(post.id)}
-                        className={`flex items-center gap-1 cursor-pointer hover:text-[#bd9661] ${post.userLiked ? 'text-[#c54b38] font-bold' : ''}`}
-                      >
-                        ❤️ {post.likes} Likes
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => showToast('Comments drawer', 'info')}
-                        className="flex items-center gap-1 cursor-pointer hover:text-[#bd9661]"
-                      >
-                        💬 {post.comments} Comments
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

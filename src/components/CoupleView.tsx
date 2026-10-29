@@ -1117,8 +1117,8 @@ export default function CoupleView({
             </div>
           )}
 
-          {/* Navigation Links */}
-          <nav className="p-2 flex flex-col gap-1">
+          {/* Navigation Links (Responsive mobile horizontal strip + desktop vertical sidebar) */}
+          <nav className="p-2 flex md:flex-col flex-row overflow-x-auto gap-1 no-scrollbar shrink-0">
             {(isMcOrPlanner ? [
               {
                 id: 'mc_runsheet' as const,
@@ -1310,10 +1310,10 @@ export default function CoupleView({
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  className={`shrink-0 md:w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer active:scale-95 ${
                     isActive
-                      ? 'bg-[#291f17] text-[#dfc194] border-l-[3px] border-l-[#bd9661] shadow-xs'
-                      : 'text-[#d9c9b8] hover:bg-[#1e1713] hover:text-white border-l-[3px] border-l-transparent'
+                      ? 'bg-[#291f17] text-[#dfc194] md:border-l-[3px] md:border-l-[#bd9661] border-b-2 md:border-b-0 border-b-[#bd9661] shadow-xs'
+                      : 'text-[#d9c9b8] hover:bg-[#1e1713] hover:text-white md:border-l-[3px] md:border-l-transparent'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 truncate">
@@ -1510,16 +1510,28 @@ export default function CoupleView({
                 <h3 className="font-serif text-lg font-bold text-[#15110e]">This Week's Checklist</h3>
                 <div className="space-y-2.5">
                   {wedding.tasks.map((t) => (
-                    <label key={t.id} className="flex items-center gap-3 text-xs text-[#15110e] cursor-pointer">
+                    <label
+                      key={t.id}
+                      className={`flex items-center gap-3 text-xs p-2 rounded-xl cursor-pointer transition-all duration-250 ${
+                        t.completed
+                          ? 'bg-emerald-50/60 text-[#8b7b6b] border border-emerald-200/50'
+                          : 'bg-white hover:bg-[#faf8f5] text-[#15110e] border border-transparent hover:border-[#ebd8c3]'
+                      }`}
+                    >
                       <input
                         type="checkbox"
                         checked={t.completed}
                         onChange={() => handleToggleTask(t.id)}
-                        className="accent-[#bd9661] w-4 h-4 cursor-pointer"
+                        className="accent-[#bd9661] w-4 h-4 cursor-pointer active:scale-90 transition-transform duration-150"
                       />
-                      <span className={t.completed ? 'line-through text-[#8b7b6b]' : 'font-medium'}>
+                      <span className={`transition-all duration-250 ${t.completed ? 'line-through text-[#8b7b6b]' : 'font-medium'}`}>
                         {t.text}
                       </span>
+                      {t.completed && (
+                        <span className="ml-auto text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-full animate-in fade-in duration-200">
+                          Done ✓
+                        </span>
+                      )}
                     </label>
                   ))}
                 </div>

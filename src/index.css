@@ -463,3 +463,80 @@ input:checked + .slider:before {
   gap: 10px;
 }
 
+
+
+/* ========================================================================== */
+/* GUEST MOBILE & RSVP INTERACTIVE ANIMATIONS                                 */
+/* ========================================================================== */
+
+@keyframes guestPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(-8px);
+  }
+  60% {
+    transform: scale(1.02) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes guestSlideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes guestPulseGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(189, 150, 97, 0.7);
+    border-color: #bd9661;
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(189, 150, 97, 0);
+    border-color: #bd9661;
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(189, 150, 97, 0);
+  }
+}
+
+@keyframes guestHeartBounce {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.5); }
+  65% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+@keyframes guestCheckPulse {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.35); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.anim-guest-pop {
+  animation: guestPopIn 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.anim-guest-slide {
+  animation: guestSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.anim-feed-glow {
+  animation: guestSlideDown 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards, guestPulseGlow 1.8s ease-out 2;
+}
+
+.anim-heart {
+  animation: guestHeartBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.anim-check {
+  animation: guestCheckPulse 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
