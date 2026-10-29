@@ -683,7 +683,7 @@ export default function GuestMobileView() {
                         </button>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-stretch gap-2.5">
                         {/* Reduced width box holding - 4 + */}
                         <div className="flex-1 bg-white border border-[#e8ded0] rounded-xl p-2.5 flex items-center justify-between shadow-xs">
                           <button
@@ -706,7 +706,7 @@ export default function GuestMobileView() {
                           </button>
                         </div>
 
-                        {/* OUTSIDE THE BOX: Link Button */}
+                        {/* OUTSIDE THE BOX: Link Button (same height as box, only link icon) */}
                         <button
                           type="button"
                           onClick={() => {
@@ -715,14 +715,14 @@ export default function GuestMobileView() {
                             }
                             setShowAdditionalGuestsModal(true);
                           }}
-                          className="h-[48px] px-3.5 rounded-xl bg-white hover:bg-[#faf4ec] border border-[#dfc194] active:scale-95 text-[#bd9661] shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shrink-0"
+                          className="w-[54px] rounded-xl bg-white hover:bg-[#faf4ec] border border-[#dfc194] active:scale-95 text-[#bd9661] shadow-xs flex items-center justify-center transition-all cursor-pointer shrink-0 self-stretch"
                           title="Register additional guests"
+                          aria-label="Register additional guests"
                         >
-                          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
                             <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
                           </svg>
-                          <span className="text-xs font-bold">5+</span>
                         </button>
                       </div>
                     )}
