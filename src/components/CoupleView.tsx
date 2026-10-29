@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppState, useSession, getWeddingCountdown, formatAUD, showToast } from '../lib/state';
 import JoeyChatbot from './JoeyChatbot';
-import { Guest, PrivateRunSheetItem } from '../lib/types';
+import { Guest, PrivateRunSheetItem, WeddingVendor } from '../lib/types';
+import { VendorDirectorySection } from './VendorDirectorySection';
+import { WeddingCountdownCard } from './WeddingCountdownCard';
 import { logAudit } from '../lib/state';
 import { InvitationTemplatesSection } from './InvitationTemplatesSection';
 import { WeddingDayCelebrationSection } from './WeddingDayCelebrationSection';
@@ -27,6 +29,7 @@ export interface CoupleViewProps {
   onSelectView?: (view: string) => void;
   weddingId?: string;
   isMcView?: boolean;
+  isPlannerView?: boolean;
   onBackToWeddings?: () => void;
   initialTab?: CoupleTab;
 }
@@ -35,6 +38,7 @@ export default function CoupleView({
   onSelectView,
   weddingId,
   isMcView,
+  isPlannerView,
   onBackToWeddings,
   initialTab,
 }: CoupleViewProps) {
@@ -44,13 +48,29 @@ export default function CoupleView({
   const activeWeddingId = weddingId || session?.weddingId || state.currentWeddingId || 'w1';
   const wedding = (state.weddings || []).find(w => w.id === activeWeddingId) || (state.weddings || [])[0];
 
-  const [activeTab, setActiveTab] = useState<CoupleTab>(initialTab || 'overview');
+  const isMcOrPlanner = Boolean(isMcView || isPlannerView || session?.role === 'mc' || session?.role === 'planner');
+
+  const [activeTab, setActiveTab] = useState<CoupleTab>(
+    initialTab || (isMcOrPlanner ? 'mc_runsheet' : 'overview')
+  );
 
   useEffect(() => {
     if (initialTab) {
       setActiveTab(initialTab);
+    } else if (isMcOrPlanner && activeTab !== 'mc_runsheet' && activeTab !== 'seating' && activeTab !== 'venue') {
+      setActiveTab('mc_runsheet');
     }
-  }, [initialTab]);
+  }, [initialTab, isMcOrPlanner]);
+
+  const handleUpdateWeddingVendors = (newVendors: WeddingVendor[]) => {
+    const updatedWeddings = (state.weddings || []).map(w => {
+      if (w.id === wedding.id) {
+        return { ...w, vendors: newVendors };
+      }
+      return w;
+    });
+    setState({ ...state, weddings: updatedWeddings });
+  };
 
   // Wedding Day Celebration Mode (Interactive demo toggle)
   const [isWeddingDayMode, setIsWeddingDayMode] = useState<boolean>(false);
@@ -404,10 +424,10 @@ export default function CoupleView({
   };
 
   // Tab 4: Content & Stories State (Screenshot 25)
-  const [contentSubTab, setContentSubTab] = useState<'ourStory' | 'inMemoriam' | 'diningMenu' | 'meetTheTeam' | 'honeymoonUpdates'>('ourStory');
+  const [contentSubTab, setContentSubTab] = useState<'ourStory' | 'inMemoriam' | 'diningMenu' | 'meetTheTeam' | 'honeymoonUpdates' | 'vendorDirectory'>('ourStory');
   const [previewPhotoIndex, setPreviewPhotoIndex] = useState<number>(0);
   const [contentPages, setContentPages] = useState<{
-    [key in 'ourStory' | 'inMemoriam' | 'diningMenu' | 'meetTheTeam' | 'honeymoonUpdates']: {
+    [key in 'ourStory' | 'inMemoriam' | 'diningMenu' | 'meetTheTeam' | 'honeymoonUpdates' | 'vendorDirectory']: {
       title: string;
       subtitle: string;
       content: string;
@@ -473,6 +493,15 @@ export default function CoupleView({
       photos: [
         'https://images.unsplash.com/photo-1507692049790-de58290a4334?auto=format&fit=crop&w=800&q=80',
       ],
+    },
+    vendorDirectory: {
+      title: 'Wedding Vendor Directory',
+      subtitle: 'Directory of all contracted wedding vendors and contact information',
+      content: '',
+      caption: 'Wedding Vendors',
+      icon: '💐',
+      status: 'Published',
+      photos: [],
     },
   });
 
@@ -1070,8 +1099,8 @@ export default function CoupleView({
             </span>
           </div>
 
-          {/* MC Mode Navigation Header */}
-          {isMcView && (
+          {/* MC & Planner Mode Navigation Header */}
+          {(isMcView || isPlannerView) && (
             <div className="px-3 pb-3 border-b border-[#231b14]">
               <button
                 type="button"
@@ -1083,14 +1112,50 @@ export default function CoupleView({
               </button>
               <div className="text-[9.5px] uppercase tracking-[1.5px] text-[#bd9661] font-bold px-1 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="truncate">MC SUITE: {wedding.couple}</span>
+                <span className="truncate">{isPlannerView || session?.role === 'planner' ? 'PLANNER SUITE' : 'MC SUITE'}: {wedding.couple}</span>
               </div>
             </div>
           )}
 
           {/* Navigation Links */}
           <nav className="p-2 flex flex-col gap-1">
-            {[
+            {(isMcOrPlanner ? [
+              {
+                id: 'mc_runsheet' as const,
+                label: 'Run Sheet',
+                icon: (
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                    <path d="M9 12h6M9 16h4" />
+                  </svg>
+                ),
+              },
+              {
+                id: 'seating' as const,
+                label: 'Seating Arrangements',
+                icon: (
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="3.5" />
+                    <circle cx="12" cy="3" r="2" />
+                    <circle cx="12" cy="21" r="2" />
+                    <circle cx="3" cy="12" r="2" />
+                    <circle cx="21" cy="12" r="2" />
+                    <path d="M12 5v3.5M12 15.5v3.5M5 12h3.5M15.5 12h3.5" />
+                  </svg>
+                ),
+              },
+              {
+                id: 'venue' as const,
+                label: 'Venue & Travel',
+                icon: (
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                ),
+              },
+            ] : [
               {
                 id: 'overview',
                 label: 'Overview',
@@ -1238,7 +1303,7 @@ export default function CoupleView({
                   </svg>
                 ),
               },
-            ].map((tab) => {
+            ]).map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <button
@@ -1270,11 +1335,17 @@ export default function CoupleView({
 
         {/* User Footer */}
         <div className="p-4 border-t border-[#231b14] text-xs">
-          {isMcView ? (
+          {isMcOrPlanner ? (
             <div>
-              <div className="text-[10px] uppercase tracking-wider text-[#bd9661] font-bold">Host Account</div>
-              <div className="font-semibold text-white">Robert Galati</div>
-              <div className="text-[11px] text-[#8c7b6c] truncate">Managing: {wedding.couple}</div>
+              <div className="text-[10px] uppercase tracking-wider text-[#bd9661] font-bold">
+                {session?.role === 'planner' ? 'Wedding Planner' : 'MC Host Console'}
+              </div>
+              <div className="font-semibold text-white">
+                {session?.name || (session?.role === 'planner' ? 'Wedding Planner' : 'Robert Galati')}
+              </div>
+              <div className="text-[11px] text-[#8c7b6c] truncate">
+                Managing: {wedding.couple} &bull; Run Sheet &amp; Seating
+              </div>
             </div>
           ) : (
             <div className="flex items-center justify-between">
@@ -1339,12 +1410,12 @@ export default function CoupleView({
         {/* ================================================================ */}
         {/* TAB 1: OVERVIEW (Screenshot 5)                                   */}
         {/* ================================================================ */}
-        {activeTab === 'overview' && (
+        {activeTab === 'overview' && !isMcOrPlanner && (
           <section className="space-y-6">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1">
-                  YOUR WEDDING
+                  YOUR WEDDING &bull; COUPLE DASHBOARD
                 </div>
                 <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#15110e]">
                   {wedding.couple}
@@ -1369,13 +1440,20 @@ export default function CoupleView({
                 >
                   <span>{isWeddingDayMode ? '🎉 Wedding Day Active' : '✨ Wedding Day Mode'}</span>
                 </button>
-                <div className="bg-[#15110e] text-[#dfc194] px-4 py-2 rounded-full font-bold text-xs tracking-wider shadow-sm">
-                  {isWeddingDayMode
-                    ? 'TODAY: SATURDAY, 14 NOV 2026'
-                    : `${countdown.days} DAYS : ${countdown.hours} HRS : ${countdown.minutes} MINS : ${countdown.seconds} SECS REMAINING`}
-                </div>
               </div>
             </div>
+
+            {/* Prominent Wedding Countdown Hero Card */}
+            {!isWeddingDayMode && (
+              <WeddingCountdownCard
+                targetDate={wedding.date || '2026-11-14T14:00:00'}
+                coupleName={wedding.couple}
+                venueName={wedding.venue}
+                dateDisplay={wedding.dateDisplay || '14 November 2026'}
+                themeColor={weddingSettings.themeColor as any}
+                variant="luxury"
+              />
+            )}
 
             {/* Wedding Day Celebration Experience (Active on Wedding Day) */}
             {isWeddingDayMode && (
@@ -1486,7 +1564,7 @@ export default function CoupleView({
         {/* ================================================================ */}
         {/* TAB 2: GUEST LIST (Screenshot 23: 172854.png)                     */}
         {/* ================================================================ */}
-        {activeTab === 'guests' && (
+        {activeTab === 'guests' && !isMcOrPlanner && (
           <section className="space-y-6">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
@@ -2178,7 +2256,7 @@ export default function CoupleView({
         {/* ================================================================ */}
         {/* TAB 4: CONTENT & STORIES (Screenshot 25: 172910.png)             */}
         {/* ================================================================ */}
-        {activeTab === 'pages' && (
+        {activeTab === 'pages' && !isMcOrPlanner && (
           <section className="space-y-5">
             <div>
               <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1">
@@ -2200,6 +2278,7 @@ export default function CoupleView({
                 { id: 'diningMenu', label: '🍽️ Dining & Menu' },
                 { id: 'meetTheTeam', label: '👥 Meet the Team' },
                 { id: 'honeymoonUpdates', label: '✈️ Honeymoon Updates' },
+                { id: 'vendorDirectory', label: '💐 Vendor Directory' },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -2216,8 +2295,14 @@ export default function CoupleView({
               ))}
             </div>
 
-            {/* Split: Editor Card vs Live Preview Card */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {contentSubTab === 'vendorDirectory' ? (
+              <VendorDirectorySection
+                wedding={wedding}
+                onUpdateWeddingVendors={handleUpdateWeddingVendors}
+              />
+            ) : (
+              /* Split: Editor Card vs Live Preview Card */
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left: Editor Card */}
               <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-4">
                 <div className="flex items-center justify-between pb-2 border-b border-[#f0ede4]">
@@ -2654,13 +2739,14 @@ export default function CoupleView({
                 </div>
               </div>
             </div>
+            )}
           </section>
         )}
 
         {/* ================================================================ */}
         {/* TAB 5: INVITATIONS (Screenshot 26: 172916.png)                    */}
         {/* ================================================================ */}
-        {activeTab === 'invitations' && (
+        {activeTab === 'invitations' && !isMcOrPlanner && (
           <section className="space-y-6">
             <InvitationTemplatesSection
               selectedQaRdHousehold={selectedQaRdHousehold}
@@ -2675,7 +2761,7 @@ export default function CoupleView({
         {/* ================================================================ */}
         {/* TAB 6: GIFT & THANK-YOU (Screenshot 27: 172928.png)              */}
         {/* ================================================================ */}
-        {activeTab === 'gifts' && !isMcView && (
+        {activeTab === 'gifts' && !isMcOrPlanner && (
           <section className="space-y-6">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
@@ -2961,7 +3047,7 @@ export default function CoupleView({
         {/* ================================================================ */}
         {/* TAB 7: CELEBRATION FEED (Screenshot 28: 172937.png)              */}
         {/* ================================================================ */}
-        {activeTab === 'feed' && (
+        {activeTab === 'feed' && !isMcOrPlanner && (
           <section className="space-y-6">
             <div>
               <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1">
@@ -3208,7 +3294,7 @@ export default function CoupleView({
         {/* ================================================================ */}
         {/* TAB 8: WEDDING VAULT (Screenshot 29: 172943.png)                 */}
         {/* ================================================================ */}
-        {activeTab === 'vault' && (
+        {activeTab === 'vault' && !isMcOrPlanner && (
           <section className="space-y-6">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
@@ -3317,7 +3403,7 @@ export default function CoupleView({
         {/* ================================================================ */}
         {/* TAB 9: 1ST ANNIVERSARY (Screenshots 30-32: 172951.png - 173005) */}
         {/* ================================================================ */}
-        {activeTab === 'anniversary' && (
+        {activeTab === 'anniversary' && !isMcOrPlanner && (
           <section className="space-y-6">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
@@ -3839,7 +3925,7 @@ export default function CoupleView({
         {/* ================================================================ */}
         {/* TAB 11: SETTINGS (Screenshot 34: 173029.png)                      */}
         {/* ================================================================ */}
-        {activeTab === 'settings' && (
+        {activeTab === 'settings' && !isMcOrPlanner && (
           <section className="space-y-6 max-w-4xl">
             <div>
               <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1">
@@ -4212,12 +4298,12 @@ export default function CoupleView({
             <div className="flex items-start justify-between flex-wrap gap-4">
               <div>
                 <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1 flex items-center gap-2">
-                  <span>🔒 PRIVATE CONSOLE</span>
+                  <span>{isPlannerView || session?.role === 'planner' ? '📋 COORDINATION SUITE' : '🔒 PRIVATE CONSOLE'}</span>
                   <span className="text-[#8b7b6b]">•</span>
                   <span className="text-[#15110e] font-semibold">{wedding.couple}</span>
                 </div>
                 <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#15110e]">
-                  Private Run Sheet
+                  {isPlannerView || session?.role === 'planner' ? 'Wedding Day Run Sheet' : 'Private Run Sheet'}
                 </h1>
                 <p className="text-xs text-[#8b7b6b] mt-1">
                   Saturday, {wedding.dateDisplay || wedding.date} &bull; {wedding.venue} &bull; {runSheet.length} Cue Entries

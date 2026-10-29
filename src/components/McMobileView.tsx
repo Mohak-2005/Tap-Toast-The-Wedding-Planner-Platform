@@ -12,7 +12,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
 
   // Selected wedding ID for Live Console mode (null = home mode)
-  const [selectedWeddingId, setSelectedWeddingId] = useState<string | null>('w_sophie_james');
+  const [selectedWeddingId, setSelectedWeddingId] = useState<string | null>(null);
   const normalizedId = selectedWeddingId === 'w_sophie_james' ? 'w1'
     : selectedWeddingId === 'w_aisha_marcus' ? 'w2'
     : selectedWeddingId === 'w_emma_tom' ? 'w3'
@@ -24,7 +24,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
   const [homeTab, setHomeTab] = useState<'weddings' | 'calendar' | 'referrals' | 'team' | 'settings'>('weddings');
 
   // Live Console Navigation ('overview' | 'runsheet' | 'seating' | 'catering' | 'guests' | 'venue')
-  const [consoleTab, setConsoleTab] = useState<'overview' | 'runsheet' | 'seating' | 'catering' | 'guests' | 'venue'>('seating');
+  const [consoleTab, setConsoleTab] = useState<'overview' | 'runsheet' | 'seating' | 'catering' | 'guests' | 'venue'>('runsheet');
 
   // Live Console Seating Sub-segment ('canvas' | 'tables' | 'unseated')
   const [seatingSubTab, setSeatingSubTab] = useState<'canvas' | 'tables' | 'unseated'>('canvas');
@@ -1497,7 +1497,7 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
       : weddingId === 'w_emma_tom' ? 'w3'
       : weddingId;
     setSelectedWeddingId(weddingId);
-    setConsoleTab('overview');
+    setConsoleTab('runsheet');
     setState({ ...state, currentWeddingId: targetId });
     if (viewportRef.current) {
       viewportRef.current.scrollTop = 0;
@@ -3468,108 +3468,62 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
             </button>
           </div>
         ) : (
-          /* Live Console Mode Bottom Dock (6 Clean Tabs with Professional Vector SVG Icons replacing Image 2) */
-          <div className="h-[64px] bg-[#15110e] border-t border-[#2b221a] flex items-center justify-around px-1 z-20 flex-shrink-0 text-white">
-            {/* 1. Overview */}
-            <button
-              type="button"
-              onClick={() => setConsoleTab('overview')}
-              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
-                consoleTab === 'overview' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
-              }`}
-            >
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                <rect x="14" y="14" width="7" height="7" rx="1.5" />
-                <rect x="3" y="14" width="7" height="7" rx="1.5" />
-              </svg>
-              <span className="text-[10px] mt-0.5">Overview</span>
-            </button>
-
-            {/* 2. Run Sheet */}
+          /* Live Console Mode Bottom Dock: Exclusively Run Sheet, Seating Arrangements & Venue (View Only) */
+          <div className="h-[64px] bg-[#15110e] border-t border-[#2b221a] flex items-center justify-around px-3 z-20 flex-shrink-0 text-white gap-2">
+            {/* 1. Run Sheet */}
             <button
               type="button"
               onClick={() => setConsoleTab('runsheet')}
-              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
-                consoleTab === 'runsheet' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
+              className={`flex flex-col items-center justify-center flex-1 py-1.5 rounded-xl cursor-pointer transition-all ${
+                consoleTab === 'runsheet'
+                  ? 'bg-[#291f17] text-[#dfc194] font-bold border border-[#bd9661]/40 shadow-xs'
+                  : 'text-[#8b7b6b] hover:text-white'
               }`}
             >
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
                 <rect x="8" y="2" width="8" height="4" rx="1" />
                 <path d="M9 12h6" />
                 <path d="M9 16h6" />
               </svg>
-              <span className="text-[10px] mt-0.5">Run Sheet</span>
+              <span className="text-[11px] mt-0.5">Run Sheet</span>
             </button>
 
-            {/* 3. Seating */}
+            {/* 2. Seating */}
             <button
               type="button"
-              onClick={() => { setSelectedWeddingId('w_sophie_james'); setConsoleTab('seating'); }}
-              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
-                consoleTab === 'seating' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
+              onClick={() => setConsoleTab('seating')}
+              className={`flex flex-col items-center justify-center flex-1 py-1.5 rounded-xl cursor-pointer transition-all ${
+                consoleTab === 'seating'
+                  ? 'bg-[#291f17] text-[#dfc194] font-bold border border-[#bd9661]/40 shadow-xs'
+                  : 'text-[#8b7b6b] hover:text-white'
               }`}
             >
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="4.5" />
                 <circle cx="12" cy="3.5" r="1.5" />
                 <circle cx="12" cy="20.5" r="1.5" />
                 <circle cx="3.5" cy="12" r="1.5" />
                 <circle cx="20.5" cy="12" r="1.5" />
               </svg>
-              <span className="text-[10px] mt-0.5">Seating</span>
+              <span className="text-[11px] mt-0.5">Seating</span>
             </button>
 
-            {/* 4. Catering */}
-            <button
-              type="button"
-              onClick={() => setConsoleTab('catering')}
-              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
-                consoleTab === 'catering' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
-              }`}
-            >
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
-                <line x1="6" y1="1" x2="6" y2="4" />
-                <line x1="10" y1="1" x2="10" y2="4" />
-                <line x1="14" y1="1" x2="14" y2="4" />
-              </svg>
-              <span className="text-[10px] mt-0.5">Catering</span>
-            </button>
-
-            {/* 5. Guests */}
-            <button
-              type="button"
-              onClick={() => setConsoleTab('guests')}
-              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
-                consoleTab === 'guests' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
-              }`}
-            >
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-              <span className="text-[10px] mt-0.5">Guests</span>
-            </button>
-
-            {/* 6. Venue */}
+            {/* 3. Venue */}
             <button
               type="button"
               onClick={() => setConsoleTab('venue')}
-              className={`flex flex-col items-center justify-center flex-1 py-1 cursor-pointer transition-colors ${
-                consoleTab === 'venue' ? 'text-[#dfc194] font-bold' : 'text-[#8b7b6b] hover:text-white'
+              className={`flex flex-col items-center justify-center flex-1 py-1.5 rounded-xl cursor-pointer transition-all ${
+                consoleTab === 'venue'
+                  ? 'bg-[#291f17] text-[#dfc194] font-bold border border-[#bd9661]/40 shadow-xs'
+                  : 'text-[#8b7b6b] hover:text-white'
               }`}
             >
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
-              <span className="text-[10px] mt-0.5">Venue</span>
+              <span className="text-[11px] mt-0.5">Venue</span>
             </button>
           </div>
         )}

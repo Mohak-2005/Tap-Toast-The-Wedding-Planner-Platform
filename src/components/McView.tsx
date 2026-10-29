@@ -290,7 +290,7 @@ export default function McView({ onSelectView }: McViewProps) {
   // Navigation state
   const [activeTab, setActiveTab] = useState<'weddings' | 'calendar' | 'clients' | 'team' | 'referrals' | 'settings'>('weddings');
   const [selectedWeddingId, setSelectedWeddingId] = useState<string | null>(null);
-  const [mcInitialTab, setMcInitialTab] = useState<CoupleTab>('overview');
+  const [mcInitialTab, setMcInitialTab] = useState<CoupleTab>('mc_runsheet');
   const [detailSubTab, setDetailSubTab] = useState<'runsheet' | 'seating' | 'guests' | 'venue'>('runsheet');
 
   // MC Gift Ledger State
@@ -960,7 +960,7 @@ export default function McView({ onSelectView }: McViewProps) {
                         className="cursor-pointer hover:bg-[#faf7f2] transition-colors"
                         onClick={() => {
                           setSelectedWeddingId(w.id);
-                          setMcInitialTab('overview');
+                          setMcInitialTab('mc_runsheet');
                         }}
                       >
                         <td>
@@ -1496,7 +1496,7 @@ export default function McView({ onSelectView }: McViewProps) {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedWeddingId(mw.id);
-                                setMcInitialTab('overview');
+                                setMcInitialTab('mc_runsheet');
                               }}
                               className="bg-[#17120f] text-[#dfc194] px-2 py-1 rounded text-[10.5px] font-semibold truncate hover:bg-[#2b221a] cursor-pointer"
                               title={`${mw.couple} at ${mw.venue}`}

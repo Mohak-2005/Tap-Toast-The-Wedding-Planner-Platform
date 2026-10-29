@@ -22,6 +22,21 @@ export interface PrivateRunSheetItem {
   order: number;
 }
 
+export interface WeddingVendor {
+  id: string;
+  category: string;
+  businessName: string;
+  contactName: string;
+  email: string;
+  phone: string;
+  website?: string;
+  instagram?: string;
+  status: 'Booked' | 'Deposit Paid' | 'In Discussion' | 'Final Payment Due' | 'Paid in Full';
+  cost?: number;
+  paidAmount?: number;
+  notes?: string;
+}
+
 export interface Wedding {
   id: string;
   couple: string;
@@ -47,6 +62,7 @@ export interface Wedding {
   daysRemaining?: number;
   status?: 'Finalising' | 'On track' | 'Planning' | string;
   tasks: Task[];
+  vendors?: WeddingVendor[];
   runSheet?: RunSheetItem[];
   privateRunSheet?: PrivateRunSheetItem[];
   tenantId?: string;

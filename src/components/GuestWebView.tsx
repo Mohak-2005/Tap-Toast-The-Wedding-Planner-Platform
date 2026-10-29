@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppState, getWeddingCountdown, formatAUD, showToast } from '../lib/state';
+import { WeddingCountdownCard } from './WeddingCountdownCard';
 
 export default function GuestWebView() {
   const { state, setState } = useAppState();
@@ -56,8 +57,14 @@ export default function GuestWebView() {
           <p className="text-sm sm:text-base text-[#c9bbae] mb-6">
             Saturday, 14 November 2026 · Fernwood Estate, Southern Highlands
           </p>
-          <div className="inline-block bg-[#241c16] border border-[#3d2f23] rounded-xl px-5 py-2.5 text-xs text-[#dfc194] font-mono tracking-wider">
-            ⏳ {countdown.formatted}
+          <div className="mt-4 max-w-xl mx-auto">
+            <WeddingCountdownCard
+              targetDate="2026-11-14T14:00:00"
+              coupleName={wedding?.couple || "Sophie & James"}
+              venueName={wedding?.venue || "Fernwood Estate, Southern Highlands"}
+              dateDisplay={wedding?.dateDisplay || "14 November 2026"}
+              variant="luxury"
+            />
           </div>
         </div>
       </section>

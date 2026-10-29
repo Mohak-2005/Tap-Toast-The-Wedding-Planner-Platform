@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppState, showToast, getWeddingCountdown } from '../lib/state';
+import { WeddingCountdownCard } from './WeddingCountdownCard';
 
 export default function GuestMobileView() {
   const { state, setState } = useAppState();
@@ -344,6 +345,15 @@ export default function GuestMobileView() {
                   Fernwood Estate &bull; 14 Nov 2026
                 </div>
               </div>
+
+              {/* Prominent Wedding Countdown Card */}
+              <WeddingCountdownCard
+                targetDate={activeWedding?.date || '2026-11-14T14:00:00'}
+                coupleName={activeWedding?.couple || 'Sophie & James'}
+                venueName={activeWedding?.venue || 'Fernwood Estate'}
+                dateDisplay={activeWedding?.dateDisplay || '14 Nov 2026'}
+                variant="compact"
+              />
 
               {/* 2x2 Hub Grid */}
               <div className="grid grid-cols-2 gap-3">
