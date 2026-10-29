@@ -15,6 +15,9 @@ export interface LuxuryTheme {
   sealIcon: string;
   stageBg: string;
   paperName: string;
+  cardBgColor: string;
+  cardBorderColor: string;
+  cardTextColor: string;
 }
 
 export const LUXURY_THEMES: LuxuryTheme[] = [
@@ -32,6 +35,9 @@ export const LUXURY_THEMES: LuxuryTheme[] = [
     sealIcon: '👑',
     stageBg: 'radial-gradient(circle at 50% 30%, #f7f3ec 0%, #e8dec8 100%)',
     paperName: '350gsm French Vanilla Cotton',
+    cardBgColor: '#f7f2e6',
+    cardBorderColor: '#c59a58',
+    cardTextColor: '#1e1812',
   },
   {
     id: 'native-wattle',
@@ -47,6 +53,9 @@ export const LUXURY_THEMES: LuxuryTheme[] = [
     sealIcon: '🌿',
     stageBg: 'radial-gradient(circle at 50% 30%, #f0f6f0 0%, #d8e5d9 100%)',
     paperName: 'Handmade Australian Deckled Linen',
+    cardBgColor: '#273f2c',
+    cardBorderColor: '#537d58',
+    cardTextColor: '#ffffff',
   },
   {
     id: 'midnight-protea',
@@ -62,6 +71,9 @@ export const LUXURY_THEMES: LuxuryTheme[] = [
     sealIcon: '🌹',
     stageBg: 'radial-gradient(circle at 50% 30%, #2a2d33 0%, #15171a 100%)',
     paperName: 'Matte Charcoal Slate Cardstock',
+    cardBgColor: '#171921',
+    cardBorderColor: '#8a2337',
+    cardTextColor: '#ffffff',
   },
   {
     id: 'coastal-harbor',
@@ -77,6 +89,9 @@ export const LUXURY_THEMES: LuxuryTheme[] = [
     sealIcon: '✨',
     stageBg: 'radial-gradient(circle at 50% 30%, #1e2e4f 0%, #080d1a 100%)',
     paperName: 'Starlit Navy Iridescent Shimmer',
+    cardBgColor: '#0e1c36',
+    cardBorderColor: '#d6b87d',
+    cardTextColor: '#ffffff',
   },
   {
     id: 'vineyard-arch',
@@ -92,6 +107,9 @@ export const LUXURY_THEMES: LuxuryTheme[] = [
     sealIcon: '✦',
     stageBg: 'radial-gradient(circle at 50% 30%, #f9f6f0 0%, #e5ddcf 100%)',
     paperName: 'Curved Die-Cut Champagne Vellux',
+    cardBgColor: '#2b1e16',
+    cardBorderColor: '#dfc194',
+    cardTextColor: '#ffffff',
   },
 ];
 
@@ -112,6 +130,7 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
   const [selectedThemeId, setSelectedThemeId] = useState<string>('magnolia-gold');
   const [invitationHeading, setInvitationHeading] = useState<string>('Together with their families');
   const [isFoilShimmerActive, setIsFoilShimmerActive] = useState<boolean>(true);
+  const [deliveryMethod, setDeliveryMethod] = useState<'digital' | 'email' | 'print'>('digital');
 
   // Unboxing Sequence State (Paperless Post interactive unboxing)
   const [envelopeState, setEnvelopeState] = useState<'sealed' | 'opening' | 'opened'>('opened');
@@ -1002,76 +1021,72 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
         </div>
       </div>
 
-      {/* 2. Top Curated Visual Themes Ribbon (Clean 5-Card Gallery Grid) */}
-      <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-xs space-y-3">
-        <div className="flex items-center justify-between">
-          <label className="text-[10.5px] font-bold text-[#8b7b6b] uppercase tracking-wider">
-            SELECT WEDDING INVITATION THEME
-          </label>
-        </div>
+      {/* Main Workspace: Personalization & RSVP with 5 Theme Cards on Left, Hero Animation Stage on Right */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-          {LUXURY_THEMES.map((theme) => {
-            const isSelected = selectedThemeId === theme.id;
-            return (
-              <button
-                key={theme.id}
-                type="button"
-                onClick={() => handleSelectTheme(theme.id)}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer relative flex flex-col justify-between h-[125px] overflow-hidden ${
-                  isSelected
-                    ? 'border-2 border-[#bd9661] bg-[#faf6f0] shadow-md ring-2 ring-[#bd9661]/25 -translate-y-0.5'
-                    : 'border-[#e8ded0] bg-white hover:bg-[#faf8f5] hover:border-[#bd9661]/60'
-                }`}
-              >
-                {/* Top Swatch Row */}
-                <div className="flex items-center justify-between w-full">
-                  <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 border-2 shadow-xs"
-                    style={{ backgroundColor: theme.envelopeColor, borderColor: theme.sealColor }}
-                  >
-                    <span className="text-xs">{theme.sealIcon}</span>
-                  </div>
-                  {isSelected ? (
-                    <span className="w-5 h-5 rounded-full bg-[#bd9661] text-[#15110e] flex items-center justify-center text-[10px] font-bold shadow-xs">
-                      ✓
-                    </span>
-                  ) : (
-                    <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-black/5 text-[#8b7b6b]">
-                      {theme.category}
-                    </span>
-                  )}
-                </div>
-
-                {/* Theme Name & Subtitle */}
-                <div>
-                  <div className="font-serif font-bold text-xs text-[#15110e] truncate leading-tight">
-                    {theme.name}
-                  </div>
-                  <div className="text-[9.5px] text-[#bd9661] font-semibold mt-1 truncate flex items-center gap-1">
-                    <span>✨</span>
-                    <span className="truncate">{theme.animationName}</span>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 3. Main Workspace: Personalization Inspector on Left, Live Hero Stage on Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-
-        {/* LEFT COLUMN: Personalization & Delivery Details (4 cols) */}
-        <div className="lg:col-span-4 space-y-4">
+        {/* LEFT COLUMN: Personalization & RSVP with Theme Cards (5 cols) */}
+        <div className="lg:col-span-5 space-y-4">
 
           <div className="bg-white border border-[#e8ded0] rounded-2xl p-5 shadow-xs space-y-4">
-            <div className="border-b border-[#f0ede4] pb-2">
+            <div className="border-b border-[#f0ede4] pb-2 flex items-center justify-between">
               <label className="text-[10.5px] font-bold text-[#8b7b6b] uppercase tracking-wider">
                 PERSONALIZATION &amp; RSVP
               </label>
+              <span className="text-[10px] text-[#bd9661] font-semibold">
+                Email Invitation
+              </span>
             </div>
 
+            {/* 1. SELECT INVITATION THEME (5 Cards inside Personalization & RSVP, each matching template color) */}
+            <div>
+              <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-2">
+                SELECT WEDDING INVITATION THEME
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {LUXURY_THEMES.map((theme, idx) => {
+                  const isSelected = selectedThemeId === theme.id;
+                  const isFullWidth = idx === 4;
+                  return (
+                    <button
+                      key={theme.id}
+                      type="button"
+                      onClick={() => handleSelectTheme(theme.id)}
+                      style={{
+                        backgroundColor: theme.cardBgColor,
+                        borderColor: isSelected ? '#bd9661' : theme.cardBorderColor,
+                        color: theme.cardTextColor,
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer relative flex items-center justify-between shadow-xs active:scale-95 ${
+                        isFullWidth ? 'sm:col-span-2' : ''
+                      } ${
+                        isSelected
+                          ? 'ring-2 ring-[#bd9661] ring-offset-1 shadow-md scale-[1.01]'
+                          : 'opacity-90 hover:opacity-100 hover:scale-[1.01]'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 truncate pr-1">
+                        <span className="text-base shrink-0">{theme.sealIcon}</span>
+                        <div className="truncate">
+                          <div className="font-serif font-bold text-xs truncate leading-snug">
+                            {theme.name}
+                          </div>
+                          <div className="text-[9px] opacity-75 font-semibold truncate">
+                            {theme.category}
+                          </div>
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <span className="w-5 h-5 rounded-full bg-[#bd9661] text-[#15110e] flex items-center justify-center text-[10px] font-bold shrink-0 shadow-xs">
+                          ✓
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 2. DELIVER TO GUEST / HOUSEHOLD */}
             <div>
               <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-1.5">
                 DELIVER TO GUEST / HOUSEHOLD
@@ -1101,19 +1116,21 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
               </select>
             </div>
 
+            {/* 3. INVITATION OPENING PHRASE / CUSTOM MESSAGE (Manual Textbox) */}
             <div>
               <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-1.5">
-                INVITATION OPENING PHRASE
+                INVITATION OPENING PHRASE / CUSTOM MESSAGE
               </label>
-              <input
-                type="text"
+              <textarea
+                rows={3}
                 value={invitationHeading}
                 onChange={(e) => setInvitationHeading(e.target.value)}
-                placeholder="e.g. Together with their families"
-                className="w-full bg-[#faf8f5] border border-[#d5c7b5] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                placeholder="Write your custom invitation message or greeting here..."
+                className="w-full bg-[#faf8f5] border border-[#d5c7b5] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661] resize-none leading-relaxed"
               />
             </div>
 
+            {/* 4. FOIL SHIMMER SHEEN */}
             <div className="pt-2 border-t border-[#f0ede4] flex items-center justify-between">
               <label className="flex items-center gap-2 text-xs font-semibold text-[#15110e] cursor-pointer">
                 <input
@@ -1125,13 +1142,26 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
                 <span>✨ Metallic Foil Shimmer Sheen</span>
               </label>
             </div>
-          </div>
 
+            {/* 5. SEND INVITATION VIA EMAIL */}
+            <div className="pt-3 border-t border-[#f0ede4]">
+              <button
+                type="button"
+                onClick={() => {
+                  showToast(`💌 Invitation dispatched to ${recipientName} via Email with live RSVP QR!`, 'success');
+                }}
+                className="w-full bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-serif font-bold py-3 px-4 rounded-xl text-xs transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+              >
+                <span>✉️</span>
+                <span>Send Invitation to {recipientName.split(' ')[0] || 'Guest'} (Email)</span>
+              </button>
+            </div>
+          </div>
 
         </div>
 
-        {/* RIGHT COLUMN: The Interactive Hero Presentation Stage (8 cols) */}
-        <div className="lg:col-span-8 flex flex-col items-center">
+        {/* RIGHT COLUMN: The Interactive Hero Presentation Stage (7 cols) */}
+        <div className="lg:col-span-7 flex flex-col items-center">
 
           {/* Clean Integrated Stage Header Bar: Centered Template Name & Replay Icon on Right */}
           <div className="w-full max-w-lg relative flex items-center justify-center pb-2 mb-2">

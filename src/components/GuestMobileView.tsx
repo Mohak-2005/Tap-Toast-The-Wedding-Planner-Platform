@@ -2,6 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { useAppState, showToast, getWeddingCountdown } from '../lib/state';
 import { WeddingCountdownCard } from './WeddingCountdownCard';
 
+
+const CELEBRATION_PARTICLES = [
+  { id: 1, char: '❤️', left: '8%', delay: '0s', duration: '1.8s', size: '26px' },
+  { id: 2, char: '🎉', left: '22%', delay: '0.1s', duration: '2.0s', size: '30px' },
+  { id: 3, char: '✨', left: '36%', delay: '0.05s', duration: '1.7s', size: '22px' },
+  { id: 4, char: '💖', left: '50%', delay: '0.2s', duration: '1.9s', size: '28px' },
+  { id: 5, char: '🥂', left: '64%', delay: '0.12s', duration: '2.1s', size: '28px' },
+  { id: 6, char: '🎊', left: '78%', delay: '0.25s', duration: '2.0s', size: '30px' },
+  { id: 7, char: '💕', left: '90%', delay: '0.18s', duration: '1.9s', size: '25px' },
+  { id: 8, char: '🎉', left: '16%', delay: '0.35s', duration: '2.0s', size: '30px' },
+  { id: 9, char: '❤️', left: '32%', delay: '0.45s', duration: '1.8s', size: '26px' },
+  { id: 10, char: '🍾', left: '46%', delay: '0.3s', duration: '2.2s', size: '29px' },
+  { id: 11, char: '✨', left: '60%', delay: '0.4s', duration: '1.8s', size: '24px' },
+  { id: 12, char: '💝', left: '74%', delay: '0.5s', duration: '2.0s', size: '27px' },
+  { id: 13, char: '🥂', left: '86%', delay: '0.38s', duration: '2.1s', size: '28px' },
+  { id: 14, char: '🎉', left: '40%', delay: '0.6s', duration: '1.9s', size: '28px' },
+  { id: 15, char: '❤️', left: '66%', delay: '0.7s', duration: '1.8s', size: '25px' },
+  { id: 16, char: '🎊', left: '26%', delay: '0.55s', duration: '2.0s', size: '29px' },
+];
+
 export default function GuestMobileView() {
   const { state, setState } = useAppState();
   const [activeTab, setActiveTab] = useState<'splash' | 'hub' | 'rsvp' | 'feed' | 'events' | 'table' | 'photos' | 'gifts' | 'story'>('hub');
@@ -10,12 +30,14 @@ export default function GuestMobileView() {
   
   // RSVP State
   const [rsvpAttending, setRsvpAttending] = useState<boolean>(true);
+  const [showAcceptAnimation, setShowAcceptAnimation] = useState<boolean>(false);
   const [guestCount, setGuestCount] = useState<number>(2);
   const [dietaryInput, setDietaryInput] = useState<string>('Vegetarian');
   const [songInput, setSongInput] = useState<string>('September — Earth, Wind & Fire');
   const [declineNote, setDeclineNote] = useState<string>('');
   const [isRsvpSaved, setIsRsvpSaved] = useState<boolean>(false);
   const [latestPostId, setLatestPostId] = useState<string | null>(null);
+  const [showCelebrationBurst, setShowCelebrationBurst] = useState<boolean>(false);
 
   // Feed State
   const activeWedding = state.weddings?.[0];
@@ -165,11 +187,13 @@ export default function GuestMobileView() {
     setFeedPosts([newPost, ...feedPosts]);
     setLatestPostId(newId);
     setFeedText('');
+    setShowCelebrationBurst(true);
     showToast('Love note posted to celebration feed!', 'success');
 
-    // Subtle fade of the highlight glow after 3.5s
+    // Celebration burst & glow fade after 3.5s
     setTimeout(() => {
       setLatestPostId(null);
+      setShowCelebrationBurst(false);
     }, 3500);
   };
 
@@ -549,7 +573,11 @@ export default function GuestMobileView() {
                   type="button"
                   onClick={() => {
                     setRsvpAttending(true);
+                    setShowAcceptAnimation(true);
                     showToast('RSVP: Joyfully Accepted selected', 'success');
+                    setTimeout(() => {
+                      setShowAcceptAnimation(false);
+                    }, 3500);
                   }}
                   className={`py-3 px-2 rounded-xl font-bold text-xs transition-all duration-200 cursor-pointer active:scale-95 ${
                     rsvpAttending
@@ -584,16 +612,18 @@ export default function GuestMobileView() {
               {/* Meaningful Contextual Transitions Based on RSVP Selection */}
               {rsvpAttending ? (
                 <div key="rsvp-attending-box" className="space-y-4 anim-guest-slide">
-                  {/* Celebratory Acceptance Confirmation Banner */}
-                  <div className="bg-[#f0f9f2] border border-[#a3d9b1] rounded-2xl p-3.5 flex items-center gap-3 shadow-xs anim-guest-pop">
-                    <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 anim-check">
-                      ✓
+                  {/* Celebratory Acceptance Confirmation Banner (Appears for 3.5s upon accepting then vanishes) */}
+                  {showAcceptAnimation && (
+                    <div className="bg-[#f0f9f2] border border-[#a3d9b1] rounded-2xl p-3.5 flex items-center gap-3 shadow-xs anim-guest-pop">
+                      <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 anim-check">
+                        ✓
+                      </div>
+                      <div className="text-left">
+                        <div className="text-xs font-bold text-emerald-950">You're Attending! 🥂</div>
+                        <div className="text-[10.5px] text-emerald-800 leading-tight">We can't wait to celebrate together at Fernwood Estate.</div>
+                      </div>
                     </div>
-                    <div className="text-left">
-                      <div className="text-xs font-bold text-emerald-950">You're Attending! 🥂</div>
-                      <div className="text-[10.5px] text-emerald-800 leading-tight">We can't wait to celebrate together at Fernwood Estate.</div>
-                    </div>
-                  </div>
+                  )}
 
                   {/* Guests Attending Counter */}
                   <div>
@@ -1905,6 +1935,26 @@ export default function GuestMobileView() {
         <div className="h-4 bg-white flex items-center justify-center pb-1">
           <div className="w-28 h-1 bg-[#15110e]/25 rounded-full" />
         </div>
+
+        {/* Floating Celebration Hearts & Crackers Overlay */}
+        {showCelebrationBurst && (
+          <div className="pointer-events-none absolute inset-0 z-50 overflow-hidden">
+            {CELEBRATION_PARTICLES.map((p) => (
+              <div
+                key={p.id}
+                className="anim-particle-float absolute bottom-2 select-none"
+                style={{
+                  left: p.left,
+                  fontSize: p.size,
+                  animationDelay: p.delay,
+                  animationDuration: p.duration,
+                }}
+              >
+                {p.char}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
