@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAppState, showToast, getStoredSession } from '../lib/state';
 import { Table, TableShape, Guest, SavedSeatingArrangement, AuditLogEntry } from '../lib/types';
+import { SEED_DATA } from '../lib/seedData';
 
 interface SeatingPlannerSectionProps {
   onSelectView?: (view: string) => void;
@@ -458,8 +459,23 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
   // SAVED SEATING ARRANGEMENTS & AUDIT LOG SYNC (Couple <-> MC)
   // ==============================================================
   const savedArrangements: SavedSeatingArrangement[] = useMemo(() => {
-    return (currentWedding as any)?.savedSeatingArrangements || [];
+    const list: SavedSeatingArrangement[] = (currentWedding as any)?.savedSeatingArrangements || [];
+    const defaultArrs = (SEED_DATA.weddings[0] as any)?.savedSeatingArrangements || [];
+    const missing = defaultArrs.filter((d: SavedSeatingArrangement) => !list.some(a => a.id === d.id));
+    return [...list, ...missing];
   }, [currentWedding]);
+
+  // Comparison Mode States (Web View)
+  const [isComparing, setIsComparing] = useState<boolean>(false);
+  const [selectedCompareArrangementIds, setSelectedCompareArrangementIds] = useState<string[]>(['arr_1', 'arr_2']);
+  const [isFloatingGuestListOpen, setIsFloatingGuestListOpen] = useState<boolean>(true);
+  const [floatingGuestListPos, setFloatingGuestListPos] = useState<{ x: number; y: number }>(() => ({ x: typeof window !== 'undefined' ? Math.max(80, window.innerWidth - 380) : 700, y: 150 }));
+  const [isDraggingFloatingList, setIsDraggingFloatingList] = useState<boolean>(false);
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [activeCompareTabArrId, setActiveCompareTabArrId] = useState<string>('arr_1');
+  const [compareGuestSearch, setCompareGuestSearch] = useState<string>('');
+  const [compareViewingTable, setCompareViewingTable] = useState<{ arrId: string; tableId: string } | null>(null);
+  const [compareDraggingTable, setCompareDraggingTable] = useState<{ arrId: string; tableId: string } | null>(null);
 
   const [activeArrangementId, setActiveArrangementId] = useState<string>(
     savedArrangements[0]?.id || 'arr_1'
@@ -484,6 +500,250 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
       setDanceFloorPos((currentWedding as any).danceFloorPos);
     }
   }, [currentWeddingId, currentWedding]);
+
+  // Floating Draggable Guest List mousemove/mouseup listener
+  useEffect(() => {
+    if (!isDraggingFloatingList) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      setFloatingGuestListPos({
+        x: Math.max(10, Math.min(window.innerWidth - 370, e.clientX - dragOffset.x)),
+        y: Math.max(10, Math.min(window.innerHeight - 160, e.clientY - dragOffset.y)),
+      });
+    };
+    const handleMouseUp = () => {
+      setIsDraggingFloatingList(false);
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingFloatingList, dragOffset]);
+
+  const handleFloatingMouseDown = (e: React.MouseEvent) => {
+    setIsDraggingFloatingList(true);
+    setDragOffset({
+      x: e.clientX - floatingGuestListPos.x,
+      y: e.clientY - floatingGuestListPos.y,
+    });
+  };
+
+  // Update a specific saved seating arrangement
+  const updateSavedArrangement = (
+    arrId: string,
+    updater: (arr: SavedSeatingArrangement) => SavedSeatingArrangement
+  ) => {
+    const updatedWeddings = (state.weddings || []).map((w) => {
+      if (w.id === currentWeddingId) {
+        let existing: SavedSeatingArrangement[] = (w as any).savedSeatingArrangements || [];
+        if (!existing.some((a) => a.id === arrId)) {
+          const fallback = savedArrangements.find((a) => a.id === arrId);
+          if (fallback) existing = [...existing, fallback];
+        }
+        const updated = existing.map((a) => (a.id === arrId ? updater(a) : a));
+        return {
+          ...w,
+          savedSeatingArrangements: updated,
+        };
+      }
+      return w;
+    });
+
+    const targetArr = savedArrangements.find((a) => a.id === arrId);
+    if (targetArr && arrId === activeArrangementId) {
+      const newArr = updater(targetArr);
+      const updatedTables = (state.tables || []).map((t) => {
+        if (t.weddingId === currentWeddingId) {
+          const found = newArr.tables.find((st) => st.id === t.id);
+          return found ? { ...found } : t;
+        }
+        return t;
+      });
+      const newTbls = newArr.tables.filter((st) => !state.tables.some((t) => t.id === st.id));
+      const finalTables = [...updatedTables, ...newTbls];
+
+      const updatedGuests = (state.guests || []).map((g) => {
+        if (g.weddingId === currentWeddingId) {
+          const assign = newArr.guestAssignments.find((a) => a.guestId === g.id);
+          if (assign !== undefined) {
+            return { ...g, tableId: assign.tableId, seatIndex: assign.seatIndex ?? null };
+          }
+        }
+        return g;
+      });
+
+      setState({
+        ...state,
+        weddings: updatedWeddings,
+        tables: finalTables,
+        guests: updatedGuests,
+      });
+    } else {
+      setState({
+        ...state,
+        weddings: updatedWeddings,
+      });
+    }
+  };
+
+  // Seat or unseat a guest in a specific arrangement
+  const handleSeatGuestInArrangement = (
+    arrId: string,
+    guestId: string,
+    tableId: string | null
+  ) => {
+    const arr = savedArrangements.find((a) => a.id === arrId);
+    if (!arr) return;
+    const targetTbl = arr.tables.find((t) => t.id === tableId);
+    const guest = weddingGuests.find((g) => g.id === guestId);
+
+    if (tableId && targetTbl) {
+      const alreadySeated = arr.guestAssignments.filter((a) => a.tableId === tableId).length;
+      if (alreadySeated >= targetTbl.capacity) {
+        showToast(`Table "${targetTbl.name}" in ${arr.name} is already full!`, 'error');
+        return;
+      }
+    }
+
+    updateSavedArrangement(arrId, (currentArr) => {
+      const otherAssignments = currentArr.guestAssignments.filter((a) => a.guestId !== guestId);
+      const currentAtTable = otherAssignments.filter((a) => a.tableId === tableId);
+      const nextSeatIndex = tableId ? currentAtTable.length : null;
+      return {
+        ...currentArr,
+        guestAssignments: [
+          ...otherAssignments,
+          { guestId, tableId, seatIndex: nextSeatIndex },
+        ],
+      };
+    });
+
+    if (tableId && targetTbl && guest) {
+      showToast(`Seated ${guest.name} at ${targetTbl.name} (${arr.name})`, 'success');
+    } else if (guest) {
+      showToast(`Unseated ${guest.name} from ${arr.name}`, 'info');
+    }
+  };
+
+  // Reposition table within an arrangement canvas
+  const handleCompareTableDragEnd = (
+    arrId: string,
+    tableId: string,
+    clientX: number,
+    clientY: number,
+    containerRect: DOMRect
+  ) => {
+    const rawX = ((clientX - containerRect.left) / containerRect.width) * 100;
+    const rawY = ((clientY - containerRect.top) / containerRect.height) * 100;
+    const clampedX = Math.max(8, Math.min(92, Math.round(rawX)));
+    const clampedY = Math.max(12, Math.min(88, Math.round(rawY)));
+
+    updateSavedArrangement(arrId, (currentArr) => ({
+      ...currentArr,
+      tables: currentArr.tables.map((t) => (t.id === tableId ? { ...t, x: clampedX, y: clampedY } : t)),
+    }));
+  };
+
+  // Add a new table to an arrangement in comparison mode
+  const handleCompareAddTable = (arrId: string) => {
+    const arr = savedArrangements.find((a) => a.id === arrId);
+    if (!arr) return;
+    const nextNum = arr.tables.filter((t) => !t.isHead).length + 1;
+    const newTbl: Table = {
+      id: `tbl_cmp_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      weddingId: currentWeddingId,
+      name: `Table ${nextNum}`,
+      shape: 'round',
+      capacity: 10,
+      x: 35 + (nextNum % 4) * 12,
+      y: 40 + (nextNum % 3) * 12,
+      category: 'General Seating',
+      isHead: false,
+    };
+
+    updateSavedArrangement(arrId, (currentArr) => ({
+      ...currentArr,
+      tables: [...currentArr.tables, newTbl],
+    }));
+
+    showToast(`Added ${newTbl.name} to ${arr.name}!`, 'success');
+  };
+
+  // Compare Modal Selection handler
+  const handleToggleSelectCompareArrangement = (arrId: string) => {
+    if (selectedCompareArrangementIds.includes(arrId)) {
+      setSelectedCompareArrangementIds((prev) => prev.filter((id) => id !== arrId));
+    } else {
+      if (selectedCompareArrangementIds.length >= 3) {
+        showToast('Max limit : 3 reached', 'error');
+        return;
+      }
+      setSelectedCompareArrangementIds((prev) => [...prev, arrId]);
+    }
+  };
+
+  // Launch Comparison Mode
+  const handleLaunchComparison = () => {
+    if (selectedCompareArrangementIds.length < 2) {
+      showToast('Please select at least 2 arrangements to compare', 'error');
+      return;
+    }
+    setShowCompareArrangementsModal(false);
+    setIsComparing(true);
+    setIsFloatingGuestListOpen(true);
+    setActiveCompareTabArrId(selectedCompareArrangementIds[0]);
+  };
+
+  // Compared arrangements objects
+  const comparedArrangements = useMemo(() => {
+    return selectedCompareArrangementIds
+      .map((id) => savedArrangements.find((a) => a.id === id))
+      .filter((a): a is SavedSeatingArrangement => Boolean(a));
+  }, [selectedCompareArrangementIds, savedArrangements]);
+
+  const activeCompareArrangement = useMemo(() => {
+    return comparedArrangements.find((a) => a.id === activeCompareTabArrId) || comparedArrangements[0];
+  }, [comparedArrangements, activeCompareTabArrId]);
+
+  const activeCompareUnassignedGuests = useMemo(() => {
+    if (!activeCompareArrangement) return [];
+    return weddingGuests.filter((g) => {
+      const isSeatedInThis = activeCompareArrangement.guestAssignments.some(
+        (a) => a.guestId === g.id && a.tableId
+      );
+      if (isSeatedInThis) return false;
+      if (compareGuestSearch.trim()) {
+        const query = compareGuestSearch.toLowerCase();
+        return (
+          g.name.toLowerCase().includes(query) ||
+          (g.category && g.category.toLowerCase().includes(query)) ||
+          (g.dietary && g.dietary.toLowerCase().includes(query))
+        );
+      }
+      return true;
+    });
+  }, [activeCompareArrangement, weddingGuests, compareGuestSearch]);
+
+  const compareViewingArrangement = useMemo(() => {
+    if (!compareViewingTable) return null;
+    return savedArrangements.find((a) => a.id === compareViewingTable.arrId) || null;
+  }, [compareViewingTable, savedArrangements]);
+
+  const compareViewingTableObj = useMemo(() => {
+    if (!compareViewingArrangement || !compareViewingTable) return null;
+    return compareViewingArrangement.tables.find((t) => t.id === compareViewingTable.tableId) || null;
+  }, [compareViewingArrangement, compareViewingTable]);
+
+  const compareViewingTableSeatedGuests = useMemo(() => {
+    if (!compareViewingArrangement || !compareViewingTable) return [];
+    const assignments = compareViewingArrangement.guestAssignments.filter(
+      (a) => a.tableId === compareViewingTable.tableId
+    );
+    return assignments
+      .map((a) => weddingGuests.find((g) => g.id === a.guestId))
+      .filter((g): g is typeof weddingGuests[0] => Boolean(g));
+  }, [compareViewingArrangement, compareViewingTable, weddingGuests]);
 
   const handleSaveArrangement = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -2200,6 +2460,8 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
           {/* ============================================================== */}
           {/* SAVED SEATING ARRANGEMENT MANAGEMENT BAR (Couple & MC Sync)    */}
           {/* ============================================================== */}
+          {!isComparing && (
+            <>
           <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
             <div className="flex flex-wrap items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-[#15110e] text-[#dfc194] border border-[#bd9661] flex items-center justify-center font-bold text-sm shrink-0">
@@ -2308,8 +2570,222 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
 
 
           </div>
+            </>
+          )}
 
-          {/* MAIN ROOM & UNALLOCATED GUESTS SIDE-BY-SIDE SPLIT */}
+          {/* ============================================================== */}
+          {/* SIDE-BY-SIDE SEATING ARRANGEMENT COMPARISON MODE (Web View)   */}
+          {/* ============================================================== */}
+          {!isMobileCompact && isComparing ? (
+            <div className="space-y-4">
+              {/* Top Comparison Action Bar */}
+              <div className="bg-[#15110e] text-white border border-[#bd9661]/50 rounded-2xl p-4 px-5 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#dfc194] to-[#bd9661] text-[#15110e] flex items-center justify-center font-bold text-lg shadow-sm">
+                    ⚖️
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold uppercase tracking-[2px] text-[#bd9661]">
+                      Side-by-Side Comparison Mode
+                    </div>
+                    <h3 className="font-serif text-base md:text-lg font-bold text-white">
+                      Comparing {comparedArrangements.length} Seating Arrangements
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsFloatingGuestListOpen((prev) => !prev)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
+                      isFloatingGuestListOpen
+                        ? 'bg-gradient-to-r from-[#dfc194] to-[#bd9661] text-[#15110e] ring-2 ring-[#bd9661]/40'
+                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
+                    }`}
+                  >
+                    <span>📋</span>
+                    <span>{isFloatingGuestListOpen ? 'Guest List Active' : 'Open Guest List'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsComparing(false);
+                      setIsFloatingGuestListOpen(false);
+                    }}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#29211a] hover:bg-[#382b20] text-[#dfc194] border border-[#bd9661]/40 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  >
+                    <span>✕</span>
+                    <span>Exit Comparison</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Side-by-Side Comparison Canvas Columns */}
+              <div className={`grid grid-cols-1 ${
+                comparedArrangements.length === 3 ? 'xl:grid-cols-3' : 'lg:grid-cols-2'
+              } gap-4 items-start`}>
+                {comparedArrangements.map((arr) => {
+                  const arrSeated = arr.guestAssignments.filter((a) => a.tableId).length;
+                  const totalCap = arr.tables.reduce((acc, t) => acc + t.capacity, 0);
+
+                  return (
+                    <div
+                      key={arr.id}
+                      className="bg-white border-2 border-[#ebdcc9] rounded-2xl shadow-sm overflow-hidden flex flex-col"
+                    >
+                      {/* Arrangement Column Header */}
+                      <div className="p-3.5 px-4 bg-[#fdfbf7] border-b border-[#ebdcc9] flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-serif font-bold text-sm text-[#15110e] truncate">
+                              {arr.name}
+                            </h4>
+                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.2 rounded shrink-0 ${
+                              arr.role === 'mc'
+                                ? 'bg-[#15110e] text-[#dfc194]'
+                                : 'bg-[#faf0e1] text-[#7d5e38]'
+                            }`}>
+                              {arr.role === 'mc' ? 'MC' : 'Couple'}
+                            </span>
+                          </div>
+                          <p className="text-[10.5px] text-[#8b7b6b] mt-0.5">
+                            {arr.tables.length} Tables &bull; <strong className="text-emerald-700">{arrSeated}</strong> / {totalCap} Guests Seated
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleCompareAddTable(arr.id)}
+                          className="px-2.5 py-1.5 bg-[#faf8f5] hover:bg-[#f2ede4] border border-[#d5c7b5] text-[#15110e] font-bold text-xs rounded-xl cursor-pointer transition-colors shrink-0 flex items-center gap-1 shadow-2xs"
+                          title={`Add table to ${arr.name}`}
+                        >
+                          <span className="text-[#bd9661] font-bold text-sm">+</span>
+                          <span>Add Table</span>
+                        </button>
+                      </div>
+
+                      {/* Canvas Area for this Arrangement */}
+                      <div
+                        id={`compare_canvas_${arr.id}`}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          const el = document.getElementById(`compare_canvas_${arr.id}`);
+                          if (el) {
+                            const rect = el.getBoundingClientRect();
+                            if (compareDraggingTable && compareDraggingTable.arrId === arr.id) {
+                              handleCompareTableDragEnd(arr.id, compareDraggingTable.tableId, e.clientX, e.clientY, rect);
+                              setCompareDraggingTable(null);
+                            }
+                          }
+                        }}
+                        className="bg-[#faf8f5] p-3 min-h-[580px] relative shadow-inner overflow-hidden select-none"
+                        style={{
+                          backgroundImage: 'radial-gradient(#d5c7b5 1.1px, transparent 1.1px)',
+                          backgroundSize: '20px 20px',
+                        }}
+                      >
+                        {/* Architectural Anchor: Bridal Stage */}
+                        <div className="absolute top-2.5 left-1/2 -translate-x-1/2 bg-[#15110e] text-[#dfc194] px-4 py-1 rounded-full border border-[#bd9661] text-[10px] font-bold tracking-wider shadow-sm flex items-center gap-1.5 whitespace-nowrap z-10">
+                          <span>👑</span> BRIDAL STAGE
+                        </div>
+
+                        {/* Dance Floor */}
+                        <div
+                          style={{
+                            left: `${arr.danceFloorPos?.x ?? 50}%`,
+                            top: `${arr.danceFloorPos?.y ?? 50}%`,
+                          }}
+                          className="absolute -translate-x-1/2 -translate-y-1/2 w-32 h-24 rounded-2xl border-2 border-dashed border-[#bd9661]/50 bg-[#bd9661]/10 flex flex-col items-center justify-center text-center select-none pointer-events-none"
+                        >
+                          <span className="text-base">💃</span>
+                          <span className="font-serif text-[10px] font-bold text-[#6b5847] uppercase tracking-wider mt-0.5">
+                            Dance Floor
+                          </span>
+                        </div>
+
+                        {/* Tables */}
+                        {arr.tables.map((tbl) => {
+                          const seatedList = arr.guestAssignments.filter((a) => a.tableId === tbl.id);
+                          const seatedCount = seatedList.length;
+                          const isFull = seatedCount >= tbl.capacity;
+                          const isEmpty = seatedCount === 0;
+                          const isRound = tbl.shape === 'round';
+                          const isKing = tbl.shape === 'king';
+
+                          const shapeClasses = isKing
+                            ? 'min-w-[125px] h-[64px] rounded-xl px-2.5 py-1.5'
+                            : isRound
+                            ? 'w-[82px] h-[82px] rounded-full aspect-square p-2'
+                            : 'min-w-[105px] h-[58px] rounded-lg px-2.5 py-1.5';
+
+                          const themeClasses = tbl.isHead
+                            ? 'bg-[#15110e] text-[#dfc194] border-2 border-[#bd9661] ring-2 ring-[#bd9661]/30 shadow-md'
+                            : isFull
+                            ? 'bg-[#15110e] text-[#dfc194] border-2 border-[#bd9661]'
+                            : isEmpty
+                            ? 'bg-white text-[#15110e] border-2 border-[#d5c7b5]'
+                            : 'bg-white text-[#15110e] border-2 border-[#bd9661] ring-1 ring-[#bd9661]/20';
+
+                          return (
+                            <div
+                              key={tbl.id}
+                              draggable
+                              onDragStart={() => setCompareDraggingTable({ arrId: arr.id, tableId: tbl.id })}
+                              onDragEnd={() => setCompareDraggingTable(null)}
+                              onDragOver={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const guestId = e.dataTransfer.getData('guestId');
+                                if (guestId) {
+                                  handleSeatGuestInArrangement(arr.id, guestId, tbl.id);
+                                }
+                              }}
+                              onClick={() => setCompareViewingTable({ arrId: arr.id, tableId: tbl.id })}
+                              style={{
+                                left: `${tbl.x}%`,
+                                top: `${tbl.y}%`,
+                              }}
+                              className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing hover:scale-105 transition-all flex flex-col items-center justify-center text-center shadow-xs select-none ${shapeClasses} ${themeClasses}`}
+                              title={`${tbl.name} (${tbl.shape}) — ${seatedCount}/${tbl.capacity} seated. Click to view table seats, or drag/drop guests here.`}
+                            >
+                              <div className="flex items-center gap-1 font-serif text-[10.5px] font-bold leading-tight">
+                                {tbl.isHead && <span>👑</span>}
+                                <span>{tbl.name}</span>
+                              </div>
+                              <span className={`text-[9px] font-sans font-bold mt-0.5 px-1.5 py-0.2 rounded-full ${
+                                isFull
+                                  ? 'bg-emerald-500/20 text-emerald-300'
+                                  : isEmpty
+                                  ? 'bg-gray-100 text-gray-600'
+                                  : 'bg-[#faf0e1] text-[#7d5e38]'
+                              }`}>
+                                {seatedCount} / {tbl.capacity}
+                              </span>
+                            </div>
+                          );
+                        })}
+
+                        {/* Landmark indicators */}
+                        <div className="absolute bottom-2 left-4 bg-white/90 border border-[#e8ded0] px-2.5 py-1 rounded-lg text-[9px] font-bold text-[#8b7b6b] shadow-2xs">
+                          🍸 Bar
+                        </div>
+                        <div className="absolute bottom-2 right-4 bg-white/90 border border-[#e8ded0] px-2.5 py-1 rounded-lg text-[9px] font-bold text-[#8b7b6b] shadow-2xs">
+                          🌿 Verandah
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+          /* Regular Seating Canvas Split */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             {/* LEFT / MAIN: DRAGGABLE ROOM CANVAS (Image 3) */}
             <div className={`${isGuestListCollapsed ? 'col-span-12' : 'lg:col-span-8 xl:col-span-8 2xl:col-span-9'} transition-all duration-300 relative`}>
@@ -2582,6 +3058,7 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
             </div>
           )}
           </div>
+          )}
         </div>
       )}
 
@@ -2698,7 +3175,7 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
           onClick={() => setShowCompareArrangementsModal(false)}
         >
           <div
-            className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-[#e8ded0] overflow-hidden flex flex-col animate-in zoom-in-95 duration-150 max-h-[85vh]"
+            className="bg-white rounded-2xl max-w-5xl w-full shadow-2xl border border-[#e8ded0] overflow-hidden flex flex-col animate-in zoom-in-95 duration-150 max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-5 py-4 bg-[#15110e] text-white flex justify-between items-center border-b border-[#29211a]">
@@ -2728,9 +3205,10 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                 Select any saved layout to instantly compare table configurations, capacities, and seating distributions. Both Couple and MC can switch arrangements anytime.
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                 {savedArrangements.map((arr) => {
                   const isActive = activeArrangementId === arr.id;
+                  const isSelected = selectedCompareArrangementIds.includes(arr.id);
                   const roundCount = arr.tables.filter((t) => t.shape === 'round').length;
                   const rectCount = arr.tables.filter((t) => t.shape === 'rectangular').length;
                   const kingCount = arr.tables.filter((t) => t.shape === 'king' || t.isHead).length;
@@ -2739,20 +3217,21 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                   return (
                     <div
                       key={arr.id}
-                      className={`border-2 rounded-xl p-4 space-y-3 transition-all ${
-                        isActive
-                          ? 'border-[#bd9661] bg-[#faf8f5] shadow-sm ring-2 ring-[#bd9661]/20'
+                      onClick={() => handleToggleSelectCompareArrangement(arr.id)}
+                      className={`border-2 rounded-2xl p-4 space-y-3 transition-all cursor-pointer relative ${
+                        isSelected
+                          ? 'border-[#bd9661] bg-[#faf8f5] shadow-md ring-2 ring-[#bd9661]'
                           : 'border-[#e8ded0] bg-white hover:border-[#bd9661]/60'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <h4 className="font-serif text-sm font-bold text-[#15110e]">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-serif text-sm font-bold text-[#15110e] truncate">
                               {arr.name}
                             </h4>
                             {isActive && (
-                              <span className="bg-emerald-50 text-emerald-800 border border-emerald-300 text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
+                              <span className="bg-emerald-50 text-emerald-800 border border-emerald-300 text-[9px] font-black uppercase px-2 py-0.5 rounded-full shrink-0">
                                 Active
                               </span>
                             )}
@@ -2762,17 +3241,24 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                           </div>
                         </div>
 
-                        <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${
-                          arr.role === 'mc'
-                            ? 'bg-[#15110e] text-[#dfc194]'
-                            : 'bg-[#faf0e1] text-[#7d5e38]'
-                        }`}>
-                          {arr.role === 'mc' ? 'MC' : 'Couple'}
-                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {isSelected && (
+                            <span className="bg-[#15110e] text-[#dfc194] border border-[#bd9661] text-[9.5px] font-bold px-2 py-0.5 rounded-full shadow-2xs">
+                              ✓ Selected
+                            </span>
+                          )}
+                          <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${
+                            arr.role === 'mc'
+                              ? 'bg-[#15110e] text-[#dfc194]'
+                              : 'bg-[#faf0e1] text-[#7d5e38]'
+                          }`}>
+                            {arr.role === 'mc' ? 'MC' : 'Couple'}
+                          </span>
+                        </div>
                       </div>
 
                       {arr.notes && (
-                        <p className="text-[11px] text-[#554536] italic bg-white/70 p-2 rounded-lg border border-[#f0ede6]">
+                        <p className="text-[11px] text-[#554536] italic bg-white/70 p-2 rounded-lg border border-[#f0ede6] line-clamp-2">
                           "{arr.notes}"
                         </p>
                       )}
@@ -2792,20 +3278,21 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                         </div>
                       </div>
 
-                      <div className="pt-1 flex items-center justify-between">
-                        {isActive ? (
-                          <span className="text-emerald-700 font-bold text-xs flex items-center gap-1">
-                            <span>✓</span> Currently Active Layout
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleLoadArrangement(arr.id)}
-                            className="btn btn-gold btn-sm w-full cursor-pointer font-bold text-center"
-                          >
-                            Load This Arrangement &rarr;
-                          </button>
-                        )}
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleSelectCompareArrangement(arr.id);
+                          }}
+                          className={`w-full py-2 px-3 rounded-xl font-bold text-xs cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
+                            isSelected
+                              ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661] hover:bg-[#251e18]'
+                              : 'bg-white hover:bg-[#faf7f2] border border-[#d5c7b5] text-[#15110e]'
+                          }`}
+                        >
+                          {isSelected ? '✓ Selected' : '+ Select'}
+                        </button>
                       </div>
                     </div>
                   );
@@ -2817,12 +3304,291 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
               <span className="text-[11px] text-[#8b7b6b]">
                 {savedArrangements.length} total saved layouts for this wedding
               </span>
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setShowCompareArrangementsModal(false)}
+                  className="btn btn-outline btn-sm cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLaunchComparison}
+                  className="btn btn-gold btn-sm cursor-pointer font-bold flex items-center gap-1.5 shadow-sm"
+                >
+                  <span>⚖️</span>
+                  <span>Compare</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* FLOATING DRAGGABLE GUEST LIST FOR COMPARISON MODE              */}
+      {/* ============================================================== */}
+      {!isMobileCompact && isComparing && isFloatingGuestListOpen && (
+        <div
+          style={{
+            left: `${floatingGuestListPos.x}px`,
+            top: `${floatingGuestListPos.y}px`,
+          }}
+          className="fixed z-50 w-80 sm:w-88 bg-white border-2 border-[#bd9661] rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150"
+        >
+          {/* Draggable Header */}
+          <div
+            onMouseDown={handleFloatingMouseDown}
+            className="px-3.5 py-2.5 bg-[#15110e] text-[#dfc194] flex items-center justify-between cursor-grab active:cursor-grabbing select-none border-b border-[#29211a]"
+            title="Click and drag to slide anywhere across screen"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-[#bd9661] text-sm">⠿</span>
+              <span className="font-serif font-bold text-xs text-white">
+                Floating Guest List
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] text-[#bd9661] bg-white/10 px-1.5 py-0.5 rounded font-sans">
+                Slide Anywhere
+              </span>
               <button
                 type="button"
-                onClick={() => setShowCompareArrangementsModal(false)}
-                className="btn btn-outline btn-sm cursor-pointer"
+                onClick={() => setIsFloatingGuestListOpen(false)}
+                className="text-white/60 hover:text-white text-sm font-bold p-1 cursor-pointer"
+                title="Close floating drawer"
               >
-                Close
+                ✕
+              </button>
+            </div>
+          </div>
+
+          {/* Compared Arrangement Tabs */}
+          <div className="p-2 bg-[#fdfbf7] border-b border-[#ebdcc9] flex gap-1 overflow-x-auto">
+            {comparedArrangements.map((arr) => {
+              const unseatedCount = weddingGuests.filter(
+                (g) => !arr.guestAssignments.some((a) => a.guestId === g.id && a.tableId)
+              ).length;
+              const isTabActive = activeCompareTabArrId === arr.id;
+
+              return (
+                <button
+                  key={arr.id}
+                  type="button"
+                  onClick={() => setActiveCompareTabArrId(arr.id)}
+                  className={`flex-1 min-w-[90px] py-1.5 px-2 rounded-xl text-[10.5px] font-bold cursor-pointer transition-all text-center ${
+                    isTabActive
+                      ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
+                      : 'bg-white hover:bg-[#f0ede4] text-[#6b5847] border border-[#e8ded0]'
+                  }`}
+                >
+                  <div className="truncate">{arr.name.split('(')[0]}</div>
+                  <div className={`text-[9px] ${isTabActive ? 'text-[#bd9661]' : 'text-[#8b7b6b]'}`}>
+                    {unseatedCount} unassigned
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search Box */}
+          <div className="p-2 border-b border-[#f2ede4] bg-white">
+            <input
+              type="text"
+              placeholder="Search unassigned guests..."
+              value={compareGuestSearch}
+              onChange={(e) => setCompareGuestSearch(e.target.value)}
+              className="w-full bg-[#faf8f5] border border-[#d5c7b5] focus:border-[#bd9661] rounded-xl px-2.5 py-1.5 text-xs text-[#15110e] outline-none"
+            />
+          </div>
+
+          {/* Guest List for Active Arrangement Tab */}
+          <div className="p-2 overflow-y-auto max-h-72 space-y-1.5 bg-[#faf8f5]">
+            {activeCompareUnassignedGuests.length === 0 ? (
+              <div className="text-center py-6 text-xs text-emerald-800 font-semibold bg-emerald-50 rounded-xl border border-emerald-200">
+                🎉 All guests are seated in this arrangement!
+              </div>
+            ) : (
+              activeCompareUnassignedGuests.map((g) => (
+                <div
+                  key={g.id}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('guestId', g.id);
+                    e.dataTransfer.setData('text/plain', g.id);
+                  }}
+                  className="bg-white border border-[#e8ded0] hover:border-[#bd9661] p-2 rounded-xl flex items-center justify-between gap-2 shadow-2xs cursor-grab active:cursor-grabbing hover:shadow-xs transition-all group"
+                  title="Drag and drop onto any table in the canvases"
+                >
+                  <div className="min-w-0">
+                    <div className="font-bold text-xs text-[#15110e] truncate flex items-center gap-1.5">
+                      <span className="text-[#8b7b6b] text-xs">⠿</span>
+                      <span>{g.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5 text-[9.5px]">
+                      {g.dietary && g.dietary !== 'None' && (
+                        <span className="text-[#c93b2b] bg-rose-50 border border-rose-200 px-1 rounded font-semibold">
+                          {g.dietary}
+                        </span>
+                      )}
+                      <span className="text-[#8b7b6b]">{g.category || 'Guest'}</span>
+                    </div>
+                  </div>
+
+                  {/* Quick Seat to Active Arrangement Tables */}
+                  <select
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        handleSeatGuestInArrangement(activeCompareTabArrId, g.id, e.target.value);
+                      }
+                    }}
+                    defaultValue=""
+                    className="text-[10px] bg-[#faf8f5] border border-[#d5c7b5] rounded-lg px-1.5 py-1 text-[#15110e] font-semibold outline-none cursor-pointer shrink-0"
+                  >
+                    <option value="" disabled>Seat...</option>
+                    {activeCompareArrangement?.tables.map((tbl) => (
+                      <option key={tbl.id} value={tbl.id}>
+                        {tbl.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="p-2 px-3 bg-[#fdfbf7] border-t border-[#ebdcc9] text-[10.5px] text-[#8b7b6b] flex items-center justify-between">
+            <span>Drag card or use 'Seat...' to assign</span>
+            <span className="font-bold text-[#15110e]">
+              {activeCompareUnassignedGuests.length} left
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* TABLE SEATING DRILLDOWN MODAL FOR COMPARISON MODE              */}
+      {/* ============================================================== */}
+      {!isMobileCompact && isComparing && compareViewingTable && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setCompareViewingTable(null)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-[#bd9661] overflow-hidden flex flex-col animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-5 py-3.5 bg-[#15110e] text-white flex justify-between items-center border-b border-[#29211a]">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-[#bd9661] tracking-wider">
+                  {compareViewingArrangement?.name}
+                </span>
+                <h3 className="font-serif text-base font-bold text-white flex items-center gap-2">
+                  <span>{compareViewingTableObj?.name}</span>
+                  <span className="text-xs text-[#dfc194] font-sans font-medium">
+                    ({compareViewingTableObj?.shape})
+                  </span>
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCompareViewingTable(null)}
+                className="text-white/70 hover:text-white text-lg font-bold p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 space-y-4 text-xs max-h-[70vh] overflow-y-auto">
+              <div className="flex items-center justify-between bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9]">
+                <span className="font-bold text-[#15110e]">Capacity:</span>
+                <span className="font-serif font-bold text-sm text-[#bd9661]">
+                  {compareViewingTableSeatedGuests.length} / {compareViewingTableObj?.capacity} Seats Filled
+                </span>
+              </div>
+
+              {/* Seated Guests List */}
+              <div className="space-y-1.5">
+                <span className="block font-bold text-[#6b5847] text-[11px] uppercase tracking-wider">
+                  Seated Guests at this Table
+                </span>
+                {compareViewingTableSeatedGuests.length === 0 ? (
+                  <div className="text-center py-5 text-gray-500 italic bg-gray-50 rounded-xl border border-gray-200">
+                    No guests currently seated at this table.
+                  </div>
+                ) : (
+                  compareViewingTableSeatedGuests.map((g, idx) => (
+                    <div
+                      key={g.id}
+                      className="bg-white border border-[#e8ded0] p-2.5 rounded-xl flex items-center justify-between gap-2 shadow-2xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-[#faf5ed] text-[#8b6528] font-bold text-[10px] flex items-center justify-center border border-[#ebd3a8]">
+                          {idx + 1}
+                        </span>
+                        <div>
+                          <div className="font-bold text-[#15110e]">{g.name}</div>
+                          {g.dietary && g.dietary !== 'None' && (
+                            <span className="text-[#c93b2b] text-[9.5px] font-semibold">
+                              {g.dietary}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSeatGuestInArrangement(compareViewingTable.arrId, g.id, null)}
+                        className="text-xs text-rose-600 hover:text-rose-800 hover:bg-rose-50 px-2 py-1 rounded-lg border border-rose-200 font-semibold cursor-pointer transition-colors"
+                      >
+                        ✕ Unseat
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Quick Seat an unallocated guest to this table */}
+              {compareViewingTableSeatedGuests.length < (compareViewingTableObj?.capacity ?? 10) && (
+                <div className="pt-2 border-t border-[#f2ede4]">
+                  <label className="block font-bold text-[#6b5847] text-[11px] mb-1">
+                    Seat an Unassigned Guest here:
+                  </label>
+                  <select
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        handleSeatGuestInArrangement(compareViewingTable.arrId, e.target.value, compareViewingTable.tableId);
+                        e.target.value = '';
+                      }
+                    }}
+                    defaultValue=""
+                    className="w-full bg-[#faf8f5] border border-[#d5c7b5] focus:border-[#bd9661] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none font-medium cursor-pointer"
+                  >
+                    <option value="" disabled>Select unassigned guest...</option>
+                    {weddingGuests
+                      .filter((g) => !compareViewingArrangement?.guestAssignments.some((a) => a.guestId === g.id && a.tableId))
+                      .map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.name} ({g.category || 'Guest'})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3.5 px-5 bg-[#faf8f5] border-t border-[#ebdcc9] flex justify-end">
+              <button
+                type="button"
+                onClick={() => setCompareViewingTable(null)}
+                className="btn btn-gold btn-sm cursor-pointer font-bold"
+              >
+                Done
               </button>
             </div>
           </div>
