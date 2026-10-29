@@ -1,142 +1,91 @@
 import React, { useState } from 'react';
 import { showToast } from '../lib/state';
 
-export interface InvitationTemplate {
+export interface LuxuryTheme {
   id: string;
   name: string;
-  tagline: string;
-  category: 'Regal' | 'Minimal' | 'Nature' | 'Vintage';
-  primaryBg: string;
-  accentColor: string;
-  textColor: string;
-  subtextColor: string;
-  borderColor: string;
-  isDark: boolean;
-  fontFamily: string;
-  foilType: 'gold' | 'rosegold' | 'silver' | 'bronze';
-  description: string;
+  subtitle: string;
+  category: 'Botanical' | 'Native Floral' | 'Midnight' | 'Coastal Harbor' | 'Vineyard Arch';
+  animationName: string;
+  envelopeColor: string;
+  envelopeFlapColor: string;
+  linerPattern: 'magnolia-damask' | 'wattle-foliage' | 'protea-garland' | 'starlit-harbor' | 'vineyard-linen';
+  sealColor: string;
+  sealBorder: string;
+  sealIcon: string;
+  stageBg: string;
 }
 
-export const INVITATION_TEMPLATES: InvitationTemplate[] = [
+export const LUXURY_THEMES: LuxuryTheme[] = [
   {
-    id: 'royal-gold',
-    name: 'Royal Gold & Baroque',
-    tagline: 'Imperial gold filigree & ornate royal crests',
-    category: 'Regal',
-    primaryBg: '#15110e',
-    accentColor: '#dfc194',
-    textColor: '#ffffff',
-    subtextColor: '#d9cbb8',
-    borderColor: '#bd9661',
-    isDark: true,
-    fontFamily: 'font-serif',
-    foilType: 'gold',
-    description: 'Dual 24k gold filigree borders with royal crown monogram and Bodoni italic accents.',
+    id: 'magnolia-gold',
+    name: 'Magnolia & Gilded Frame',
+    subtitle: 'White gardenia blossoms, eucalyptus foliage & double gold frame',
+    category: 'Botanical',
+    animationName: 'Classic 3D Top Flap & Gilded Elevation',
+    envelopeColor: '#1e1812',
+    envelopeFlapColor: '#2b221a',
+    linerPattern: 'magnolia-damask',
+    sealColor: '#c59a58',
+    sealBorder: '#f0d8a8',
+    sealIcon: '👑',
+    stageBg: 'radial-gradient(circle at 50% 30%, #f7f3ec 0%, #e8dec8 100%)',
   },
   {
-    id: 'modern-minimal',
-    name: 'Modern Minimal Arch',
-    tagline: 'Curved architectural arch & crisp editorial type',
-    category: 'Minimal',
-    primaryBg: '#fcfaf7',
-    accentColor: '#916c3d',
-    textColor: '#15110e',
-    subtextColor: '#5a4d41',
-    borderColor: '#cbb89d',
-    isDark: false,
-    fontFamily: 'font-sans',
-    foilType: 'gold',
-    description: 'Scandinavian curved arch silhouette, airy negative space and high-contrast charcoal typography.',
+    id: 'native-wattle',
+    name: 'Native Wattle & Protea',
+    subtitle: 'Golden mimosa wattle, King Protea watercolor & raw linen',
+    category: 'Native Floral',
+    animationName: 'French Gatefold Double-Door Blossom',
+    envelopeColor: '#17271b',
+    envelopeFlapColor: '#213827',
+    linerPattern: 'wattle-foliage',
+    sealColor: '#3c6645',
+    sealBorder: '#7bb086',
+    sealIcon: '🌿',
+    stageBg: 'radial-gradient(circle at 50% 30%, #f0f6f0 0%, #d8e5d9 100%)',
   },
   {
-    id: 'botanical-sage',
-    name: 'Botanical Sage & Olive',
-    tagline: 'Delicate eucalyptus wreath & forest olive palette',
-    category: 'Nature',
-    primaryBg: '#1a261e',
-    accentColor: '#b4cca0',
-    textColor: '#f7faf5',
-    subtextColor: '#d0ded0',
-    borderColor: '#6f8a6b',
-    isDark: true,
-    fontFamily: 'font-serif',
-    foilType: 'gold',
-    description: 'Hand-drawn leafy laurel wreath, eucalyptus corner sprigs, and forest velvet tones.',
+    id: 'midnight-protea',
+    name: 'Midnight Protea & Garland',
+    subtitle: 'Dark slate charcoal, lush Protea floral border & copperplate script',
+    category: 'Midnight',
+    animationName: 'Velvet Ribbon Slide & Diagonal Sleeve Tilt',
+    envelopeColor: '#18191c',
+    envelopeFlapColor: '#22252a',
+    linerPattern: 'protea-garland',
+    sealColor: '#8a2337',
+    sealBorder: '#e27b91',
+    sealIcon: '🌹',
+    stageBg: 'radial-gradient(circle at 50% 30%, #2a2d33 0%, #15171a 100%)',
   },
   {
-    id: 'art-deco',
-    name: 'Art Deco 1920s Gatsby',
-    tagline: 'Geometric chevrons & roaring twenties sunburst',
-    category: 'Vintage',
-    primaryBg: '#0b0e14',
-    accentColor: '#dfc194',
-    textColor: '#ffffff',
-    subtextColor: '#c9bca4',
-    borderColor: '#bd9661',
-    isDark: true,
-    fontFamily: 'font-serif',
-    foilType: 'gold',
-    description: 'Stepped chevron geometric corner angles and Chrysler-era radiating sunburst crest.',
+    id: 'coastal-harbor',
+    name: 'Sydney Harbor & Fairy Lights',
+    subtitle: 'Glowing canopy fairy lights, harbor sunset bridge & ocean navy',
+    category: 'Coastal Harbor',
+    animationName: 'Pocketfold Elevation & Fairy Light Twinkle',
+    envelopeColor: '#0b162c',
+    envelopeFlapColor: '#122244',
+    linerPattern: 'starlit-harbor',
+    sealColor: '#d4af37',
+    sealBorder: '#fae392',
+    sealIcon: '✨',
+    stageBg: 'radial-gradient(circle at 50% 30%, #1e2e4f 0%, #080d1a 100%)',
   },
   {
-    id: 'rustic-kraft',
-    name: 'Rustic Kraft & Wax Seal',
-    tagline: 'Handmade deckle edge, vintage twine & wax seal',
-    category: 'Vintage',
-    primaryBg: '#f6f1e8',
-    accentColor: '#8c6239',
-    textColor: '#24160d',
-    subtextColor: '#5c4738',
-    borderColor: '#b89f88',
-    isDark: false,
-    fontFamily: 'font-serif',
-    foilType: 'bronze',
-    description: 'Textured handmade parchment with crimson wax seal medallion and dashed saddle-stitch border.',
-  },
-  {
-    id: 'celestial-midnight',
-    name: 'Celestial Midnight Navy',
-    tagline: 'Starlit constellations & deep cosmic galaxy',
-    category: 'Regal',
-    primaryBg: '#070d20',
-    accentColor: '#fce082',
-    textColor: '#ffffff',
-    subtextColor: '#b0c8e8',
-    borderColor: '#738db5',
-    isDark: true,
-    fontFamily: 'font-serif',
-    foilType: 'silver',
-    description: 'Deep midnight star map backdrop with constellation coordinates and star sparkle motifs.',
-  },
-  {
-    id: 'boho-terracotta',
-    name: 'Boho Terracotta & Palm',
-    tagline: 'Sun-drenched desert terracotta & dried pampas',
-    category: 'Nature',
-    primaryBg: '#3a1914',
-    accentColor: '#e59b77',
-    textColor: '#fcf5f0',
-    subtextColor: '#e0c2b2',
-    borderColor: '#c0795c',
-    isDark: true,
-    fontFamily: 'font-sans',
-    foilType: 'rosegold',
-    description: 'Earthy Tuscan terracotta warmth, bohemian sun arch curves, and dried fan palm illustrations.',
-  },
-  {
-    id: 'timeless-heritage',
-    name: 'Timeless Heritage Monogram',
-    tagline: 'Blind embossed crest & couture high-fashion',
-    category: 'Minimal',
-    primaryBg: '#ffffff',
-    accentColor: '#bd9661',
-    textColor: '#111111',
-    subtextColor: '#555555',
-    borderColor: '#d5ccc2',
-    isDark: false,
-    fontFamily: 'font-serif',
-    foilType: 'gold',
-    description: 'Blind debossed double hairline frame with interlocking couture monogram and high-contrast Didot type.',
+    id: 'vineyard-arch',
+    name: 'Hunter Valley Vineyard Arch',
+    subtitle: 'Modern architectural dome arch, vineyard arbor & champagne palette',
+    category: 'Vineyard Arch',
+    animationName: 'Arched Dome Lid Kinetic Snap & Slide',
+    envelopeColor: '#211913',
+    envelopeFlapColor: '#2f241c',
+    linerPattern: 'vineyard-linen',
+    sealColor: '#96784d',
+    sealBorder: '#dfc194',
+    sealIcon: '✦',
+    stageBg: 'radial-gradient(circle at 50% 30%, #f9f6f0 0%, #e5ddcf 100%)',
   },
 ];
 
@@ -151,877 +100,1085 @@ interface InvitationTemplatesSectionProps {
 export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProps> = ({
   selectedQaRdHousehold,
   setSelectedQaRdHousehold,
-  selectedQaRdPalette,
-  setSelectedQaRdPalette,
   onSelectView,
 }) => {
-  const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [customFoil, setCustomFoil] = useState<'gold' | 'rosegold' | 'silver' | 'bronze'>('gold');
+  // Theme & Customization States
+  const [selectedThemeId, setSelectedThemeId] = useState<string>('magnolia-gold');
   const [invitationHeading, setInvitationHeading] = useState<string>('Together with their families');
   const [isFoilShimmerActive, setIsFoilShimmerActive] = useState<boolean>(true);
 
-  const currentTemplate = INVITATION_TEMPLATES[currentIndex];
+  // Unboxing Sequence State (Paperless Post interactive unboxing)
+  const [envelopeState, setEnvelopeState] = useState<'sealed' | 'opening' | 'opened'>('sealed');
 
-  const handlePrevTemplate = () => {
-    const nextIdx = currentIndex === 0 ? INVITATION_TEMPLATES.length - 1 : currentIndex - 1;
-    setCurrentIndex(nextIdx);
-    setCustomFoil(INVITATION_TEMPLATES[nextIdx].foilType);
+  const currentTheme = LUXURY_THEMES.find(t => t.id === selectedThemeId) || LUXURY_THEMES[0];
+  const recipientName = selectedQaRdHousehold.split(' (')[0] || 'Honoured Guest';
+
+  // Open sequence with theme-specific animation duration
+  const handleOpenEnvelope = () => {
+    if (envelopeState !== 'sealed') return;
+    setEnvelopeState('opening');
+
+    const duration = currentTheme.id === 'vineyard-arch' ? 450 : 850;
+    setTimeout(() => {
+      setEnvelopeState('opened');
+      showToast(`💌 ${currentTheme.name} invitation presented!`, 'success');
+    }, duration);
   };
 
-  const handleNextTemplate = () => {
-    const nextIdx = currentIndex === INVITATION_TEMPLATES.length - 1 ? 0 : currentIndex + 1;
-    setCurrentIndex(nextIdx);
-    setCustomFoil(INVITATION_TEMPLATES[nextIdx].foilType);
+  // Replay sequence
+  const handleReplaySequence = () => {
+    setEnvelopeState('sealed');
+    setTimeout(() => {
+      handleOpenEnvelope();
+    }, 200);
   };
 
-  // Determine if the current card finish has a light or dark background
-  const isLightBackground = () => {
-    if (selectedQaRdPalette === 'champagne') return true;
-    if (selectedQaRdPalette === 'merlot' || selectedQaRdPalette === 'sage') return false;
-    // For 'obsidian' (Template Default), check current template's intrinsic tone
-    return !currentTemplate.isDark;
-  };
+  // Dynamic QR Code URL for RSVP
+  const guestQueryParam = encodeURIComponent(recipientName.toLowerCase().replace(/\s+/g, '-'));
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://taptoast.demo/wedding/sophie-james?guest=${guestQueryParam}&theme=${currentTheme.id}`;
 
-  const isLight = isLightBackground();
+  // ==========================================================================
+  // TEMPLATE 1: Magnolia & Gilded Double Frame (Image 4 Top-Left)
+  // ==========================================================================
+  const renderMagnoliaGoldTemplate = () => (
+    <div
+      className="relative w-full rounded-2xl p-6 sm:p-7 border-[2px] border-[#c59a58] text-center shadow-2xl overflow-hidden select-none bg-[#fdfbf7] text-[#1c150c]"
+      style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)' }}
+    >
+      <div className="absolute inset-2.5 border border-[#c59a58]/60 rounded-xl pointer-events-none" />
 
-  // Dynamic card background based on selected card finish & palette
-  const getCardBg = () => {
-    if (selectedQaRdPalette === 'champagne') return '#faf6f0';
-    if (selectedQaRdPalette === 'merlot') return '#2b1016';
-    if (selectedQaRdPalette === 'sage') return '#152219';
-    return currentTemplate.primaryBg;
-  };
+      {/* Top-Left Magnolia & Eucalyptus Foliage Cluster */}
+      <div className="absolute -top-3 -left-3 pointer-events-none select-none z-10">
+        <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+          <ellipse cx="28" cy="40" rx="20" ry="10" transform="rotate(-30 28 40)" fill="#44614d" opacity="0.85" />
+          <ellipse cx="45" cy="25" rx="18" ry="9" transform="rotate(-60 45 25)" fill="#5c7d67" opacity="0.9" />
+          <ellipse cx="65" cy="20" rx="16" ry="8" transform="rotate(-15 65 20)" fill="#354e3d" opacity="0.8" />
+          <circle cx="36" cy="36" r="16" fill="#ffffff" stroke="#e8dfd1" strokeWidth="1.5" />
+          <path d="M36 20 C32 28, 32 44, 36 52 C40 44, 40 28, 36 20 Z" fill="#fffdfa" />
+          <path d="M20 36 C28 32, 44 32, 52 36 C44 40, 28 40, 20 36 Z" fill="#fcf8f0" />
+          <circle cx="36" cy="36" r="4.5" fill="#d4af37" />
+        </svg>
+      </div>
 
-  // Primary text color (Sophie & James, primary labels) based on palette and finish
-  const getEffectiveTextColor = () => {
-    if (selectedQaRdPalette === 'champagne') return '#15110e'; // Rich obsidian ink
-    if (selectedQaRdPalette === 'merlot') return '#fff8f2'; // Pearlescent ivory
-    if (selectedQaRdPalette === 'sage') return '#f5faf6'; // Crisp botanical white
-    // Obsidian / Template Default:
-    return currentTemplate.isDark ? '#ffffff' : currentTemplate.textColor;
-  };
+      {/* Bottom-Right Magnolia & Eucalyptus Foliage Cluster */}
+      <div className="absolute -bottom-3 -right-3 pointer-events-none select-none z-10 rotate-180">
+        <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+          <ellipse cx="28" cy="40" rx="20" ry="10" transform="rotate(-30 28 40)" fill="#44614d" opacity="0.85" />
+          <ellipse cx="45" cy="25" rx="18" ry="9" transform="rotate(-60 45 25)" fill="#5c7d67" opacity="0.9" />
+          <circle cx="36" cy="36" r="16" fill="#ffffff" stroke="#e8dfd1" strokeWidth="1.5" />
+          <path d="M36 20 C32 28, 32 44, 36 52 C40 44, 40 28, 36 20 Z" fill="#fffdfa" />
+          <circle cx="36" cy="36" r="4.5" fill="#d4af37" />
+        </svg>
+      </div>
 
-  // Secondary subtext color (invitation phrases, locations, dates notes)
-  const getEffectiveSubtextColor = () => {
-    if (selectedQaRdPalette === 'champagne') return '#5a4d41'; // Warm mocha / espresso
-    if (selectedQaRdPalette === 'merlot') return '#e2cec5'; // Soft blush champagne
-    if (selectedQaRdPalette === 'sage') return '#c4d6c7'; // Soft eucalyptus sage
-    // Obsidian / Template Default:
-    return currentTemplate.subtextColor;
-  };
+      <div className="text-[10px] tracking-[2.5px] uppercase font-serif text-[#966d29] mb-1">
+        {invitationHeading.toUpperCase()}
+      </div>
 
-  // Dynamic foil accents: Automatically adjusts tone for maximum contrast and legibility
-  // On light backgrounds: Uses deep, burnished, rich metallic tones (e.g. slate platinum, deep gold)
-  // On dark backgrounds: Uses bright, luminous, radiant metallic tones
-  const getEffectiveFoil = () => {
-    if (isLight) {
-      const lightFoils: Record<string, { text: string; border: string }> = {
-        gold: {
-          text: '#946e33', // Deep burnished 24K gold
-          border: '#bd9661',
-        },
-        rosegold: {
-          text: '#a64d5e', // Deep rose bronze
-          border: '#c47985',
-        },
-        silver: {
-          text: '#374151', // Deep slate platinum (crisp & high-contrast on ivory/white)
-          border: '#64748b',
-        },
-        bronze: {
-          text: '#85471c', // Deep rich antique bronze
-          border: '#b36932',
-        },
-      };
-      return lightFoils[customFoil];
-    } else {
-      const darkFoils: Record<string, { text: string; border: string }> = {
-        gold: {
-          text: '#dfc194', // Luminous champagne gold
-          border: '#bd9661',
-        },
-        rosegold: {
-          text: '#f4c2c2', // Radiant luminous rose
-          border: '#d48b8b',
-        },
-        silver: {
-          text: '#e6eef5', // Radiant silver platinum
-          border: '#9cb2c9',
-        },
-        bronze: {
-          text: '#e5a663', // Radiant warm bronze
-          border: '#cd7f32',
-        },
-      };
-      return darkFoils[customFoil];
+      <div className="my-2">
+        <h2 className="font-serif italic text-3xl sm:text-4xl text-[#966d29] leading-tight font-medium">
+          Sophie Taylor
+        </h2>
+        <div className="text-[11px] font-serif uppercase tracking-[3px] text-[#665747] my-0.5">
+          AND
+        </div>
+        <h2 className="font-serif italic text-3xl sm:text-4xl text-[#966d29] leading-tight font-medium">
+          Daniel Carter
+        </h2>
+      </div>
+
+      <div className="text-[11px] font-serif text-[#665747] my-2">
+        INVITE YOU TO CELEBRATE THEIR WEDDING
+      </div>
+
+      {/* Date Bar: SATURDAY | 12 | APRIL 2026 */}
+      <div className="flex items-center justify-center gap-3 my-2 text-[#966d29] font-serif">
+        <span className="text-[11px] uppercase tracking-wider font-semibold">SATURDAY</span>
+        <span className="text-gray-300">|</span>
+        <span className="text-xl font-bold">14</span>
+        <span className="text-gray-300">|</span>
+        <span className="text-[11px] uppercase tracking-wider font-semibold">NOVEMBER 2026</span>
+      </div>
+
+      <div className="text-[11px] font-serif text-[#665747]">
+        AT 4:00 PM
+      </div>
+      <div className="text-xs font-serif font-bold text-[#1c150c] mt-1">
+        THE BOTANICAL GARDEN &bull; SYDNEY, NSW
+      </div>
+
+      <div className="flex items-center justify-center gap-2 my-2.5">
+        <div className="w-10 h-[1px] bg-[#c59a58]/50" />
+        <span className="text-[10px] text-[#966d29]">♥</span>
+        <div className="w-10 h-[1px] bg-[#c59a58]/50" />
+      </div>
+
+      {/* Elegant QR Code Section */}
+      <div className="flex flex-col items-center justify-center my-1.5 z-20 relative">
+        <div className="p-1.5 rounded-xl border border-[#c59a58] shadow-xs bg-white">
+          <img
+            src={qrCodeUrl}
+            alt="Wedding RSVP QR Code"
+            className="w-16 h-16 object-contain rounded-lg"
+          />
+        </div>
+        <div className="text-[9px] font-serif font-bold uppercase tracking-[2px] mt-1 text-[#966d29]">
+          DINNER &amp; DANCING TO FOLLOW &bull; SCAN TO RSVP
+        </div>
+      </div>
+
+      <div className="text-[10px] font-serif text-[#665747]">
+        Presented with honour to <strong className="text-[#1c150c] font-semibold">{recipientName}</strong>
+      </div>
+    </div>
+  );
+
+  // ==========================================================================
+  // TEMPLATE 2: Native Wattle & Protea Watercolor (Image 1 & Image 4 Top-Right)
+  // ==========================================================================
+  const renderNativeWattleTemplate = () => (
+    <div
+      className="relative w-full rounded-2xl p-6 sm:p-7 border border-[#487252]/40 text-center shadow-2xl overflow-hidden select-none bg-white text-[#152418]"
+      style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)' }}
+    >
+      {/* Top-Left Soft Watercolor Mimosa Wattle & Leaf Sprigs */}
+      <div className="absolute top-0 left-0 pointer-events-none select-none z-10">
+        <svg width="130" height="130" viewBox="0 0 130 130" fill="none">
+          <ellipse cx="30" cy="20" rx="22" ry="7" transform="rotate(35 30 20)" fill="#789c7c" opacity="0.6" />
+          <ellipse cx="50" cy="35" rx="26" ry="8" transform="rotate(15 50 35)" fill="#5a805e" opacity="0.7" />
+          <ellipse cx="25" cy="50" rx="24" ry="7" transform="rotate(70 25 50)" fill="#8ba88f" opacity="0.6" />
+          <circle cx="25" cy="30" r="4" fill="#eed259" opacity="0.85" />
+          <circle cx="32" cy="26" r="4.5" fill="#f5dc6e" opacity="0.9" />
+          <circle cx="38" cy="32" r="3.5" fill="#e5c545" opacity="0.85" />
+          <circle cx="45" cy="28" r="4" fill="#eed259" opacity="0.85" />
+          <circle cx="52" cy="36" r="4.5" fill="#f5dc6e" opacity="0.9" />
+          <circle cx="40" cy="42" r="3.5" fill="#e5c545" opacity="0.8" />
+          <circle cx="28" cy="42" r="4" fill="#eed259" opacity="0.8" />
+        </svg>
+      </div>
+
+      {/* Bottom-Right Watercolor Pink Protea / Waratah Floral */}
+      <div className="absolute -bottom-2 -right-2 pointer-events-none select-none z-10">
+        <svg width="120" height="130" viewBox="0 0 120 130" fill="none">
+          <ellipse cx="80" cy="110" rx="20" ry="6" transform="rotate(-30 80 110)" fill="#5a805e" opacity="0.7" />
+          <path d="M70 120 C60 90, 65 60, 75 40 C80 60, 85 90, 70 120 Z" fill="#ea8c98" opacity="0.8" />
+          <path d="M60 120 C50 95, 52 70, 60 55 C68 70, 72 95, 60 120 Z" fill="#f2aab4" opacity="0.85" />
+          <path d="M80 120 C75 95, 82 70, 90 55 C88 70, 85 95, 80 120 Z" fill="#de7080" opacity="0.85" />
+          <path d="M70 50 L70 35 M65 58 L60 44 M75 58 L80 44" stroke="#d49444" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </div>
+
+      <div className="text-[11px] font-serif text-[#4b6551] mb-1 italic">
+        Kindly join us for the wedding of
+      </div>
+
+      {/* Couple Names - Flowing Signature Cursive Script */}
+      <div className="my-2">
+        <h2 className="font-serif italic text-4xl sm:text-5xl text-[#17271b] leading-tight font-normal">
+          Isabelle
+        </h2>
+        <div className="text-xs font-serif italic text-[#4b6551] my-0.5">
+          and
+        </div>
+        <h2 className="font-serif italic text-4xl sm:text-5xl text-[#17271b] leading-tight font-normal">
+          Sergio
+        </h2>
+      </div>
+
+      <div className="text-xs font-serif font-semibold text-[#17271b] mt-3">
+        Saturday, November 14, 2026
+      </div>
+      <div className="text-[11px] font-serif text-[#4b6551] mt-0.5">
+        3 o&rsquo;clock in the afternoon
+      </div>
+
+      <div className="text-xs font-serif font-bold text-[#17271b] mt-3">
+        The Chapel &bull; Manor Circle
+      </div>
+      <div className="text-[10.5px] font-serif text-[#4b6551]">
+        Sanctuary Cove &bull; 4212 Queensland
+      </div>
+
+      <div className="flex items-center justify-center gap-2 my-2.5 text-xs text-[#3c6645]">
+        <span>🌿</span>
+        <div className="w-12 h-[1px] bg-[#487252]/30" />
+        <span>🌿</span>
+      </div>
+
+      {/* QR Code Presentation */}
+      <div className="flex flex-col items-center justify-center my-1.5 z-20 relative">
+        <div className="p-1.5 rounded-xl border border-[#7bb086] shadow-xs bg-white">
+          <img
+            src={qrCodeUrl}
+            alt="Wedding RSVP QR Code"
+            className="w-16 h-16 object-contain rounded-lg"
+          />
+        </div>
+        <div className="text-[9px] font-serif uppercase tracking-[1.5px] mt-1 text-[#3c6645] font-semibold">
+          RECEPTION TO FOLLOW &bull; SCAN TO RSVP
+        </div>
+      </div>
+
+      <div className="text-[10px] font-serif text-[#4b6551]">
+        With love for <strong className="text-[#17271b] font-semibold">{recipientName}</strong>
+      </div>
+    </div>
+  );
+
+  // ==========================================================================
+  // TEMPLATE 3: Midnight Protea & Garland (Image 2)
+  // ==========================================================================
+  const renderMidnightProteaTemplate = () => (
+    <div
+      className="relative w-full rounded-2xl p-6 sm:p-7 border border-[#444a54] text-center shadow-2xl overflow-hidden select-none bg-[#24262b] text-white"
+      style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)' }}
+    >
+      {/* Top Floral Garland Border */}
+      <div className="absolute top-0 inset-x-0 h-16 pointer-events-none select-none z-10 flex items-center justify-between px-3">
+        <svg className="w-full h-14" viewBox="0 0 360 50" fill="none">
+          <ellipse cx="40" cy="15" rx="25" ry="8" transform="rotate(-15 40 15)" fill="#688572" opacity="0.8" />
+          <ellipse cx="90" cy="20" rx="30" ry="10" transform="rotate(10 90 20)" fill="#4e6957" opacity="0.85" />
+          <ellipse cx="270" cy="20" rx="30" ry="10" transform="rotate(-10 270 20)" fill="#4e6957" opacity="0.85" />
+          <ellipse cx="320" cy="15" rx="25" ry="8" transform="rotate(15 320 15)" fill="#688572" opacity="0.8" />
+          <circle cx="65" cy="22" r="12" fill="#d97d8b" opacity="0.85" />
+          <circle cx="180" cy="14" r="14" fill="#e89ca7" opacity="0.9" />
+          <circle cx="295" cy="22" r="12" fill="#d97d8b" opacity="0.85" />
+        </svg>
+      </div>
+
+      {/* Bottom Floral Garland Border */}
+      <div className="absolute bottom-0 inset-x-0 h-16 pointer-events-none select-none z-10 flex items-center justify-between px-3 rotate-180">
+        <svg className="w-full h-14" viewBox="0 0 360 50" fill="none">
+          <ellipse cx="60" cy="20" rx="28" ry="9" transform="rotate(10 60 20)" fill="#4e6957" opacity="0.85" />
+          <ellipse cx="300" cy="20" rx="28" ry="9" transform="rotate(-10 300 20)" fill="#4e6957" opacity="0.85" />
+          <circle cx="180" cy="14" r="14" fill="#e89ca7" opacity="0.9" />
+        </svg>
+      </div>
+
+      <div className="pt-7 text-[9px] font-serif uppercase tracking-[3px] text-[#d6d9de] mb-1">
+        YOU ARE INVITED TO
+      </div>
+
+      <div className="font-serif italic text-2xl sm:text-3xl text-[#e89ca7] font-normal leading-none my-1">
+        the Wedding of
+      </div>
+
+      <h2 className="font-serif text-3xl sm:text-4xl font-bold tracking-wider leading-tight text-white my-1">
+        RACHEL &amp; JOHN
+      </h2>
+
+      <div className="text-[11px] font-serif uppercase tracking-widest text-[#d6d9de] mt-2">
+        SATURDAY, NOVEMBER 14, 2026
+      </div>
+      <div className="text-[10px] font-serif text-[#aab0b8] mt-0.5">
+        AT 4 O&rsquo;CLOCK IN THE EVENING
+      </div>
+
+      <div className="text-xs font-serif font-bold text-white mt-2">
+        HOTEL STARLIGHT
+      </div>
+      <div className="text-[10.5px] font-serif text-[#aab0b8]">
+        5353 ROSEWOOD ROAD &bull; NAPA, CALIFORNIA
+      </div>
+
+      {/* QR Code Presentation */}
+      <div className="flex flex-col items-center justify-center my-2 z-20 relative">
+        <div className="p-1.5 rounded-xl border border-white/40 shadow-md bg-white">
+          <img
+            src={qrCodeUrl}
+            alt="Wedding RSVP QR Code"
+            className="w-16 h-16 object-contain rounded-lg"
+          />
+        </div>
+        <div className="text-[9px] font-serif italic text-[#e89ca7] mt-1">
+          reception to follow &bull; scan to rsvp
+        </div>
+      </div>
+
+      <div className="text-[10px] font-serif text-[#aab0b8] pb-4">
+        Reserved for <strong className="text-white font-semibold">{recipientName}</strong>
+      </div>
+    </div>
+  );
+
+  // ==========================================================================
+  // TEMPLATE 4: Sydney Harbor & Fairy Lights (Image 4 Top-Middle & Bottom-Right)
+  // ==========================================================================
+  const renderCoastalHarborTemplate = () => (
+    <div
+      className="relative w-full rounded-2xl p-6 sm:p-7 border border-[#30476e] text-center shadow-2xl overflow-hidden select-none bg-[#0a1326] text-white"
+      style={{
+        backgroundImage: 'linear-gradient(to bottom, #0a1326 0%, #11203d 50%, #1e345e 100%)',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+      }}
+    >
+      {/* Golden Canopy Fairy Lights Draped Across Top */}
+      <div className="absolute top-0 inset-x-0 h-14 pointer-events-none select-none z-10">
+        <svg className="w-full h-12" viewBox="0 0 360 40" fill="none">
+          <path d="M0 8 Q 90 28, 180 8 Q 270 28, 360 8" stroke="#d4af37" strokeWidth="1" opacity="0.6" />
+          <circle cx="45" cy="17" r="3.5" fill="#fae392" filter="drop-shadow(0 0 4px #ffd700)" />
+          <circle cx="90" cy="20" r="3.5" fill="#fae392" filter="drop-shadow(0 0 4px #ffd700)" />
+          <circle cx="135" cy="17" r="3.5" fill="#fae392" filter="drop-shadow(0 0 4px #ffd700)" />
+          <circle cx="225" cy="17" r="3.5" fill="#fae392" filter="drop-shadow(0 0 4px #ffd700)" />
+          <circle cx="270" cy="20" r="3.5" fill="#fae392" filter="drop-shadow(0 0 4px #ffd700)" />
+          <circle cx="315" cy="17" r="3.5" fill="#fae392" filter="drop-shadow(0 0 4px #ffd700)" />
+        </svg>
+      </div>
+
+      {/* Sydney Opera House & Harbor Bridge Silhouette */}
+      <div className="absolute bottom-0 inset-x-0 h-28 pointer-events-none select-none opacity-25">
+        <svg className="w-full h-full" viewBox="0 0 400 100" fill="none" preserveAspectRatio="none">
+          <path d="M220 100 C250 30, 350 30, 390 100" stroke="#ffffff" strokeWidth="2.5" />
+          <path d="M40 100 L70 50 L100 100 Z" fill="#ffffff" />
+          <path d="M80 100 L110 40 L140 100 Z" fill="#ffffff" />
+          <path d="M120 100 L150 55 L180 100 Z" fill="#ffffff" />
+        </svg>
+      </div>
+
+      <div className="pt-4 text-[9px] font-sans font-bold uppercase tracking-[3px] text-[#fae392] mb-1">
+        YOU&rsquo;RE INVITED TO THE WEDDING OF
+      </div>
+
+      <h2 className="font-serif italic text-4xl sm:text-5xl text-white font-normal leading-tight my-1">
+        Olivia &amp; James
+      </h2>
+
+      <div className="text-[10px] font-mono tracking-[3px] uppercase text-[#9ec1ee] my-1">
+        LOVE &bull; FAMILY &bull; AUSTRALIA
+      </div>
+
+      <div className="flex items-center justify-center gap-3 my-2 text-[#fae392] font-serif">
+        <span className="text-[11px] uppercase tracking-wider font-semibold">SAT</span>
+        <span className="text-white/30">|</span>
+        <span className="text-xl font-bold">28</span>
+        <span className="text-white/30">|</span>
+        <span className="text-[11px] uppercase tracking-wider font-semibold">NOV 2026</span>
+      </div>
+
+      <div className="text-[11px] text-[#9ec1ee]">
+        AT 4:30 PM
+      </div>
+      <div className="text-xs font-bold text-white mt-1">
+        WATSONS BAY BOUTIQUE HOTEL &bull; SYDNEY, NSW
+      </div>
+
+      {/* QR Code Presentation */}
+      <div className="flex flex-col items-center justify-center my-2 z-20 relative">
+        <div className="p-1.5 rounded-xl border border-[#fae392] shadow-md bg-white">
+          <img
+            src={qrCodeUrl}
+            alt="Wedding RSVP QR Code"
+            className="w-16 h-16 object-contain rounded-lg"
+          />
+        </div>
+        <div className="text-[9px] font-sans uppercase tracking-[2px] mt-1 text-[#fae392] font-semibold">
+          DINNER, DRINKS &amp; DANCING TO FOLLOW &bull; SCAN TO RSVP
+        </div>
+      </div>
+
+      <div className="text-[10px] text-[#9ec1ee] pb-1">
+        Delivered with love to <strong className="text-white font-semibold">{recipientName}</strong>
+      </div>
+    </div>
+  );
+
+  // ==========================================================================
+  // TEMPLATE 5: Hunter Valley Vineyard Arch (Image 4 Bottom-Middle)
+  // ==========================================================================
+  const renderVineyardArchTemplate = () => (
+    <div
+      className="relative w-full rounded-t-[140px] rounded-b-2xl p-6 sm:p-7 border border-[#dfc194] text-center shadow-2xl overflow-hidden select-none bg-[#faf7f2] text-[#211913]"
+      style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)' }}
+    >
+      <div className="absolute top-2.5 inset-x-5 h-28 rounded-t-[125px] border-t border-x border-[#dfc194]/60 pointer-events-none" />
+
+      <div className="pt-4 flex items-center justify-center gap-1.5 text-xs text-[#6e583c] opacity-80">
+        <span>🌿</span>
+        <span className="text-[9px] font-serif font-bold tracking-[3px] uppercase">V I N E Y A R D &bull; A R C H</span>
+        <span>🌿</span>
+      </div>
+
+      <div className="text-[10px] font-serif tracking-[2px] uppercase text-[#6e583c] mt-2 mb-1">
+        {invitationHeading.toUpperCase()}
+      </div>
+
+      <div className="my-1.5">
+        <h2 className="font-serif italic text-4xl sm:text-5xl text-[#96784d] leading-tight font-medium">
+          Charlotte
+        </h2>
+        <div className="text-xs font-serif italic text-[#6e583c] my-0.5">
+          &amp;
+        </div>
+        <h2 className="font-serif italic text-4xl sm:text-5xl text-[#96784d] leading-tight font-medium">
+          Benjamin
+        </h2>
+      </div>
+
+      <div className="text-[11px] font-serif text-[#6e583c] my-1">
+        INVITE YOU TO CELEBRATE THEIR WEDDING
+      </div>
+
+      <div className="text-xs font-serif font-bold text-[#211913] mt-2">
+        SATURDAY, 14 MARCH 2026
+      </div>
+      <div className="text-[10.5px] font-serif text-[#6e583c]">
+        AT 4:00 PM
+      </div>
+
+      <div className="text-xs font-serif font-bold text-[#211913] mt-2">
+        TAMBURLAINE ORGANIC WINES
+      </div>
+      <div className="text-[10px] font-serif text-[#6e583c]">
+        HUNTER VALLEY, NSW
+      </div>
+
+      {/* QR Code Presentation */}
+      <div className="flex flex-col items-center justify-center my-2 z-20 relative">
+        <div className="p-1.5 rounded-xl border border-[#dfc194] shadow-xs bg-white">
+          <img
+            src={qrCodeUrl}
+            alt="Wedding RSVP QR Code"
+            className="w-16 h-16 object-contain rounded-lg"
+          />
+        </div>
+        <div className="text-[9px] font-serif uppercase tracking-[1.5px] mt-1 text-[#96784d] font-semibold">
+          FOOD, WINE &amp; DANCING TO FOLLOW &bull; SCAN TO RSVP
+        </div>
+      </div>
+
+      <div className="text-[10px] font-serif text-[#6e583c]">
+        Reserved for <strong className="text-[#211913] font-semibold">{recipientName}</strong>
+      </div>
+    </div>
+  );
+
+  // Template switch
+  const renderSelectedTemplate = () => {
+    switch (currentTheme.id) {
+      case 'native-wattle':
+        return renderNativeWattleTemplate();
+      case 'midnight-protea':
+        return renderMidnightProteaTemplate();
+      case 'coastal-harbor':
+        return renderCoastalHarborTemplate();
+      case 'vineyard-arch':
+        return renderVineyardArchTemplate();
+      case 'magnolia-gold':
+      default:
+        return renderMagnoliaGoldTemplate();
     }
   };
 
-  const cardBg = getCardBg();
-  const textColor = getEffectiveTextColor();
-  const subtextColor = getEffectiveSubtextColor();
-  const activeFoil = getEffectiveFoil();
+  // ==========================================================================
+  // 5 COMPLETELY DIFFERENT ENVELOPE STRUCTURES & UNBOXING ANIMATIONS
+  // ==========================================================================
+
+  // ANIMATION 1: Classic 3D Top Flap & Gilded Rise (Magnolia Gold)
+  const renderClassicTopFlapEnvelope = () => (
+    <div
+      className={`relative w-full h-[320px] rounded-2xl shadow-2xl transition-all duration-700 flex flex-col justify-end overflow-visible ${
+        envelopeState === 'opened' ? 'translate-y-28 scale-95 opacity-85' : 'translate-y-0 scale-100 opacity-100'
+      }`}
+      style={{
+        backgroundColor: currentTheme.envelopeColor,
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+      }}
+    >
+      {/* Liner */}
+      <div className="absolute inset-x-2 top-2 h-[280px] rounded-t-xl overflow-hidden opacity-90 border-t border-white/20 bg-white">
+        <div className="w-full h-full bg-[radial-gradient(#c59a58_1.5px,transparent_1.5px)] [background-size:16px_16px] opacity-40" />
+      </div>
+
+      {/* Front Pouch Triangles */}
+      <div className="absolute inset-0 z-20 pointer-events-none rounded-2xl overflow-hidden">
+        <div className="absolute bottom-0 left-0 w-0 h-0 border-l-[190px] sm:border-l-[220px] border-b-[180px] border-l-transparent" style={{ borderBottomColor: currentTheme.envelopeFlapColor, opacity: 0.95 }} />
+        <div className="absolute bottom-0 right-0 w-0 h-0 border-r-[190px] sm:border-r-[220px] border-b-[180px] border-r-transparent" style={{ borderBottomColor: currentTheme.envelopeFlapColor, opacity: 0.95 }} />
+        <div className="absolute bottom-0 inset-x-0 h-0 border-x-[190px] sm:border-x-[220px] border-b-[160px] border-x-transparent" style={{ borderBottomColor: currentTheme.envelopeColor }} />
+      </div>
+
+      {/* Top Pointed Flap (Folds Open Upwards) */}
+      <div
+        className={`absolute top-0 inset-x-0 h-[170px] z-30 transition-transform duration-700 origin-top ${
+          envelopeState === 'sealed' ? 'rotate-x-0' : '-rotate-x-180'
+        }`}
+        style={{ transformStyle: 'preserve-3d' }}
+      >
+        <div
+          className="w-0 h-0 border-x-[195px] sm:border-x-[225px] border-t-[160px] border-x-transparent mx-auto relative drop-shadow-md"
+          style={{ borderTopColor: currentTheme.envelopeFlapColor }}
+        >
+          {envelopeState === 'sealed' && (
+            <button
+              type="button"
+              onClick={handleOpenEnvelope}
+              className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full flex flex-col items-center justify-center cursor-pointer shadow-2xl transition-transform hover:scale-110 active:scale-95 group pointer-events-auto"
+              style={{
+                backgroundColor: currentTheme.sealColor,
+                border: `3px solid ${currentTheme.sealBorder}`,
+                boxShadow: `0 8px 24px ${currentTheme.sealColor}99, inset 0 2px 4px rgba(255,255,255,0.4)`,
+              }}
+              title="Click wax seal to open invitation"
+            >
+              <span className="text-sm drop-shadow-xs group-hover:scale-110 transition-transform">{currentTheme.sealIcon}</span>
+              <span className="text-[7.5px] font-bold text-white tracking-widest font-serif leading-none mt-0.5">S &bull; D</span>
+              <span className="absolute -bottom-5 whitespace-nowrap text-[9px] font-bold tracking-wider uppercase text-[#15110e] bg-white/95 px-2 py-0.5 rounded-full shadow-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                Tap to Open
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {envelopeState === 'sealed' && (
+        <div className="absolute inset-x-8 bottom-6 z-25 text-center pointer-events-none space-y-1">
+          <div className="text-[9.5px] uppercase font-bold tracking-[2.5px] opacity-90 font-serif" style={{ color: currentTheme.sealBorder }}>
+            DELIVERED WITH HONOUR TO
+          </div>
+          <div className="font-serif text-lg font-bold text-white tracking-wide">{recipientName}</div>
+          <div className="text-[10px] text-white/70 italic">The Botanical Garden &bull; Sydney, NSW</div>
+        </div>
+      )}
+    </div>
+  );
+
+  // ANIMATION 2: French Gatefold Double-Door Blossom (Native Wattle & Protea)
+  const renderGatefoldEnvelope = () => (
+    <div
+      className={`relative w-full h-[320px] rounded-2xl shadow-2xl transition-all duration-700 flex flex-col justify-center overflow-visible ${
+        envelopeState === 'opened' ? 'translate-y-28 scale-95 opacity-85' : 'translate-y-0 scale-100 opacity-100'
+      }`}
+      style={{
+        backgroundColor: currentTheme.envelopeColor,
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+        perspective: '1200px',
+      }}
+    >
+      {/* Inner Foliage Paper Background */}
+      <div className="absolute inset-2 rounded-xl overflow-hidden bg-[#fafcf9] border border-[#7bb086]/30 flex items-center justify-center">
+        <span className="text-5xl opacity-20">🌿 🕊️ 🌿</span>
+      </div>
+
+      {/* Left French Gatefold Door (Swings open to the left) */}
+      <div
+        className={`absolute inset-y-0 left-0 w-1/2 z-25 rounded-l-2xl border-r border-[#7bb086]/40 transition-transform duration-700 origin-left shadow-lg ${
+          envelopeState === 'sealed' ? 'rotate-y-0' : '-rotate-y-120 opacity-70'
+        }`}
+        style={{
+          backgroundColor: currentTheme.envelopeFlapColor,
+          transformStyle: 'preserve-3d',
+        }}
+      >
+        <div className="absolute inset-3 border border-dashed border-[#7bb086]/30 rounded-l-xl pointer-events-none" />
+        <div className="absolute top-1/2 -translate-y-1/2 right-3 text-xs opacity-60">🌿</div>
+      </div>
+
+      {/* Right French Gatefold Door (Swings open to the right) */}
+      <div
+        className={`absolute inset-y-0 right-0 w-1/2 z-25 rounded-r-2xl border-l border-[#7bb086]/40 transition-transform duration-700 origin-right shadow-lg ${
+          envelopeState === 'sealed' ? 'rotate-y-0' : 'rotate-y-120 opacity-70'
+        }`}
+        style={{
+          backgroundColor: currentTheme.envelopeFlapColor,
+          transformStyle: 'preserve-3d',
+        }}
+      >
+        <div className="absolute inset-3 border border-dashed border-[#7bb086]/30 rounded-r-xl pointer-events-none" />
+        <div className="absolute top-1/2 -translate-y-1/2 left-3 text-xs opacity-60">🌿</div>
+      </div>
+
+      {/* Center Wax Seal Medallion holding the two doors together */}
+      {envelopeState === 'sealed' && (
+        <button
+          type="button"
+          onClick={handleOpenEnvelope}
+          className="absolute z-35 left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex flex-col items-center justify-center cursor-pointer shadow-2xl transition-transform hover:scale-110 active:scale-95 group pointer-events-auto"
+          style={{
+            backgroundColor: currentTheme.sealColor,
+            border: `3px solid ${currentTheme.sealBorder}`,
+            boxShadow: `0 8px 24px ${currentTheme.sealColor}99, inset 0 2px 4px rgba(255,255,255,0.4)`,
+          }}
+          title="Click to unfold botanical French doors"
+        >
+          <span className="text-sm drop-shadow-xs group-hover:scale-110 transition-transform">🌿</span>
+          <span className="text-[7.5px] font-bold text-white tracking-widest font-serif leading-none mt-0.5">I &bull; S</span>
+          <span className="absolute -bottom-5 whitespace-nowrap text-[9px] font-bold tracking-wider uppercase text-[#15110e] bg-white/95 px-2 py-0.5 rounded-full shadow-xs opacity-0 group-hover:opacity-100 transition-opacity">
+            Open Doors
+          </span>
+        </button>
+      )}
+
+      {envelopeState === 'sealed' && (
+        <div className="absolute inset-x-8 bottom-3 z-30 text-center pointer-events-none space-y-0.5">
+          <div className="font-serif text-sm font-bold text-white tracking-wide">{recipientName}</div>
+          <div className="text-[9.5px] text-white/70 italic">Sanctuary Cove &bull; Queensland</div>
+        </div>
+      )}
+    </div>
+  );
+
+  // ANIMATION 3: Velvet Ribbon Slide & Diagonal Sleeve Tilt (Midnight Protea)
+  const renderRibbonSleeveEnvelope = () => (
+    <div
+      className={`relative w-full h-[320px] rounded-2xl shadow-2xl transition-all duration-700 flex flex-col justify-center overflow-visible ${
+        envelopeState === 'opened' ? 'translate-y-28 scale-95 opacity-85' : 'translate-y-0 scale-100 opacity-100'
+      }`}
+      style={{
+        backgroundColor: currentTheme.envelopeColor,
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+      }}
+    >
+      {/* Dark Slate Sleeve Interior */}
+      <div className="absolute inset-2 rounded-xl bg-[#2b2e35] border border-white/10 flex items-center justify-center">
+        <div className="text-center space-y-1 opacity-40">
+          <div className="text-sm">🌹</div>
+          <div className="text-[9px] font-mono tracking-widest uppercase text-white">MIDNIGHT EDITION</div>
+        </div>
+      </div>
+
+      {/* Horizontal Velvet Satin Belly-Band Ribbon */}
+      <div
+        className={`absolute inset-x-0 top-1/2 -translate-y-1/2 h-16 z-25 shadow-xl transition-all duration-700 flex items-center justify-between px-6 ${
+          envelopeState === 'sealed' ? 'translate-y-0 opacity-100' : 'translate-y-36 opacity-0 pointer-events-none'
+        }`}
+        style={{
+          backgroundColor: '#3e131d',
+          borderTop: '2px solid #e27b91',
+          borderBottom: '2px solid #e27b91',
+        }}
+      >
+        <span className="text-[9px] font-serif uppercase tracking-[2px] text-[#e89ca7] font-bold">R &amp; J</span>
+        <span className="text-[9px] font-serif uppercase tracking-[2px] text-[#e89ca7] font-bold">NAPA 2026</span>
+      </div>
+
+      {/* Ruby Wax Seal Centered on Belly-Band */}
+      {envelopeState === 'sealed' && (
+        <button
+          type="button"
+          onClick={handleOpenEnvelope}
+          className="absolute z-35 left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex flex-col items-center justify-center cursor-pointer shadow-2xl transition-transform hover:scale-110 active:scale-95 group pointer-events-auto"
+          style={{
+            backgroundColor: currentTheme.sealColor,
+            border: `3px solid ${currentTheme.sealBorder}`,
+            boxShadow: `0 8px 24px ${currentTheme.sealColor}99, inset 0 2px 4px rgba(255,255,255,0.4)`,
+          }}
+          title="Click to release velvet ribbon"
+        >
+          <span className="text-sm drop-shadow-xs group-hover:scale-110 transition-transform">🌹</span>
+          <span className="text-[7.5px] font-bold text-white tracking-widest font-serif leading-none mt-0.5">R &bull; J</span>
+          <span className="absolute -bottom-5 whitespace-nowrap text-[9px] font-bold tracking-wider uppercase text-[#15110e] bg-white/95 px-2 py-0.5 rounded-full shadow-xs opacity-0 group-hover:opacity-100 transition-opacity">
+            Release Ribbon
+          </span>
+        </button>
+      )}
+
+      {envelopeState === 'sealed' && (
+        <div className="absolute inset-x-8 bottom-3 z-30 text-center pointer-events-none space-y-0.5">
+          <div className="font-serif text-sm font-bold text-white tracking-wide">{recipientName}</div>
+          <div className="text-[9.5px] text-[#e89ca7] italic">Hotel Starlight &bull; Napa, CA</div>
+        </div>
+      )}
+    </div>
+  );
+
+  // ANIMATION 4: Pocketfold Elevation & Fairy Light Twinkle (Coastal Harbor)
+  const renderPocketfoldEnvelope = () => (
+    <div
+      className={`relative w-full h-[320px] rounded-2xl shadow-2xl transition-all duration-700 flex flex-col justify-end overflow-visible ${
+        envelopeState === 'opened' ? 'translate-y-28 scale-95 opacity-85' : 'translate-y-0 scale-100 opacity-100'
+      }`}
+      style={{
+        backgroundColor: currentTheme.envelopeColor,
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+      }}
+    >
+      {/* Pocketfold Lining with Starlit Galaxy */}
+      <div className="absolute inset-x-2 top-2 h-[280px] rounded-t-xl overflow-hidden opacity-90 border-t border-white/20 bg-[#070e1c]">
+        <div className="w-full h-full bg-[radial-gradient(#fae392_1px,transparent_1px)] [background-size:14px_14px] opacity-40" />
+      </div>
+
+      {/* Front Scalloped Pocket Pocket */}
+      <div className="absolute inset-x-0 bottom-0 h-40 z-20 rounded-b-2xl border-t-2 border-[#d4af37]/60 pointer-events-none" style={{ backgroundColor: currentTheme.envelopeFlapColor }}>
+        <div className="absolute top-2 inset-x-0 flex items-center justify-center gap-1.5 text-xs text-[#fae392]">
+          <span>✨</span>
+          <span className="text-[9px] font-mono tracking-widest uppercase">SYDNEY HARBOUR POCKETFOLD</span>
+          <span>✨</span>
+        </div>
+      </div>
+
+      {/* Top Scalloped Flap with Fairy Light String on Rim */}
+      <div
+        className={`absolute top-0 inset-x-0 h-[160px] z-30 transition-transform duration-1000 origin-top rounded-t-2xl ${
+          envelopeState === 'sealed' ? 'rotate-x-0' : '-rotate-x-180'
+        }`}
+        style={{
+          backgroundColor: currentTheme.envelopeColor,
+          transformStyle: 'preserve-3d',
+          borderBottom: '2px solid #d4af37',
+        }}
+      >
+        {/* Fairy Light String along the flap rim */}
+        <div className="absolute bottom-1 inset-x-4 flex justify-between">
+          <span className="w-2 h-2 rounded-full bg-[#ffd700] shadow-[0_0_8px_#ffd700] animate-pulse" />
+          <span className="w-2 h-2 rounded-full bg-[#fae392] shadow-[0_0_8px_#ffd700]" />
+          <span className="w-2 h-2 rounded-full bg-[#ffd700] shadow-[0_0_8px_#ffd700] animate-pulse" />
+          <span className="w-2 h-2 rounded-full bg-[#fae392] shadow-[0_0_8px_#ffd700]" />
+          <span className="w-2 h-2 rounded-full bg-[#ffd700] shadow-[0_0_8px_#ffd700] animate-pulse" />
+        </div>
+
+        {envelopeState === 'sealed' && (
+          <button
+            type="button"
+            onClick={handleOpenEnvelope}
+            className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full flex flex-col items-center justify-center cursor-pointer shadow-2xl transition-transform hover:scale-110 active:scale-95 group pointer-events-auto"
+            style={{
+              backgroundColor: currentTheme.sealColor,
+              border: `3px solid ${currentTheme.sealBorder}`,
+              boxShadow: `0 8px 24px ${currentTheme.sealColor}99, inset 0 2px 4px rgba(255,255,255,0.4)`,
+            }}
+            title="Click to illuminate fairy lights & open"
+          >
+            <span className="text-sm drop-shadow-xs group-hover:scale-110 transition-transform">✨</span>
+            <span className="text-[7.5px] font-bold text-white tracking-widest font-serif leading-none mt-0.5">O &bull; J</span>
+            <span className="absolute -bottom-5 whitespace-nowrap text-[9px] font-bold tracking-wider uppercase text-[#15110e] bg-white/95 px-2 py-0.5 rounded-full shadow-xs opacity-0 group-hover:opacity-100 transition-opacity">
+              Illuminate
+            </span>
+          </button>
+        )}
+      </div>
+
+      {envelopeState === 'sealed' && (
+        <div className="absolute inset-x-8 bottom-4 z-25 text-center pointer-events-none space-y-0.5">
+          <div className="font-serif text-sm font-bold text-white tracking-wide">{recipientName}</div>
+          <div className="text-[9.5px] text-[#fae392] italic">Watsons Bay &bull; Sydney, NSW</div>
+        </div>
+      )}
+    </div>
+  );
+
+  // ANIMATION 5: Arched Dome Lid Kinetic Snap & Slide (Hunter Valley Vineyard)
+  const renderArchedDomeEnvelope = () => (
+    <div
+      className={`relative w-full h-[320px] rounded-t-[140px] rounded-b-2xl shadow-2xl transition-all duration-500 flex flex-col justify-end overflow-visible ${
+        envelopeState === 'opened' ? 'translate-y-28 scale-95 opacity-85' : 'translate-y-0 scale-100 opacity-100'
+      }`}
+      style={{
+        backgroundColor: currentTheme.envelopeColor,
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+      }}
+    >
+      {/* Arched Interior Cavity */}
+      <div className="absolute inset-x-2 top-2 h-[280px] rounded-t-[130px] overflow-hidden opacity-90 border-t border-white/20 bg-[#faf7f2]">
+        <div className="w-full h-full bg-[linear-gradient(45deg,#dfc194_25%,transparent_25%),linear-gradient(-45deg,#dfc194_25%,transparent_25%)] [background-size:24px_24px] opacity-20" />
+      </div>
+
+      {/* Front Arched Pocket */}
+      <div className="absolute inset-0 z-20 pointer-events-none rounded-b-2xl overflow-hidden">
+        <div className="absolute bottom-0 inset-x-0 h-44 rounded-t-3xl border-t-2 border-[#dfc194]/50" style={{ backgroundColor: currentTheme.envelopeFlapColor }}>
+          <div className="pt-2 text-center text-[8.5px] font-mono tracking-widest text-[#dfc194] uppercase font-bold">
+            ARCHITECTURAL DOME SERIES
+          </div>
+        </div>
+      </div>
+
+      {/* Rounded Arched Dome Lid (Sharp Kinetic Snap Opening) */}
+      <div
+        className={`absolute top-0 inset-x-0 h-[140px] rounded-t-[140px] z-30 transition-transform duration-400 ease-out origin-top ${
+          envelopeState === 'sealed' ? 'rotate-x-0' : '-rotate-x-180'
+        }`}
+        style={{
+          backgroundColor: currentTheme.envelopeColor,
+          transformStyle: 'preserve-3d',
+          borderBottom: '2px solid #dfc194',
+        }}
+      >
+        {envelopeState === 'sealed' && (
+          <button
+            type="button"
+            onClick={handleOpenEnvelope}
+            className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full flex flex-col items-center justify-center cursor-pointer shadow-2xl transition-transform hover:scale-110 active:scale-95 group pointer-events-auto"
+            style={{
+              backgroundColor: currentTheme.sealColor,
+              border: `3px solid ${currentTheme.sealBorder}`,
+              boxShadow: `0 8px 24px ${currentTheme.sealColor}99, inset 0 2px 4px rgba(255,255,255,0.4)`,
+            }}
+            title="Click to snap open architectural dome"
+          >
+            <span className="text-sm drop-shadow-xs group-hover:scale-110 transition-transform">✦</span>
+            <span className="text-[7.5px] font-bold text-white tracking-widest font-serif leading-none mt-0.5">C &bull; B</span>
+            <span className="absolute -bottom-5 whitespace-nowrap text-[9px] font-bold tracking-wider uppercase text-[#15110e] bg-white/95 px-2 py-0.5 rounded-full shadow-xs opacity-0 group-hover:opacity-100 transition-opacity">
+              Snap Open
+            </span>
+          </button>
+        )}
+      </div>
+
+      {envelopeState === 'sealed' && (
+        <div className="absolute inset-x-8 bottom-4 z-25 text-center pointer-events-none space-y-0.5">
+          <div className="font-serif text-sm font-bold text-white tracking-wide">{recipientName}</div>
+          <div className="text-[9.5px] text-[#dfc194] italic">Hunter Valley &bull; NSW</div>
+        </div>
+      )}
+    </div>
+  );
+
+  // Switch between the 5 distinct envelope unboxing animations
+  const renderEnvelopeAnimation = () => {
+    switch (currentTheme.id) {
+      case 'native-wattle':
+        return renderGatefoldEnvelope();
+      case 'midnight-protea':
+        return renderRibbonSleeveEnvelope();
+      case 'coastal-harbor':
+        return renderPocketfoldEnvelope();
+      case 'vineyard-arch':
+        return renderArchedDomeEnvelope();
+      case 'magnolia-gold':
+      default:
+        return renderClassicTopFlapEnvelope();
+    }
+  };
+
+  // Switch between the 5 distinct card transition motions
+  const getCardTransitionMotion = () => {
+    switch (currentTheme.id) {
+      case 'native-wattle':
+        // Blossom upward float with gentle rotation
+        return envelopeState === 'opened'
+          ? 'relative -mt-64 scale-100 translate-y-0 rotate-0 opacity-100'
+          : 'absolute top-10 scale-85 translate-y-8 -rotate-1 opacity-0 pointer-events-none';
+      case 'midnight-protea':
+        // Dramatic diagonal 3D tilt slide
+        return envelopeState === 'opened'
+          ? 'relative -mt-64 scale-100 translate-y-0 rotate-0 opacity-100'
+          : 'absolute top-10 scale-90 translate-y-12 rotate-[-2deg] opacity-0 pointer-events-none';
+      case 'coastal-harbor':
+        // Twilight zoom-up elevation
+        return envelopeState === 'opened'
+          ? 'relative -mt-64 scale-100 translate-y-0 opacity-100'
+          : 'absolute top-10 scale-80 translate-y-10 opacity-0 pointer-events-none';
+      case 'vineyard-arch':
+        // Architectural linear snap slide
+        return envelopeState === 'opened'
+          ? 'relative -mt-64 scale-100 translate-y-0 opacity-100'
+          : 'absolute top-10 scale-95 translate-y-6 opacity-0 pointer-events-none';
+      case 'magnolia-gold':
+      default:
+        // Classic straight vertical rise
+        return envelopeState === 'opened'
+          ? 'relative -mt-64 scale-100 translate-y-0 opacity-100'
+          : 'absolute top-10 scale-90 translate-y-8 opacity-0 pointer-events-none';
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6 animate-in fade-in duration-200">
+      {/* 1. Header with Controls & Clean Quick Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#e8ded0]">
         <div>
-          <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1">
-            DIGITAL &amp; PHYSICAL INVITATION SUITE
+          <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1 flex items-center gap-2">
+            <span>DIGITAL &amp; PHYSICAL INVITATION SUITE</span>
+            <span className="text-[#8b7b6b]">&bull;</span>
+            <span className="text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 text-[10px]">
+              Active: {currentTheme.name}
+            </span>
           </div>
           <h1 className="font-serif text-3xl font-bold text-[#15110e]">
             Invitation Design Studio
           </h1>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Clean Top Action Bar (Fullscreen Button Removed) */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => showToast('Generated high-resolution printable PDF invitation with QR & bleed marks', 'success')}
+            className="bg-white border border-[#d5c7b5] hover:bg-[#faf8f5] text-[#15110e] font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+          >
+            <span>📄</span> Export PDF
+          </button>
           <button
             type="button"
             onClick={() => {
               if (onSelectView) onSelectView('guest-mobile');
-              showToast('Simulating guest scanning QaRd...', 'info');
+              showToast('Previewing guest mobile hub view', 'info');
             }}
-            className="bg-white border border-[#d5c7b5] hover:bg-[#faf8f5] text-[#15110e] font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+            className="bg-white border border-[#d5c7b5] hover:bg-[#faf8f5] text-[#15110e] font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2" /><line x1="12" y1="18" x2="12.01" y2="18" /></svg> Preview Guest Mobile
+            <span>📱</span> Mobile View
           </button>
         </div>
       </div>
 
-      {/* Main Studio Work Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-2">
-        {/* Left Column: Customization Controls (5 cols) - Starts directly from PREVIEW FOR GUEST HOUSEHOLD */}
-        <div className="lg:col-span-5 bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-5">
-          {/* Household Selector */}
-          <div>
-            <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-1.5">
-              PREVIEW FOR GUEST HOUSEHOLD
-            </label>
-            <select
-              value={selectedQaRdHousehold}
-              onChange={(e) => setSelectedQaRdHousehold(e.target.value)}
-              className="w-full bg-white border border-[#e8ded0] rounded-xl p-3 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-            >
-              <option value="Priya Sharma (The Sharma Family)">Priya Sharma (The Sharma Family)</option>
-              <option value="Hannah Martin">Hannah Martin (Solo)</option>
-              <option value="The Whitfield family">The Whitfield family (4 Guests)</option>
-              <option value="Michael & Sarah Chen">Michael &amp; Sarah Chen (Couple)</option>
-            </select>
-          </div>
+      {/* 2. Main Studio Grid (Balanced 2-Column Workspace) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-          {/* Metallic Foil Finish Selector */}
-          <div>
-            <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-2">
-              METALLIC FOIL EMBOSSING
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { id: 'gold', name: '24K Gold', color: '#bd9661' },
-                { id: 'rosegold', name: 'Rose Gold', color: '#d48b8b' },
-                { id: 'silver', name: 'Platinum', color: '#a6a6a6' },
-                { id: 'bronze', name: 'Bronze', color: '#cd7f32' },
-              ].map((f) => (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setCustomFoil(f.id as any)}
-                  className={`p-2 rounded-xl border text-center cursor-pointer transition-all flex flex-col items-center gap-1 ${
-                    customFoil === f.id
-                      ? 'border-2 border-[#15110e] bg-[#faf8f5] shadow-xs'
-                      : 'border-[#e8ded0] hover:bg-[#faf8f5]'
-                  }`}
-                >
-                  <span
-                    className="w-4 h-4 rounded-full shadow-xs border border-white"
-                    style={{ backgroundColor: f.color }}
-                  />
-                  <span className="text-[10px] font-bold text-[#15110e]">{f.name}</span>
-                </button>
-              ))}
+        {/* LEFT COLUMN: Clean Curated Controls (5 cols) */}
+        <div className="lg:col-span-5 space-y-4">
+
+          {/* Theme Selector: 5 Australian & Luxury Curated Themes */}
+          <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-[10.5px] font-bold text-[#8b7b6b] uppercase tracking-wider">
+                INVITATION THEME (5 DISTINCT STYLES &amp; ANIMATIONS)
+              </label>
+              <span className="text-[10px] text-[#bd9661] font-bold">5 Available</span>
+            </div>
+
+            <div className="space-y-2">
+              {LUXURY_THEMES.map((theme) => {
+                const isSelected = selectedThemeId === theme.id;
+                return (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    onClick={() => setSelectedThemeId(theme.id)}
+                    className={`w-full p-2.5 sm:p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                      isSelected
+                        ? 'border-2 border-[#bd9661] bg-[#faf6f0] shadow-xs'
+                        : 'border-[#e8ded0] bg-white hover:bg-[#faf8f5]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {/* Swatch Ring */}
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 shadow-xs"
+                        style={{ backgroundColor: theme.envelopeColor, borderColor: theme.sealColor }}
+                      >
+                        <span className="text-xs">{theme.sealIcon}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <strong className="text-xs text-[#15110e] truncate">{theme.name}</strong>
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-white/80 border text-[#8b7b6b]">
+                            {theme.category}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-[#8b7b6b] truncate mt-0.5">
+                          {theme.subtitle}
+                        </div>
+                        <div className="text-[9px] text-[#bd9661] font-semibold mt-0.5 flex items-center gap-1">
+                          <span>✨</span>
+                          <span>Animation: {theme.animationName}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {isSelected && (
+                      <span className="w-5 h-5 rounded-full bg-[#bd9661] text-[#15110e] flex items-center justify-center text-xs font-bold shrink-0">
+                        ✓
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Color Palette Tint Override */}
-          <div>
-            <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-2">
-              CARD FINISH &amp; PALETTE
-            </label>
-            <div className="grid grid-cols-2 gap-2.5">
-              {[
-                { id: 'obsidian', title: 'Obsidian Noir', sub: 'Template Default', bg: currentTemplate.primaryBg, text: currentTemplate.isDark ? '#ffffff' : '#15110e' },
-                { id: 'champagne', title: 'Champagne Ivory', sub: 'Warm Cream Silk', bg: '#faf6f0', text: '#15110e' },
-                { id: 'merlot', title: 'Burgundy Merlot', sub: 'Rich Wine Velvet', bg: '#2b1016', text: '#ffffff' },
-                { id: 'sage', title: 'Botanical Sage', sub: 'Forest Olive Tint', bg: '#152219', text: '#ffffff' },
-              ].map((pal) => (
-                <button
-                  key={pal.id}
-                  type="button"
-                  onClick={() => setSelectedQaRdPalette(pal.id as any)}
-                  className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
-                    selectedQaRdPalette === pal.id ? 'border-2 border-[#bd9661] shadow-xs' : 'border-[#e8ded0]'
-                  }`}
-                  style={{ backgroundColor: pal.bg, color: pal.text }}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded-full border border-[#bd9661]" style={{ backgroundColor: pal.bg }} />
-                    <strong className="text-xs">{pal.title}</strong>
-                  </div>
-                  <div className="text-[9.5px] opacity-75 mt-0.5">{pal.sub}</div>
-                </button>
-              ))}
+          {/* Personalization & Delivery Details */}
+          <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 sm:p-5 shadow-xs space-y-3.5">
+            <div>
+              <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-1">
+                PERSONALIZED FOR GUEST / HOUSEHOLD
+              </label>
+              <select
+                value={selectedQaRdHousehold}
+                onChange={(e) => setSelectedQaRdHousehold(e.target.value)}
+                className="w-full bg-[#faf8f5] border border-[#d5c7b5] rounded-xl p-2.5 text-xs text-[#15110e] font-semibold outline-none focus:border-[#bd9661]"
+              >
+                <option value="Priya Sharma (The Sharma Family)">Priya Sharma (The Sharma Family)</option>
+                <option value="Hannah Martin">Hannah Martin (Solo)</option>
+                <option value="The Whitfield family">The Whitfield family (4 Guests)</option>
+                <option value="Michael & Sarah Chen">Michael &amp; Sarah Chen (Couple)</option>
+                <option value="Uncle David & Aunt Carol">Uncle David &amp; Aunt Carol (VIP)</option>
+              </select>
             </div>
-          </div>
 
-          {/* Custom Header Phrase */}
-          <div>
-            <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-1.5">
-              INVITATION INVITEE PHRASE
-            </label>
-            <input
-              type="text"
-              value={invitationHeading}
-              onChange={(e) => setInvitationHeading(e.target.value)}
-              placeholder="e.g. Together with their families"
-              className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-            />
-          </div>
-
-          {/* Interactive Shimmer Toggle & Print PDF */}
-          <div className="pt-2 border-t border-[#f0ede4] flex items-center justify-between">
-            <label className="flex items-center gap-2 text-xs font-semibold text-[#15110e] cursor-pointer">
+            <div>
+              <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider mb-1">
+                INVITATION OPENING PHRASE
+              </label>
               <input
-                type="checkbox"
-                checked={isFoilShimmerActive}
-                onChange={(e) => setIsFoilShimmerActive(e.target.checked)}
-                className="accent-[#bd9661] w-4 h-4 cursor-pointer"
+                type="text"
+                value={invitationHeading}
+                onChange={(e) => setInvitationHeading(e.target.value)}
+                placeholder="e.g. Together with their families"
+                className="w-full bg-[#faf8f5] border border-[#d5c7b5] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
               />
-              <span>Foil Shimmer Sheen Effect</span>
-            </label>
-            <button
-              type="button"
-              onClick={() => showToast('Generated print-ready PDF with 3mm bleeds & CMYK foil separation', 'success')}
-              className="text-[11px] font-bold text-[#bd9661] hover:underline cursor-pointer"
-            >
-              Download PDF &rarr;
-            </button>
+            </div>
+
+            <div className="pt-2 border-t border-[#f0ede4] flex items-center justify-between">
+              <label className="flex items-center gap-2 text-xs font-semibold text-[#15110e] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isFoilShimmerActive}
+                  onChange={(e) => setIsFoilShimmerActive(e.target.checked)}
+                  className="accent-[#bd9661] w-4 h-4 cursor-pointer"
+                />
+                <span>✨ Metallic Foil Shimmer Sheen</span>
+              </label>
+
+              <span className="text-[10px] text-[#8b7b6b] font-medium">
+                QR RSVP Integrated
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Right Column: Live QaRd Card with Side Navigation Arrows (7 cols) */}
+        {/* RIGHT COLUMN: The Interactive Presentation Stage (7 cols) */}
         <div className="lg:col-span-7 flex flex-col items-center">
-          {/* Top Subcard: Only template name and category badge, nothing else */}
-          <div className="w-full max-w-md bg-white border border-[#e8ded0] rounded-2xl py-3 px-5 mb-4 shadow-xs flex items-center justify-between">
-            <h2 className="font-serif text-base md:text-lg font-bold text-[#15110e]">
-              {currentTemplate.name}
-            </h2>
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-[#faf8f5] border border-[#bd9661] text-[#bd9661] px-2.5 py-0.5 rounded-full">
-              {currentTemplate.category}
-            </span>
+
+          {/* Clean Top Bar: Replay Only (Flip Back & Stationery Views removed) */}
+          <div className="w-full max-w-lg flex items-center justify-between pb-2 mb-2">
+            <div className="text-xs font-bold text-[#8b7b6b] uppercase tracking-wider flex items-center gap-1.5">
+              <span>✉️</span>
+              <span>{currentTheme.animationName}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleReplaySequence}
+              className="px-3 py-1.5 rounded-xl border border-[#d5c7b5] bg-white hover:bg-[#faf8f5] text-[#15110e] text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+              title="Replay Unboxing Animation"
+            >
+              <span>↺</span>
+              <span>Replay Sequence</span>
+            </button>
           </div>
 
-          {/* Interactive Card Presentation Container with Flanking Circular Gold/Obsidian Arrows */}
-          <div className="relative w-full max-w-md flex items-center justify-center">
-            {/* Left Circular Floating Arrow Button */}
-            <button
-              type="button"
-              onClick={handlePrevTemplate}
-              aria-label="Previous Template"
-              className="absolute -left-4 sm:-left-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#15110e] border-2 border-[#bd9661] text-[#dfc194] hover:bg-[#251e18] hover:text-white hover:scale-110 active:scale-95 shadow-xl flex items-center justify-center cursor-pointer transition-all group"
-              title="Previous Template"
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-0.5 transition-transform">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-            </button>
-
-            {/* Right Circular Floating Arrow Button */}
-            <button
-              type="button"
-              onClick={handleNextTemplate}
-              aria-label="Next Template"
-              className="absolute -right-4 sm:-right-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#15110e] border-2 border-[#bd9661] text-[#dfc194] hover:bg-[#251e18] hover:text-white hover:scale-110 active:scale-95 shadow-xl flex items-center justify-center cursor-pointer transition-all group"
-              title="Next Template"
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-0.5 transition-transform">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </button>
-
-            {/* The Live QaRd Card with Authentic Fine-Art Wedding Stationery Design */}
-            <div
-              className={`w-full rounded-3xl p-7 border-4 shadow-2xl text-center transition-all relative overflow-hidden ${
-                isFoilShimmerActive ? 'before:absolute before:inset-0 before:bg-gradient-to-tr before:from-transparent before:via-white/10 before:to-transparent before:pointer-events-none' : ''
-              }`}
-              style={{
-                backgroundColor: cardBg,
-                color: textColor,
-                borderColor: activeFoil.border,
-              }}
-            >
-              {/* ============================================================== */}
-              {/* TEMPLATE 1: ROYAL GOLD & BAROQUE                               */}
-              {/* ============================================================== */}
-              {currentTemplate.id === 'royal-gold' && (
-                <div
-                  className="rounded-2xl p-6 space-y-3 relative border-2 border-double"
-                  style={{ borderColor: activeFoil.border }}
-                >
-                  {/* Fine Baroque Corner Vectors */}
-                  <svg className="absolute top-2 left-2 w-4 h-4" viewBox="0 0 24 24" fill="none" stroke={activeFoil.text} strokeWidth="1.5">
-                    <path d="M4 12V4h8M4 4l8 8" />
-                  </svg>
-                  <svg className="absolute top-2 right-2 w-4 h-4" viewBox="0 0 24 24" fill="none" stroke={activeFoil.text} strokeWidth="1.5">
-                    <path d="M20 12V4h-8M20 4l-8 8" />
-                  </svg>
-                  <svg className="absolute bottom-2 left-2 w-4 h-4" viewBox="0 0 24 24" fill="none" stroke={activeFoil.text} strokeWidth="1.5">
-                    <path d="M4 12v8h8M4 20l8-8" />
-                  </svg>
-                  <svg className="absolute bottom-2 right-2 w-4 h-4" viewBox="0 0 24 24" fill="none" stroke={activeFoil.text} strokeWidth="1.5">
-                    <path d="M20 12v8h-8M20 20l-8-8" />
-                  </svg>
-
-                  {/* Regal Wedding Monogram Seal */}
-                  <div className="flex flex-col items-center justify-center">
-                    <svg className="w-6 h-6 mb-1" viewBox="0 0 24 24" fill="none" stroke={activeFoil.text} strokeWidth="1.5">
-                      <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z" />
-                    </svg>
-                    <span className="font-serif text-[10px] font-bold tracking-[3px] uppercase" style={{ color: activeFoil.text }}>
-                      T A P  &amp;  T O A S T
-                    </span>
-                  </div>
-
-                  <div className="text-[10px] tracking-widest uppercase font-serif" style={{ color: activeFoil.text }}>
-                    {invitationHeading.toUpperCase()}
-                  </div>
-
-                  <h2 className="font-serif text-3xl font-bold leading-tight" style={{ color: textColor }}>
-                    Sophie <span className="italic font-normal" style={{ color: activeFoil.text }}>&amp;</span> James
-                  </h2>
-
-                  <div className="text-[11px] italic" style={{ color: subtextColor }}>
-                    request the honour of your presence at their wedding celebration
-                  </div>
-
-                  <div className="text-xs font-semibold" style={{ color: activeFoil.text }}>
-                    Saturday, the Fourteenth of November, 2026
-                  </div>
-                  <div className="text-[11px]" style={{ color: subtextColor }}>
-                    Two O'Clock in the Afternoon &bull; Fernwood Estate
-                  </div>
-
-                  {/* Symmetrical Fine Gold Divider */}
-                  <div className="flex items-center justify-center gap-2 my-2.5">
-                    <div className="w-14 h-[1px]" style={{ backgroundColor: activeFoil.border }} />
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill={activeFoil.text}>
-                      <polygon points="12 2 15 9 22 12 15 15 12 22 9 15 2 12 9 9" />
-                    </svg>
-                    <div className="w-14 h-[1px]" style={{ backgroundColor: activeFoil.border }} />
-                  </div>
-
-                  {/* QR Presentation */}
-                  <div className="bg-white p-3 rounded-2xl w-[145px] h-[145px] mx-auto flex items-center justify-center shadow-lg border" style={{ borderColor: activeFoil.border }}>
-                    <img
-                      src="https://api.qrserver.com/v1/create-qr-code/?size=125x125&data=https://taptoast.demo/wedding/sophie-james?guest=priya"
-                      alt="Invitation QR Code"
-                      className="w-[125px] h-[125px] object-contain"
-                    />
-                  </div>
-
-                  <div className="text-[9.5px] tracking-widest uppercase font-bold pt-1" style={{ color: activeFoil.text }}>
-                    KINDLY SCAN TO CONFIRM ATTENDANCE
-                  </div>
-                  <div className="text-xs font-serif italic" style={{ color: subtextColor }}>
-                    Prepared for {selectedQaRdHousehold.split(' (')[0]}
-                  </div>
-                </div>
-              )}
-
-              {/* ============================================================== */}
-              {/* TEMPLATE 2: MODERN MINIMAL ARCH                                */}
-              {/* ============================================================== */}
-              {currentTemplate.id === 'modern-minimal' && (
-                <div
-                  className="rounded-t-[80px] rounded-b-2xl p-6 space-y-3.5 relative border"
-                  style={{ borderColor: activeFoil.border }}
-                >
-                  {/* Modern Arch Monogram */}
-                  <div className="flex flex-col items-center justify-center pt-2">
-                    <div className="w-8 h-8 rounded-full border flex items-center justify-center" style={{ borderColor: activeFoil.border }}>
-                      <span className="font-serif text-xs font-bold" style={{ color: activeFoil.text }}>S · J</span>
-                    </div>
-                    <span className="text-[9px] font-sans uppercase tracking-[3px] font-bold mt-1.5" style={{ color: textColor }}>
-                      T H E   W E D D I N G   O F
-                    </span>
-                  </div>
-
-                  <div className="text-[10px] tracking-[2px] uppercase font-semibold" style={{ color: subtextColor }}>
-                    {invitationHeading}
-                  </div>
-
-                  <h2 className="font-serif text-3xl font-normal tracking-wide leading-tight" style={{ color: textColor }}>
-                    Sophie <span className="italic font-light" style={{ color: activeFoil.text }}>&amp;</span> James
-                  </h2>
-
-                  <div className="text-[11px] font-serif italic" style={{ color: subtextColor }}>
-                    invite you to celebrate their wedding day
-                  </div>
-
-                  <div className="text-xs font-semibold tracking-wide" style={{ color: textColor }}>
-                    14 . 11 . 2026 &bull; 2:00 PM
-                  </div>
-                  <div className="text-[11px] font-medium" style={{ color: subtextColor }}>
-                    Fernwood Estate &bull; Southern Highlands
-                  </div>
-
-                  {/* Clean Hairline */}
-                  <div className="w-16 h-[1px] mx-auto my-3" style={{ backgroundColor: activeFoil.border }} />
-
-                  {/* QR Presentation */}
-                  <div className="bg-white p-3 rounded-2xl w-[145px] h-[145px] mx-auto flex items-center justify-center shadow-md border border-[#e8ded0]">
-                    <img
-                      src="https://api.qrserver.com/v1/create-qr-code/?size=125x125&data=https://taptoast.demo/wedding/sophie-james?guest=priya"
-                      alt="Invitation QR Code"
-                      className="w-[125px] h-[125px] object-contain"
-                    />
-                  </div>
-
-                  <div className="text-[9.5px] tracking-[2px] uppercase font-bold pt-1" style={{ color: textColor }}>
-                    SCAN TO ACCESS EVENT CONSOLE
-                  </div>
-                  <div className="text-xs font-medium" style={{ color: subtextColor }}>
-                    Guest Pass: {selectedQaRdHousehold.split(' (')[0]}
-                  </div>
-                </div>
-              )}
-
-              {/* ============================================================== */}
-              {/* TEMPLATE 3: BOTANICAL SAGE & OLIVE                             */}
-              {/* ============================================================== */}
-              {currentTemplate.id === 'botanical-sage' && (
-                <div
-                  className="rounded-2xl p-6 space-y-3 relative border"
-                  style={{ borderColor: activeFoil.border }}
-                >
-                  {/* Fine-line Botanical Corner Accents */}
-                  <svg className="absolute top-2 left-2 w-5 h-5 opacity-80" viewBox="0 0 24 24" fill="none" stroke={activeFoil.text} strokeWidth="1.2">
-                    <path d="M3 21c3-6 8-10 18-12M3 21c6-3 10-8 12-18M7 17c2-3 4-5 9-6M17 7c-3 2-5 4-6 9" />
-                  </svg>
-                  <svg className="absolute top-2 right-2 w-5 h-5 opacity-80" viewBox="0 0 24 24" fill="none" stroke={activeFoil.text} strokeWidth="1.2">
-                    <path d="M21 21c-3-6-8-10-18-12M21 21c-6-3-10-8-12-18M17 17c-2-3-4-5-9-6M7 7c3 2 5 4 6 9" />
-                  </svg>
-
-                  {/* Botanical Laurel Wreath Crest SVG */}
-                  <div className="flex flex-col items-center justify-center">
-                    <svg className="w-10 h-10 mb-0.5" viewBox="0 0 48 48" fill="none" stroke={activeFoil.text} strokeWidth="1.5">
-                      <path d="M12 36c-4-6-4-16 2-22 4-4 10-6 10-6s6 2 10 6c6 6 6 16 2 22" />
-                      <circle cx="24" cy="24" r="3" fill={activeFoil.text} />
-                    </svg>
-                    <span className="font-serif text-[10px] font-bold tracking-[2px] uppercase" style={{ color: activeFoil.text }}>
-                      T A P  &amp;  T O A S T
-                    </span>
-                  </div>
-
-                  <div className="text-[10px] tracking-widest uppercase font-serif" style={{ color: activeFoil.text }}>
-                    {invitationHeading}
-                  </div>
-
-                  <h2 className="font-serif text-3xl font-bold leading-tight" style={{ color: textColor }}>
-                    Sophie <span className="italic font-normal" style={{ color: activeFoil.text }}>&amp;</span> James
-                  </h2>
-
-                  <div className="text-[11px] font-serif italic" style={{ color: subtextColor }}>
-                    request the pleasure of your company to celebrate their marriage
-                  </div>
-
-                  <div className="text-xs font-medium" style={{ color: activeFoil.text }}>
-                    Saturday, 14 November 2026 &bull; 2:00 PM
-                  </div>
-                  <div className="text-[11px]" style={{ color: subtextColor }}>
-                    The Rose Arbor &bull; Fernwood Estate
-                  </div>
-
-                  {/* Botanical Foliage Line Divider */}
-                  <div className="flex items-center justify-center gap-2 my-2.5">
-                    <div className="w-12 h-[1px]" style={{ backgroundColor: activeFoil.border }} />
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke={activeFoil.text} strokeWidth="1.5">
-                      <path d="M12 2C8 6 6 12 12 22c6-10 4-16 0-20z" />
-                    </svg>
-                    <div className="w-12 h-[1px]" style={{ backgroundColor: activeFoil.border }} />
-                  </div>
-
-                  {/* QR Presentation */}
-                  <div className="bg-white p-3 rounded-2xl w-[145px] h-[145px] mx-auto flex items-center justify-center shadow-lg border border-emerald-800/40">
-                    <img
-                      src="https://api.qrserver.com/v1/create-qr-code/?size=125x125&data=https://taptoast.demo/wedding/sophie-james?guest=priya"
-                      alt="Invitation QR Code"
-                      className="w-[125px] h-[125px] object-contain"
-                    />
-                  </div>
-
-                  <div className="text-[9.5px] tracking-widest uppercase font-bold pt-1" style={{ color: activeFoil.text }}>
-                    SCAN TO CONFIRM YOUR ATTENDANCE
-                  </div>
-                  <div className="text-xs italic" style={{ color: subtextColor }}>
-                    Reserved for {selectedQaRdHousehold.split(' (')[0]}
-                  </div>
-                </div>
-              )}
-
-              {/* ============================================================== */}
-              {/* TEMPLATE 4: ART DECO 1920s GATSBY                              */}
-              {/* ============================================================== */}
-              {currentTemplate.id === 'art-deco' && (
-                <div
-                  className="rounded-2xl p-6 space-y-3 relative border-2"
-                  style={{ borderColor: activeFoil.border }}
-                >
-                  {/* Geometric Stepped Corners */}
-                  <svg className="absolute top-2 left-2 w-3 h-3" viewBox="0 0 24 24" fill={activeFoil.text}>
-                    <polygon points="12 2 22 12 12 22 2 12" />
-                  </svg>
-                  <svg className="absolute top-2 right-2 w-3 h-3" viewBox="0 0 24 24" fill={activeFoil.text}>
-                    <polygon points="12 2 22 12 12 22 2 12" />
-                  </svg>
-                  <svg className="absolute bottom-2 left-2 w-3 h-3" viewBox="0 0 24 24" fill={activeFoil.text}>
-                    <polygon points="12 2 22 12 12 22 2 12" />
-                  </svg>
-                  <svg className="absolute bottom-2 right-2 w-3 h-3" viewBox="0 0 24 24" fill={activeFoil.text}>
-                    <polygon points="12 2 22 12 12 22 2 12" />
-                  </svg>
-
-                  {/* Gatsby Sunburst Fan Crest */}
-                  <div className="flex flex-col items-center justify-center">
-                    <svg className="w-8 h-8 mb-0.5" viewBox="0 0 32 32" fill="none" stroke={activeFoil.text} strokeWidth="1.5">
-                      <path d="M16 28V8M16 8l-6 8M16 8l6 8M4 28l12-20 12 20M8 28l8-14 8 14" />
-                    </svg>
-                    <span className="font-serif text-[10.5px] font-bold tracking-[4px] uppercase" style={{ color: activeFoil.text }}>
-                      T A P  &amp;  T O A S T
-                    </span>
-                  </div>
-
-                  <div className="text-[10px] tracking-[3px] uppercase font-bold" style={{ color: activeFoil.text }}>
-                    {invitationHeading.toUpperCase()}
-                  </div>
-
-                  <h2 className="font-serif text-3xl font-extrabold tracking-wider leading-tight uppercase" style={{ color: textColor }}>
-                    SOPHIE <span className="font-serif italic font-normal" style={{ color: activeFoil.text }}>&amp;</span> JAMES
-                  </h2>
-
-                  <div className="text-[11px] font-serif italic" style={{ color: subtextColor }}>
-                    cordially invite you to celebrate their union
-                  </div>
-
-                  <div className="text-xs font-bold tracking-widest" style={{ color: activeFoil.text }}>
-                    SATURDAY &bull; NOVEMBER 14TH &bull; 2026
-                  </div>
-                  <div className="text-[11px] tracking-wide" style={{ color: subtextColor }}>
-                    The Grand Ballroom &bull; Fernwood Estate
-                  </div>
-
-                  {/* Stepped Diamond Vector Divider */}
-                  <div className="flex items-center justify-center gap-2 my-2.5">
-                    <div className="w-10 h-[1px]" style={{ backgroundColor: activeFoil.border }} />
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill={activeFoil.text}>
-                      <polygon points="12 2 22 12 12 22 2 12" />
-                    </svg>
-                    <div className="w-10 h-[1px]" style={{ backgroundColor: activeFoil.border }} />
-                  </div>
-
-                  {/* QR Presentation */}
-                  <div className="bg-white p-3 rounded-2xl w-[145px] h-[145px] mx-auto flex items-center justify-center shadow-xl border-2" style={{ borderColor: activeFoil.border }}>
-                    <img
-                      src="https://api.qrserver.com/v1/create-qr-code/?size=125x125&data=https://taptoast.demo/wedding/sophie-james?guest=priya"
-                      alt="Invitation QR Code"
-                      className="w-[125px] h-[125px] object-contain"
-                    />
-                  </div>
-
-                  <div className="text-[9.5px] tracking-[2px] uppercase font-bold pt-1" style={{ color: activeFoil.text }}>
-                    BLACK TIE &bull; DINNER &amp; DANCING
-                  </div>
-                  <div className="text-xs font-serif italic" style={{ color: subtextColor }}>
-                    Guest of Honour: {selectedQaRdHousehold.split(' (')[0]}
-                  </div>
-                </div>
-              )}
-
-              {/* ============================================================== */}
-              {/* TEMPLATE 5: RUSTIC KRAFT & WAX SEAL                            */}
-              {/* ============================================================== */}
-              {currentTemplate.id === 'rustic-kraft' && (
-                <div
-                  className="rounded-2xl p-6 space-y-3 relative border-2 border-dashed"
-                  style={{ borderColor: activeFoil.border }}
-                >
-                  {/* Handcrafted Crimson Wax Seal Medallion */}
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#8c1f1f] via-[#751616] to-[#4d0b0b] shadow-md border border-[#b83535] flex items-center justify-center text-white">
-                      <span className="font-serif text-xs font-bold tracking-widest text-[#f5d9a4] drop-shadow-sm">
-                        S &amp; J
-                      </span>
-                    </div>
-                    <span className="text-[9.5px] uppercase font-serif tracking-[2px] font-bold mt-1.5" style={{ color: textColor }}>
-                      H E R I T A G E   M A N O R
-                    </span>
-                  </div>
-
-                  <div className="text-[10px] tracking-wider uppercase font-semibold" style={{ color: subtextColor }}>
-                    {invitationHeading}
-                  </div>
-
-                  <h2 className="font-serif text-3xl font-bold leading-tight" style={{ color: textColor }}>
-                    Sophie <span className="italic font-normal" style={{ color: activeFoil.text }}>&amp;</span> James
-                  </h2>
-
-                  <div className="text-[11px] font-serif italic" style={{ color: subtextColor }}>
-                    request the pleasure of your company on their wedding day
-                  </div>
-
-                  <div className="text-xs font-bold" style={{ color: activeFoil.text }}>
-                    Saturday, the 14th of November, 2026
-                  </div>
-                  <div className="text-[11px] font-medium" style={{ color: subtextColor }}>
-                    The Country Homestead &bull; Fernwood Estate
-                  </div>
-
-                  {/* Symmetrical Fine Twine Knot Divider */}
-                  <div className="flex items-center justify-center gap-2 my-2.5">
-                    <div className="w-12 h-[1px] border-b border-dashed" style={{ borderColor: activeFoil.border }} />
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke={activeFoil.text} strokeWidth="1.5">
-                      <circle cx="12" cy="12" r="3" />
-                      <path d="M3 12h6M15 12h6" />
-                    </svg>
-                    <div className="w-12 h-[1px] border-b border-dashed" style={{ borderColor: activeFoil.border }} />
-                  </div>
-
-                  {/* QR Presentation */}
-                  <div className="bg-[#fffdfa] p-3 rounded-2xl w-[145px] h-[145px] mx-auto flex items-center justify-center shadow-md border border-[#d6c7b2]">
-                    <img
-                      src="https://api.qrserver.com/v1/create-qr-code/?size=125x125&data=https://taptoast.demo/wedding/sophie-james?guest=priya"
-                      alt="Invitation QR Code"
-                      className="w-[125px] h-[125px] object-contain"
-                    />
-                  </div>
-
-                  <div className="text-[9.5px] tracking-wider uppercase font-bold pt-1" style={{ color: textColor }}>
-                    PLEASE SCAN TO CONFIRM ATTENDANCE
-                  </div>
-                  <div className="text-xs font-serif italic" style={{ color: subtextColor }}>
-                    Prepared for {selectedQaRdHousehold.split(' (')[0]}
-                  </div>
-                </div>
-              )}
-
-              {/* ============================================================== */}
-              {/* TEMPLATE 6: CELESTIAL MIDNIGHT NAVY                            */}
-              {/* ============================================================== */}
-              {currentTemplate.id === 'celestial-midnight' && (
-                <div
-                  className="rounded-2xl p-6 space-y-3 relative border"
-                  style={{ borderColor: activeFoil.border }}
-                >
-                  {/* Fine-line Starlight Corner Vectors */}
-                  <svg className="absolute top-2 left-2 w-3.5 h-3.5" viewBox="0 0 24 24" fill={activeFoil.text}>
-                    <polygon points="12 2 15 9 22 12 15 15 12 22 9 15 2 12 9 9" />
-                  </svg>
-                  <svg className="absolute top-2 right-2 w-3.5 h-3.5" viewBox="0 0 24 24" fill={activeFoil.text}>
-                    <polygon points="12 2 15 9 22 12 15 15 12 22 9 15 2 12 9 9" />
-                  </svg>
-                  <svg className="absolute bottom-2 left-2 w-3.5 h-3.5" viewBox="0 0 24 24" fill={activeFoil.text}>
-                    <polygon points="12 2 15 9 22 12 15 15 12 22 9 15 2 12 9 9" />
-                  </svg>
-                  <svg className="absolute bottom-2 right-2 w-3.5 h-3.5" viewBox="0 0 24 24" fill={activeFoil.text}>
-                    <polygon points="12 2 15 9 22 12 15 15 12 22 9 15 2 12 9 9" />
-                  </svg>
-
-                  {/* Delicate Fine-line Celestial Crescent Crest */}
-                  <div className="flex flex-col items-center justify-center">
-                    <svg className="w-8 h-8 mb-0.5" viewBox="0 0 32 32" fill="none" stroke={activeFoil.text} strokeWidth="1.5">
-                      <path d="M18 4a12 12 0 1 0 10 16 14 14 0 0 1-10-16z" />
-                      <circle cx="20" cy="10" r="1.5" fill={activeFoil.text} />
-                    </svg>
-                    <span className="font-serif text-[10px] font-bold tracking-[3px] uppercase" style={{ color: activeFoil.text }}>
-                      U N D E R   T H E   S T A R S
-                    </span>
-                  </div>
-
-                  <div className="text-[10px] tracking-widest uppercase font-serif" style={{ color: subtextColor }}>
-                    {invitationHeading}
-                  </div>
-
-                  <h2 className="font-serif text-3xl font-bold leading-tight" style={{ color: textColor }}>
-                    Sophie <span className="italic font-normal" style={{ color: activeFoil.text }}>&amp;</span> James
-                  </h2>
-
-                  <div className="text-[11px] font-serif italic" style={{ color: subtextColor }}>
-                    invite you to celebrate their union under the heavens
-                  </div>
-
-                  <div className="text-xs font-semibold" style={{ color: activeFoil.text }}>
-                    Saturday, 14 November 2026 &bull; Twilight Ceremony
-                  </div>
-                  <div className="text-[11px]" style={{ color: subtextColor }}>
-                    The Stargazer Lawn &bull; Fernwood Estate
-                  </div>
-
-                  {/* Symmetrical Fine Starburst Divider */}
-                  <div className="flex items-center justify-center gap-2 my-2.5">
-                    <div className="w-12 h-[1px]" style={{ backgroundColor: activeFoil.border }} />
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill={activeFoil.text}>
-                      <polygon points="12 2 14.5 9.5 22 12 14.5 14.5 12 22 9.5 14.5 2 12 9.5 9.5" />
-                    </svg>
-                    <div className="w-12 h-[1px]" style={{ backgroundColor: activeFoil.border }} />
-                  </div>
-
-                  {/* QR Presentation */}
-                  <div className="bg-white p-3 rounded-2xl w-[145px] h-[145px] mx-auto flex items-center justify-center shadow-2xl border" style={{ borderColor: activeFoil.border }}>
-                    <img
-                      src="https://api.qrserver.com/v1/create-qr-code/?size=125x125&data=https://taptoast.demo/wedding/sophie-james?guest=priya"
-                      alt="Invitation QR Code"
-                      className="w-[125px] h-[125px] object-contain"
-                    />
-                  </div>
-
-                  <div className="text-[9.5px] tracking-widest uppercase font-bold pt-1" style={{ color: activeFoil.text }}>
-                    SCAN TO JOIN UNDER THE NIGHT SKY
-                  </div>
-                  <div className="text-xs italic" style={{ color: subtextColor }}>
-                    Reserved for {selectedQaRdHousehold.split(' (')[0]}
-                  </div>
-                </div>
-              )}
-
-              {/* ============================================================== */}
-              {/* TEMPLATE 7: BOHO TERRACOTTA & PALM                             */}
-              {/* ============================================================== */}
-              {currentTemplate.id === 'boho-terracotta' && (
-                <div
-                  className="rounded-2xl p-6 space-y-3 relative border"
-                  style={{ borderColor: activeFoil.border }}
-                >
-                  {/* Fine-line Bohemian Sun Arch Crest SVG */}
-                  <div className="flex flex-col items-center justify-center">
-                    <svg className="w-8 h-8 mb-0.5" viewBox="0 0 32 32" fill="none" stroke={activeFoil.text} strokeWidth="1.5">
-                      <path d="M4 24a12 12 0 0 1 24 0M10 24a6 6 0 0 1 12 0M16 4v4M6 10l3 3M26 10l-3 3" />
-                    </svg>
-                    <span className="font-serif text-[10px] font-bold tracking-[2px] uppercase" style={{ color: activeFoil.text }}>
-                      T U S C A N   V I L L A
-                    </span>
-                  </div>
-
-                  <div className="text-[10px] tracking-widest uppercase font-semibold" style={{ color: activeFoil.text }}>
-                    {invitationHeading}
-                  </div>
-
-                  <h2 className="font-serif text-3xl font-bold leading-tight" style={{ color: textColor }}>
-                    Sophie <span className="italic font-normal" style={{ color: activeFoil.text }}>&amp;</span> James
-                  </h2>
-
-                  <div className="text-[11px] font-serif italic" style={{ color: subtextColor }}>
-                    invite you to join them in celebrating their love
-                  </div>
-
-                  <div className="text-xs font-bold" style={{ color: activeFoil.text }}>
-                    Saturday, 14 November 2026 &bull; 2:00 PM
-                  </div>
-                  <div className="text-[11px]" style={{ color: subtextColor }}>
-                    The Olive Grove &bull; Fernwood Estate
-                  </div>
-
-                  {/* Terracotta Sunburst Line Divider */}
-                  <div className="flex items-center justify-center gap-2 my-2.5">
-                    <div className="w-12 h-[1px]" style={{ backgroundColor: activeFoil.border }} />
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill={activeFoil.text}>
-                      <circle cx="12" cy="12" r="3" />
-                      <line x1="12" y1="2" x2="12" y2="6" stroke={activeFoil.text} strokeWidth="1.5" />
-                      <line x1="12" y1="18" x2="12" y2="22" stroke={activeFoil.text} strokeWidth="1.5" />
-                      <line x1="2" y1="12" x2="6" y2="12" stroke={activeFoil.text} strokeWidth="1.5" />
-                      <line x1="18" y1="12" x2="22" y2="12" stroke={activeFoil.text} strokeWidth="1.5" />
-                    </svg>
-                    <div className="w-12 h-[1px]" style={{ backgroundColor: activeFoil.border }} />
-                  </div>
-
-                  {/* QR Presentation */}
-                  <div className="bg-[#fffbf8] p-3 rounded-2xl w-[145px] h-[145px] mx-auto flex items-center justify-center shadow-md border" style={{ borderColor: activeFoil.border }}>
-                    <img
-                      src="https://api.qrserver.com/v1/create-qr-code/?size=125x125&data=https://taptoast.demo/wedding/sophie-james?guest=priya"
-                      alt="Invitation QR Code"
-                      className="w-[125px] h-[125px] object-contain"
-                    />
-                  </div>
-
-                  <div className="text-[9.5px] tracking-widest uppercase font-bold pt-1" style={{ color: activeFoil.text }}>
-                    FEAST &amp; LIVE MUSIC TO FOLLOW
-                  </div>
-                  <div className="text-xs italic" style={{ color: subtextColor }}>
-                    With warmth for {selectedQaRdHousehold.split(' (')[0]}
-                  </div>
-                </div>
-              )}
-
-              {/* ============================================================== */}
-              {/* TEMPLATE 8: TIMELESS HERITAGE MONOGRAM                         */}
-              {/* ============================================================== */}
-              {currentTemplate.id === 'timeless-heritage' && (
-                <div
-                  className="rounded-2xl p-6 space-y-3 relative border-2"
-                  style={{ borderColor: activeFoil.border }}
-                >
-                  {/* Interlocking Monogram Medallion */}
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="w-10 h-10 rounded-full border flex items-center justify-center shadow-2xs" style={{ borderColor: activeFoil.border }}>
-                      <span className="font-serif text-sm font-bold tracking-wider" style={{ color: activeFoil.text }}>
-                        SJ
-                      </span>
-                    </div>
-                    <span className="font-serif text-[9.5px] font-bold tracking-[3px] uppercase mt-1.5" style={{ color: textColor }}>
-                      H E R I T A G E   E D I T I O N
-                    </span>
-                  </div>
-
-                  <div className="text-[10px] tracking-[2px] uppercase font-semibold" style={{ color: subtextColor }}>
-                    {invitationHeading}
-                  </div>
-
-                  <h2 className="font-serif text-3xl font-extrabold tracking-tight leading-tight" style={{ color: textColor }}>
-                    Sophie <span className="font-serif italic font-normal" style={{ color: activeFoil.text }}>&amp;</span> James
-                  </h2>
-
-                  <div className="text-[11px] font-serif italic" style={{ color: subtextColor }}>
-                    request the pleasure of your company at the celebration of their marriage
-                  </div>
-
-                  <div className="text-xs font-bold" style={{ color: activeFoil.text }}>
-                    Saturday, the Fourteenth of November, Two Thousand Twenty-Six
-                  </div>
-                  <div className="text-[11px] font-medium" style={{ color: subtextColor }}>
-                    Fernwood Estate &bull; Southern Highlands
-                  </div>
-
-                  {/* Symmetrical Fine Rule */}
-                  <div className="flex items-center justify-center gap-2 my-2.5">
-                    <div className="w-12 h-[1px]" style={{ backgroundColor: activeFoil.border }} />
-                    <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill={activeFoil.text}>
-                      <polygon points="12 2 15 9 22 12 15 15 12 22 9 15 2 12 9 9" />
-                    </svg>
-                    <div className="w-12 h-[1px]" style={{ backgroundColor: activeFoil.border }} />
-                  </div>
-
-                  {/* QR Presentation */}
-                  <div className="bg-white p-3 rounded-2xl w-[145px] h-[145px] mx-auto flex items-center justify-center shadow-lg border border-[#e8ded0]">
-                    <img
-                      src="https://api.qrserver.com/v1/create-qr-code/?size=125x125&data=https://taptoast.demo/wedding/sophie-james?guest=priya"
-                      alt="Invitation QR Code"
-                      className="w-[125px] h-[125px] object-contain"
-                    />
-                  </div>
-
-                  <div className="text-[9.5px] tracking-[2px] uppercase font-bold pt-1" style={{ color: textColor }}>
-                    BLACK TIE &bull; RECEPTION TO FOLLOW
-                  </div>
-                  <div className="text-xs font-serif italic" style={{ color: subtextColor }}>
-                    Presented to {selectedQaRdHousehold.split(' (')[0]}
-                  </div>
+          {/* THE ANIMATION STAGE CONTAINER */}
+          <div
+            className="w-full max-w-lg min-h-[580px] rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center relative shadow-xl overflow-hidden border border-[#d5c7b5]/60 transition-all duration-700"
+            style={{
+              background: currentTheme.stageBg,
+              perspective: '1200px',
+            }}
+          >
+            {/* Ambient Lighting Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-white/30 pointer-events-none" />
+
+            <div className="relative w-full max-w-md flex flex-col items-center select-none">
+
+              {/* The Dedicated Envelope Animation for this Specific Template */}
+              {renderEnvelopeAnimation()}
+
+              {/* THE INVITATION CARD (EXTRACTS OUT OF ENVELOPE ACCORDING TO UNIQUE MOTION) */}
+              <div
+                className={`w-full max-w-[370px] sm:max-w-[400px] transition-all duration-700 ease-out z-40 ${getCardTransitionMotion()}`}
+              >
+                {renderSelectedTemplate()}
+              </div>
+
+              {/* Open Instruction Pill (When Sealed) */}
+              {envelopeState === 'sealed' && (
+                <div className="mt-6 text-center">
+                  <button
+                    type="button"
+                    onClick={handleOpenEnvelope}
+                    className="bg-[#15110e] text-[#dfc194] border border-[#bd9661] px-5 py-2 rounded-full font-serif font-bold text-xs shadow-lg cursor-pointer flex items-center gap-2 hover:bg-[#251e18] hover:scale-105 transition-all"
+                  >
+                    <span>✉️</span>
+                    <span>Click Wax Seal to Open</span>
+                  </button>
                 </div>
               )}
             </div>
