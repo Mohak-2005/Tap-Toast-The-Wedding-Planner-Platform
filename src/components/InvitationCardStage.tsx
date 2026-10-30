@@ -171,6 +171,24 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
         </svg>
       </div>
 
+      {/* Top-Right & Bottom-Left Celebratory Golden Stars */}
+      <div className="absolute top-3 right-3 w-12 h-12 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 50 50" fill="none" className="w-full h-full">
+          <path d="M25 12 L26.5 18 L32.5 19.5 L26.5 21 L25 27 L23.5 21 L17.5 19.5 L23.5 18 Z" fill="#c59a58" opacity="0.9" />
+          <circle cx="25" cy="19.5" r="4.5" fill="#c59a58" opacity="0.25" />
+          <circle cx="36" cy="30" r="1.5" fill="#d4af37" />
+          <circle cx="15" cy="10" r="1.2" fill="#c59a58" />
+        </svg>
+      </div>
+      <div className="absolute bottom-3 left-3 w-12 h-12 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 50 50" fill="none" className="w-full h-full">
+          <path d="M25 22 L26.5 28 L32.5 29.5 L26.5 31 L25 37 L23.5 31 L17.5 29.5 L23.5 28 Z" fill="#c59a58" opacity="0.9" />
+          <circle cx="25" cy="29.5" r="4.5" fill="#c59a58" opacity="0.25" />
+          <circle cx="14" cy="20" r="1.5" fill="#d4af37" />
+          <circle cx="35" cy="40" r="1.2" fill="#c59a58" />
+        </svg>
+      </div>
+
       <div className="text-[10px] tracking-[2.5px] uppercase font-serif text-[#966d29] mb-1">
         {invitationHeading.toUpperCase()}
       </div>
@@ -241,6 +259,10 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
       className="relative w-full rounded-2xl p-6 sm:p-7 border border-[#487252]/40 text-center shadow-2xl overflow-hidden select-none bg-white text-[#152418]"
       style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)' }}
     >
+      {/* Inner Decorative Border Frame */}
+      <div className="absolute inset-2.5 border border-[#487252]/25 rounded-xl pointer-events-none" />
+
+      {/* Top-Left Soft Watercolor Mimosa Wattle & Leaf Sprigs */}
       <div className="absolute top-0 left-0 pointer-events-none select-none z-10">
         <svg width="130" height="130" viewBox="0 0 130 130" fill="none">
           <ellipse cx="30" cy="20" rx="22" ry="7" transform="rotate(35 30 20)" fill="#789c7c" opacity="0.6" />
@@ -253,6 +275,35 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
           <circle cx="52" cy="36" r="4.5" fill="#f5dc6e" opacity="0.9" />
           <circle cx="40" cy="42" r="3.5" fill="#e5c545" opacity="0.8" />
           <circle cx="28" cy="42" r="4" fill="#eed259" opacity="0.8" />
+        </svg>
+      </div>
+
+      {/* Bottom-Right Watercolor Pink Protea / Waratah Floral */}
+      <div className="absolute -bottom-2 -right-2 pointer-events-none select-none z-10">
+        <svg width="120" height="130" viewBox="0 0 120 130" fill="none">
+          <ellipse cx="80" cy="110" rx="20" ry="6" transform="rotate(-30 80 110)" fill="#5a805e" opacity="0.7" />
+          <path d="M70 120 C60 90, 65 60, 75 40 C80 60, 85 90, 70 120 Z" fill="#ea8c98" opacity="0.8" />
+          <path d="M60 120 C50 95, 52 70, 60 55 C68 70, 72 95, 60 120 Z" fill="#f2aab4" opacity="0.85" />
+          <path d="M80 120 C75 95, 82 70, 90 55 C88 70, 85 95, 80 120 Z" fill="#de7080" opacity="0.85" />
+          <path d="M70 50 L70 35 M65 58 L60 44 M75 58 L80 44" stroke="#d49444" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </div>
+
+      {/* Top-Right & Bottom-Left Native Golden Stars & Sparkles */}
+      <div className="absolute top-3 right-3 w-12 h-12 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 50 50" fill="none" className="w-full h-full">
+          <path d="M25 14 L26.5 19 L31.5 20.5 L26.5 22 L25 27 L23.5 22 L18.5 20.5 L23.5 19 Z" fill="#eed259" opacity="0.9" />
+          <circle cx="25" cy="20.5" r="4" fill="#eed259" opacity="0.25" />
+          <circle cx="35" cy="12" r="1.5" fill="#f5dc6e" />
+          <circle cx="16" cy="30" r="1.2" fill="#eed259" />
+        </svg>
+      </div>
+      <div className="absolute bottom-3 left-3 w-12 h-12 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 50 50" fill="none" className="w-full h-full">
+          <path d="M25 22 L26.5 27 L31.5 28.5 L26.5 30 L25 35 L23.5 30 L18.5 28.5 L23.5 27 Z" fill="#eed259" opacity="0.9" />
+          <circle cx="25" cy="28.5" r="4" fill="#eed259" opacity="0.25" />
+          <circle cx="15" cy="20" r="1.5" fill="#789c7c" />
+          <circle cx="35" cy="38" r="1.2" fill="#eed259" />
         </svg>
       </div>
 
@@ -308,7 +359,58 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
       className="relative w-full rounded-2xl p-6 sm:p-7 border border-[#8a2337]/50 text-center shadow-2xl overflow-hidden select-none bg-[#171921] text-white"
       style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)' }}
     >
-      <div className="text-[10px] tracking-[3px] uppercase font-serif text-[#e27b91] mb-1">
+      {/* 1. Gilded Inner Border with Velvet Hue */}
+      <div className="absolute inset-2.5 border border-[#e27b91]/35 rounded-xl pointer-events-none" />
+
+      {/* 2. Top Lush Floral Garland Border (Proteas, Eucalyptus, Copper Stars) */}
+      <div className="absolute top-0 inset-x-0 h-16 pointer-events-none select-none z-10 overflow-hidden">
+        <svg className="w-full h-16" viewBox="0 0 380 54" fill="none" preserveAspectRatio="none">
+          <ellipse cx="45" cy="16" rx="26" ry="8" transform="rotate(-15 45 16)" fill="#4e6957" opacity="0.85" />
+          <ellipse cx="95" cy="22" rx="30" ry="10" transform="rotate(10 95 22)" fill="#354e3d" opacity="0.9" />
+          <ellipse cx="285" cy="22" rx="30" ry="10" transform="rotate(-10 285 22)" fill="#354e3d" opacity="0.9" />
+          <ellipse cx="335" cy="16" rx="26" ry="8" transform="rotate(15 335 16)" fill="#4e6957" opacity="0.85" />
+          <circle cx="70" cy="24" r="13" fill="#8a2337" opacity="0.9" />
+          <circle cx="70" cy="24" r="8" fill="#b33951" opacity="0.95" />
+          <circle cx="190" cy="15" r="15" fill="#8a2337" opacity="0.9" />
+          <circle cx="190" cy="15" r="10" fill="#e27b91" opacity="0.95" />
+          <circle cx="190" cy="15" r="4" fill="#dfc194" />
+          <circle cx="310" cy="24" r="13" fill="#8a2337" opacity="0.9" />
+          <circle cx="310" cy="24" r="8" fill="#b33951" opacity="0.95" />
+          <path d="M130 14 L131.5 17 L134.5 18 L131.5 19 L130 22 L128.5 19 L125.5 18 L128.5 17 Z" fill="#dfc194" opacity="0.9" />
+          <path d="M250 14 L251.5 17 L254.5 18 L251.5 19 L250 22 L248.5 19 L245.5 18 L248.5 17 Z" fill="#dfc194" opacity="0.9" />
+        </svg>
+      </div>
+
+      {/* 3. Bottom Floral Garland with Rose Blooms & Stardust */}
+      <div className="absolute bottom-0 inset-x-0 h-16 pointer-events-none select-none z-10 overflow-hidden rotate-180">
+        <svg className="w-full h-16" viewBox="0 0 380 54" fill="none" preserveAspectRatio="none">
+          <ellipse cx="65" cy="20" rx="28" ry="9" transform="rotate(10 65 20)" fill="#4e6957" opacity="0.85" />
+          <ellipse cx="315" cy="20" rx="28" ry="9" transform="rotate(-10 315 20)" fill="#4e6957" opacity="0.85" />
+          <circle cx="190" cy="15" r="14" fill="#8a2337" opacity="0.9" />
+          <circle cx="190" cy="15" r="9" fill="#e27b91" opacity="0.95" />
+          <circle cx="190" cy="15" r="3.5" fill="#dfc194" />
+          <circle cx="100" cy="20" r="10" fill="#b33951" opacity="0.85" />
+          <circle cx="280" cy="20" r="10" fill="#b33951" opacity="0.85" />
+        </svg>
+      </div>
+
+      {/* 4. Left & Right Flank Copper Twinkling Sparkles */}
+      <div className="absolute top-1/2 -translate-y-1/2 left-2 w-10 h-24 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 40 100" fill="none" className="w-full h-full">
+          <path d="M16 20 L17.5 24 L21.5 25.5 L17.5 27 L16 31 L14.5 27 L10.5 25.5 L14.5 24 Z" fill="#dfc194" opacity="0.85" />
+          <circle cx="20" cy="50" r="1.5" fill="#e27b91" />
+          <path d="M18 70 L19 73 L22 74 L19 75 L18 78 L17 75 L14 74 L17 73 Z" fill="#dfc194" opacity="0.75" />
+        </svg>
+      </div>
+      <div className="absolute top-1/2 -translate-y-1/2 right-2 w-10 h-24 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 40 100" fill="none" className="w-full h-full">
+          <path d="M24 20 L25.5 24 L29.5 25.5 L25.5 27 L24 31 L22.5 27 L18.5 25.5 L22.5 24 Z" fill="#dfc194" opacity="0.85" />
+          <circle cx="20" cy="50" r="1.5" fill="#e27b91" />
+          <path d="M22 70 L23 73 L26 74 L23 75 L22 78 L21 75 L18 74 L21 73 Z" fill="#dfc194" opacity="0.75" />
+        </svg>
+      </div>
+
+      <div className="pt-5 text-[10px] tracking-[3px] uppercase font-serif text-[#e27b91] mb-1">
         {invitationHeading.toUpperCase()}
       </div>
 
@@ -355,9 +457,83 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
   const renderCoastalHarborTemplate = () => (
     <div
       className="relative w-full rounded-2xl p-6 sm:p-7 border border-[#d6b87d]/50 text-center shadow-2xl overflow-hidden select-none bg-[#0e1c36] text-white"
-      style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)' }}
+      style={{
+        backgroundImage: 'linear-gradient(to bottom, #091326 0%, #0e1c36 45%, #182e56 100%)',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+      }}
     >
-      <div className="pt-2 text-[9px] font-sans font-bold uppercase tracking-[3px] text-[#fae392] mb-1">
+      {/* 1. Gilded Inner Border Frame */}
+      <div className="absolute inset-2.5 border border-[#fae392]/35 rounded-xl pointer-events-none" />
+
+      {/* 2. Golden Canopy Fairy Lights Draped Across Top */}
+      <div className="absolute top-0 inset-x-0 h-14 pointer-events-none select-none z-10 overflow-hidden">
+        <svg className="w-full h-12" viewBox="0 0 380 44" fill="none" preserveAspectRatio="none">
+          <path d="M0 10 Q 95 30, 190 14 Q 285 30, 380 10" stroke="#fae392" strokeWidth="1" strokeDasharray="3 3" opacity="0.75" />
+          <circle cx="50" cy="22" r="6" fill="#ffd700" opacity="0.25" />
+          <circle cx="50" cy="22" r="3" fill="#fae392" />
+          <circle cx="105" cy="24" r="6" fill="#ffd700" opacity="0.25" />
+          <circle cx="105" cy="24" r="3" fill="#ffffff" />
+          <circle cx="160" cy="18" r="6" fill="#ffd700" opacity="0.25" />
+          <circle cx="160" cy="18" r="3" fill="#fae392" />
+          <circle cx="220" cy="19" r="6" fill="#ffd700" opacity="0.25" />
+          <circle cx="220" cy="19" r="3" fill="#ffd700" />
+          <circle cx="275" cy="24" r="6" fill="#ffd700" opacity="0.25" />
+          <circle cx="275" cy="24" r="3" fill="#ffffff" />
+          <circle cx="330" cy="21" r="6" fill="#ffd700" opacity="0.25" />
+          <circle cx="330" cy="21" r="3" fill="#fae392" />
+        </svg>
+      </div>
+
+      {/* 3. Top-Left & Top-Right Twinkling Celestial Stars */}
+      <div className="absolute top-2 left-2 w-16 h-16 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 60 60" fill="none" className="w-full h-full">
+          <path d="M22 14 L23.5 19 L28.5 20.5 L23.5 22 L22 27 L20.5 22 L15.5 20.5 L20.5 19 Z" fill="#fae392" opacity="0.9" />
+          <circle cx="22" cy="20.5" r="5" fill="#ffd700" opacity="0.3" />
+          <path d="M40 28 L41 31 L44 32 L41 33 L40 36 L39 33 L36 32 L39 31 Z" fill="#ffffff" opacity="0.85" />
+          <circle cx="12" cy="34" r="1.5" fill="#fae392" />
+          <circle cx="32" cy="10" r="1.2" fill="#ffd700" />
+        </svg>
+      </div>
+      <div className="absolute top-2 right-2 w-16 h-16 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 60 60" fill="none" className="w-full h-full">
+          <path d="M38 14 L39.5 19 L44.5 20.5 L39.5 22 L38 27 L36.5 22 L31.5 20.5 L36.5 19 Z" fill="#ffd700" opacity="0.9" />
+          <circle cx="38" cy="20.5" r="5" fill="#ffd700" opacity="0.3" />
+          <path d="M20 28 L21 31 L24 32 L21 33 L20 36 L19 33 L16 32 L19 31 Z" fill="#ffffff" opacity="0.85" />
+          <circle cx="48" cy="34" r="1.5" fill="#fae392" />
+          <circle cx="28" cy="10" r="1.2" fill="#ffffff" />
+        </svg>
+      </div>
+
+      {/* 4. Sydney Opera House & Harbor Bridge Silhouette Backdrop */}
+      <div className="absolute bottom-0 inset-x-0 h-32 pointer-events-none select-none opacity-20 z-0">
+        <svg className="w-full h-full" viewBox="0 0 400 110" fill="none" preserveAspectRatio="none">
+          <path d="M210 110 C240 35, 350 35, 395 110" stroke="#fae392" strokeWidth="2" />
+          <path d="M240 110 C265 55, 335 55, 365 110" stroke="#fae392" strokeWidth="1" strokeDasharray="2 2" />
+          <path d="M40 110 L68 55 L96 110 Z" fill="#ffffff" />
+          <path d="M78 110 L108 45 L138 110 Z" fill="#ffffff" />
+          <path d="M118 110 L148 60 L178 110 Z" fill="#ffffff" />
+        </svg>
+      </div>
+
+      {/* 5. Bottom Corners Twinkling Starlight */}
+      <div className="absolute bottom-1 left-2 w-14 h-14 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 50 50" fill="none" className="w-full h-full">
+          <path d="M20 24 L21 28 L25 29 L21 30 L20 34 L19 30 L15 29 L19 28 Z" fill="#fae392" opacity="0.85" />
+          <circle cx="20" cy="29" r="4" fill="#ffd700" opacity="0.25" />
+          <circle cx="32" cy="18" r="1.5" fill="#ffffff" />
+          <circle cx="10" cy="16" r="1.2" fill="#fae392" />
+        </svg>
+      </div>
+      <div className="absolute bottom-1 right-2 w-14 h-14 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 50 50" fill="none" className="w-full h-full">
+          <path d="M30 24 L31 28 L35 29 L31 30 L30 34 L29 30 L25 29 L29 28 Z" fill="#ffd700" opacity="0.85" />
+          <circle cx="30" cy="29" r="4" fill="#ffd700" opacity="0.25" />
+          <circle cx="18" cy="18" r="1.5" fill="#ffffff" />
+          <circle cx="40" cy="16" r="1.2" fill="#fae392" />
+        </svg>
+      </div>
+
+      <div className="pt-4 text-[9px] font-sans font-bold uppercase tracking-[3px] text-[#fae392] mb-1">
         YOU&rsquo;RE INVITED TO THE WEDDING OF
       </div>
 
@@ -409,7 +585,53 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
       className="relative w-full rounded-t-[140px] rounded-b-2xl p-6 sm:p-7 border border-[#dfc194] text-center shadow-2xl overflow-hidden select-none bg-[#faf7f2] text-[#211913]"
       style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)' }}
     >
-      <div className="pt-3 text-[10px] font-serif tracking-[2px] uppercase text-[#6e583c] mt-2 mb-1">
+      {/* 1. Architectural Dome Inner Arch Line */}
+      <div className="absolute top-2.5 inset-x-5 h-32 rounded-t-[125px] border-t-2 border-x-2 border-[#dfc194]/60 pointer-events-none" />
+
+      {/* 2. Top Arch Champagne Grapevines, Foliage & Celebratory Stars */}
+      <div className="absolute top-0 inset-x-0 h-24 pointer-events-none select-none z-10 overflow-hidden">
+        <svg className="w-full h-24" viewBox="0 0 380 90" fill="none" preserveAspectRatio="none">
+          {/* Left Grape Leaves & Tendrils */}
+          <path d="M30 65 Q 55 35, 95 25" stroke="#dfc194" strokeWidth="1.5" strokeLinecap="round" />
+          <ellipse cx="65" cy="38" rx="18" ry="7" transform="rotate(-25 65 38)" fill="#96784d" opacity="0.65" />
+          <ellipse cx="90" cy="28" rx="16" ry="6" transform="rotate(10 90 28)" fill="#bd9661" opacity="0.6" />
+          <circle cx="50" cy="46" r="3.5" fill="#dfc194" />
+          <circle cx="58" cy="52" r="3.5" fill="#bd9661" />
+          <circle cx="66" cy="48" r="3" fill="#dfc194" />
+
+          {/* Right Grape Leaves & Tendrils */}
+          <path d="M350 65 Q 325 35, 285 25" stroke="#dfc194" strokeWidth="1.5" strokeLinecap="round" />
+          <ellipse cx="315" cy="38" rx="18" ry="7" transform="rotate(25 315 38)" fill="#96784d" opacity="0.65" />
+          <ellipse cx="290" cy="28" rx="16" ry="6" transform="rotate(-10 290 28)" fill="#bd9661" opacity="0.6" />
+          <circle cx="330" cy="46" r="3.5" fill="#dfc194" />
+          <circle cx="322" cy="52" r="3.5" fill="#bd9661" />
+          <circle cx="314" cy="48" r="3" fill="#dfc194" />
+
+          {/* Keystone Celebratory Star at Arch Apex */}
+          <path d="M190 8 L191.5 13 L196.5 14.5 L191.5 16 L190 21 L188.5 16 L183.5 14.5 L188.5 13 Z" fill="#dfc194" opacity="0.9" />
+          <circle cx="190" cy="14.5" r="4" fill="#dfc194" opacity="0.3" />
+        </svg>
+      </div>
+
+      {/* 3. Bottom Corners Champagne Vineyard Flourishes */}
+      <div className="absolute bottom-2 left-3 w-14 h-14 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 50 50" fill="none" className="w-full h-full">
+          <path d="M10 40 Q 25 30, 38 20" stroke="#dfc194" strokeWidth="1.2" strokeLinecap="round" />
+          <circle cx="20" cy="30" r="2.5" fill="#dfc194" />
+          <circle cx="28" cy="24" r="2.2" fill="#bd9661" />
+          <path d="M32 15 L33 18 L36 19 L33 20 L32 23 L31 20 L28 19 L31 18 Z" fill="#dfc194" opacity="0.85" />
+        </svg>
+      </div>
+      <div className="absolute bottom-2 right-3 w-14 h-14 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 50 50" fill="none" className="w-full h-full">
+          <path d="M40 40 Q 25 30, 12 20" stroke="#dfc194" strokeWidth="1.2" strokeLinecap="round" />
+          <circle cx="30" cy="30" r="2.5" fill="#dfc194" />
+          <circle cx="22" cy="24" r="2.2" fill="#bd9661" />
+          <path d="M18 15 L19 18 L22 19 L19 20 L18 23 L17 20 L14 19 L17 18 Z" fill="#dfc194" opacity="0.85" />
+        </svg>
+      </div>
+
+      <div className="pt-4 text-[10px] font-serif tracking-[2px] uppercase text-[#6e583c] mt-2 mb-1">
         {invitationHeading.toUpperCase()}
       </div>
 

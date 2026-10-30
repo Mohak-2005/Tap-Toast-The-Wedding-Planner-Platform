@@ -207,6 +207,24 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
         </svg>
       </div>
 
+      {/* Top-Right & Bottom-Left Celebratory Golden Stars */}
+      <div className="absolute top-3 right-3 w-12 h-12 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 50 50" fill="none" className="w-full h-full">
+          <path d="M25 12 L26.5 18 L32.5 19.5 L26.5 21 L25 27 L23.5 21 L17.5 19.5 L23.5 18 Z" fill="#c59a58" opacity="0.9" />
+          <circle cx="25" cy="19.5" r="4.5" fill="#c59a58" opacity="0.25" />
+          <circle cx="36" cy="30" r="1.5" fill="#d4af37" />
+          <circle cx="15" cy="10" r="1.2" fill="#c59a58" />
+        </svg>
+      </div>
+      <div className="absolute bottom-3 left-3 w-12 h-12 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 50 50" fill="none" className="w-full h-full">
+          <path d="M25 22 L26.5 28 L32.5 29.5 L26.5 31 L25 37 L23.5 31 L17.5 29.5 L23.5 28 Z" fill="#c59a58" opacity="0.9" />
+          <circle cx="25" cy="29.5" r="4.5" fill="#c59a58" opacity="0.25" />
+          <circle cx="14" cy="20" r="1.5" fill="#d4af37" />
+          <circle cx="35" cy="40" r="1.2" fill="#c59a58" />
+        </svg>
+      </div>
+
       <div className="text-[10px] tracking-[2.5px] uppercase font-serif text-[#966d29] mb-1">
         {invitationHeading.toUpperCase()}
       </div>
@@ -301,6 +319,27 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
           <path d="M60 120 C50 95, 52 70, 60 55 C68 70, 72 95, 60 120 Z" fill="#f2aab4" opacity="0.85" />
           <path d="M80 120 C75 95, 82 70, 90 55 C88 70, 85 95, 80 120 Z" fill="#de7080" opacity="0.85" />
           <path d="M70 50 L70 35 M65 58 L60 44 M75 58 L80 44" stroke="#d49444" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </div>
+
+      {/* Inner Decorative Border Frame */}
+      <div className="absolute inset-2.5 border border-[#487252]/25 rounded-xl pointer-events-none" />
+
+      {/* Top-Right & Bottom-Left Native Golden Stars & Sparkles */}
+      <div className="absolute top-3 right-3 w-12 h-12 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 50 50" fill="none" className="w-full h-full">
+          <path d="M25 14 L26.5 19 L31.5 20.5 L26.5 22 L25 27 L23.5 22 L18.5 20.5 L23.5 19 Z" fill="#eed259" opacity="0.9" />
+          <circle cx="25" cy="20.5" r="4" fill="#eed259" opacity="0.25" />
+          <circle cx="35" cy="12" r="1.5" fill="#f5dc6e" />
+          <circle cx="16" cy="30" r="1.2" fill="#eed259" />
+        </svg>
+      </div>
+      <div className="absolute bottom-3 left-3 w-12 h-12 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 50 50" fill="none" className="w-full h-full">
+          <path d="M25 22 L26.5 27 L31.5 28.5 L26.5 30 L25 35 L23.5 30 L18.5 28.5 L23.5 27 Z" fill="#eed259" opacity="0.9" />
+          <circle cx="25" cy="28.5" r="4" fill="#eed259" opacity="0.25" />
+          <circle cx="15" cy="20" r="1.5" fill="#789c7c" />
+          <circle cx="35" cy="38" r="1.2" fill="#eed259" />
         </svg>
       </div>
 
@@ -448,16 +487,63 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
       }}
     >
-      {/* Golden Canopy Fairy Lights Draped Across Top */}
-      <div className="absolute top-0 inset-x-0 h-14 pointer-events-none select-none z-10">
-        <svg className="w-full h-12" viewBox="0 0 360 40" fill="none">
-          <path d="M0 8 Q 90 28, 180 8 Q 270 28, 360 8" stroke="#d4af37" strokeWidth="1" opacity="0.6" />
-          <circle cx="45" cy="17" r="3.5" fill="#fae392" filter="drop-shadow(0 0 4px #ffd700)" />
-          <circle cx="90" cy="20" r="3.5" fill="#fae392" filter="drop-shadow(0 0 4px #ffd700)" />
-          <circle cx="135" cy="17" r="3.5" fill="#fae392" filter="drop-shadow(0 0 4px #ffd700)" />
-          <circle cx="225" cy="17" r="3.5" fill="#fae392" filter="drop-shadow(0 0 4px #ffd700)" />
-          <circle cx="270" cy="20" r="3.5" fill="#fae392" filter="drop-shadow(0 0 4px #ffd700)" />
-          <circle cx="315" cy="17" r="3.5" fill="#fae392" filter="drop-shadow(0 0 4px #ffd700)" />
+      {/* 1. Gilded Inner Border Frame */}
+      <div className="absolute inset-2.5 border border-[#fae392]/35 rounded-xl pointer-events-none" />
+
+      {/* 2. Golden Canopy Fairy Lights Draped Across Top */}
+      <div className="absolute top-0 inset-x-0 h-14 pointer-events-none select-none z-10 overflow-hidden">
+        <svg className="w-full h-12" viewBox="0 0 380 44" fill="none" preserveAspectRatio="none">
+          <path d="M0 10 Q 95 30, 190 14 Q 285 30, 380 10" stroke="#fae392" strokeWidth="1" strokeDasharray="3 3" opacity="0.75" />
+          <circle cx="50" cy="22" r="6" fill="#ffd700" opacity="0.25" />
+          <circle cx="50" cy="22" r="3" fill="#fae392" />
+          <circle cx="105" cy="24" r="6" fill="#ffd700" opacity="0.25" />
+          <circle cx="105" cy="24" r="3" fill="#ffffff" />
+          <circle cx="160" cy="18" r="6" fill="#ffd700" opacity="0.25" />
+          <circle cx="160" cy="18" r="3" fill="#fae392" />
+          <circle cx="220" cy="19" r="6" fill="#ffd700" opacity="0.25" />
+          <circle cx="220" cy="19" r="3" fill="#ffd700" />
+          <circle cx="275" cy="24" r="6" fill="#ffd700" opacity="0.25" />
+          <circle cx="275" cy="24" r="3" fill="#ffffff" />
+          <circle cx="330" cy="21" r="6" fill="#ffd700" opacity="0.25" />
+          <circle cx="330" cy="21" r="3" fill="#fae392" />
+        </svg>
+      </div>
+
+      {/* 3. Top-Left & Top-Right Twinkling Celestial Stars */}
+      <div className="absolute top-2 left-2 w-16 h-16 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 60 60" fill="none" className="w-full h-full">
+          <path d="M22 14 L23.5 19 L28.5 20.5 L23.5 22 L22 27 L20.5 22 L15.5 20.5 L20.5 19 Z" fill="#fae392" opacity="0.9" />
+          <circle cx="22" cy="20.5" r="5" fill="#ffd700" opacity="0.3" />
+          <path d="M40 28 L41 31 L44 32 L41 33 L40 36 L39 33 L36 32 L39 31 Z" fill="#ffffff" opacity="0.85" />
+          <circle cx="12" cy="34" r="1.5" fill="#fae392" />
+          <circle cx="32" cy="10" r="1.2" fill="#ffd700" />
+        </svg>
+      </div>
+      <div className="absolute top-2 right-2 w-16 h-16 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 60 60" fill="none" className="w-full h-full">
+          <path d="M38 14 L39.5 19 L44.5 20.5 L39.5 22 L38 27 L36.5 22 L31.5 20.5 L36.5 19 Z" fill="#ffd700" opacity="0.9" />
+          <circle cx="38" cy="20.5" r="5" fill="#ffd700" opacity="0.3" />
+          <path d="M20 28 L21 31 L24 32 L21 33 L20 36 L19 33 L16 32 L19 31 Z" fill="#ffffff" opacity="0.85" />
+          <circle cx="48" cy="34" r="1.5" fill="#fae392" />
+          <circle cx="28" cy="10" r="1.2" fill="#ffffff" />
+        </svg>
+      </div>
+
+      {/* 4. Bottom Corners Twinkling Starlight */}
+      <div className="absolute bottom-1 left-2 w-14 h-14 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 50 50" fill="none" className="w-full h-full">
+          <path d="M20 24 L21 28 L25 29 L21 30 L20 34 L19 30 L15 29 L19 28 Z" fill="#fae392" opacity="0.85" />
+          <circle cx="20" cy="29" r="4" fill="#ffd700" opacity="0.25" />
+          <circle cx="32" cy="18" r="1.5" fill="#ffffff" />
+          <circle cx="10" cy="16" r="1.2" fill="#fae392" />
+        </svg>
+      </div>
+      <div className="absolute bottom-1 right-2 w-14 h-14 pointer-events-none select-none z-10">
+        <svg viewBox="0 0 50 50" fill="none" className="w-full h-full">
+          <path d="M30 24 L31 28 L35 29 L31 30 L30 34 L29 30 L25 29 L29 28 Z" fill="#ffd700" opacity="0.85" />
+          <circle cx="30" cy="29" r="4" fill="#ffd700" opacity="0.25" />
+          <circle cx="18" cy="18" r="1.5" fill="#ffffff" />
+          <circle cx="40" cy="16" r="1.2" fill="#fae392" />
         </svg>
       </div>
 
