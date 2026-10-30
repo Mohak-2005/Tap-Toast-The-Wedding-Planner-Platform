@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAppState, showToast, getWeddingCountdown, logAudit } from '../lib/state';
 import { WeddingCountdownCard } from './WeddingCountdownCard';
+import { ENVELOPE_SCHEDULE, ENVELOPE_TABLE, ENVELOPE_PHOTOS, ENVELOPE_GIFTS, BANNER_STORY } from '../assets/envelopeCards';
 
 
 const CELEBRATION_PARTICLES = [
@@ -57,10 +58,21 @@ export default function GuestMobileView() {
     }
   }, [activeTab]);
 
-  // Feed State
+  // Feed State & Live Ticking Countdown
   const activeWedding = state.weddings?.[0];
-  const countdown = getWeddingCountdown(activeWedding?.date || '2026-11-14T14:00:00');
-  const isPastWedding = countdown.days <= 0 && countdown.hours <= 0 && countdown.minutes <= 0;
+  const targetWeddingDate = activeWedding?.date || '2026-11-14T14:00:00';
+  const [liveCountdown, setLiveCountdown] = useState(() => getWeddingCountdown(targetWeddingDate));
+
+  useEffect(() => {
+    setLiveCountdown(getWeddingCountdown(targetWeddingDate));
+    const interval = setInterval(() => {
+      setLiveCountdown(getWeddingCountdown(targetWeddingDate));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [targetWeddingDate]);
+
+  const countdown = liveCountdown;
+  const isPastWedding = countdown.days <= 0 && countdown.hours <= 0 && countdown.minutes <= 0 && countdown.seconds <= 0;
   const autoPhase: 'pre' | 'married' = isPastWedding ? 'married' : 'pre';
   const [feedNoteType, setFeedNoteType] = useState<'love' | 'thankyou'>('love');
   const [feedText, setFeedText] = useState<string>('');
@@ -390,129 +402,177 @@ export default function GuestMobileView() {
           )}
 
           {/* ============================================================== */}
-          {/* TAB: HUB (Screenshot 2: 172534.png)                             */}
+          {/* TAB: HUB                                                         */}
           {/* ============================================================== */}
           {activeTab === 'hub' && (
             <div className="p-4 space-y-3.5">
-              {/* Welcome Header */}
-              <div className="mt-2 text-left px-1">
-                <h1 className="font-serif text-[28px] font-bold text-[#15110e] leading-tight mb-1">
-                  Welcome, Priya
-                </h1>
-                <div className="text-base text-[#15110e] font-serif font-medium">
-                  Sophie <span className="text-[#bd9661] italic font-normal">&amp;</span> James's Wedding
+
+              {/* Welcome Header with gold botanical branch in top-right */}
+              <div className="relative mt-2 overflow-visible">
+                <div className="text-left px-1 pr-24">
+                  <div className="font-serif text-[17px] font-medium text-[#b08d55] tracking-wide mb-0.5">
+                    Welcome,
+                  </div>
+                  <h1 className="font-serif text-[32px] font-bold text-[#2a1612] leading-tight mb-1 flex items-center gap-1.5">
+                    Priya <span className="text-[#a87948] font-light text-[28px]">&#9825;</span>
+                  </h1>
+                  <div className="text-[15px] text-[#2a1612] font-serif font-medium">
+                    Sophie <span className="text-[#c59f60] italic font-normal">&amp;</span> James's Wedding
+                  </div>
+                  <div className="text-xs text-[#8b7b6b] mt-1 flex items-center gap-1">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="#c59f60"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>
+                    Fernwood Estate &bull; 14 Nov 2026
+                  </div>
                 </div>
-                <div className="text-xs text-[#8b7b6b] mt-0.5">
-                  Fernwood Estate &bull; 14 Nov 2026
+
+                {/* Top-Right Golden Botanical Branch */}
+                <div className="absolute top-[-14px] right-[-6px] w-[95px] h-[95px] pointer-events-none select-none" aria-hidden="true">
+                  <svg viewBox="0 0 110 110" width="95" height="95" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M96 8 Q70 40 32 104" stroke="#c59f60" strokeWidth="1.6" fill="none" strokeLinecap="round"/>
+                    <path d="M84 18 Q62 12 56 32 Q78 30 84 18Z" fill="#dfc194" stroke="#c59f60" strokeWidth="0.8" opacity="0.9"/>
+                    <path d="M70 38 Q46 30 42 52 Q68 48 70 38Z" fill="#bd9661" stroke="#c59f60" strokeWidth="0.8" opacity="0.85"/>
+                    <path d="M54 60 Q30 52 26 74 Q52 70 54 60Z" fill="#dfc194" stroke="#c59f60" strokeWidth="0.8" opacity="0.9"/>
+                    <path d="M102 14 Q108 38 86 46 Q88 24 102 14Z" fill="#bd9661" stroke="#c59f60" strokeWidth="0.8" opacity="0.75"/>
+                    <path d="M94 38 Q104 60 78 68 Q80 46 94 38Z" fill="#dfc194" stroke="#c59f60" strokeWidth="0.8" opacity="0.8"/>
+                    <circle cx="76" cy="26" r="2.8" fill="#c59f60" opacity="0.9"/>
+                    <circle cx="62" cy="48" r="2.4" fill="#dfc194" opacity="0.95"/>
+                    <circle cx="48" cy="68" r="2.8" fill="#c59f60" opacity="0.9"/>
+                    <circle cx="90" cy="22" r="3.2" fill="#dfc194" opacity="0.7"/>
+                    <circle cx="90" cy="22" r="1.6" fill="#fff" opacity="0.85"/>
+                  </svg>
                 </div>
               </div>
 
-              {/* Prominent Wedding Countdown Card */}
-              <WeddingCountdownCard
-                targetDate={activeWedding?.date || '2026-11-14T14:00:00'}
-                coupleName={activeWedding?.couple || 'Sophie & James'}
-                venueName={activeWedding?.venue || 'Fernwood Estate'}
-                dateDisplay={activeWedding?.dateDisplay || '14 Nov 2026'}
-                variant="compact"
-              />
+              {/* Wedding Countdown — dark pill style with live second-by-second ticking */}
+              {(() => {
+                const cd = liveCountdown;
+                return (
+                  <div className="bg-[#15110e] rounded-2xl px-3 py-3.5 shadow-md relative overflow-hidden border border-[#2b211a]">
+                    {/* Left delicate branch */}
+                    <div className="absolute left-1 top-0 bottom-0 w-12 flex items-center pointer-events-none" aria-hidden="true">
+                      <svg viewBox="0 0 50 85" width="44" height="74" fill="none">
+                        <path d="M40 5 Q18 28 10 80" stroke="#c59f60" strokeWidth="1.2" fill="none" strokeLinecap="round" opacity="0.75"/>
+                        <path d="M36 12 Q18 8 15 24 Q30 22 36 12Z" fill="#dfc194" opacity="0.7"/>
+                        <path d="M28 30 Q10 24 8 42 Q24 38 28 30Z" fill="#bd9661" opacity="0.65"/>
+                        <path d="M18 50 Q2 42 2 62 Q18 58 18 50Z" fill="#dfc194" opacity="0.7"/>
+                        <circle cx="34" cy="16" r="2" fill="#dfc194" opacity="0.75"/>
+                        <circle cx="24" cy="36" r="1.6" fill="#bd9661" opacity="0.7"/>
+                      </svg>
+                    </div>
+                    {/* Right delicate branch */}
+                    <div className="absolute right-1 top-0 bottom-0 w-12 flex items-center justify-end pointer-events-none" aria-hidden="true">
+                      <svg viewBox="0 0 50 85" width="44" height="74" fill="none" style={{transform:'scaleX(-1)'}}>
+                        <path d="M40 5 Q18 28 10 80" stroke="#c59f60" strokeWidth="1.2" fill="none" strokeLinecap="round" opacity="0.75"/>
+                        <path d="M36 12 Q18 8 15 24 Q30 22 36 12Z" fill="#dfc194" opacity="0.7"/>
+                        <path d="M28 30 Q10 24 8 42 Q24 38 28 30Z" fill="#bd9661" opacity="0.65"/>
+                        <path d="M18 50 Q2 42 2 62 Q18 58 18 50Z" fill="#dfc194" opacity="0.7"/>
+                        <circle cx="34" cy="16" r="2" fill="#dfc194" opacity="0.75"/>
+                        <circle cx="24" cy="36" r="1.6" fill="#bd9661" opacity="0.7"/>
+                      </svg>
+                    </div>
+                    {/* Content */}
+                    <div className="relative z-10 px-8">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full bg-[#dfc194] animate-pulse" />
+                          <span className="text-[9.5px] font-bold tracking-[2px] uppercase text-[#dfc194]">Wedding Countdown</span>
+                        </div>
+                        <span className="text-[9.5px] text-[#9d8570]">14 Nov 2026</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { value: cd.days, label: 'DAYS' },
+                          { value: cd.hours, label: 'HOURS' },
+                          { value: cd.minutes, label: 'MINS' },
+                          { value: cd.seconds, label: 'SECS' },
+                        ].map(({ value, label }) => (
+                          <div key={label} className="bg-[#221a14] border border-[#382b20] rounded-xl flex flex-col items-center justify-center py-2 px-1 shadow-inner">
+                            <span className="font-serif text-[23px] font-bold text-[#faf4ec] leading-none tabular-nums">{String(value).padStart(2, '0')}</span>
+                            <span className="text-[7.5px] font-bold tracking-widest text-[#9d8570] mt-1 uppercase">{label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
-              {/* 2x2 Hub Grid */}
-              <div className="grid grid-cols-2 gap-3">
-                {/* Tile 1: Today's Schedule */}
+              {/* 2x2 Hub Grid — Exact Reference Envelope Cards */}
+              <div className="grid grid-cols-2 gap-3 pt-0.5">
+                {/* Tile 1: Today's Schedule (Dark Envelope) */}
                 <button
                   type="button"
                   onClick={() => setActiveTab('events')}
-                  className="bg-[#1c1612] text-white border border-[#2e231a] rounded-xl p-3.5 text-left shadow-sm hover:scale-[1.01] transition-transform flex flex-col justify-between h-[116px] cursor-pointer"
+                  className="relative rounded-2xl overflow-hidden shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer border border-[#2e231a] block w-full p-0 bg-transparent text-left group"
+                  aria-label="View Today's Schedule"
                 >
-                  <div className="w-7 h-7 flex items-center justify-center text-[#dfc194]">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-[#dfc194]">Today's Schedule</div>
-                    <div className="text-xs text-[#e8ded0]">Ceremony at 2:00 PM</div>
-                  </div>
+                  <img
+                    src={ENVELOPE_SCHEDULE}
+                    alt="Today's Schedule"
+                    className="w-full h-auto block rounded-2xl transition-transform duration-200 group-hover:brightness-105"
+                    loading="eager"
+                  />
                 </button>
 
-                {/* Tile 2: My Table */}
+                {/* Tile 2: My Table (Cream Envelope) */}
                 <button
                   type="button"
                   onClick={() => setActiveTab('table')}
-                  className="bg-white border border-[#e8ded0] rounded-xl p-3.5 text-left shadow-sm hover:scale-[1.01] transition-transform flex flex-col justify-between h-[116px] cursor-pointer"
+                  className="relative rounded-2xl overflow-hidden shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer border border-[#dfceb3] block w-full p-0 bg-transparent text-left group"
+                  aria-label="View My Table"
                 >
-                  <div className="w-7 h-7 flex items-center justify-center text-[#bd9661]">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="5" />
-                      <circle cx="12" cy="3" r="2" />
-                      <circle cx="12" cy="21" r="2" />
-                      <circle cx="3" cy="12" r="2" />
-                      <circle cx="21" cy="12" r="2" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-[#15110e]">My Table</div>
-                    <div className="text-xs text-[#8b7b6b]">Table 4, Seat 4</div>
-                  </div>
+                  <img
+                    src={ENVELOPE_TABLE}
+                    alt="My Table"
+                    className="w-full h-auto block rounded-2xl transition-transform duration-200 group-hover:brightness-105"
+                    loading="eager"
+                  />
                 </button>
 
-                {/* Tile 3: Photo Wall */}
+                {/* Tile 3: Photo Wall (Cream Envelope) */}
                 <button
                   type="button"
                   onClick={() => setActiveTab('photos')}
-                  className="bg-white border border-[#e8ded0] rounded-xl p-3.5 text-left shadow-sm hover:scale-[1.01] transition-transform flex flex-col justify-between h-[116px] cursor-pointer"
+                  className="relative rounded-2xl overflow-hidden shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer border border-[#dfceb3] block w-full p-0 bg-transparent text-left group"
+                  aria-label="View Photo Wall"
                 >
-                  <div className="w-7 h-7 flex items-center justify-center text-[#bd9661]">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                      <circle cx="12" cy="13" r="4" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-[#15110e]">Photo Wall</div>
-                    <div className="text-xs text-[#8b7b6b]">Add &amp; browse photos</div>
-                  </div>
+                  <img
+                    src={ENVELOPE_PHOTOS}
+                    alt="Photo Wall"
+                    className="w-full h-auto block rounded-2xl transition-transform duration-200 group-hover:brightness-105"
+                    loading="eager"
+                  />
                 </button>
 
-                {/* Tile 4: Gift & Go */}
+                {/* Tile 4: Gift & Go (Dark Envelope) */}
                 <button
                   type="button"
                   onClick={() => setActiveTab('gifts')}
-                  className="bg-white border border-[#e8ded0] rounded-xl p-3.5 text-left shadow-sm hover:scale-[1.01] transition-transform flex flex-col justify-between h-[116px] cursor-pointer"
+                  className="relative rounded-2xl overflow-hidden shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer border border-[#2e231a] block w-full p-0 bg-transparent text-left group"
+                  aria-label="Send Gift"
                 >
-                  <div className="w-7 h-7 flex items-center justify-center text-[#bd9661]">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 12 20 22 4 22 4 12" />
-                      <rect x="2" y="7" width="20" height="5" />
-                      <line x1="12" y1="22" x2="12" y2="7" />
-                      <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
-                      <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-[#15110e]">Gift &amp; Go</div>
-                    <div className="text-xs text-[#8b7b6b]">Send a gift</div>
-                  </div>
+                  <img
+                    src={ENVELOPE_GIFTS}
+                    alt="Gift & Go"
+                    className="w-full h-auto block rounded-2xl transition-transform duration-200 group-hover:brightness-105"
+                    loading="eager"
+                  />
                 </button>
               </div>
 
-              {/* Wide Banner: Our Story & Details */}
+              {/* Wide Banner: Our Story & Details — Exact Reference Image */}
               <button
                 type="button"
                 onClick={() => setActiveTab('story')}
-                className="w-full bg-white border border-[#e8ded0] rounded-xl p-3.5 shadow-sm flex items-center justify-between cursor-pointer hover:border-[#bd9661] hover:shadow-md transition-all active:scale-[0.99] text-left"
+                className="w-full rounded-2xl overflow-hidden shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer block p-0 bg-transparent text-left group"
+                aria-label="View Our Story & Details"
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">📖</span>
-                  <div>
-                    <div className="font-bold text-sm text-[#15110e]">Our Story &amp; Details</div>
-                    <div className="text-[11px] text-[#8b7b6b]">Story, memoriam, dinner menu &amp; updates</div>
-                  </div>
-                </div>
-                <div className="text-xs text-[#bd9661] font-semibold">&rarr;</div>
+                <img
+                  src={BANNER_STORY}
+                  alt="Our Story & Details"
+                  className="w-full h-auto block rounded-2xl transition-transform duration-200 group-hover:brightness-105"
+                  loading="eager"
+                />
               </button>
 
               {/* Celebration Feed Section Preview */}
@@ -526,7 +586,7 @@ export default function GuestMobileView() {
                     onClick={() => setActiveTab('feed')}
                     className="text-xs text-[#bd9661] font-semibold hover:underline cursor-pointer"
                   >
-                    View all &rarr;
+                    View all &#8594;
                   </button>
                 </div>
 
@@ -543,11 +603,9 @@ export default function GuestMobileView() {
                       </div>
                     </div>
                   </div>
-
                   <p className="text-xs text-[#6b5849] italic bg-[#faf8f5] p-2.5 rounded-lg border-l-2 border-[#bd9661] leading-relaxed">
                     "Dear The Whitfield family, thank you so much for your wonderful and generous gift of $250! It means the world to have your love and support as we begin our new chapter together. Love, Sophie &amp; James."
                   </p>
-
                   <div className="pt-1 flex items-center gap-4 text-[11px] text-[#8b7b6b]">
                     <span>❤️ 3 Likes</span>
                     <span>💬 0 Comments</span>
@@ -2051,7 +2109,7 @@ export default function GuestMobileView() {
               {/* Scrollable Guest List */}
               <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
                 {additionalGuests.map((guest, idx) => (
-                  <div key={guest.id} className="bg-white border border-[#e8ded0] rounded-2xl overflow-hidden shadow-xs">
+                  <div key={guest.id} className="bg-white border border-[#e8ded0] rounded-2xl shadow-xs">
                     {/* Accordion Header — NO 'x' mark when closed */}
                     <button
                       type="button"
@@ -2290,3 +2348,4 @@ export default function GuestMobileView() {
     </div>
   );
 }
+
