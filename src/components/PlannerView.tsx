@@ -13,7 +13,7 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
 
   // Active Wedding Selection (null = All Weddings home mode)
   const [selectedWeddingId, setSelectedWeddingId] = useState<string | null>(null);
-  const [plannerInitialTab, setPlannerInitialTab] = useState<'mc_runsheet' | 'seating' | 'venue'>('mc_runsheet');
+  const [plannerInitialTab, setPlannerInitialTab] = useState<'mc_runsheet' | 'seating' | 'venue' | 'vendors'>('mc_runsheet');
   const [activeTab, setActiveTab] = useState<'weddings' | 'calendar' | 'clients' | 'referrals' | 'settings'>('weddings');
 
   // Calendar State

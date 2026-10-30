@@ -127,7 +127,7 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
   onSelectView,
 }) => {
   // Theme & Customization States
-  const [selectedThemeId, setSelectedThemeId] = useState<string>('magnolia-gold');
+  const [selectedThemeId, setSelectedThemeId] = useState<string>(() => { try { return localStorage.getItem('tt_invitation_theme') || 'magnolia-gold'; } catch { return 'magnolia-gold'; } });
   const [invitationHeading, setInvitationHeading] = useState<string>('Together with their families');
   const [isFoilShimmerActive, setIsFoilShimmerActive] = useState<boolean>(true);
   const [deliveryMethod, setDeliveryMethod] = useState<'digital' | 'email' | 'print'>('digital');
@@ -153,6 +153,7 @@ export const InvitationTemplatesSection: React.FC<InvitationTemplatesSectionProp
   // When clicking ANY template, immediately play from the beginning automatically!
   const handleSelectTheme = (themeId: string) => {
     setSelectedThemeId(themeId);
+    try { localStorage.setItem('tt_invitation_theme', themeId); } catch {}
     setEnvelopeState('sealed');
 
     setTimeout(() => {

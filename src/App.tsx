@@ -11,6 +11,7 @@ import GuestWebView from './components/GuestWebView';
 import LoginView from './components/LoginView';
 import RegisterView from './components/RegisterView';
 import PlannerView from './components/PlannerView';
+import InvitationDemoView from './components/InvitationDemoView';
 
 interface ToastItem {
   id: string;
@@ -103,11 +104,12 @@ export default function App() {
       'mc',
       'superadmin',
       'guest-web',
+      'invitation-demo',
     ];
     if (validViews.includes(hash)) {
       return hash;
     }
-    return 'login';
+    return 'guest-mobile';
   };
 
   const [currentView, setCurrentView] = useState<string>(getInitialView);
@@ -181,6 +183,8 @@ export default function App() {
         return <SuperAdminView onSelectView={handleSelectView} />;
       case 'guest-web':
         return <GuestWebView />;
+      case 'invitation-demo':
+        return <InvitationDemoView onSelectView={handleSelectView} />;
       case 'login':
         return <LoginView onSelectView={handleSelectView} />;
       case 'register':

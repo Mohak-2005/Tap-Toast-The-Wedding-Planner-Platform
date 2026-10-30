@@ -1,7 +1,13 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppState, showToast, getWeddingCountdown, logAudit } from '../lib/state';
 import { WeddingCountdownCard } from './WeddingCountdownCard';
-import { ENVELOPE_SCHEDULE, ENVELOPE_TABLE, ENVELOPE_PHOTOS, ENVELOPE_GIFTS, BANNER_STORY } from '../assets/envelopeCards';
+import {
+  ENVELOPE_SCHEDULE,
+  ENVELOPE_TABLE,
+  ENVELOPE_PHOTOS,
+  ENVELOPE_GIFTS,
+  BANNER_STORY,
+} from '../assets/envelopeCards';
 
 
 const CELEBRATION_PARTICLES = [

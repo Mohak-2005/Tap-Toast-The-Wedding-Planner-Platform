@@ -9,6 +9,7 @@ import { InvitationTemplatesSection } from './InvitationTemplatesSection';
 import { WeddingDayCelebrationSection } from './WeddingDayCelebrationSection';
 import { SeatingPlannerSection } from './SeatingPlannerSection';
 import { DietaryBadges, parseDietaryRequirements } from '../lib/dietaryHelper';
+import { ColorPicker2D } from './ColorPicker2D';
 
 export type CoupleTab =
   | 'overview'
@@ -23,7 +24,8 @@ export type CoupleTab =
   | 'vault'
   | 'anniversary'
   | 'venue'
-  | 'settings';
+  | 'settings'
+  | 'vendors';
 
 export interface CoupleViewProps {
   onSelectView?: (view: string) => void;
@@ -57,7 +59,7 @@ export default function CoupleView({
   useEffect(() => {
     if (initialTab) {
       setActiveTab(initialTab);
-    } else if (isMcOrPlanner && activeTab !== 'mc_runsheet' && activeTab !== 'seating' && activeTab !== 'venue') {
+    } else if (isMcOrPlanner && activeTab !== 'mc_runsheet' && activeTab !== 'seating' && activeTab !== 'venue' && activeTab !== 'vendors') {
       setActiveTab('mc_runsheet');
     }
   }, [initialTab, isMcOrPlanner]);
@@ -717,6 +719,18 @@ export default function CoupleView({
   }
   const [selectedMemory, setSelectedMemory] = useState<WeddingMemory | null>(null);
 
+  // Color Themes State (default palettes + custom user-added palettes)
+  const [colorThemes, setColorThemes] = useState([
+    { id: 'merlot', name: 'Burgundy Merlot', bg: '#2b1016', text: '#ffffff', sub: 'Rich Wine & Gold' },
+    { id: 'sage', name: 'Botanical Sage', bg: '#1c2820', text: '#ffffff', sub: 'Forest Olive & Gold' },
+    { id: 'gold', name: 'Champagne Gold', bg: '#302619', text: '#ffffff', sub: 'Warm Ochre & Cream' },
+    { id: 'obsidian', name: 'Obsidian Noir', bg: '#15110e', text: '#ffffff', sub: 'Deep Ink & Gold' },
+  ]);
+  const [isDressCodeModalOpen, setIsDressCodeModalOpen] = useState(false);
+  const [newThemeName, setNewThemeName] = useState('Burgundy Merlot');
+  const [newThemeSub, setNewThemeSub] = useState('Rich Wine & Gold');
+  const [newThemeColor, setNewThemeColor] = useState('#8B1E3F');
+
   // Tab 11: Settings State (Screenshot 34)
   const [weddingSettings, setWeddingSettings] = useState({
     partner1: 'Sophie',
@@ -1145,6 +1159,20 @@ export default function CoupleView({
                   </svg>
                 ),
               },
+              ...(isPlannerView || session?.role === 'planner' ? [
+                {
+                  id: 'vendors' as const,
+                  label: 'Vendor Concierge',
+                  icon: (
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M3 21h18"/>
+                      <path d="M5 21V7l7-4 7 4v14"/>
+                      <path d="M9 10h6"/>
+                      <path d="M9 14h6"/>
+                    </svg>
+                  ),
+                },
+              ] : []),
               {
                 id: 'venue' as const,
                 label: 'Venue & Travel',
@@ -3827,7 +3855,7 @@ export default function CoupleView({
               </p>
             </div>
 
-            {/* 2x2 Venue Details Grid matching Screenshot 33 */}
+            {/* 2x2 Venue Details Grid matching Screenshot 33 (Synced with Venue Logistics in Settings) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Card 1: Venue & Address */}
               <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-3">
@@ -3839,13 +3867,18 @@ export default function CoupleView({
                   </div>
                 </div>
                 <div className="text-xs text-[#15110e] leading-relaxed">
-                  <strong>Fernwood Estate, Southern Highlands</strong><br />
-                  124 Range Road, Mittagong NSW 2575<br />
+                  <strong>{weddingSettings.venueName || wedding.venue}</strong><br />
+                  {weddingSettings.venueAddress || '124 Range Road, Mittagong NSW 2575'}<br />
                   Australia
                 </div>
                 <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebd3a8] text-xs text-[#6b5849] leading-relaxed space-y-1">
-                  <div><strong>Ceremony:</strong> 2:00 PM &bull; The Lower Meadow Lawns</div>
-                  <div><strong>Cocktail Hour &amp; Reception:</strong> 5:00 PM &bull; The Grand Pavilion</div>
+                  <div><strong>Ceremony:</strong> {weddingSettings.dateTime ? (weddingSettings.dateTime.split(' ')[1] || '2:00 PM') : '2:00 PM'} &bull; The Lower Meadow Lawns</div>
+                  <div><strong>Cocktail Hour &amp; Reception:</strong> {weddingSettings.receptionTime || '5:00 PM'} &bull; The Grand Pavilion</div>
+                  {weddingSettings.weatherContingency && (
+                    <div className="pt-1 text-[#8c4b27] border-t border-[#ebd3a8]/60 mt-1">
+                      <strong>Weather Contingency:</strong> {weddingSettings.weatherContingency}
+                    </div>
+                  )}
                   <div><strong>Venue Concierge:</strong> (02) 4871 2000 &bull; concierge@fernwoodestate.demo</div>
                 </div>
               </div>
@@ -3859,12 +3892,17 @@ export default function CoupleView({
                     <div className="text-xs text-[#8b7b6b]">On-Site Valet &amp; Dedicated Bays</div>
                   </div>
                 </div>
-                <p className="text-xs text-[#15110e]">
-                  Complimentary on-site guest parking is available at the Main Lawn entrance. Follow directional signage upon arrival.
+                <p className="text-xs text-[#15110e] leading-relaxed">
+                  {weddingSettings.parkingInstructions || "Complimentary on-site guest parking is available at the Main Lawn entrance. Follow directional signage upon arrival."}
                 </p>
+                {weddingSettings.valetInstructions && (
+                  <p className="text-xs text-[#6b5849]">
+                    <strong>Valet:</strong> {weddingSettings.valetInstructions}
+                  </p>
+                )}
                 <ul className="text-xs text-[#6b5849] space-y-1 pl-4 list-disc">
                   <li><strong>120 dedicated sealed bays</strong> with illuminated pathways.</li>
-                  <li><strong>Valet attendants:</strong> Stationed at the porte-cochère from 1:15 PM.</li>
+                  <li><strong>Valet attendants:</strong> {weddingSettings.valetInstructions || "Stationed at the porte-cochère from 1:15 PM."}</li>
                   <li><strong>EV Charging:</strong> 4 Type-2 chargers available at North Parking.</li>
                   <li><strong>Overnight Parking:</strong> Permitted until 11:00 AM Sunday morning.</li>
                 </ul>
@@ -3879,13 +3917,12 @@ export default function CoupleView({
                     <div className="text-xs text-[#8b7b6b]">Scheduled Private Charter Transfers</div>
                   </div>
                 </div>
-                <p className="text-xs text-[#15110e]">
-                  Private express mini-coaches operate between key Southern Highlands hotels and Fernwood Estate:
+                <p className="text-xs text-[#15110e] leading-relaxed">
+                  {weddingSettings.shuttleSchedule || "Private express mini-coaches operate between key Southern Highlands hotels and Fernwood Estate:"}
                 </p>
                 <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebd3a8] text-xs text-[#6b5849] space-y-1">
                   <strong>Guest Arrival Shuttles:</strong>
-                  <div>&bull; 1:15 PM from Bowral Grand Hotel (Station St Entrance)</div>
-                  <div>&bull; 1:30 PM from Milton Park Country House Resort</div>
+                  <div>&bull; {weddingSettings.shuttleSchedule || "1:15 PM from Bowral Grand Hotel (Station St Entrance)"}</div>
                 </div>
               </div>
 
@@ -3895,10 +3932,10 @@ export default function CoupleView({
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661]">LIVE NAVIGATION</div>
                     <h3 className="font-serif text-base font-bold text-[#15110e]">Interactive Google Map</h3>
-                    <div className="text-[11px] text-[#8b7b6b]">Coordinates: 34.4512&deg; S, 150.5369&deg; E</div>
+                    <div className="text-[11px] text-[#8b7b6b]">Destination: {weddingSettings.venueName || wedding.venue}</div>
                   </div>
                   <a
-                    href="https://maps.google.com/?q=Fernwood+Estate+124+Range+Road+Mittagong+NSW+2575"
+                    href={`https://maps.google.com/?q=${encodeURIComponent(`${weddingSettings.venueName || wedding.venue} ${weddingSettings.venueAddress}`.trim())}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer shadow-xs transition-colors inline-flex items-center gap-1"
@@ -3909,7 +3946,7 @@ export default function CoupleView({
 
                 {/* Map Graphic Container */}
                 <a
-                  href="https://maps.google.com/?q=Fernwood+Estate+124+Range+Road+Mittagong+NSW+2575"
+                  href={`https://maps.google.com/?q=${encodeURIComponent(`${weddingSettings.venueName || wedding.venue} ${weddingSettings.venueAddress}`.trim())}`}
                   target="_blank"
                   rel="noreferrer"
                   className="block relative bg-[#e5e3df] rounded-xl h-[160px] overflow-hidden border border-[#d5c7b5] cursor-pointer group"
@@ -3924,8 +3961,8 @@ export default function CoupleView({
                   <div className="absolute inset-x-4 bottom-4 bg-[#15110e]/90 text-white p-3 rounded-xl backdrop-blur-xs flex items-center gap-3">
                     <span className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-sm shadow-sm">📍</span>
                     <div className="text-left">
-                      <strong className="text-xs block">Fernwood Estate</strong>
-                      <span className="text-[10px] text-[#c9bbae]">124 Range Road, Mittagong NSW 2575 &bull; Click to open</span>
+                      <strong className="text-xs block">{weddingSettings.venueName || wedding.venue}</strong>
+                      <span className="text-[10px] text-[#c9bbae]">{weddingSettings.venueAddress} &bull; Click to open</span>
                     </div>
                   </div>
                 </a>
@@ -4176,31 +4213,45 @@ export default function CoupleView({
 
             {/* Section 3: Aesthetics & Dress Code */}
             <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-4">
-              <div className="flex items-center gap-2 pb-2 border-b border-[#f0ede4]">
-                <span className="text-lg">🎨</span>
-                <h3 className="font-serif text-base font-bold text-[#15110e]">Aesthetic &amp; Dress Code</h3>
+              <div className="flex items-center justify-between pb-2 border-b border-[#f0ede4]">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🎨</span>
+                  <div>
+                    <h3 className="font-serif text-base font-bold text-[#15110e]">Aesthetic &amp; Dress Code</h3>
+                    <div className="text-[11px] text-[#8b7b6b]">Colors, theme &amp; guest attire guidelines</div>
+                  </div>
+                </div>
+                {/* Pencil icon button to open pop-up modal */}
+                <button
+                  type="button"
+                  onClick={() => setIsDressCodeModalOpen(true)}
+                  className="p-1.5 px-2.5 rounded-lg text-[#15110e] bg-[#fbf9f5] hover:bg-[#f0ebe1] border border-[#e8ded0] transition-colors cursor-pointer flex items-center gap-1.5 text-xs font-semibold shadow-2xs"
+                  title="Add custom dress code theme"
+                  aria-label="Add custom dress code theme"
+                >
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#bd9661" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                    <path d="m15 5 4 4"/>
+                  </svg>
+                  <span className="text-xs text-[#15110e] font-medium">Add Theme</span>
+                </button>
               </div>
 
               <div>
                 <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1.5">WEDDING COLOR THEME</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {[
-                    { id: 'merlot', name: 'Burgundy Merlot', bg: '#2b1016', text: '#ffffff', sub: 'Rich Wine & Gold' },
-                    { id: 'sage', name: 'Botanical Sage', bg: '#1c2820', text: '#ffffff', sub: 'Forest Olive & Gold' },
-                    { id: 'gold', name: 'Champagne Gold', bg: '#302619', text: '#ffffff', sub: 'Warm Ochre & Cream' },
-                    { id: 'obsidian', name: 'Obsidian Noir', bg: '#15110e', text: '#ffffff', sub: 'Deep Ink & Gold' },
-                  ].map((pal) => (
+                  {colorThemes.map((pal) => (
                     <button
                       key={pal.id}
                       type="button"
                       onClick={() => setWeddingSettings({ ...weddingSettings, themeColor: pal.id })}
                       className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                        weddingSettings.themeColor === pal.id ? 'border-2 border-[#bd9661] shadow-xs' : 'border-[#e8ded0]'
+                        weddingSettings.themeColor === pal.id ? 'border-2 border-[#bd9661] shadow-xs ring-2 ring-[#bd9661]/20' : 'border-[#e8ded0]'
                       }`}
                       style={{ backgroundColor: pal.bg, color: pal.text }}
                     >
-                      <div className="text-xs font-bold">{pal.name}</div>
-                      <div className="text-[10px] opacity-75 mt-0.5">{pal.sub}</div>
+                      <div className="text-xs font-bold truncate">{pal.name}</div>
+                      <div className="text-[10px] opacity-75 mt-0.5 truncate">{pal.sub}</div>
                     </button>
                   ))}
                 </div>
@@ -4290,6 +4341,9 @@ export default function CoupleView({
                 <button
                   type="button"
                   onClick={() => {
+                    if (weddingSettings.venueName) {
+                      wedding.venue = weddingSettings.venueName;
+                    }
                     showToast('✓ Wedding configuration settings saved successfully!', 'success');
                   }}
                   className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-6 py-2.5 rounded-xl text-xs transition-colors cursor-pointer shadow-sm"
@@ -4852,11 +4906,135 @@ export default function CoupleView({
             </div>
           </section>
         )}
+
+        {/* ================================================================ */}
+        {/* TAB PLANNER: WEDDING CONCIERGE DIRECTORY                          */}
+        {/* ================================================================ */}
+        {activeTab === 'vendors' && (
+          <section className="space-y-6 animate-in fade-in duration-200">
+            <VendorDirectorySection
+              wedding={wedding}
+              onUpdateWeddingVendors={handleUpdateWeddingVendors}
+              readOnly={true}
+            />
+          </section>
+        )}
       </div>
       </main>
 
       {/* Floating Joey AI Assistant */}
       {activeTab !== 'seating' && <JoeyChatbot context="couple" />}
+      {/* Modal: Add Custom Dress Code & Theme with Image 5 Color Picker */}
+      {isDressCodeModalOpen && (
+        <div className="fixed inset-0 z-50 bg-[#15110e]/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full border border-[#ebd3a8] shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-[#f0ede4]">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🎨</span>
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-[#15110e]">Add New Dress Code Theme</h3>
+                  <p className="text-[11px] text-[#8b7b6b]">Custom wedding palette &amp; guest attire styling</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDressCodeModalOpen(false)}
+                className="w-7 h-7 rounded-full bg-[#f8f6f0] hover:bg-[#ede7d8] text-[#8b7b6b] hover:text-[#15110e] flex items-center justify-center text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Input 1: Theme Name (e.g. burgundy merlot) */}
+            <div>
+              <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                THEME NAME (E.G. BURGUNDY MERLOT)
+              </label>
+              <input
+                type="text"
+                value={newThemeName}
+                onChange={(e) => setNewThemeName(e.target.value)}
+                placeholder="e.g. Burgundy Merlot"
+                className="w-full bg-[#fdfbf7] border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+              />
+            </div>
+
+            {/* Input 2: Subtitle / Description (e.g. rich wine and gold) */}
+            <div>
+              <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                SUBTITLE / DESCRIPTION (E.G. RICH WINE AND GOLD)
+              </label>
+              <input
+                type="text"
+                value={newThemeSub}
+                onChange={(e) => setNewThemeSub(e.target.value)}
+                placeholder="e.g. Rich Wine & Gold"
+                className="w-full bg-[#fdfbf7] border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+              />
+            </div>
+
+            {/* Color Picker: 2D Hue/Saturation spectrum & vertical Lightness slider (Image 5) */}
+            <div>
+              <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1.5">
+                PALETTE COLOR PICKER
+              </label>
+              <ColorPicker2D color={newThemeColor} onChange={setNewThemeColor} />
+            </div>
+
+            {/* Live Card Preview */}
+            <div>
+              <div className="text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">SWATCH PREVIEW</div>
+              <div
+                className="p-3 rounded-xl border border-[#bd9661] shadow-xs text-left"
+                style={{
+                  backgroundColor: newThemeColor,
+                  color: '#ffffff',
+                }}
+              >
+                <div className="text-xs font-bold">{newThemeName || 'Untitled Theme'}</div>
+                <div className="text-[10px] opacity-75 mt-0.5">{newThemeSub || 'Custom Theme'}</div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[#f0ede4]">
+              <button
+                type="button"
+                onClick={() => setIsDressCodeModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-[#8b7b6b] hover:bg-[#f5f1e8] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!newThemeName.trim()) {
+                    showToast('Please enter a theme name', 'error');
+                    return;
+                  }
+                  const newId = 'theme_' + Date.now();
+                  const newThemeObj = {
+                    id: newId,
+                    name: newThemeName.trim(),
+                    sub: newThemeSub.trim() || 'Custom Palette',
+                    bg: newThemeColor,
+                    text: '#ffffff',
+                  };
+                  setColorThemes((prev) => [...prev, newThemeObj]);
+                  setWeddingSettings((prev) => ({ ...prev, themeColor: newId }));
+                  setIsDressCodeModalOpen(false);
+                  showToast(`✓ Added "${newThemeObj.name}" to wedding color themes!`, 'success');
+                }}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] cursor-pointer shadow-sm transition-colors"
+              >
+                Add Theme
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

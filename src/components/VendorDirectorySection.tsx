@@ -4,7 +4,8 @@ import { showToast, logAudit, useAppState } from '../lib/state';
 
 interface VendorDirectorySectionProps {
   wedding: Wedding;
-  onUpdateWeddingVendors: (vendors: WeddingVendor[]) => void;
+  onUpdateWeddingVendors?: (vendors: WeddingVendor[]) => void;
+  readOnly?: boolean;
 }
 
 const DEFAULT_VENDORS: WeddingVendor[] = [
@@ -92,6 +93,7 @@ const CATEGORIES = [
 export const VendorDirectorySection: React.FC<VendorDirectorySectionProps> = ({
   wedding,
   onUpdateWeddingVendors,
+  readOnly = false,
 }) => {
   const { state, setState } = useAppState();
 
@@ -203,14 +205,14 @@ export const VendorDirectorySection: React.FC<VendorDirectorySectionProps> = ({
       logAudit(state, setState, 'Vendor Added', wedding.couple, 'couple', `Added new vendor: ${formBusinessName} (${formCategory})`, 'Content');
     }
 
-    onUpdateWeddingVendors(updatedList);
+    if (onUpdateWeddingVendors) onUpdateWeddingVendors(updatedList);
     setShowModal(false);
   };
 
   const handleDeleteVendor = (vendor: WeddingVendor) => {
     if (window.confirm(`Are you sure you want to remove "${vendor.businessName}" from your vendor directory?`)) {
       const updatedList = vendors.filter(v => v.id !== vendor.id);
-      onUpdateWeddingVendors(updatedList);
+      if (onUpdateWeddingVendors) onUpdateWeddingVendors(updatedList);
       showToast(`Removed "${vendor.businessName}" from Vendor Directory`, 'info');
       logAudit(state, setState, 'Vendor Deleted', wedding.couple, 'couple', `Removed vendor: ${vendor.businessName}`, 'Content');
     }
@@ -219,27 +221,91 @@ export const VendorDirectorySection: React.FC<VendorDirectorySectionProps> = ({
   const getCategoryIcon = (cat: string) => {
     switch (cat) {
       case 'Photography & Cinema':
-        return '📷';
+        return (
+          <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        );
       case 'Florals & Styling':
-        return '💐';
+        return (
+          <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2a5 5 0 0 1 5 5c0 3-5 9-5 9s-5-6-5-9a5 5 0 0 1 5-5z"/>
+            <circle cx="12" cy="7" r="1.5"/>
+          </svg>
+        );
       case 'Catering & Bar':
-        return '🍽️';
+        return (
+          <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 2v6a3 3 0 0 1-3 3 3 3 0 0 1-3-3V2"/>
+            <path d="M15 11v11"/>
+            <path d="M6 2v20"/>
+            <path d="M6 6h4"/>
+          </svg>
+        );
       case 'Music & Entertainment':
-        return '🎵';
+        return (
+          <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18V5l12-2v13"/>
+            <circle cx="6" cy="18" r="3"/>
+            <circle cx="18" cy="16" r="3"/>
+          </svg>
+        );
       case 'Celebrant':
-        return '🕊️';
+        return (
+          <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        );
       case 'Hair & Makeup':
-        return '💄';
+        return (
+          <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="6" cy="6" r="3"/>
+            <path d="M8.12 8.12 12 12"/>
+            <path d="M20 4 8.5 15.5"/>
+            <circle cx="18" cy="18" r="3"/>
+            <path d="M14.8 14.8 12 12"/>
+          </svg>
+        );
       case 'Venue':
-        return '🏛️';
+        return (
+          <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 21h18"/>
+            <path d="M5 21V7l7-4 7 4v14"/>
+            <path d="M9 10h6"/>
+            <path d="M9 14h6"/>
+          </svg>
+        );
       case 'Cake Designer':
-        return '🎂';
+        return (
+          <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/>
+            <path d="M4 16s2-1 4-1 4 1 4 1 2-1 4-1 4 1 4 1"/>
+            <path d="M2 21h20"/>
+            <circle cx="12" cy="7" r="2"/>
+          </svg>
+        );
       case 'Attire & Styling':
-        return '👗';
+        return (
+          <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 3a2 2 0 0 1 2 2c0 .7-.4 1.3-1 1.7V8l8 5-2 9H5l-2-9 8-5V6.7c-.6-.4-1-1-1-1.7a2 2 0 0 1 2-2z"/>
+          </svg>
+        );
       case 'Transport':
-        return '🚗';
+        return (
+          <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="1" y="3" width="15" height="13"/>
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+            <circle cx="5.5" cy="18.5" r="2.5"/>
+            <circle cx="18.5" cy="18.5" r="2.5"/>
+          </svg>
+        );
       default:
-        return '✨';
+        return (
+          <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        );
     }
   };
 
@@ -249,25 +315,28 @@ export const VendorDirectorySection: React.FC<VendorDirectorySectionProps> = ({
       <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="text-[11px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-1">
-            COUPLE CONTENT &bull; VENDOR DIRECTORY
+            {readOnly ? 'WEDDING CONCIERGE • VENDOR DIRECTORY' : 'COUPLE CONTENT • VENDOR DIRECTORY'}
           </div>
           <h2 className="font-serif text-2xl md:text-3xl font-bold text-[#15110e]">
             Wedding Vendor Directory
           </h2>
           <p className="text-xs text-[#8b7b6b] mt-1 max-w-2xl leading-relaxed">
-            Maintain all your wedding vendor details, contact persons, phone numbers, and service deliverables in one central directory. 
-            <span className="font-semibold text-[#15110e]"> No separate vendor login required</span> — this is your private wedding book.
+            {readOnly
+              ? 'View and reference all confirmed wedding vendor details, contact persons, phone numbers, and service deliverables.'
+              : 'Maintain all your wedding vendor details, contact persons, phone numbers, and service deliverables in one central directory.'}
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleOpenAddModal}
-          className="bg-gradient-to-r from-[#dfc194] to-[#bd9661] hover:brightness-105 text-[#15110e] px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
-        >
-          <span className="text-base font-bold">+</span>
-          <span>Add New Vendor</span>
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={handleOpenAddModal}
+            className="bg-gradient-to-r from-[#dfc194] to-[#bd9661] hover:brightness-105 text-[#15110e] px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+          >
+            <span className="text-base font-bold">+</span>
+            <span>Add New Vendor</span>
+          </button>
+        )}
       </div>
 
       {/* Filter and Search Bar */}
@@ -293,27 +362,27 @@ export const VendorDirectorySection: React.FC<VendorDirectorySectionProps> = ({
           )}
         </div>
 
-        {/* Category Pills */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar">
+        {/* Category Pills - Icon on left, text to the right on same line */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar items-center">
           {CATEGORIES.map((cat) => (
             <button
               key={cat}
               type="button"
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
                 selectedCategory === cat
-                  ? 'bg-[#15110e] text-[#dfc194]'
+                  ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
                   : 'bg-[#faf8f5] border border-[#f0ede4] text-[#8b7b6b] hover:text-[#15110e] hover:bg-[#f5ede2]'
               }`}
             >
-              {cat !== 'All' && <span className="mr-1">{getCategoryIcon(cat)}</span>}
-              {cat}
+              {cat !== 'All' && <span className="shrink-0 flex items-center">{getCategoryIcon(cat)}</span>}
+              <span>{cat}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Vendor Cards Grid */}
+      {/* Vendor Directory Tabular View */}
       {filteredVendors.length === 0 ? (
         <div className="bg-white border border-[#e8ded0] rounded-2xl p-12 text-center shadow-xs space-y-3">
           <div className="text-4xl">💐</div>
@@ -323,133 +392,206 @@ export const VendorDirectorySection: React.FC<VendorDirectorySectionProps> = ({
               ? 'Try adjusting your search query or category filter above.'
               : 'Start adding your wedding suppliers, contacts, and contracted deliverables.'}
           </p>
-          <button
-            type="button"
-            onClick={handleOpenAddModal}
-            className="mt-2 bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] px-4 py-2 rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-xs"
-          >
-            + Add First Vendor
-          </button>
+          {!readOnly && (
+            <button
+              type="button"
+              onClick={handleOpenAddModal}
+              className="mt-2 bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] px-4 py-2 rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-xs"
+            >
+              + Add First Vendor
+            </button>
+          )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredVendors.map((vendor) => {
-            return (
-              <div
-                key={vendor.id}
-                className="bg-white border border-[#e8ded0] hover:border-[#bd9661]/60 rounded-2xl p-5 shadow-xs transition-all flex flex-col justify-between space-y-4 group"
-              >
-                <div>
-                  {/* Category Row */}
-                  <div className="pb-3 border-b border-[#f0ede4]">
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#916c3d] bg-[#faf6f0] border border-[#ebd3a8] px-2.5 py-0.5 rounded-full">
-                      <span>{getCategoryIcon(vendor.category)}</span>
-                      <span>{vendor.category}</span>
-                    </span>
-                  </div>
+        <div className="bg-white border border-[#e8ded0] rounded-2xl shadow-xs overflow-hidden">
+          {/* Table Header Bar */}
+          <div className="px-5 py-3.5 bg-[#fbf9f6] border-b border-[#ebdcc9] flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shadow-xs"></span>
+              <span className="font-semibold text-[#15110e] text-xs">
+                {filteredVendors.length} {filteredVendors.length === 1 ? 'Vendor' : 'Vendors Registered'}
+              </span>
+              {selectedCategory !== 'All' && (
+                <span className="bg-[#f0e7db] text-[#735e4b] px-2 py-0.5 rounded-md text-[11px] font-medium border border-[#dfd2c0]">
+                  {selectedCategory}
+                </span>
+              )}
+              {searchQuery && (
+                <span className="bg-[#f0e7db] text-[#735e4b] px-2 py-0.5 rounded-md text-[11px] font-medium border border-[#dfd2c0]">
+                  &ldquo;{searchQuery}&rdquo;
+                </span>
+              )}
+            </div>
+            <span className="text-[11px] text-[#8b7b6b]">{readOnly ? 'Concierge Vendor Directory' : 'Private Vendor Directory'}</span>
+          </div>
 
-                  {/* Business Name & Contact Person */}
-                  <div className="mt-3">
-                    <h3 className="font-serif text-lg font-bold text-[#15110e] group-hover:text-[#bd9661] transition-colors leading-snug">
-                      {vendor.businessName}
-                    </h3>
-                    <div className="text-xs text-[#8b7b6b] mt-0.5 flex items-center gap-1.5">
-                      <span className="w-5 h-5 rounded-full bg-[#f5ede2] text-[#bd9661] font-bold text-[10px] inline-flex items-center justify-center">
-                        {(vendor.contactName || vendor.businessName).charAt(0)}
-                      </span>
-                      <span className="font-medium text-[#15110e]">{vendor.contactName || 'Primary Contact'}</span>
-                    </div>
-                  </div>
-
-                  {/* Contact Methods */}
-                  <div className="mt-4 space-y-2 text-xs bg-[#faf8f5] p-3 rounded-xl border border-[#f0ede4]">
-                    {vendor.phone && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-[#8b7b6b] flex items-center gap-1.5 text-[11px]">
-                          <span>📞</span> Phone:
-                        </span>
-                        <a
-                          href={`tel:${vendor.phone}`}
-                          className="font-medium text-[#15110e] hover:text-[#bd9661] hover:underline"
-                        >
-                          {vendor.phone}
-                        </a>
-                      </div>
-                    )}
-
-                    {vendor.email && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-[#8b7b6b] flex items-center gap-1.5 text-[11px]">
-                          <span>✉️</span> Email:
-                        </span>
-                        <a
-                          href={`mailto:${vendor.email}`}
-                          className="font-medium text-[#15110e] hover:text-[#bd9661] hover:underline truncate max-w-[170px]"
-                          title={vendor.email}
-                        >
-                          {vendor.email}
-                        </a>
-                      </div>
-                    )}
-
-                    {vendor.website && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-[#8b7b6b] flex items-center gap-1.5 text-[11px]">
-                          <span>🌐</span> Web:
-                        </span>
-                        <a
-                          href={vendor.website.startsWith('http') ? vendor.website : `https://${vendor.website}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-medium text-[#bd9661] hover:underline truncate max-w-[170px]"
-                        >
-                          {vendor.website.replace(/^https?:\/\//, '')} ↗
-                        </a>
-                      </div>
-                    )}
-
-                    {vendor.instagram && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-[#8b7b6b] flex items-center gap-1.5 text-[11px]">
-                          <span>📸</span> Insta:
-                        </span>
-                        <span className="font-medium text-[#8b7b6b]">
-                          {vendor.instagram}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Contract Notes / Deliverables */}
-                  {vendor.notes && (
-                    <div className="mt-3 text-xs bg-[#fdfbf8] p-2.5 rounded-xl border border-[#ebdcc9] text-[#6b5849] italic leading-relaxed">
-                      "{vendor.notes}"
-                    </div>
+          {/* Responsive Professional Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[880px]">
+              <thead>
+                <tr className="bg-[#f5f1ea] border-b border-[#dfd2c0] text-[11px] font-bold uppercase tracking-wider text-[#6e5d50]">
+                  <th className="py-3 px-3.5 w-[160px] font-semibold">Category</th>
+                  <th className="py-3 px-3.5 w-[190px] font-semibold">Vendor / Business</th>
+                  <th className="py-3 px-3.5 w-[140px] font-semibold">Contact Person</th>
+                  <th className="py-3 px-3.5 w-[170px] font-semibold">Phone &amp; Email</th>
+                  <th className="py-3 px-3.5 w-[145px] font-semibold">Web &amp; Social</th>
+                  <th className="py-3 px-3.5 font-semibold">Deliverables &amp; Notes</th>
+                  {!readOnly && (
+                    <th className="py-3 px-3.5 w-[90px] font-semibold text-center">Actions</th>
                   )}
-                </div>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#ebdcc9] text-xs bg-white">
+                {filteredVendors.map((vendor) => (
+                  <tr
+                    key={vendor.id}
+                    className="hover:bg-[#faf7f2] transition-colors group"
+                  >
+                    {/* Category */}
+                    <td className="py-3.5 px-3.5 align-middle">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#15110e] bg-[#f7f2ea] border border-[#dfd2c0] px-2.5 py-1 rounded-md whitespace-nowrap shadow-2xs">
+                        {getCategoryIcon(vendor.category)}
+                        <span>{vendor.category}</span>
+                      </span>
+                    </td>
 
-                {/* Card Action Buttons (Edit & Delete only) */}
-                <div className="pt-3 border-t border-[#f0ede4] flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEditModal(vendor)}
-                    className="text-xs text-[#bd9661] hover:text-[#916c3d] px-2.5 py-1 rounded-lg hover:bg-[#faf8f5] font-bold cursor-pointer transition-colors inline-flex items-center gap-1 border border-transparent hover:border-[#ebdcc9]"
-                    title="Edit Vendor"
-                  >
-                    <span>✏️</span> Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteVendor(vendor)}
-                    className="text-xs text-rose-500 hover:text-rose-700 px-2 py-1 rounded-lg hover:bg-rose-50 font-bold cursor-pointer transition-colors"
-                    title="Remove Vendor"
-                  >
-                    <span>🗑️</span>
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+                    {/* Business Name */}
+                    <td className="py-3.5 px-3.5 align-middle">
+                      <div className="font-semibold text-xs text-[#15110e] leading-snug">
+                        {vendor.businessName}
+                      </div>
+                    </td>
+
+                    {/* Contact Person */}
+                    <td className="py-3.5 px-3.5 align-middle">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-[#15110e] text-[#dfc194] font-bold text-[10px] inline-flex items-center justify-center shrink-0 border border-[#bd9661]/40 shadow-2xs">
+                          {vendor.contactName ? vendor.contactName.charAt(0) : '—'}
+                        </span>
+                        <span className="text-xs text-[#15110e] font-medium whitespace-nowrap">
+                          {vendor.contactName || '—'}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Phone & Email with Golden Theme Micro-Icons */}
+                    <td className="py-3.5 px-3.5 align-middle">
+                      <div className="space-y-1">
+                        {vendor.phone ? (
+                          <a
+                            href={`tel:${vendor.phone}`}
+                            className="flex items-center gap-1.5 text-[#15110e] hover:text-[#bd9661] font-medium whitespace-nowrap transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                            </svg>
+                            <span>{vendor.phone}</span>
+                          </a>
+                        ) : null}
+                        {vendor.email ? (
+                          <a
+                            href={`mailto:${vendor.email}`}
+                            className="flex items-center gap-1.5 text-[#736355] hover:text-[#15110e] hover:underline text-[11px] truncate max-w-[170px] transition-colors"
+                            title={vendor.email}
+                          >
+                            <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                              <polyline points="22,6 12,13 2,6"/>
+                            </svg>
+                            <span className="truncate">{vendor.email}</span>
+                          </a>
+                        ) : null}
+                        {!vendor.phone && !vendor.email && (
+                          <span className="text-[#a89b8d] italic text-[11px]">—</span>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Web & Social with Golden Theme Micro-Icons */}
+                    <td className="py-3.5 px-3.5 align-middle">
+                      <div className="space-y-1">
+                        {vendor.website ? (
+                          <a
+                            href={vendor.website.startsWith('http') ? vendor.website : `https://${vendor.website}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-[#bd9661] hover:text-[#8a6839] font-medium text-[11px] truncate max-w-[150px] transition-colors"
+                            title={vendor.website}
+                          >
+                            <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10"/>
+                              <line x1="2" y1="12" x2="22" y2="12"/>
+                              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                            </svg>
+                            <span className="truncate">{vendor.website.replace(/^https?:\/\//, '')}</span>
+                            <span className="text-[10px]">↗</span>
+                          </a>
+                        ) : null}
+                        {vendor.instagram ? (
+                          <div className="text-[11px] text-[#736355] flex items-center gap-1.5">
+                            <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                            </svg>
+                            <span>{vendor.instagram}</span>
+                          </div>
+                        ) : null}
+                        {!vendor.website && !vendor.instagram && (
+                          <span className="text-[#a89b8d] italic text-[11px]">—</span>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Deliverables & Notes */}
+                    <td className="py-3.5 px-3.5 align-middle">
+                      <p className="text-xs text-[#4d4036] leading-relaxed line-clamp-3">
+                        {vendor.notes || <span className="text-[#a89b8d] italic text-[11px]">No deliverables noted</span>}
+                      </p>
+                    </td>
+
+                    {/* Actions: Clean Pencil & Bin icons (hidden when readOnly) */}
+                    {!readOnly && (
+                      <td className="py-3.5 px-3.5 align-middle text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditModal(vendor)}
+                            className="w-7 h-7 rounded-lg text-[#15110e] hover:text-[#bd9661] hover:bg-[#faf6f0] border border-[#dfd2c0] flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
+                            title="Edit Vendor"
+                            aria-label="Edit Vendor"
+                          >
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M12 20h9"/>
+                              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteVendor(vendor)}
+                            className="w-7 h-7 rounded-lg text-[#8b7b6b] hover:text-rose-600 hover:bg-rose-50 border border-[#dfd2c0] flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
+                            title="Remove Vendor"
+                            aria-label="Remove Vendor"
+                          >
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6"/>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Table Footer */}
+          <div className="px-5 py-3 bg-[#faf8f5] border-t border-[#e8ded0] flex items-center justify-between text-[11px] text-[#8b7b6b]">
+            <span>Showing {filteredVendors.length} of {vendors.length} total vendors</span>
+            <span>All vendor contacts are private to the couple &amp; planning team</span>
+          </div>
         </div>
       )}
 

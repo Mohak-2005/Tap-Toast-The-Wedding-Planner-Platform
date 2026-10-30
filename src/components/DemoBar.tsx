@@ -19,6 +19,7 @@ export default function DemoBar({ currentView, onSelectView }: DemoBarProps) {
     { id: 'login', label: 'Sign In', role: null },
     { id: 'register', label: 'Register', role: null },
     { id: 'guest-mobile', label: 'Guest Mobile', role: null },
+    { id: 'invitation-demo', label: 'Invitation Demo', role: null },
     { id: 'mc-mobile', label: 'MC Mobile', role: 'mc' },
     { id: 'sr-mobile', label: 'S/R mobile', role: null },
     { id: 'couple', label: 'Couple Dashboard', role: 'couple' },
