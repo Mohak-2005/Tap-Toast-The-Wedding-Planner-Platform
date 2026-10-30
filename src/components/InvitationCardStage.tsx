@@ -115,20 +115,24 @@ export const LUXURY_THEMES: LuxuryTheme[] = [
 export interface InvitationCardStageProps {
   themeId: string;
   recipientName: string;
-  envelopeState: 'sealed' | 'opening' | 'opened';
-  onExecuteOpen: () => void;
+  envelopeState?: 'sealed' | 'opening' | 'opened';
+  onExecuteOpen?: () => void;
   invitationHeading?: string;
   className?: string;
+  disableAnimation?: boolean;
 }
 
 export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
   themeId,
   recipientName,
-  envelopeState,
+  envelopeState = 'opened',
   onExecuteOpen,
   invitationHeading = 'Together with their families',
   className = '',
+  disableAnimation = false,
 }) => {
+  const transClass = disableAnimation ? 'transition-none' : 'transition-all duration-700';
+  const transTransformClass = disableAnimation ? 'transition-none' : 'transition-transform duration-700';
   const currentTheme = LUXURY_THEMES.find(t => t.id === themeId) || LUXURY_THEMES[0];
   const guestQueryParam = encodeURIComponent(recipientName.toLowerCase().replace(/\s+/g, '-'));
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://taptoast.demo/wedding/sophie-james?guest=${guestQueryParam}&theme=${currentTheme.id}`;
@@ -467,7 +471,7 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
   // ==========================================================================
   const renderClassicTopFlapEnvelope = () => (
     <div
-      className={`relative w-full h-[320px] rounded-2xl shadow-2xl transition-all duration-700 flex flex-col justify-end overflow-visible ${
+      className={`relative w-full h-[320px] rounded-2xl shadow-2xl ${transClass} flex flex-col justify-end overflow-visible ${
         envelopeState === 'opened' ? 'translate-y-28 scale-95 opacity-85' : 'translate-y-0 scale-100 opacity-100'
       }`}
       style={{
@@ -486,7 +490,7 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
       </div>
 
       <div
-        className={`absolute top-0 inset-x-0 h-[170px] z-30 transition-transform duration-700 origin-top ${
+        className={`absolute top-0 inset-x-0 h-[170px] z-30 ${transTransformClass} origin-top ${
           envelopeState === 'sealed' ? 'rotate-x-0' : '-rotate-x-180'
         }`}
         style={{ transformStyle: 'preserve-3d' }}
@@ -531,7 +535,7 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
 
   const renderGatefoldEnvelope = () => (
     <div
-      className={`relative w-full h-[320px] rounded-2xl shadow-2xl transition-all duration-700 flex flex-col justify-center overflow-visible ${
+      className={`relative w-full h-[320px] rounded-2xl shadow-2xl ${transClass} flex flex-col justify-center overflow-visible ${
         envelopeState === 'opened' ? 'translate-y-28 scale-95 opacity-85' : 'translate-y-0 scale-100 opacity-100'
       }`}
       style={{
@@ -545,7 +549,7 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
       </div>
 
       <div
-        className={`absolute inset-y-0 left-0 w-1/2 z-25 rounded-l-2xl border-r border-[#7bb086]/40 transition-transform duration-700 origin-left shadow-lg ${
+        className={`absolute inset-y-0 left-0 w-1/2 z-25 rounded-l-2xl border-r border-[#7bb086]/40 ${transTransformClass} origin-left shadow-lg ${
           envelopeState === 'sealed' ? 'rotate-y-0' : '-rotate-y-120 opacity-70'
         }`}
         style={{ backgroundColor: currentTheme.envelopeFlapColor, transformStyle: 'preserve-3d' }}
@@ -554,7 +558,7 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
       </div>
 
       <div
-        className={`absolute inset-y-0 right-0 w-1/2 z-25 rounded-r-2xl border-l border-[#7bb086]/40 transition-transform duration-700 origin-right shadow-lg ${
+        className={`absolute inset-y-0 right-0 w-1/2 z-25 rounded-r-2xl border-l border-[#7bb086]/40 ${transTransformClass} origin-right shadow-lg ${
           envelopeState === 'sealed' ? 'rotate-y-0' : 'rotate-y-120 opacity-70'
         }`}
         style={{ backgroundColor: currentTheme.envelopeFlapColor, transformStyle: 'preserve-3d' }}
@@ -593,7 +597,7 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
 
   const renderRibbonSleeveEnvelope = () => (
     <div
-      className={`relative w-full h-[320px] rounded-2xl shadow-2xl transition-all duration-700 flex flex-col justify-center overflow-visible ${
+      className={`relative w-full h-[320px] rounded-2xl shadow-2xl ${transClass} flex flex-col justify-center overflow-visible ${
         envelopeState === 'opened' ? 'translate-y-28 scale-95 opacity-85' : 'translate-y-0 scale-100 opacity-100'
       }`}
       style={{
@@ -653,7 +657,7 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
 
   const renderPocketfoldEnvelope = () => (
     <div
-      className={`relative w-full h-[320px] rounded-2xl shadow-2xl transition-all duration-700 flex flex-col justify-end overflow-visible ${
+      className={`relative w-full h-[320px] rounded-2xl shadow-2xl ${transClass} flex flex-col justify-end overflow-visible ${
         envelopeState === 'opened' ? 'translate-y-28 scale-95 opacity-85' : 'translate-y-0 scale-100 opacity-100'
       }`}
       style={{
@@ -819,7 +823,7 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
 
   return (
     <div
-      className={`w-full max-w-lg min-h-[580px] rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center relative shadow-xl overflow-hidden border border-[#d5c7b5]/60 transition-all duration-700 ${className}`}
+      className={`w-full max-w-lg min-h-[580px] rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center relative shadow-xl overflow-hidden border border-[#d5c7b5]/60 ${transClass} ${className}`}
       style={{
         background: currentTheme.stageBg,
         perspective: '1200px',
@@ -834,7 +838,7 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
 
         {/* THE INVITATION CARD (EXTRACTS OUT ACCORDING TO UNIQUE MOTION) */}
         <div
-          className={`w-full max-w-[370px] sm:max-w-[400px] transition-all duration-700 ease-out z-40 ${getCardTransitionMotion()}`}
+          className={`w-full max-w-[370px] sm:max-w-[400px] ${disableAnimation ? 'transition-none' : 'transition-all duration-700 ease-out'} z-40 ${getCardTransitionMotion()}`}
         >
           {renderSelectedTemplate()}
         </div>

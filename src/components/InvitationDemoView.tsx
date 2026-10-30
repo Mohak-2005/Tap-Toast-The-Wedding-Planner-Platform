@@ -27,7 +27,7 @@ export const InvitationDemoView: React.FC<InvitationDemoViewProps> = ({ onSelect
     return localStorage.getItem('tt_invitation_theme') || 'magnolia-gold';
   });
 
-  const [envelopeState, setEnvelopeState] = useState<'sealed' | 'opening' | 'opened'>('sealed');
+  const envelopeState = 'opened';
   const [selectedRecipient, setSelectedRecipient] = useState<DemoRecipient>(DEMO_RECIPIENTS[0]);
   const [clientTheme, setClientTheme] = useState<'apple' | 'gmail'>('apple');
   const [copiedLink, setCopiedLink] = useState(false);
@@ -46,30 +46,6 @@ export const InvitationDemoView: React.FC<InvitationDemoViewProps> = ({ onSelect
   const handleSelectTheme = (themeId: string) => {
     setSelectedThemeId(themeId);
     localStorage.setItem('tt_invitation_theme', themeId);
-    setEnvelopeState('sealed');
-    setTimeout(() => {
-      executeOpenSequence(themeId);
-    }, 280);
-  };
-
-  const executeOpenSequence = (themeId?: string) => {
-    setEnvelopeState('opening');
-    const tid = themeId || selectedThemeId;
-    const duration = tid === 'vineyard-arch' ? 400 : 700;
-
-    setTimeout(() => {
-      setEnvelopeState('opened');
-      showToast('💌 Wedding invitation opened!', 'success');
-    }, duration);
-  };
-
-  const handleToggleEnvelope = () => {
-    if (envelopeState === 'opened') {
-      setEnvelopeState('sealed');
-      showToast('Envelope re-sealed', 'info');
-    } else {
-      executeOpenSequence();
-    }
   };
 
   const handleCopyLink = () => {
@@ -403,14 +379,7 @@ export const InvitationDemoView: React.FC<InvitationDemoViewProps> = ({ onSelect
               </select>
             </div>
 
-            {/* Re-seal / Open Button */}
-            <button
-              type="button"
-              onClick={handleToggleEnvelope}
-              className="px-3.5 py-1 bg-[#15110e] text-[#dfc194] hover:bg-[#2a221b] rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
-            >
-              <span>{envelopeState === 'opened' ? '↺ Close Envelope' : '✨ Open Invitation'}</span>
-            </button>
+
 
             {/* Theme switcher */}
             <div className="flex items-center gap-0.5 bg-[#e4ded5] p-0.5 rounded-lg text-[11px]">
@@ -476,20 +445,20 @@ export const InvitationDemoView: React.FC<InvitationDemoViewProps> = ({ onSelect
               We are overjoyed to invite you to celebrate our wedding day with us. You hold a very special place in our lives, and having you by our side as we exchange our vows would mean the world to us.
             </p>
             <p className="text-xs text-[#8b7b6b] italic">
-              Please tap or click the sealed envelope below to open your personalized wedding invitation card:
+              Your personalized wedding invitation card is presented below:
             </p>
           </div>
 
           {/* ========================================================= */}
-          {/* THE EXACT INVITATION UNBOXING STAGE AS SELECTED IN STUDIO */}
+          {/* THE OPENED INVITATION CARD (DIRECTLY SHOWN FOR EACH TEMPLATE) */}
           {/* ========================================================= */}
           <div className="w-full max-w-lg my-2 flex flex-col items-center shrink-0">
             <InvitationCardStage
               themeId={selectedThemeId}
               recipientName={selectedRecipient.name}
-              envelopeState={envelopeState}
-              onExecuteOpen={executeOpenSequence}
+              envelopeState="opened"
               invitationHeading="Together with their families"
+              disableAnimation={true}
             />
           </div>
 
