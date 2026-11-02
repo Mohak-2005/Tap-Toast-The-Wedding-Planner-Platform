@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAppState, useSession, showToast, logAudit, setStoredSession } from '../lib/state';
 
 interface SrMobileViewProps {
@@ -72,41 +72,59 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
     showToast(`Filled credentials for ${name}`, 'info');
   };
 
-  // Sign in submit
+  // Sign in submit (Common sign-in: automatically recognizes user role from credentials)
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoggingIn(true);
     setTimeout(() => {
       setIsLoggingIn(false);
-      let sessionName = 'Robert Galati';
-      let weddingId: string | undefined = undefined;
+      const emailLower = loginEmail.trim().toLowerCase();
 
-      if (loginRole === 'superadmin') {
+      // Look up matching user in system state
+      const foundUser = state.users.find(u => u.email.toLowerCase() === emailLower);
+
+      let detectedRole: 'mc' | 'couple' | 'superadmin' = 'couple';
+      let sessionName = 'User';
+      let weddingId: string | undefined = undefined;
+      let tenantId: string | undefined = undefined;
+
+      if (foundUser) {
+        detectedRole = foundUser.role === 'planner' ? 'mc' : foundUser.role;
+        sessionName = foundUser.name;
+        weddingId = foundUser.weddingId;
+        tenantId = foundUser.tenantId;
+      } else if (emailLower.includes('admin') || emailLower === 'admin@tapandtoast.demo') {
+        detectedRole = 'superadmin';
         sessionName = 'Platform Admin';
-      } else if (loginRole === 'couple') {
-        const found = state.users.find(u => u.email.toLowerCase() === loginEmail.toLowerCase());
-        sessionName = found ? found.name : 'Sophie & James';
-        weddingId = found?.weddingId || 'w1';
-      } else {
+      } else if (emailLower.includes('galati') || emailLower.includes('robert') || emailLower.includes('mc')) {
+        detectedRole = 'mc';
         sessionName = 'Robert Galati';
+        tenantId = 'tenant_galati';
+      } else {
+        detectedRole = 'couple';
+        sessionName = 'Sophie & James';
+        weddingId = 'w1';
       }
 
+      setLoginRole(detectedRole);
+
       const newSession = {
-        role: loginRole,
+        role: detectedRole,
         email: loginEmail,
         name: sessionName,
         weddingId,
+        tenantId,
         keepSignedIn: loginRemember,
       };
 
       setStoredSession(newSession);
       setSession(newSession);
-      logAudit(state, setState, 'User Login (Mobile)', sessionName, loginRole, `Logged in via S/R Mobile as ${loginRole}`, 'Security');
-      showToast(`Welcome back, ${sessionName}!`, 'success');
+      logAudit(state, setState, 'User Login (Mobile)', sessionName, detectedRole, `Logged in via common mobile sign-in as ${detectedRole}`, 'Security');
+      showToast(`Welcome back, ${sessionName}! (${detectedRole === 'superadmin' ? 'Super Admin' : detectedRole === 'mc' ? 'MC / Pro' : 'Couple'})`, 'success');
 
       if (onSelectView) {
-        if (loginRole === 'superadmin') onSelectView('superadmin');
-        else if (loginRole === 'couple') onSelectView('couple');
+        if (detectedRole === 'superadmin') onSelectView('superadmin');
+        else if (detectedRole === 'couple') onSelectView('couple');
         else onSelectView('mc');
       }
     }, 400);
@@ -116,6 +134,35 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
   // REGISTER STATE
   // ==========================================
   const [regAccountType, setRegAccountType] = useState<'couple' | 'mc'>('couple');
+  const [mcShowConfirm, setMcShowConfirm] = useState(false);
+  const [coupleShowConfirm, setCoupleShowConfirm] = useState(false);
+  const [weddingStyle, setWeddingStyle] = useState('Modern Luxury & Black Tie');
+  const [mcChoiceMode, setMcChoiceMode] = useState<'certified' | 'own'>('certified');
+  const [isMcDropdownOpen, setIsMcDropdownOpen] = useState(false);
+  const mcDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close MC dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (mcDropdownRef.current && !mcDropdownRef.current.contains(event.target as Node)) {
+        setIsMcDropdownOpen(false);
+      }
+    };
+    if (isMcDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMcDropdownOpen]);
+
+  // Couple's Own Preferred MC info
+  const [ownMcName, setOwnMcName] = useState('');
+  const [ownMcEmail, setOwnMcEmail] = useState('');
+  const [ownMcPhone, setOwnMcPhone] = useState('');
+  const [ownMcAgency, setOwnMcAgency] = useState('');
+  const [ownMcNotes, setOwnMcNotes] = useState('');
+  const [isFloatingChatOpen, setIsFloatingChatOpen] = useState(false);
 
   // MC fields
   const [mcName, setMcName] = useState('');
@@ -288,6 +335,19 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>('signature');
   const [billingCycle, setBillingCycle] = useState<'onetime' | 'monthly'>('onetime');
   const [promoCode, setPromoCode] = useState('');
+  const handleApplyPromo = () => {
+    const code = promoCode.trim().toUpperCase();
+    if (!code) return;
+    if (code === 'WELCOME10') {
+      setDiscountPercent(10);
+      showToast('Promo code applied: 10% discount', 'success');
+    } else if (code === 'VIP20' || code === 'LAUNCH20') {
+      setDiscountPercent(20);
+      showToast('VIP promo applied: 20% discount', 'success');
+    } else {
+      showToast('Invalid promo code. Try WELCOME10', 'error');
+    }
+  };
   const [discountPercent, setDiscountPercent] = useState(0);
   const [cardName, setCardName] = useState('');
   const [cardNumber, setCardNumber] = useState('');
@@ -300,12 +360,12 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
   const finalPrice = Math.max(0, basePrice - discountAmount);
 
   // MC selection state
-  const [selectedMcId, setSelectedMcId] = useState<string>('mc_robert');
+  const [selectedMcId, setSelectedMcId] = useState<string>('');
   const [selectedMcModal, setSelectedMcModal] = useState<any | null>(null);
 
   // Auto-sync selectedMcId if chosen MC is not available on date
   useEffect(() => {
-    if (availableMcs.length > 0 && !availableMcs.some(m => m.id === selectedMcId)) {
+    if (selectedMcId && availableMcs.length > 0 && !availableMcs.some(m => m.id === selectedMcId)) {
       setSelectedMcId(availableMcs[0].id);
     }
   }, [availableMcs, selectedMcId]);
@@ -420,6 +480,11 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
     strengthScore === 0 ? '#e5e7eb' : strengthScore <= 2 ? '#ef4444' : strengthScore === 3 ? '#eab308' : '#10b981';
   const strengthLabel =
     strengthScore === 0 ? 'Empty' : strengthScore <= 2 ? 'Weak password' : strengthScore === 3 ? 'Medium strength' : 'Strong password';
+  const passwordsMatch = Boolean(mcPassword && mcConfirmPassword && mcPassword === mcConfirmPassword);
+  const couplePasswordsMatch = Boolean(couplePassword && coupleConfirmPassword && couplePassword === coupleConfirmPassword);
+  const selectedMc = useMemo(() => {
+    return MC_DIRECTORY.find(m => m.id === selectedMcId) || null;
+  }, [selectedMcId]);
 
   // Registration submit: MC
   // MC Step 1: Proceed to Plan selection
@@ -475,11 +540,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
   // Couple Wizard Handlers
   const handleProceedToPayment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!weddingDate) {
-      setWeddingDateError(true);
-      showToast('Wedding Date is mandatory. Please choose your wedding date to proceed.', 'error');
-      return;
-    }
+    setWeddingDateError(false);
     if (couplePassword !== coupleConfirmPassword) {
       showToast('Passwords do not match', 'error');
       return;
@@ -488,7 +549,6 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
       showToast('Please agree to terms', 'error');
       return;
     }
-    setWeddingDateError(false);
     setCoupleStep('payment');
     showToast('Details saved! Please select your subscription plan.', 'success');
   };
@@ -697,41 +757,10 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
             /* ========================================================== */
             <div className="space-y-4">
               {/* Role selector pill tabs */}
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1.5">
-                  Select Login Portal
-                </label>
-                <div className="grid grid-cols-3 gap-1.5 p-1 bg-[#ede6da] rounded-xl border border-[#dfd4c3]">
-                  {(['mc', 'couple', 'superadmin'] as const).map((r) => {
-                    const label = r === 'mc' ? 'MC / Pro' : r === 'couple' ? 'Couple' : 'Super Admin';
-                    const active = loginRole === r;
-                    return (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => {
-                          setLoginRole(r);
-                          if (r === 'mc') setLoginEmail('robert@galati.demo');
-                          else if (r === 'couple') setLoginEmail('sophie@demo.test');
-                          else setLoginEmail('admin@tapandtoast.demo');
-                        }}
-                        className={`py-1.5 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
-                          active
-                            ? 'bg-white text-[#15110e] shadow-xs border border-[#bd9661]'
-                            : 'text-[#6b5847] hover:text-[#15110e]'
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Title Header */}
+              {/* Common Sign In Header */}
               <div>
                 <h2 className="font-serif text-xl font-bold text-[#15110e]">
-                  Sign in to your {loginRole === 'mc' ? 'MC / Pro' : loginRole === 'couple' ? 'Couple' : 'Super Admin'} account
+                  Sign in to Tap &amp; Toast
                 </h2>
                 <p className="text-xs text-[#8b7b6b] mt-0.5">
                   Enter your credentials below to access your dashboard.
@@ -884,88 +913,133 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
             </div>
           ) : (
             /* ========================================================== */
-            /* MODE 2: MOBILE REGISTER                                     */
-            /* ========================================================== */
+            /* MODE 2: MOBILE REGISTER (SAME TO SAME AS WEB REGISTER IN MOBILE VIEW) */
             <div className="space-y-4">
-              {/* Account Type Selector */}
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1.5">
-                  Select Account Type
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setRegAccountType('couple')}
-                    className={`py-2 px-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      regAccountType === 'couple'
-                        ? 'bg-[#15110e] text-[#dfc194] shadow-sm ring-1 ring-[#bd9661]'
-                        : 'bg-white border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e]'
-                    }`}
-                  >
-                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg> Couple Portal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRegAccountType('mc')}
-                    className={`py-2 px-2.5 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                      regAccountType === 'mc'
-                        ? 'bg-[#15110e] text-[#dfc194] shadow-sm ring-1 ring-[#bd9661]'
-                        : 'bg-white border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e]'
-                    }`}
-                  >
-                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" /><line x1="8" y1="22" x2="16" y2="22" /></svg> MC / Planner
-                  </button>
-                </div>
+              {/* Account Type Selector identical to Web Register */}
+              <div className="grid grid-cols-2 gap-2 bg-[#f0ebe3] p-1.5 rounded-xl border border-[#e2d8cb]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRegAccountType('couple');
+                    setCoupleStep('registration');
+                  }}
+                  className={`py-1.5 px-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    regAccountType === 'couple'
+                      ? 'bg-[#15110e] text-[#dfc194] shadow-sm ring-1 ring-[#bd9661]'
+                      : 'text-[#6b5847] hover:text-[#15110e] hover:bg-[#e8ded0]/50'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                  <span>Couple Registration</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRegAccountType('mc');
+                    setMcRegStep('details');
+                  }}
+                  className={`py-1.5 px-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    regAccountType === 'mc'
+                      ? 'bg-[#15110e] text-[#dfc194] shadow-sm ring-1 ring-[#bd9661]'
+                      : 'text-[#6b5847] hover:text-[#15110e] hover:bg-[#e8ded0]/50'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2" /><line x1="12" y1="19" x2="12" y2="22" /><line x1="8" y1="22" x2="16" y2="22" /></svg>
+                  <span>Certified MC Registration</span>
+                </button>
               </div>
 
               {regAccountType === 'couple' ? (
                 <div className="space-y-3.5">
-                  {/* 3-Step Couple Wizard Breadcrumb */}
-                  <div className="bg-[#faf8f5] border border-[#e8ded0] rounded-xl p-2 flex items-center justify-between text-[10px]">
-                    <div className={`flex items-center gap-1 font-bold ${
-                      coupleStep === 'registration' ? 'text-[#bd9661]' : 'text-[#8b7b6b]'
-                    }`}>
-                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] ${
-                        coupleStep === 'registration' ? 'bg-[#15110e] text-[#dfc194]' : 'bg-[#e8ded0] text-[#15110e]'
-                      }`}>
-                        1
+                  {/* COUPLE ONBOARDING PROGRESS STEPPER */}
+                  <div className="bg-[#faf8f5] border border-[#e8ded0] rounded-xl p-2.5 flex items-center justify-between text-xs">
+                    {/* Step 1 */}
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                          coupleStep === 'registration'
+                            ? 'bg-[#15110e] text-[#dfc194] ring-2 ring-[#bd9661]'
+                            : 'bg-[#bd9661] text-[#15110e]'
+                        }`}
+                      >
+                        {coupleStep !== 'registration' ? '✓' : '1'}
+                      </div>
+                      <span className={`text-[11px] font-semibold ${coupleStep === 'registration' ? 'text-[#15110e]' : 'text-[#8b7b6b]'}`}>
+                        Registration
                       </span>
-                      <span>Details</span>
                     </div>
-                    <span className="text-[#d5c7b5]">→</span>
-                    <div className={`flex items-center gap-1 font-bold ${
-                      coupleStep === 'payment' ? 'text-[#bd9661]' : 'text-[#8b7b6b]'
-                    }`}>
-                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] ${
-                        coupleStep === 'payment' ? 'bg-[#15110e] text-[#dfc194]' : 'bg-[#e8ded0] text-[#15110e]'
-                      }`}>
-                        2
+
+                    <div className="h-0.5 flex-1 bg-[#ebdcc9] mx-2">
+                      <div
+                        className="h-full bg-[#bd9661] transition-all duration-300"
+                        style={{ width: coupleStep === 'registration' ? '0%' : coupleStep === 'payment' ? '50%' : '100%' }}
+                      />
+                    </div>
+
+                    {/* Step 2 */}
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                          coupleStep === 'payment'
+                            ? 'bg-[#15110e] text-[#dfc194] ring-2 ring-[#bd9661]'
+                            : coupleStep === 'mc'
+                            ? 'bg-[#bd9661] text-[#15110e]'
+                            : 'bg-[#ebdcc9] text-[#8b7b6b]'
+                        }`}
+                      >
+                        {coupleStep === 'mc' ? '✓' : '2'}
+                      </div>
+                      <span className={`text-[11px] font-semibold ${coupleStep === 'payment' ? 'text-[#15110e]' : 'text-[#8b7b6b]'}`}>
+                        Plan &amp; Pay
                       </span>
-                      <span>Plan &amp; Pay</span>
                     </div>
-                    <span className="text-[#d5c7b5]">→</span>
-                    <div className={`flex items-center gap-1 font-bold ${
-                      coupleStep === 'mc' ? 'text-[#bd9661]' : 'text-[#8b7b6b]'
-                    }`}>
-                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] ${
-                        coupleStep === 'mc' ? 'bg-[#15110e] text-[#dfc194]' : 'bg-[#e8ded0] text-[#15110e]'
-                      }`}>
+
+                    <div className="h-0.5 flex-1 bg-[#ebdcc9] mx-2">
+                      <div
+                        className="h-full bg-[#bd9661] transition-all duration-300"
+                        style={{ width: coupleStep === 'mc' ? '100%' : '0%' }}
+                      />
+                    </div>
+
+                    {/* Step 3 */}
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                          coupleStep === 'mc'
+                            ? 'bg-[#15110e] text-[#dfc194] ring-2 ring-[#bd9661]'
+                            : 'bg-[#ebdcc9] text-[#8b7b6b]'
+                        }`}
+                      >
                         3
+                      </div>
+                      <span className={`text-[11px] font-semibold ${coupleStep === 'mc' ? 'text-[#15110e]' : 'text-[#8b7b6b]'}`}>
+                        MC Setup
                       </span>
-                      <span>Select MC</span>
                     </div>
                   </div>
 
                   {coupleStep === 'registration' ? (
                     /* STEP 1: COUPLE REGISTRATION DETAILS */
                     <form noValidate onSubmit={handleProceedToPayment} className="space-y-3.5">
+                      <div>
+                        <div className="text-[9px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-0.5">
+                          STEP 1 OF 3 · WEDDING &amp; COUPLE PROFILE
+                        </div>
+                        <h3 className="font-serif text-base font-bold text-[#15110e] leading-tight">
+                          Register Your Wedding
+                        </h3>
+                        <p className="text-[11px] text-[#8b7b6b] mt-0.5">
+                          Set up your luxury celebration hub, digital stationery suite, and coordination workspace.
+                        </p>
+                      </div>
+
                       {/* Groom Section */}
                       <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2.5">
-                        <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 pb-1 border-b border-[#ebdcc9]">
+                        <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 pb-1 border-b border-[#ebdcc9]">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#bd9661]" /> Groom Details
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                          <label className="block text-[10px] font-bold uppercase text-[#4a3b2c] mb-1">
                             Groom Full Name *
                           </label>
                           <input
@@ -974,11 +1048,11 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                             value={groomName}
                             onChange={(e) => setGroomName(e.target.value)}
                             placeholder="James Wilson"
-                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                            className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none shadow-2xs"
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                          <label className="block text-[10px] font-bold uppercase text-[#4a3b2c] mb-1">
                             Groom Email *
                           </label>
                           <input
@@ -986,16 +1060,16 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                             required
                             value={groomEmail}
                             onChange={(e) => setGroomEmail(e.target.value)}
-                            placeholder="james@example.com"
-                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                            placeholder="james.wilson@example.com"
+                            className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none shadow-2xs"
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                          <label className="block text-[10px] font-bold uppercase text-[#4a3b2c] mb-1">
                             Groom Contact Number *
                           </label>
-                          <div className="flex">
-                            <span className="inline-flex items-center px-2.5 py-1.5 border border-r-0 border-[#d5c7b5] bg-[#f5ede2] text-xs font-bold text-[#6b5847] rounded-l-lg select-none">
+                          <div className="flex rounded-lg overflow-hidden border border-[#d5c7b5] focus-within:border-[#bd9661] bg-white shadow-2xs">
+                            <span className="inline-flex items-center px-2.5 bg-[#f5ede2] text-xs font-bold text-[#6b5847] border-r border-[#e2d8cb] select-none">
                               +61
                             </span>
                             <input
@@ -1004,7 +1078,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                               value={groomMobile}
                               onChange={(e) => setGroomMobile(formatAuMobile(e.target.value))}
                               placeholder="0412 345 678"
-                              className="w-full bg-white border border-[#d5c7b5] rounded-r-lg rounded-l-none px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                              className="w-full px-2.5 py-1.5 text-xs text-[#15110e] outline-none bg-white"
                             />
                           </div>
                         </div>
@@ -1012,11 +1086,11 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
 
                       {/* Bride Section */}
                       <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2.5">
-                        <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 pb-1 border-b border-[#ebdcc9]">
+                        <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 pb-1 border-b border-[#ebdcc9]">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#bd9661]" /> Bride Details
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                          <label className="block text-[10px] font-bold uppercase text-[#4a3b2c] mb-1">
                             Bride Full Name *
                           </label>
                           <input
@@ -1025,11 +1099,11 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                             value={brideName}
                             onChange={(e) => setBrideName(e.target.value)}
                             placeholder="Sophie Carter"
-                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                            className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none shadow-2xs"
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                          <label className="block text-[10px] font-bold uppercase text-[#4a3b2c] mb-1">
                             Bride Email *
                           </label>
                           <input
@@ -1037,16 +1111,16 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                             required
                             value={brideEmail}
                             onChange={(e) => setBrideEmail(e.target.value)}
-                            placeholder="sophie@example.com"
-                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                            placeholder="sophie.carter@example.com"
+                            className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none shadow-2xs"
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                          <label className="block text-[10px] font-bold uppercase text-[#4a3b2c] mb-1">
                             Bride Contact Number *
                           </label>
-                          <div className="flex">
-                            <span className="inline-flex items-center px-2.5 py-1.5 border border-r-0 border-[#d5c7b5] bg-[#f5ede2] text-xs font-bold text-[#6b5847] rounded-l-lg select-none">
+                          <div className="flex rounded-lg overflow-hidden border border-[#d5c7b5] focus-within:border-[#bd9661] bg-white shadow-2xs">
+                            <span className="inline-flex items-center px-2.5 bg-[#f5ede2] text-xs font-bold text-[#6b5847] border-r border-[#e2d8cb] select-none">
                               +61
                             </span>
                             <input
@@ -1055,7 +1129,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                               value={brideMobile}
                               onChange={(e) => setBrideMobile(formatAuMobile(e.target.value))}
                               placeholder="0423 456 789"
-                              className="w-full bg-white border border-[#d5c7b5] rounded-r-lg rounded-l-none px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                              className="w-full px-2.5 py-1.5 text-xs text-[#15110e] outline-none bg-white"
                             />
                           </div>
                         </div>
@@ -1065,39 +1139,27 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                       <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2.5">
                         <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center justify-between pb-1 border-b border-[#ebdcc9]">
                           <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#bd9661]" /> Wedding &amp; Venue Details</span>
-                          <span className="text-[9.5px] font-semibold text-rose-600 bg-rose-50 px-1.5 py-0.2 rounded border border-rose-200">
-                            Date Mandatory*
-                          </span>
+                          <span className="text-[9.5px] text-[#8b7b6b] font-medium">Venue &amp; Schedule</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <div className="flex items-center justify-between mb-1">
-                              <label className="block text-[10px] font-bold uppercase text-[#8b7b6b]">
-                                Date *
+                              <label className="block text-[10px] font-bold uppercase text-[#4a3b2c]">
+                                Wedding Date
                               </label>
+                              <span className="text-[9.5px] font-medium text-[#8b7b6b] bg-[#faf8f5] border border-[#e8ded0] px-1.5 py-0.5 rounded">
+                                Optional
+                              </span>
                             </div>
                             <input
                               type="date"
-                              required
                               value={weddingDate}
-                              onChange={(e) => {
-                                setWeddingDate(e.target.value);
-                                if (e.target.value) setWeddingDateError(false);
-                              }}
-                              className={`w-full bg-white border ${
-                                weddingDateError
-                                  ? 'border-rose-400 ring-1 ring-rose-200'
-                                  : 'border-[#d5c7b5] focus:border-[#bd9661]'
-                              } rounded-lg px-2 py-1.5 text-xs text-[#15110e] outline-none font-semibold`}
+                              onChange={(e) => setWeddingDate(e.target.value)}
+                              className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] rounded-lg px-2 py-1.5 text-xs text-[#15110e] outline-none font-semibold shadow-2xs"
                             />
-                            {weddingDateError && (
-                              <p className="text-[9px] text-rose-600 font-semibold mt-0.5">
-                                ✕ Wedding Date is mandatory.
-                              </p>
-                            )}
                           </div>
                           <div>
-                            <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                            <label className="block text-[10px] font-bold uppercase text-[#4a3b2c] mb-1">
                               Guests (Adults/Kids) *
                             </label>
                             <input
@@ -1106,31 +1168,31 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                               min={1}
                               value={guestCount}
                               onChange={(e) => setGuestCount(parseInt(e.target.value) || 0)}
-                              className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661] font-bold"
+                              className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661] font-bold shadow-2xs"
                             />
                           </div>
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
-                            Ceremony &amp; Reception Venue <span className="font-normal lowercase">(optional)</span>
+                          <label className="block text-[10px] font-bold uppercase text-[#4a3b2c] mb-1">
+                            Ceremony &amp; Reception Venue <span className="font-normal lowercase text-[#8b7b6b]">(optional)</span>
                           </label>
                           <input
                             type="text"
                             value={venue}
                             onChange={(e) => setVenue(e.target.value)}
                             placeholder="e.g. Fernwood Estate, Hunter Valley"
-                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-2xs"
                           />
                         </div>
                       </div>
 
                       {/* Password & Security */}
                       <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2.5">
-                        <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 pb-1 border-b border-[#ebdcc9]">
-                          <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#bd9661]" /> Account Password</span>
+                        <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 pb-1 border-b border-[#ebdcc9]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#bd9661]" /> Account Password
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                          <label className="block text-[10px] font-bold uppercase text-[#4a3b2c] mb-1">
                             Password *
                           </label>
                           <div className="relative">
@@ -1140,92 +1202,105 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                               value={couplePassword}
                               onChange={(e) => setCouplePassword(e.target.value)}
                               placeholder="Create password"
-                              className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 pr-12 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                              className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 pr-10 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-2xs"
                             />
                             <button
-  type="button"
-  onClick={() => setCoupleShowPwd(!coupleShowPwd)}
-  aria-label={coupleShowPwd ? 'Hide password' : 'Show password'}
-  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8b7b6b] hover:text-[#15110e] transition-colors cursor-pointer p-0.5"
->
-  {coupleShowPwd ? (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
-    </svg>
-  ) : (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-    </svg>
-  )}
-</button>
+                              type="button"
+                              onClick={() => setCoupleShowPwd(!coupleShowPwd)}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8b7b6b] hover:text-[#15110e] cursor-pointer"
+                            >
+                              {coupleShowPwd ? (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                                </svg>
+                              ) : (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              )}
+                            </button>
                           </div>
                           <div className="w-full bg-[#e8ded0] h-1 rounded-full mt-1.5 overflow-hidden">
                             <div
                               className="h-full transition-all duration-300"
-                              style={{
-                                width: `${(strengthScore / 4) * 100}%`,
-                                backgroundColor: strengthColor,
-                              }}
+                              style={{ width: `${(strengthScore / 4) * 100}%`, backgroundColor: strengthColor }}
                             />
                           </div>
-                          <div className="text-[10px] text-[#8b7b6b] mt-0.5">{strengthLabel}</div>
+                          <div className="text-[9.5px] text-[#8b7b6b] mt-0.5">{strengthLabel}</div>
                         </div>
 
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                          <label className="block text-[10px] font-bold uppercase text-[#4a3b2c] mb-1">
                             Confirm Password *
                           </label>
-                          <input
-                            type={coupleShowPwd ? 'text' : 'password'}
-                            required
-                            value={coupleConfirmPassword}
-                            onChange={(e) => setCoupleConfirmPassword(e.target.value)}
-                            placeholder="Re-enter password"
-                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-                          />
-                          {coupleConfirmPassword && (
-                            <div
-                              className={`text-[10px] mt-0.5 font-semibold ${
-                                couplePassword === coupleConfirmPassword ? 'text-emerald-600' : 'text-red-500'
-                              }`}
+                          <div className="relative">
+                            <input
+                              type={coupleShowConfirm ? 'text' : 'password'}
+                              required
+                              value={coupleConfirmPassword}
+                              onChange={(e) => setCoupleConfirmPassword(e.target.value)}
+                              placeholder="Re-enter password"
+                              className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 pr-10 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-2xs"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setCoupleShowConfirm(!coupleShowConfirm)}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8b7b6b] hover:text-[#15110e] cursor-pointer"
                             >
-                              {couplePassword === coupleConfirmPassword ? '✓ Passwords match' : '✕ Passwords do not match'}
+                              {coupleShowConfirm ? (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                                </svg>
+                              ) : (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
+                          {coupleConfirmPassword && (
+                            <div className={`text-[10px] mt-0.5 font-semibold ${couplePasswordsMatch ? 'text-emerald-600' : 'text-red-500'}`}>
+                              {couplePasswordsMatch ? '✓ Passwords match' : '✕ Passwords do not match'}
                             </div>
                           )}
                         </div>
                       </div>
 
                       {/* Terms */}
-                      <label className="flex items-start gap-2 text-[11px] text-[#8b7b6b] cursor-pointer">
+                      <label className="flex items-start gap-2 text-[11px] text-[#6b5847] cursor-pointer">
                         <input
                           type="checkbox"
                           checked={agreeTerms}
                           onChange={(e) => setAgreeTerms(e.target.checked)}
-                          className="mt-0.5 rounded text-[#bd9661]"
+                          className="mt-0.5 rounded text-[#bd9661] focus:ring-[#bd9661]"
                         />
-                        <span>I agree to the Terms of Service &amp; Privacy Policy</span>
+                        <span>
+                          I agree to the <span className="text-[#bd9661] underline font-semibold">Terms of Service</span> and <span className="text-[#bd9661] underline font-semibold">Privacy Policy</span>
+                        </span>
                       </label>
 
                       <button
                         type="submit"
-                        className="w-full py-2.5 px-4 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm"
+                        className="w-full py-2.5 px-4 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
                       >
-                        Proceed to Select Plan →
+                        <span>Proceed to Choose Plan &amp; Payment</span>
+                        <span>→</span>
                       </button>
                     </form>
                   ) : coupleStep === 'payment' ? (
                     /* STEP 2: COUPLE SUBSCRIPTION & STRIPE PAYMENT SIMULATION */
                     <form noValidate onSubmit={handleProceedToMc} className="space-y-3.5">
                       <div>
-                        <div className="text-[9px] font-bold uppercase tracking-wider text-[#bd9661]">
-                          STEP 2 &bull; COUPLE SUBSCRIPTION
+                        <div className="text-[9px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-0.5">
+                          STEP 2 OF 3 · WEDDING SUITE PLANS
                         </div>
-                        <h3 className="font-serif text-base font-bold text-[#15110e]">
-                          Choose Couple Plan
+                        <h3 className="font-serif text-base font-bold text-[#15110e] leading-tight">
+                          Select Your Wedding Plan
                         </h3>
                         <p className="text-[11px] text-[#8b7b6b] mt-0.5">
-                          Tap &amp; Toast is centered around the Couple. MC collaboration is included in your suite.
+                          Choose your digital wedding suite pass. Includes automated RSVP tracking, seating studio, and MC synchronization.
                         </p>
                       </div>
 
@@ -1255,7 +1330,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                         </button>
                       </div>
 
-                      {/* Dropdown Accordion Plans List */}
+                      {/* Dropdown Accordion Plans List identical to Web Register */}
                       <div className="space-y-2">
                         {SUBSCRIPTION_PLANS.map((plan) => {
                           const isSelected = selectedPlanId === plan.id;
@@ -1266,34 +1341,34 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                             <div
                               key={plan.id}
                               onClick={() => setSelectedPlanId(plan.id)}
-                              className={`border-2 rounded-xl p-3 transition-all cursor-pointer bg-white ${
+                              className={`border-2 rounded-xl p-2.5 transition-all cursor-pointer bg-white ${
                                 isSelected
-                                  ? 'border-[#bd9661] shadow-xs ring-1 ring-[#bd9661]/25'
+                                  ? 'border-[#bd9661] shadow-xs ring-1 ring-[#bd9661]/25 bg-[#fdfbf7]'
                                   : 'border-[#e8ded0] hover:border-[#bd9661]/50'
                               }`}
                             >
-                              <div className="flex items-center justify-between">
+                              <div className="flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2">
                                   <input
                                     type="radio"
                                     name="mobileSubscriptionPlan"
                                     checked={isSelected}
                                     onChange={() => setSelectedPlanId(plan.id)}
-                                    className="text-[#bd9661]"
+                                    className="text-[#bd9661] focus:ring-[#bd9661] cursor-pointer"
                                   />
                                   <div>
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
                                       <span className="font-serif text-xs font-bold text-[#15110e]">
                                         {plan.name}
                                       </span>
                                       {plan.badge && (
                                         <span className="text-[8px] font-black uppercase bg-[#15110e] text-[#dfc194] px-1.5 py-0.2 rounded">
-                                          {plan.badge}
+                                          {plan.badge === 'RECOMMENDED' ? 'MOST POPULAR' : plan.badge}
                                         </span>
                                       )}
                                     </div>
                                     <div className="font-mono text-xs font-bold text-[#bd9661] mt-0.5">
-                                      ${planPrice} AUD <span className="text-[10px] font-normal text-[#8b7b6b]">/{billingCycle === 'onetime' ? 'wedding' : 'mo'}</span>
+                                      ${planPrice} AUD <span className="text-[9.5px] font-normal text-[#8b7b6b]">/{billingCycle === 'onetime' ? 'wedding' : 'mo'}</span>
                                     </div>
                                   </div>
                                 </div>
@@ -1304,16 +1379,28 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                                     e.stopPropagation();
                                     setExpandedPlanId(isExpanded ? null : plan.id);
                                   }}
-                                  className="text-xs text-[#8b7b6b] hover:text-[#15110e] p-1 cursor-pointer font-bold"
+                                  className="p-1 rounded text-[#8b7b6b] hover:text-[#15110e] hover:bg-[#f0ebe3] cursor-pointer"
                                   title={isExpanded ? 'Collapse features' : 'Expand features'}
                                 >
-                                  {isExpanded ? '▲' : '▼'}
+                                  <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                                  >
+                                    <polyline points="6 9 12 15 18 9" />
+                                  </svg>
                                 </button>
                               </div>
 
                               {/* Accordion Expandable Features */}
                               {isExpanded && (
-                                <div className="mt-2 pt-2 border-t border-[#f0ede6] space-y-1 text-[11px] text-[#544332]">
+                                <div className="mt-2 pt-2 border-t border-[#f0ede6] space-y-1 text-[10.5px] text-[#544332]">
                                   {plan.features.map((feat, i) => (
                                     <div key={i} className="flex items-center gap-1.5">
                                       <span className="text-[#bd9661] font-bold">✓</span>
@@ -1329,7 +1416,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
 
                       {/* Stripe Test Card Quick Fill */}
                       <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between pb-1 border-b border-[#ebdcc9]">
                           <span className="text-[10px] font-bold uppercase text-[#8b7b6b]">
                             STRIPE SECURE CHECKOUT
                           </span>
@@ -1347,6 +1434,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                             Use Demo Test Card
                           </button>
                         </div>
+
                         <div>
                           <label className="block text-[9.5px] font-bold uppercase text-[#8b7b6b] mb-0.5">
                             Cardholder Name
@@ -1357,9 +1445,10 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                             value={cardName}
                             onChange={(e) => setCardName(e.target.value)}
                             placeholder="Sophie Carter"
-                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none"
+                            className="w-full bg-white border border-[#d5c7b5] rounded-md px-2.5 py-1.5 text-xs text-[#15110e] outline-none"
                           />
                         </div>
+
                         <div>
                           <label className="block text-[9.5px] font-bold uppercase text-[#8b7b6b] mb-0.5">
                             Card Number
@@ -1370,13 +1459,14 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                             value={cardNumber}
                             onChange={(e) => setCardNumber(e.target.value)}
                             placeholder="4242 •••• •••• 4242"
-                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none font-mono"
+                            className="w-full bg-white border border-[#d5c7b5] rounded-md px-2.5 py-1.5 text-xs text-[#15110e] outline-none font-mono"
                           />
                         </div>
+
                         <div className="grid grid-cols-2 gap-2">
                           <div>
                             <label className="block text-[9.5px] font-bold uppercase text-[#8b7b6b] mb-0.5">
-                              Expiry
+                              Expiry Date
                             </label>
                             <input
                               type="text"
@@ -1384,7 +1474,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                               value={cardExpiry}
                               onChange={(e) => setCardExpiry(e.target.value)}
                               placeholder="12/28"
-                              className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none font-mono"
+                              className="w-full bg-white border border-[#d5c7b5] rounded-md px-2.5 py-1.5 text-xs text-[#15110e] outline-none font-mono"
                             />
                           </div>
                           <div>
@@ -1397,432 +1487,717 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                               value={cardCvc}
                               onChange={(e) => setCardCvc(e.target.value)}
                               placeholder="123"
-                              className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none font-mono"
+                              className="w-full bg-white border border-[#d5c7b5] rounded-md px-2.5 py-1.5 text-xs text-[#15110e] outline-none font-mono"
                             />
                           </div>
                         </div>
 
+                        {/* Promo Code Input */}
+                        <div className="pt-0.5">
+                          <label className="block text-[9.5px] font-bold uppercase text-[#8b7b6b] mb-0.5">Promo Code</label>
+                          <div className="flex gap-1.5">
+                            <input
+                              type="text"
+                              value={promoCode}
+                              onChange={(e) => setPromoCode(e.target.value)}
+                              placeholder="e.g. WELCOME10"
+                              className="flex-1 bg-white border border-[#d5c7b5] rounded-md px-2 py-1 text-xs uppercase outline-none focus:border-[#bd9661]"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleApplyPromo}
+                              className="bg-[#15110e] text-[#dfc194] px-2.5 py-1 rounded-md text-[11px] font-bold hover:bg-[#2b221a] cursor-pointer whitespace-nowrap"
+                            >
+                              Apply
+                            </button>
+                          </div>
+                        </div>
+
                         {/* Price Total */}
-                        <div className="pt-2 border-t border-[#ebdcc9] flex justify-between items-center text-xs font-bold text-[#15110e]">
-                          <span>Total Due (incl. GST):</span>
-                          <span className="font-serif text-sm font-bold text-[#bd9661]">
-                            ${finalPrice}.00 AUD
-                          </span>
+                        <div className="bg-white p-2 rounded-lg border border-[#ebdcc9] text-[11px] space-y-1">
+                          <div className="flex justify-between text-[#8b7b6b]">
+                            <span>{activePlan.name} ({billingCycle === 'onetime' ? 'One-Time' : 'Monthly'})</span>
+                            <span>${basePrice}.00 AUD</span>
+                          </div>
+                          {discountPercent > 0 && (
+                            <div className="flex justify-between text-emerald-600 font-semibold">
+                              <span>Promo Discount ({discountPercent}%)</span>
+                              <span>-${discountAmount}.00 AUD</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-[#8b7b6b]">
+                            <span>Australian GST (10%)</span>
+                            <span>Included</span>
+                          </div>
+                          <div className="flex justify-between text-xs font-bold text-[#15110e] pt-1 border-t border-[#f0ede6]">
+                            <span>Total Due:</span>
+                            <span className="text-[#bd9661] font-serif">${finalPrice}.00 AUD</span>
+                          </div>
                         </div>
                       </div>
 
                       {/* Navigation Buttons */}
-                      <div className="flex gap-2 pt-1">
+                      <div className="flex items-center gap-2 pt-1">
                         <button
                           type="button"
                           onClick={() => setCoupleStep('registration')}
-                          className="px-3 py-2 bg-[#f0ede4] hover:bg-[#e5ded2] text-[#15110e] font-bold text-xs rounded-lg cursor-pointer"
+                          className="h-9 px-3 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center justify-center"
                         >
-                          ← Back
+                          ← Back to Details
                         </button>
                         <button
                           type="submit"
                           disabled={isRegistering}
-                          className="flex-1 py-2 px-3 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm text-center"
+                          className="h-9 flex-1 px-3 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm text-center flex items-center justify-center gap-1.5 disabled:opacity-50"
                         >
-                          {isRegistering ? 'Processing...' : `Pay $${finalPrice} & Select MC →`}
+                          <span>{isRegistering ? 'Processing...' : `Pay ${finalPrice} & Proceed to MC Setup →`}</span>
                         </button>
                       </div>
                     </form>
                   ) : (
-                    /* STEP 3: SELECTING MC & JOEY CONCIERGE (DATE-FILTERED) */
+                    /* STEP 3: MC SETUP (DROPDOWN + JOEY AI IDENTICAL TO WEB REGISTER) */
                     <div className="space-y-3.5">
                       <div>
-                        <div className="text-[9px] font-bold uppercase tracking-wider text-[#bd9661]">
-                          STEP 3 &bull; CERTIFIED MC SELECTION
+                        <div className="text-[9px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-0.5">
+                          COUPLE ONBOARDING · STEP 3 OF 3
                         </div>
-                        <h3 className="font-serif text-base font-bold text-[#15110e]">
-                          Select Certified MC
+                        <h3 className="font-serif text-base font-bold text-[#15110e] leading-tight">
+                          MC Setup
                         </h3>
                         <p className="text-[11px] text-[#8b7b6b] mt-0.5">
-                          Chat with Joey AI to compare and audit reception preferences.
+                          Choose from our certified wedding MCs or prefer your own host. SuperAdmin will dispatch platform credentials accordingly.
                         </p>
                       </div>
 
-                      {/* MC Cards with Photo, Name, Service, Rating, Eye-View Pop-up */}
-                      <div className="space-y-2">
-                        {availableMcs.map((mc) => {
-                          const isSelected = selectedMcId === mc.id;
-
-                          return (
-                            <div
-                              key={mc.id}
-                              onClick={() => setSelectedMcId(mc.id)}
-                              className={`bg-white border-2 rounded-xl p-2.5 transition-all cursor-pointer flex items-center justify-between ${
-                                isSelected
-                                  ? 'border-[#bd9661] shadow-xs ring-1 ring-[#bd9661]/25'
-                                  : 'border-[#e8ded0] hover:border-[#bd9661]/50'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <div className="w-10 h-10 rounded-full bg-[#15110e] border border-[#bd9661] flex items-center justify-center text-[#dfc194] font-bold text-xs shrink-0 overflow-hidden">
-                                  {mc.image ? (
-                                    <img src={mc.image} alt={mc.name} className="w-full h-full object-cover" />
-                                  ) : (
-                                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
-                                  )}
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="font-serif text-xs font-bold text-[#15110e] truncate">
-                                    {mc.name}
-                                  </div>
-                                  <div className="text-[10px] text-[#8b7b6b] truncate">
-                                    {mc.business}
-                                  </div>
-                                  <div className="text-[10px] font-bold text-[#bd9661] flex items-center gap-1">
-                                    <span>⭐ {mc.rating}</span>
-                                    {mc.reviews > 0 && <span className="text-[9px] text-[#8b7b6b]">({mc.reviews})</span>}
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                {/* Eye View Pop-up Button */}
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedMcModal(mc);
-                                  }}
-                                  className="w-7 h-7 rounded-lg bg-[#faf8f5] hover:bg-[#f0ede4] text-[#15110e] border border-[#d5c7b5] flex items-center justify-center text-xs cursor-pointer"
-                                  title={`View details for ${mc.name}`}
-                                >
-                                  <svg className="w-3.5 h-3.5 inline mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedMcId(mc.id)}
-                                  className={`px-2.5 py-1 rounded-lg text-[10.5px] font-bold cursor-pointer transition-colors ${
-                                    isSelected
-                                      ? 'bg-[#15110e] text-[#dfc194]'
-                                      : 'bg-[#faf8f5] text-[#15110e] border border-[#d5c7b5]'
-                                  }`}
-                                >
-                                  {isSelected ? '✓ Picked' : 'Select'}
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
+                      {/* MC CHOICE MODE SELECTOR: CERTIFIED VS PREFER OWN MC */}
+                      <div className="grid grid-cols-2 gap-1.5 bg-[#f4efe8] p-1 rounded-xl border border-[#ebdcc9]">
+                        <button
+                          type="button"
+                          onClick={() => setMcChoiceMode('certified')}
+                          className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                            mcChoiceMode === 'certified'
+                              ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
+                              : 'text-[#6b5847] hover:text-[#15110e]'
+                          }`}
+                        >
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                          </svg>
+                          <span>Choose Certified MC</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMcChoiceMode('own');
+                            setIsFloatingChatOpen(false);
+                          }}
+                          className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                            mcChoiceMode === 'own'
+                              ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
+                              : 'text-[#6b5847] hover:text-[#15110e]'
+                          }`}
+                        >
+                          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <line x1="19" y1="8" x2="19" y2="14" />
+                            <line x1="22" y1="11" x2="16" y2="11" />
+                          </svg>
+                          <span>Prefer Our Own MC</span>
+                        </button>
                       </div>
 
-                      {/* Joey AI Concierge Chatbot */}
-                      <div className="bg-white border border-[#e8ded0] rounded-2xl overflow-hidden shadow-2xs">
-                        <div className="px-3 py-2 bg-[#15110e] text-white flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <svg className="w-4 h-4 text-[#bd9661]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                            <span className="font-serif text-xs font-bold">Joey AI MC Concierge</span>
-                          </div>
-                          <span className="text-[9px] text-[#bd9661] uppercase font-bold tracking-wider">
-                            MC Questions Only
-                          </span>
-                        </div>
+                      {/* OPTION A: CHOOSE FROM CERTIFIED WEDDING MCS (DROPDOWN) */}
+                      {mcChoiceMode === 'certified' ? (
+                        <div className="space-y-3">
+                          <div className="space-y-1">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-[#15110e]">
+                              SELECT YOUR CERTIFIED WEDDING MC
+                            </label>
 
-                        {/* Chat Messages */}
-                        <div className="p-2.5 max-h-36 overflow-y-auto space-y-2 bg-[#fbf9f5] text-[11px]">
-                          {chatMessages.map((msg) => (
-                            <div
-                              key={msg.id}
-                              className={`flex ${msg.sender === 'couple' ? 'justify-end' : 'justify-start'}`}
-                            >
-                              <div
-                                className={`max-w-[85%] p-2 rounded-xl whitespace-pre-line ${
-                                  msg.sender === 'couple'
-                                    ? 'bg-[#15110e] text-[#dfc194]'
-                                    : 'bg-white text-[#15110e] border border-[#ebdcc9] shadow-2xs'
-                                }`}
+                            <div className="relative" ref={mcDropdownRef}>
+                              <button
+                                type="button"
+                                onClick={() => setIsMcDropdownOpen(!isMcDropdownOpen)}
+                                className="w-full bg-white border border-[#d5c7b5] hover:border-[#bd9661] rounded-xl p-2.5 flex items-center justify-between text-left transition-all cursor-pointer shadow-2xs"
                               >
-                                {msg.text}
+                                <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                  <div className="w-9 h-9 rounded-full bg-[#15110e] border border-[#bd9661] flex items-center justify-center text-[#dfc194] font-serif font-bold text-xs shrink-0 overflow-hidden">
+                                    {!selectedMcId ? (
+                                      <span>🥂</span>
+                                    ) : selectedMc?.image ? (
+                                      <img src={selectedMc.image} alt={selectedMc.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                      <span>{selectedMc ? selectedMc.name.split(' ').map((n: string) => n[0]).join('') : 'MC'}</span>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="font-serif font-bold text-xs text-[#15110e] truncate">
+                                      {!selectedMcId ? 'Select MC' : selectedMc?.name}
+                                    </div>
+                                    <div className="text-[10px] text-[#7d654c] mt-0.5 line-clamp-1 font-medium">
+                                      {!selectedMcId ? (
+                                        'Choose a certified MC according to your preference, or proceed without one to assign later'
+                                      ) : (
+                                        <span>{selectedMc?.business} &bull; <strong className="text-[#bd9661]">⭐ {selectedMc?.rating}</strong></span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 text-xs text-[#8b7b6b] shrink-0">
+                                  {selectedMcId && selectedMc && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedMcModal(selectedMc);
+                                      }}
+                                      title="View MC Details"
+                                      aria-label="View MC Info"
+                                      className="w-6 h-6 rounded-full bg-[#fbf8f3] hover:bg-[#ebdcc9] text-[#7d654c] hover:text-[#15110e] flex items-center justify-center transition-colors cursor-pointer border border-[#d5c7b5]"
+                                    >
+                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                      </svg>
+                                    </button>
+                                  )}
+                                  <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className={`transition-transform duration-200 ${isMcDropdownOpen ? 'rotate-180 text-[#bd9661]' : ''}`}
+                                  >
+                                    <polyline points="6 9 12 15 18 9" />
+                                  </svg>
+                                </div>
+                              </button>
+
+                              {/* Dropdown Menu List with 'No MC' as First Option */}
+                              {isMcDropdownOpen && (
+                                <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#e8ded0] rounded-xl shadow-xl z-30 max-h-[260px] overflow-y-auto divide-y divide-[#f5f1eb]">
+                                  {/* Option 1: No MC */}
+                                  <div
+                                    onClick={() => {
+                                      setSelectedMcId('');
+                                      setIsMcDropdownOpen(false);
+                                      showToast('Proceeding without an MC', 'info');
+                                    }}
+                                    className={`p-2.5 flex items-center justify-between cursor-pointer transition-colors ${
+                                      !selectedMcId ? 'bg-[#fdfbf7]' : 'hover:bg-[#faf8f5]'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      <div className="w-8 h-8 rounded-full bg-[#15110e] border border-[#bd9661] flex items-center justify-center text-xs shrink-0">
+                                        🥂
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className="font-serif font-bold text-xs text-[#15110e]">
+                                          No MC
+                                        </div>
+                                        <div className="text-[10px] text-[#8b7b6b] truncate">
+                                          Proceed without an MC and assign it later
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {!selectedMcId ? (
+                                      <span className="bg-[#15110e] text-[#dfc194] text-[9.5px] font-bold px-2 py-0.5 rounded-full shrink-0">
+                                        ✓ Picked
+                                      </span>
+                                    ) : (
+                                      <span className="text-[11px] text-[#bd9661] hover:underline font-semibold shrink-0">
+                                        Select →
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Certified MCs */}
+                                  {availableMcs.map((mc) => {
+                                    const isSelected = selectedMcId === mc.id;
+                                    return (
+                                      <div
+                                        key={mc.id}
+                                        onClick={() => {
+                                          setSelectedMcId(mc.id);
+                                          setIsMcDropdownOpen(false);
+                                          showToast(`Selected ${mc.name}!`, 'success');
+                                        }}
+                                        className={`p-2.5 flex items-center justify-between cursor-pointer transition-colors ${
+                                          isSelected ? 'bg-[#fdfbf7]' : 'hover:bg-[#faf8f5]'
+                                        }`}
+                                      >
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                          <div className="w-8 h-8 rounded-full bg-[#15110e] border border-[#bd9661] flex items-center justify-center text-[#dfc194] font-serif font-bold text-[10px] shrink-0 overflow-hidden">
+                                            {mc.image ? (
+                                              <img src={mc.image} alt={mc.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                              mc.name.split(' ').map((n: string) => n[0]).join('')
+                                            )}
+                                          </div>
+                                          <div className="min-w-0">
+                                            <div className="font-serif font-bold text-xs text-[#15110e] flex items-center gap-1">
+                                              <span>{mc.name}</span>
+                                              <span className="text-[9.5px] font-sans font-semibold text-[#bd9661]">
+                                                ⭐ {mc.rating}
+                                              </span>
+                                            </div>
+                                            <div className="text-[10px] text-[#8b7b6b] truncate">
+                                              {mc.business} &bull; {mc.price > 0 ? `$${mc.price} AUD` : 'Included'}
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setSelectedMcModal(mc);
+                                            }}
+                                            className="w-6 h-6 rounded-full bg-[#fbf8f3] hover:bg-[#ebdcc9] text-[#7d654c] hover:text-[#15110e] flex items-center justify-center transition-colors cursor-pointer border border-[#d5c7b5]"
+                                            title="View details"
+                                          >
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                              <circle cx="12" cy="12" r="3" />
+                                            </svg>
+                                          </button>
+                                          {isSelected ? (
+                                            <span className="bg-[#15110e] text-[#dfc194] text-[9.5px] font-bold px-2 py-0.5 rounded-full shrink-0">
+                                              ✓ Picked
+                                            </span>
+                                          ) : (
+                                            <span className="text-[11px] text-[#bd9661] hover:underline font-semibold shrink-0">
+                                              Select →
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* DISTINCT STYLED AI CONCIERGE BANNER (ONLY IN CERTIFIED MC VIEW) */}
+                          <div className="bg-gradient-to-r from-[#fbf6ed] to-[#f6ede0] border-l-4 border-l-[#bd9661] border-y border-r border-[#dfcfb9] rounded-xl p-3 flex items-center justify-between gap-2 shadow-xs">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-8 h-8 rounded-full overflow-hidden border border-[#bd9661] bg-[#181310] flex items-center justify-center shrink-0">
+                                <img src="./chatbot-avatar.png" alt="Joey AI" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }} />
+                                <span className="text-xs select-none">✨</span>
+                              </div>
+                              <div className="min-w-0">
+                                <h4 className="font-serif text-xs font-bold text-[#15110e] truncate">
+                                  Need help deciding? Ask Joey AI
+                                </h4>
+                                <p className="text-[10px] text-[#786450] truncate">
+                                  Chat live to compare host experience, reviews &amp; rates
+                                </p>
                               </div>
                             </div>
-                          ))}
-                          {isChatTyping && (
-                            <div className="text-[10px] text-[#8b7b6b] italic">
-                              Joey is thinking...
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Quick Prompts */}
-                        <div className="px-2 py-1 bg-white border-t border-[#f0ede6] flex gap-1 overflow-x-auto no-scrollbar">
-                          {[
-                            'Who is available?',
-                            'Who has 5.0 stars?',
-                            'Most experienced?',
-                            'Under $1,800?',
-                          ].map((chip) => (
                             <button
-                              key={chip}
                               type="button"
-                              onClick={() => handleSendChatMessage(chip)}
-                              className="text-[9.5px] bg-[#faf8f5] hover:bg-[#f0ede4] text-[#15110e] border border-[#ebdcc9] rounded-full px-2 py-0.5 whitespace-nowrap cursor-pointer shrink-0 font-medium"
+                              onClick={() => setIsFloatingChatOpen(!isFloatingChatOpen)}
+                              className="px-2.5 py-1.5 bg-[#15110e] hover:bg-[#2b221a] text-[#dfc194] hover:text-white border border-[#bd9661]/40 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 shrink-0 cursor-pointer shadow-xs whitespace-nowrap"
                             >
-                              {chip}
+                              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                              <span>{isFloatingChatOpen ? 'Close Chat' : 'Open Chat'}</span>
                             </button>
-                          ))}
-                        </div>
+                          </div>
 
-                        {/* Chat Input */}
-                        <div className="p-2 bg-white border-t border-[#f0ede6] flex gap-1.5">
-                          <input
-                            type="text"
-                            value={chatInput}
-                            onChange={(e) => setChatInput(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handleSendChatMessage();
-                              }
-                            }}
-                            placeholder="Ask about MC experience, rating, cost..."
-                            className="flex-1 bg-[#faf8f5] border border-[#d5c7b5] rounded-lg px-2.5 py-1 text-[11px] text-[#15110e] outline-none"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleSendChatMessage()}
-                            className="bg-[#15110e] text-[#dfc194] px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer"
-                          >
-                            Send
-                          </button>
-                        </div>
-                      </div>
+                          </div>
+                      ) : (
+                        /* OPTION B: PREFER / BRING OWN MC */
+                        <div className="bg-[#faf8f5] border border-[#ebdcc9] rounded-xl p-3 space-y-2.5 shadow-2xs">
+                          <div className="border-b border-[#f0ede4] pb-1.5">
+                            <h4 className="font-serif font-bold text-xs text-[#15110e]">
+                              Couple's Preferred Wedding MC
+                            </h4>
+                            <p className="text-[10px] text-[#8b7b6b] mt-0.5">
+                              Prefer to have your own friend, family member, or professional MC host your wedding? Enter their contact details below.
+                            </p>
+                          </div>
 
-                      {/* Navigation Buttons */}
-                      <div className="flex gap-2 pt-1">
+                          <div className="space-y-2 text-xs">
+                            <div>
+                              <label className="block text-[9.5px] font-bold text-[#8b7b6b] uppercase mb-0.5">
+                                MC Full Name <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                value={ownMcName}
+                                onChange={(e) => setOwnMcName(e.target.value)}
+                                placeholder="e.g. Anthony Rossi"
+                                className="w-full bg-white border border-[#d5c7b5] rounded-lg p-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[9.5px] font-bold text-[#8b7b6b] uppercase mb-0.5">
+                                MC Mobile / Phone Number
+                              </label>
+                              <div className="flex">
+                                <span className="inline-flex items-center px-2.5 border border-r-0 border-[#d5c7b5] bg-[#f5ede2] text-xs font-bold text-[#6b5847] rounded-l-lg select-none">
+                                  +61
+                                </span>
+                                <input
+                                  type="tel"
+                                  value={ownMcPhone}
+                                  onChange={(e) => setOwnMcPhone(formatAuMobile(e.target.value))}
+                                  placeholder="0412 888 777"
+                                  className="w-full bg-white border border-[#d5c7b5] rounded-r-lg rounded-l-none p-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-[9.5px] font-bold text-[#8b7b6b] uppercase mb-0.5">
+                                MC Email Address <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                type="email"
+                                required
+                                value={ownMcEmail}
+                                onChange={(e) => setOwnMcEmail(e.target.value)}
+                                placeholder="e.g. anthony.rossi@mcservices.com.au"
+                                className="w-full bg-white border border-[#d5c7b5] rounded-lg p-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[9.5px] font-bold text-[#8b7b6b] uppercase mb-0.5">
+                                Business / Agency Name (Optional)
+                              </label>
+                              <input
+                                type="text"
+                                value={ownMcAgency}
+                                onChange={(e) => setOwnMcAgency(e.target.value)}
+                                placeholder="e.g. Rossi Event Hosting"
+                                className="w-full bg-white border border-[#d5c7b5] rounded-lg p-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Navigation CTA Buttons */}
+                      <div className="flex items-center gap-2 pt-1">
                         <button
                           type="button"
                           onClick={() => setCoupleStep('payment')}
-                          className="px-3 py-2 bg-[#f0ede4] hover:bg-[#e5ded2] text-[#15110e] font-bold text-xs rounded-lg cursor-pointer"
+                          className="h-9 shrink-0 px-3 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center justify-center"
                         >
-                          ← Back
+                          ← Back to Plan
                         </button>
                         <button
                           type="button"
                           onClick={handleFinalizeCoupleRegistration}
-                          disabled={isRegistering}
-                          className="flex-1 py-2.5 px-3 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm text-center"
+                          disabled={isRegistering || (mcChoiceMode === 'own' && (!ownMcName.trim() || !ownMcEmail.trim()))}
+                          className="h-9 flex-1 px-3 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-1 disabled:opacity-50 text-center whitespace-nowrap"
                         >
-                          {isRegistering ? 'Launching Workspace...' : 'Complete & Launch Dashboard →'}
+                          <span>
+                            {isRegistering
+                              ? 'Launching...'
+                              : mcChoiceMode === 'own'
+                              ? 'Confirm & Launch →'
+                              : !selectedMcId
+                              ? 'Skip & Launch Dashboard →'
+                              : 'Confirm & Launch →'}
+                          </span>
                         </button>
                       </div>
                     </div>
                   )}
                 </div>
               ) : (
-                /* MC MULTI-STEP REGISTRATION FORM */
+                /* MC MULTI-STEP REGISTRATION FORM (SAME TO SAME AS WEB REGISTER IN MOBILE VIEW) */
                 <div className="space-y-3.5">
                   {/* 2-Step MC Wizard Breadcrumb */}
-                  <div className="bg-[#faf8f5] border border-[#e8ded0] rounded-xl p-2 flex items-center justify-center gap-3 text-[10px]">
-                    <div className={`flex items-center gap-1.5 font-bold ${
-                      mcRegStep === 'details' ? 'text-[#bd9661]' : 'text-[#8b7b6b]'
-                    }`}>
-                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] ${
-                        mcRegStep === 'details' ? 'bg-[#15110e] text-[#dfc194]' : 'bg-[#bd9661] text-[#15110e]'
-                      }`}>
+                  <div className="bg-[#faf8f5] border border-[#e8ded0] rounded-xl p-2.5 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                          mcRegStep === 'details'
+                            ? 'bg-[#15110e] text-[#dfc194] ring-2 ring-[#bd9661]'
+                            : 'bg-[#bd9661] text-[#15110e]'
+                        }`}
+                      >
                         {mcRegStep !== 'details' ? '✓' : '1'}
+                      </div>
+                      <span className={`text-[11px] font-semibold ${mcRegStep === 'details' ? 'text-[#15110e]' : 'text-[#8b7b6b]'}`}>
+                        Host Profile
                       </span>
-                      <span>Host Profile</span>
                     </div>
-                    <div className="w-8 h-0.5 bg-[#e8ded0] rounded-full" />
-                    <div className={`flex items-center gap-1.5 font-bold ${
-                      mcRegStep === 'plan_payment' ? 'text-[#bd9661]' : 'text-[#8b7b6b]'
-                    }`}>
-                      <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] ${
-                        mcRegStep === 'plan_payment' ? 'bg-[#15110e] text-[#dfc194]' : 'bg-[#e8ded0] text-[#15110e]'
-                      }`}>
+
+                    <div className="h-0.5 flex-1 bg-[#ebdcc9] mx-2">
+                      <div
+                        className="h-full bg-[#bd9661] transition-all duration-300"
+                        style={{ width: mcRegStep === 'details' ? '0%' : '100%' }}
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] ${
+                          mcRegStep === 'plan_payment'
+                            ? 'bg-[#15110e] text-[#dfc194] ring-2 ring-[#bd9661]'
+                            : 'bg-[#ebdcc9] text-[#8b7b6b]'
+                        }`}
+                      >
                         2
+                      </div>
+                      <span className={`text-[11px] font-semibold ${mcRegStep === 'plan_payment' ? 'text-[#15110e]' : 'text-[#8b7b6b]'}`}>
+                        SaaS Plan &amp; Pay
                       </span>
-                      <span>SaaS Plan &amp; Pay</span>
                     </div>
                   </div>
 
                   {mcRegStep === 'details' ? (
                     /* STEP 1: HOST DETAILS */
                     <form onSubmit={handleProceedToMcPlan} className="space-y-3.5">
-                      <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2.5">
-                        <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 pb-1 border-b border-[#ebdcc9]">
-                          <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#bd9661]" /> Host Profile &amp; Business</span>
+                      <div>
+                        <div className="text-[9px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-0.5">
+                          STEP 1 OF 2 · PRO MC &amp; COORDINATOR ACCOUNT
                         </div>
+                        <h3 className="font-serif text-base font-bold text-[#15110e] leading-tight">
+                          Register Certified MC Account
+                        </h3>
+                        <p className="text-[11px] text-[#8b7b6b] mt-0.5">
+                          Manage multiple couple run sheets, client audio cues, and seamless wedding coordination.
+                        </p>
+                      </div>
+
+                      {/* Business & Personal Details Card */}
+                      <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#e8ded0] space-y-2.5">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5 text-[#bd9661]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          <span>Host Profile &amp; Business Information</span>
+                        </div>
+
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
                             Full Name *
                           </label>
                           <input
                             type="text"
                             required
+                            placeholder="e.g. Robert Galati"
                             value={mcName}
                             onChange={(e) => setMcName(e.target.value)}
-                            placeholder="Jane Doe"
-                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                            className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none"
                           />
                         </div>
+
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
                             Business Name *
                           </label>
                           <input
                             type="text"
                             required
+                            placeholder="e.g. Galati MC Services"
                             value={mcBusiness}
                             onChange={(e) => setMcBusiness(e.target.value)}
-                            placeholder="Jane Doe Weddings"
-                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                            className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none"
                           />
                         </div>
+
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
                             Email Address *
                           </label>
                           <input
                             type="email"
                             required
+                            placeholder="robert@galatimc.com.au"
                             value={mcEmail}
                             onChange={(e) => setMcEmail(e.target.value)}
-                            placeholder="jane@example.com"
-                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                            className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none"
                           />
                         </div>
+
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
-                            Mobile Number *
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
+                            Australian Mobile *
                           </label>
-                          <div className="flex">
-                            <span className="inline-flex items-center px-2.5 py-1.5 border border-r-0 border-[#d5c7b5] bg-[#f5ede2] text-xs font-bold text-[#6b5847] rounded-l-lg select-none">
+                          <div className="flex rounded-lg overflow-hidden border border-[#d5c7b5] focus-within:border-[#bd9661] bg-white">
+                            <span className="inline-flex items-center px-2.5 bg-[#f5ede2] text-xs font-bold text-[#6b5847] border-r border-[#e2d8cb] select-none">
                               +61
                             </span>
                             <input
                               type="tel"
                               required
+                              placeholder="0412 345 678"
                               value={mcMobile}
                               onChange={(e) => setMcMobile(formatAuMobile(e.target.value))}
-                              placeholder="0412 345 678"
-                              className="w-full bg-white border border-[#d5c7b5] rounded-r-lg rounded-l-none px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                              className="w-full px-2.5 py-1.5 text-xs text-[#15110e] outline-none bg-white"
                             />
                           </div>
                         </div>
+
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
-                            ABN <span className="font-normal lowercase">(optional)</span>
-                          </label>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-[#4a3b2c]">
+                              Australian Business Number (ABN)
+                            </label>
+                            <span className="text-[9.5px] text-[#8b7b6b]">(Optional)</span>
+                          </div>
                           <input
                             type="text"
+                            placeholder="12 345 678 901"
                             value={mcAbn}
                             onChange={(e) => setMcAbn(e.target.value)}
-                            placeholder="12 345 678 901"
-                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                            className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none"
                           />
                         </div>
                       </div>
 
-                      {/* Password */}
-                      <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2.5">
-                        <div className="text-[#bd9661] text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 pb-1 border-b border-[#ebdcc9]">
-                          <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#bd9661]" /> Account Password</span>
+                      {/* Password & Security Card */}
+                      <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#e8ded0] space-y-2.5">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5 text-[#bd9661]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                          <span>Account Security</span>
                         </div>
+
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
                             Password *
                           </label>
                           <div className="relative">
                             <input
                               type={mcShowPwd ? 'text' : 'password'}
                               required
+                              placeholder="Create password"
                               value={mcPassword}
                               onChange={(e) => setMcPassword(e.target.value)}
-                              placeholder="Create password"
-                              className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 pr-12 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                              className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] rounded-lg px-2.5 py-1.5 pr-10 text-xs text-[#15110e] outline-none"
                             />
                             <button
-  type="button"
-  onClick={() => setMcShowPwd(!mcShowPwd)}
-  aria-label={mcShowPwd ? 'Hide password' : 'Show password'}
-  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8b7b6b] hover:text-[#15110e] transition-colors cursor-pointer p-0.5"
->
-  {mcShowPwd ? (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
-    </svg>
-  ) : (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-    </svg>
-  )}
-</button>
+                              type="button"
+                              onClick={() => setMcShowPwd(!mcShowPwd)}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8b7b6b] hover:text-[#15110e] cursor-pointer"
+                            >
+                              {mcShowPwd ? (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                                </svg>
+                              ) : (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              )}
+                            </button>
                           </div>
                           <div className="w-full bg-[#e8ded0] h-1 rounded-full mt-1.5 overflow-hidden">
                             <div
                               className="h-full transition-all duration-300"
-                              style={{
-                                width: `${(strengthScore / 4) * 100}%`,
-                                backgroundColor: strengthColor,
-                              }}
+                              style={{ width: `${(strengthScore / 4) * 100}%`, backgroundColor: strengthColor }}
                             />
                           </div>
-                          <div className="text-[10px] text-[#8b7b6b] mt-0.5">{strengthLabel}</div>
+                          <div className="text-[9.5px] text-[#8b7b6b] mt-0.5">{strengthLabel}</div>
                         </div>
 
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-[#8b7b6b] mb-1">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
                             Confirm Password *
                           </label>
-                          <input
-                            type={mcShowPwd ? 'text' : 'password'}
-                            required
-                            value={mcConfirmPassword}
-                            onChange={(e) => setMcConfirmPassword(e.target.value)}
-                            placeholder="Re-enter password"
-                            className="w-full bg-white border border-[#d5c7b5] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-                          />
+                          <div className="relative">
+                            <input
+                              type={mcShowConfirm ? 'text' : 'password'}
+                              required
+                              placeholder="Re-enter password"
+                              value={mcConfirmPassword}
+                              onChange={(e) => setMcConfirmPassword(e.target.value)}
+                              className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] rounded-lg px-2.5 py-1.5 pr-10 text-xs text-[#15110e] outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setMcShowConfirm(!mcShowConfirm)}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8b7b6b] hover:text-[#15110e] cursor-pointer"
+                            >
+                              {mcShowConfirm ? (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                                </svg>
+                              ) : (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
+                          {mcConfirmPassword && (
+                            <div className={`text-[10px] mt-0.5 font-semibold ${passwordsMatch ? 'text-emerald-700' : 'text-rose-600'}`}>
+                              {passwordsMatch ? '✓ Passwords match' : '✕ Passwords do not match'}
+                            </div>
+                          )}
                         </div>
                       </div>
 
                       {/* Terms */}
-                      <label className="flex items-start gap-2 text-[11px] text-[#8b7b6b] cursor-pointer">
+                      <label className="flex items-start gap-2 text-[11px] text-[#6b5847] cursor-pointer">
                         <input
                           type="checkbox"
                           checked={agreeTerms}
                           onChange={(e) => setAgreeTerms(e.target.checked)}
-                          className="mt-0.5 rounded text-[#bd9661]"
+                          className="mt-0.5 rounded text-[#bd9661] focus:ring-[#bd9661]"
                         />
-                        <span>I agree to the Terms of Service &amp; Privacy Policy</span>
+                        <span>
+                          I agree to the <span className="text-[#bd9661] underline font-semibold">Terms of Service</span> and <span className="text-[#bd9661] underline font-semibold">Privacy Policy</span>
+                        </span>
                       </label>
 
                       <button
                         type="submit"
-                        className="w-full py-2.5 px-4 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm"
+                        className="w-full py-2.5 px-4 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
                       >
-                        Proceed to Choose MC Plan &amp; Billing →
+                        <span>Proceed to Choose MC Plan &amp; Billing</span>
+                        <span>→</span>
                       </button>
                     </form>
                   ) : (
-                    /* STEP 2: MC PLAN SELECTION & BILLING (DROPDOWN ACCORDION STYLE) */
+                    /* STEP 2: MC PLAN SELECTION & STRIPE BILLING */
                     <form onSubmit={handleFinalizeMcRegistration} className="space-y-3.5">
-                      <div className="text-center pb-1">
-                        <h3 className="font-serif text-sm font-bold text-[#15110e]">
+                      <div>
+                        <div className="text-[9px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-0.5">
+                          STEP 2 OF 2 · MC SAAS PLAN &amp; STRIPE BILLING
+                        </div>
+                        <h3 className="font-serif text-base font-bold text-[#15110e] leading-tight">
                           Select Your MC Subscription Plan
                         </h3>
-                        <p className="text-[10.5px] text-[#8b7b6b]">
-                          Choose a plan to activate your MC hosting workspace.
+                        <p className="text-[11px] text-[#8b7b6b] mt-0.5">
+                          Choose a base tier to manage private weddings or a certified paid tier to be listed and booked on the Tap &amp; Toast platform.
                         </p>
                       </div>
 
+                      {/* Plan Selection Cards with Accordion Chevron Dropdown */}
                       <div className="space-y-2">
                         {MC_PLANS.map((plan) => {
                           const isSelected = selectedMcPlanId === plan.id;
                           const isExpanded = expandedMcPlanId === plan.id;
+
                           return (
                             <div
                               key={plan.id}
                               onClick={() => setSelectedMcPlanId(plan.id)}
                               className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
                                 isSelected
-                                  ? 'border-[#bd9661] bg-[#fdfbf7] shadow-2xs ring-1 ring-[#bd9661]'
+                                  ? 'border-[#bd9661] bg-[#fdfbf7] shadow-xs ring-1 ring-[#bd9661]'
                                   : 'border-[#e8ded0] bg-white hover:border-[#d5c7b5]'
                               }`}
                             >
@@ -1830,7 +2205,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                                 <div className="flex items-center gap-2">
                                   <input
                                     type="radio"
-                                    name="mobileMcPlan"
+                                    name="mobileMcPlanChoice"
                                     checked={isSelected}
                                     onChange={() => setSelectedMcPlanId(plan.id)}
                                     className="text-[#bd9661] focus:ring-[#bd9661] cursor-pointer"
@@ -1850,7 +2225,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                                         </span>
                                       )}
                                     </div>
-                                    <div className="text-[10px] text-[#8b7b6b]">
+                                    <div className="text-[10px] text-[#8b7b6b] mt-0.5">
                                       {plan.tagline}
                                     </div>
                                   </div>
@@ -1862,7 +2237,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                                       ${plan.price}
                                     </div>
                                     <div className="text-[8.5px] text-[#8b7b6b] uppercase">
-                                      {plan.price === 0 ? 'Free' : '/mo'}
+                                      {plan.price === 0 ? 'Free' : 'AUD / mo'}
                                     </div>
                                   </div>
 
@@ -1872,7 +2247,8 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                                       e.stopPropagation();
                                       setExpandedMcPlanId(isExpanded ? null : plan.id);
                                     }}
-                                    className="p-1 rounded text-[#8b7b6b] hover:text-[#15110e] cursor-pointer"
+                                    className="p-1 rounded text-[#8b7b6b] hover:text-[#15110e] hover:bg-[#f0ebe3] cursor-pointer"
+                                    title={isExpanded ? 'Collapse features' : 'Expand features'}
                                   >
                                     <svg
                                       width="14"
@@ -1891,8 +2267,12 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                                 </div>
                               </div>
 
+                              {/* Accordion Expandable Features */}
                               {isExpanded && (
                                 <div className="mt-2 pt-2 border-t border-[#f0ede6]">
+                                  <div className="text-[9.5px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1">
+                                    Plan Features:
+                                  </div>
                                   <ul className="space-y-1 text-[10.5px] text-[#524438]">
                                     {plan.features.map((feat, fIdx) => (
                                       <li key={fIdx} className="flex items-center gap-1.5">
@@ -1908,11 +2288,11 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                         })}
                       </div>
 
-                      {/* Paid Plan Card Simulation */}
+                      {/* Paid Plan Stripe Payment Simulation */}
                       {selectedMcPlanId !== 'mc_base' && (
-                        <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2.5">
-                          <div className="flex items-center justify-between pb-1.5 border-b border-[#ebdcc9]">
-                            <span className="text-[11px] font-bold text-[#15110e]">Stripe Secure Payment</span>
+                        <div className="bg-[#faf8f5] p-3 rounded-xl border border-[#ebdcc9] space-y-2">
+                          <div className="flex items-center justify-between pb-1 border-b border-[#ebdcc9]">
+                            <span className="text-[10px] font-bold uppercase text-[#8b7b6b]">Stripe Secure Payment</span>
                             <button
                               type="button"
                               onClick={() => {
@@ -1927,56 +2307,59 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                               Use Test Card
                             </button>
                           </div>
+
                           <div>
-                            <label className="block text-[9px] font-bold uppercase text-[#8b7b6b] mb-1">Cardholder Name</label>
+                            <label className="block text-[9.5px] font-bold uppercase text-[#8b7b6b] mb-0.5">Cardholder Name</label>
                             <input
                               type="text"
                               required
                               value={mcCardName}
                               onChange={(e) => setMcCardName(e.target.value)}
                               placeholder="Name on card"
-                              className="w-full bg-white border border-[#d5c7b5] rounded-md px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                              className="w-full bg-white border border-[#d5c7b5] rounded-md px-2.5 py-1.5 text-xs text-[#15110e] outline-none"
                             />
                           </div>
+
                           <div>
-                            <label className="block text-[9px] font-bold uppercase text-[#8b7b6b] mb-1">Card Number</label>
+                            <label className="block text-[9.5px] font-bold uppercase text-[#8b7b6b] mb-0.5">Card Number</label>
                             <input
                               type="text"
                               required
                               value={mcCardNumber}
                               onChange={(e) => setMcCardNumber(e.target.value)}
                               placeholder="4242 •••• •••• 4242"
-                              className="w-full bg-white border border-[#d5c7b5] rounded-md px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                              className="w-full bg-white border border-[#d5c7b5] rounded-md px-2.5 py-1.5 text-xs text-[#15110e] outline-none font-mono"
                             />
                           </div>
+
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className="block text-[9px] font-bold uppercase text-[#8b7b6b] mb-1">Expiry Date</label>
+                              <label className="block text-[9.5px] font-bold uppercase text-[#8b7b6b] mb-0.5">Expiry Date</label>
                               <input
                                 type="text"
                                 required
                                 value={mcCardExpiry}
                                 onChange={(e) => setMcCardExpiry(e.target.value)}
                                 placeholder="MM/YY"
-                                className="w-full bg-white border border-[#d5c7b5] rounded-md px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                                className="w-full bg-white border border-[#d5c7b5] rounded-md px-2.5 py-1.5 text-xs text-[#15110e] outline-none font-mono"
                               />
                             </div>
                             <div>
-                              <label className="block text-[9px] font-bold uppercase text-[#8b7b6b] mb-1">CVC / CVV</label>
+                              <label className="block text-[9.5px] font-bold uppercase text-[#8b7b6b] mb-0.5">CVC / CVV</label>
                               <input
                                 type="text"
                                 required
                                 value={mcCardCvc}
                                 onChange={(e) => setMcCardCvc(e.target.value)}
                                 placeholder="123"
-                                className="w-full bg-white border border-[#d5c7b5] rounded-md px-2.5 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                                className="w-full bg-white border border-[#d5c7b5] rounded-md px-2.5 py-1.5 text-xs text-[#15110e] outline-none font-mono"
                               />
                             </div>
                           </div>
 
                           {/* Promo Code Input */}
                           <div className="pt-0.5">
-                            <label className="block text-[9px] font-bold uppercase text-[#8b7b6b] mb-1">Promo Code</label>
+                            <label className="block text-[9.5px] font-bold uppercase text-[#8b7b6b] mb-0.5">Promo Code</label>
                             <div className="flex gap-1.5">
                               <input
                                 type="text"
@@ -2032,23 +2415,22 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                         <button
                           type="button"
                           onClick={() => setMcRegStep('details')}
-                          className="px-3 py-2.5 bg-[#f0ede4] hover:bg-[#e5ded2] text-[#15110e] font-bold text-xs rounded-lg cursor-pointer whitespace-nowrap"
+                          className="h-9 shrink-0 px-3 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center justify-center"
                         >
-                          ← Back
+                          ← Back to Details
                         </button>
                         <button
                           type="submit"
                           disabled={isRegistering}
-                          className="flex-1 py-2.5 px-2 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm text-center flex items-center justify-center gap-1.5"
+                          className="h-9 flex-1 px-3 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm text-center flex items-center justify-center gap-1 whitespace-nowrap"
                         >
-                          <span className="whitespace-nowrap">
+                          <span>
                             {isRegistering
-                              ? 'Activating Plan...'
+                              ? 'Activating...'
                               : selectedMcPlanId === 'mc_base'
-                              ? 'Activate Free Plan & Launch'
-                              : 'Pay & Launch MC Portal'}
+                              ? 'Activate Free Tier →'
+                              : 'Pay & Launch →'}
                           </span>
-                          {!isRegistering && <span className="inline-block">→</span>}
                         </button>
                       </div>
                     </form>
@@ -2056,7 +2438,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
                 </div>
               )}
 
-              {/* Bottom Switch Link (Only on Step 1 for couple) */}
+              {/* Bottom Switch Link (Only on Step 1 for couple and MC) */}
               {(regAccountType === 'couple' ? coupleStep === 'registration' : mcRegStep === 'details') && (
                 <div className="text-center text-xs text-[#8b7b6b] pt-2">
                   Already have an account?{' '}
@@ -2073,7 +2455,104 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
           )}
         </div>
 
+                {/* ============================================================== */}
+        {/* FLOATING POP-UP CHATBOT WINDOW FOR JOEY AI (MATCHING WEB REGISTRATION POP-UP) */}
         {/* ============================================================== */}
+        {isFloatingChatOpen && (
+          <div className="absolute inset-x-3 bottom-3 z-40 bg-white rounded-2xl border-2 border-[#bd9661] shadow-[0_16px_48px_rgba(21,17,14,0.35)] overflow-hidden flex flex-col max-h-[440px] animate-in fade-in slide-in-from-bottom-4">
+            {/* Pop-up Header */}
+            <div className="bg-[#15110e] text-white px-3.5 py-2.5 flex items-center justify-between border-b border-[#29211a] flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <h4 className="font-serif text-xs font-bold text-[#dfc194]">
+                  Joey AI MC Matchmaker
+                </h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFloatingChatOpen(false)}
+                className="w-5 h-5 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors cursor-pointer text-xs font-bold"
+                title="Close Chat"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Messages Scroll Area */}
+            <div className="p-3 overflow-y-auto space-y-2.5 flex-1 bg-[#faf8f5] text-xs">
+              {chatMessages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`p-2.5 rounded-xl text-xs leading-relaxed ${
+                    msg.sender === 'couple'
+                      ? 'bg-[#15110e] text-[#dfc194] ml-6 shadow-xs'
+                      : 'bg-white text-[#15110e] border border-[#ebdcc9] mr-6 shadow-2xs'
+                  }`}
+                >
+                  <div className="font-semibold text-[9px] uppercase tracking-wider mb-1 opacity-70">
+                    {msg.sender === 'couple' ? 'You' : 'Joey AI'}
+                  </div>
+                  <div className="whitespace-pre-wrap">{msg.text}</div>
+                </div>
+              ))}
+              {isChatTyping && (
+                <div className="bg-white text-[#8b7b6b] text-[10.5px] p-2 rounded-lg border border-[#ebdcc9] inline-block animate-pulse">
+                  Joey is typing...
+                </div>
+              )}
+            </div>
+
+            {/* Quick Suggestion Chips */}
+            <div className="px-3 pt-2 pb-1 bg-white border-t border-[#f0ede6] flex gap-1.5 flex-wrap flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => handleSendChatMessage('Who is free on my date?')}
+                className="text-[9.5px] font-semibold bg-[#faf8f5] hover:bg-[#ede6da] text-[#6b5847] border border-[#d5c7b5] px-2 py-0.5 rounded-full cursor-pointer transition-colors"
+              >
+                📅 Who is free?
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSendChatMessage('Who has 5.0 stars?')}
+                className="text-[9.5px] font-semibold bg-[#faf8f5] hover:bg-[#ede6da] text-[#6b5847] border border-[#d5c7b5] px-2 py-0.5 rounded-full cursor-pointer transition-colors"
+              >
+                ⭐ 5.0 Stars
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSendChatMessage('Which MC is under $1,800?')}
+                className="text-[9.5px] font-semibold bg-[#faf8f5] hover:bg-[#ede6da] text-[#6b5847] border border-[#d5c7b5] px-2 py-0.5 rounded-full cursor-pointer transition-colors"
+              >
+                💰 Under $1,800
+              </button>
+            </div>
+
+            {/* Input Form */}
+            <div className="p-2.5 bg-white border-t border-[#f0ede6] flex gap-2 flex-shrink-0">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSendChatMessage();
+                  }
+                }}
+                placeholder="Ask about MC experience, rating, cost..."
+                className="flex-1 bg-[#faf8f5] border border-[#d5c7b5] focus:border-[#bd9661] rounded-lg px-2.5 py-1.5 text-xs text-[#15110e] outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => handleSendChatMessage()}
+                className="bg-[#15110e] text-[#dfc194] hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors"
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* MODAL: MC PROFILE EYE-VIEW POP-UP                              */}
         {/* ============================================================== */}
         {selectedMcModal && (

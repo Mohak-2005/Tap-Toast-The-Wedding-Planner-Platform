@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
-interface ColorPicker2DProps {
+export interface ColorPicker2DProps {
   color: string; // Hex string, e.g. '#8B1E3F'
   onChange: (hex: string) => void;
+  darkMode?: boolean;
 }
 
 // Convert HSL to Hex
@@ -66,7 +67,7 @@ function hexToHsl(hex: string): { h: number; s: number; l: number } {
   };
 }
 
-export const ColorPicker2D: React.FC<ColorPicker2DProps> = ({ color, onChange }) => {
+export const ColorPicker2D: React.FC<ColorPicker2DProps> = ({ color, onChange, darkMode = false }) => {
   const initialHsl = hexToHsl(color);
   const [hue, setHue] = useState<number>(initialHsl.h);
   const [saturation, setSaturation] = useState<number>(initialHsl.s);
@@ -180,8 +181,27 @@ export const ColorPicker2D: React.FC<ColorPicker2DProps> = ({ color, onChange })
   const currentHex = hslToHex(hue, saturation, lightness);
 
   return (
-    <div className="bg-[#fcfbf9] border border-[#e8ded0] rounded-xl p-3 select-none">
-      {/* 2D Spectrum Box + Vertical Lightness Bar (Exact Image 5 Layout) */}
+    <div
+      className={`rounded-xl p-3 select-none transition-all ${
+        darkMode
+          ? 'bg-[#181310] border border-[#3d3024] shadow-md text-white'
+          : 'bg-[#fcfbf9] border border-[#e8ded0] shadow-2xs text-[#15110e]'
+      }`}
+    >
+      {/* Custom Color Spectrum Header */}
+      <div className={`flex items-center justify-between pb-1.5 mb-2 border-b ${darkMode ? 'border-[#3d3024]' : 'border-[#ede5d8]'}`}>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs">🎨</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8c6b3e]">
+            Custom Color Spectrum
+          </span>
+        </div>
+        <span className="text-[9px] text-[#8b7b6b]">
+          Drag to pick custom shade
+        </span>
+      </div>
+
+      {/* 2D Spectrum Box + Vertical Lightness Bar (Exact Image 3 Layout) */}
       <div className="flex items-center gap-3">
         {/* 2D Spectrum Gradient Canvas / Box */}
         <div
@@ -196,7 +216,9 @@ export const ColorPicker2D: React.FC<ColorPicker2DProps> = ({ color, onChange })
               handleSpectrumMove(e.touches[0].clientX, e.touches[0].clientY);
             }
           }}
-          className="relative flex-1 h-[145px] rounded-lg cursor-crosshair overflow-hidden border border-[#d5c7b5] shadow-inner"
+          className={`relative flex-1 h-[135px] rounded-lg cursor-crosshair overflow-hidden border shadow-inner ${
+            darkMode ? 'border-[#3d3024]' : 'border-[#d5c7b5]'
+          }`}
           style={{
             background: `
               linear-gradient(to top, rgba(120, 120, 120, 0.85) 0%, rgba(255, 255, 255, 0) 100%),
@@ -216,7 +238,7 @@ export const ColorPicker2D: React.FC<ColorPicker2DProps> = ({ color, onChange })
         >
           {/* Circular Crosshair Pointer */}
           <div
-            className="absolute w-4 h-4 rounded-full border-2 border-white shadow-[0_0_2px_rgba(0,0,0,0.8)] pointer-events-none -translate-x-1/2 -translate-y-1/2"
+            className="absolute w-4 h-4 rounded-full border-2 border-white shadow-[0_0_3px_rgba(0,0,0,0.8)] pointer-events-none -translate-x-1/2 -translate-y-1/2"
             style={{
               left: `${Math.max(0, Math.min(100, pointerX))}%`,
               top: `${Math.max(0, Math.min(100, pointerY))}%`,
@@ -239,7 +261,9 @@ export const ColorPicker2D: React.FC<ColorPicker2DProps> = ({ color, onChange })
                 handleSliderMove(e.touches[0].clientY);
               }
             }}
-            className="w-4 h-[145px] rounded-md cursor-ns-resize border border-[#d5c7b5] shadow-inner"
+            className={`w-4 h-[135px] rounded-md cursor-ns-resize border shadow-inner ${
+              darkMode ? 'border-[#3d3024]' : 'border-[#d5c7b5]'
+            }`}
             style={{
               background: `linear-gradient(to bottom, #ffffff 0%, hsl(${hue}, ${saturation}%, 50%) 50%, #000000 100%)`,
             }}
@@ -252,26 +276,38 @@ export const ColorPicker2D: React.FC<ColorPicker2DProps> = ({ color, onChange })
               top: `${Math.max(0, Math.min(100, sliderY))}%`,
             }}
           >
-            <div className="w-0 h-0 border-y-[5px] border-y-transparent border-r-[7px] border-r-[#15110e]" />
+            <div
+              className={`w-0 h-0 border-y-[5px] border-y-transparent border-r-[7px] ${
+                darkMode ? 'border-r-[#bd9661]' : 'border-r-[#15110e]'
+              }`}
+            />
           </div>
         </div>
       </div>
 
       {/* Bottom Row: Swatch Preview & Hex input */}
-      <div className="mt-3 flex items-center justify-between gap-3 pt-2.5 border-t border-[#f0ede4]">
-        <div className="flex items-center gap-2.5">
+      <div
+        className={`mt-2.5 flex items-center justify-between gap-3 pt-2 border-t ${
+          darkMode ? 'border-[#2b221a]' : 'border-[#f0ede4]'
+        }`}
+      >
+        <div className="flex items-center gap-2">
           <div
-            className="w-9 h-9 rounded-lg border border-[#d5c7b5] shadow-xs shrink-0"
+            className={`w-7 h-7 rounded-lg border shadow-xs shrink-0 ${
+              darkMode ? 'border-[#3d3024]' : 'border-[#d5c7b5]'
+            }`}
             style={{ backgroundColor: currentHex }}
           />
           <div>
-            <div className="text-[10px] font-bold text-[#8b7b6b] uppercase">SELECTED COLOR</div>
-            <div className="font-mono text-xs font-bold text-[#15110e]">{currentHex}</div>
+            <div className="text-[9px] font-bold text-[#8b7b6b] uppercase">COLOR</div>
+            <div className={`font-mono text-xs font-bold ${darkMode ? 'text-[#fce4ca]' : 'text-[#15110e]'}`}>
+              {currentHex}
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-1.5">
-          <label className="text-[10px] font-bold text-[#8b7b6b] uppercase">HEX</label>
+          <label className="text-[9px] font-bold text-[#8b7b6b] uppercase">HEX</label>
           <input
             type="text"
             value={currentHex}
@@ -281,7 +317,11 @@ export const ColorPicker2D: React.FC<ColorPicker2DProps> = ({ color, onChange })
                 onChange(val);
               }
             }}
-            className="w-20 bg-white border border-[#d5c7b5] rounded-lg px-2 py-1 text-xs font-mono font-bold text-[#15110e] text-center outline-none focus:border-[#bd9661]"
+            className={`w-20 rounded-lg px-2 py-0.5 text-xs font-mono font-bold text-center outline-none border transition-colors ${
+              darkMode
+                ? 'bg-[#15110e] border-[#3d3024] text-[#fce4ca] focus:border-[#bd9661]'
+                : 'bg-white border-[#d5c7b5] text-[#15110e] focus:border-[#bd9661]'
+            }`}
           />
         </div>
       </div>

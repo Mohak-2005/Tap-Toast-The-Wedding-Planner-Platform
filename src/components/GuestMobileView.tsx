@@ -8,6 +8,7 @@ import {
   ENVELOPE_GIFTS,
   BANNER_STORY,
 } from '../assets/envelopeCards';
+import { InvitationCardStage, LUXURY_THEMES } from './InvitationCardStage';
 
 
 const CELEBRATION_PARTICLES = [
@@ -31,7 +32,77 @@ const CELEBRATION_PARTICLES = [
 
 export default function GuestMobileView() {
   const { state, setState } = useAppState();
-  const [activeTab, setActiveTab] = useState<'splash' | 'hub' | 'rsvp' | 'feed' | 'events' | 'table' | 'photos' | 'gifts' | 'story'>('hub');
+
+  // Theme & Lead Guest from Invitations Tab / Demo Link
+  const [invitationThemeId, setInvitationThemeId] = useState<string>(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hash = window.location.hash;
+      const hashParams = new URLSearchParams(hash.includes('?') ? hash.split('?')[1] : '');
+      const t = urlParams.get('theme') || hashParams.get('theme') || localStorage.getItem('tt_invitation_theme');
+      return t || 'coastal-harbor';
+    } catch {
+      return 'coastal-harbor';
+    }
+  });
+
+  const currentTheme = LUXURY_THEMES.find(t => t.id === invitationThemeId) || LUXURY_THEMES[3];
+
+  const [guestLeadName, setGuestLeadName] = useState<string>(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hash = window.location.hash;
+      const hashParams = new URLSearchParams(hash.includes('?') ? hash.split('?')[1] : '');
+      const g = urlParams.get('guest') || hashParams.get('guest') || localStorage.getItem('tt_guest_name');
+      return g || 'Priya Sharma';
+    } catch {
+      return 'Priya Sharma';
+    }
+  });
+
+  const [envelopeState, setEnvelopeState] = useState<'sealed' | 'opening' | 'opened'>('sealed');
+
+  const handleExecuteOpen = () => {
+    setEnvelopeState('opening');
+    setTimeout(() => {
+      setEnvelopeState('opened');
+    }, 750);
+  };
+
+  const handleReplayAnimation = () => {
+    setEnvelopeState('sealed');
+    setTimeout(() => {
+      handleExecuteOpen();
+    }, 350);
+  };
+
+  const [activeTab, setActiveTab] = useState<'splash' | 'hub' | 'rsvp' | 'feed' | 'events' | 'table' | 'photos' | 'gifts' | 'story'>(() => {
+    try {
+      const shouldAnimate = localStorage.getItem('tt_show_invitation_animation') === 'true';
+      const hash = window.location.hash;
+      if (shouldAnimate || hash.includes('invite') || hash.includes('animate=true')) {
+        return 'splash';
+      }
+    } catch {}
+    return 'hub';
+  });
+
+  useEffect(() => {
+    try {
+      const t = localStorage.getItem('tt_invitation_theme');
+      if (t) setInvitationThemeId(t);
+      const g = localStorage.getItem('tt_guest_name');
+      if (g) setGuestLeadName(g);
+    } catch {}
+
+    if (activeTab === 'splash') {
+      setEnvelopeState('sealed');
+      const timer = setTimeout(() => {
+        handleExecuteOpen();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab]);
   const [storyFilter, setStoryFilter] = useState<'all' | 'story' | 'menu' | 'memoriam' | 'party' | 'honeymoon'>('all');
   const [showJoey, setShowJoey] = useState(false);
   
@@ -346,63 +417,81 @@ export default function GuestMobileView() {
         <div className="flex-1 overflow-y-auto no-scrollbar relative flex flex-col">
           
           {/* ============================================================== */}
-          {/* SCREEN: INVITATION SPLASH / QR (Screenshot 1: 172526.png)       */}
+          {/* SCREEN: BESPOKE INVITATION UNBOXING ANIMATION & ENTER HOME HUB  */}
           {/* ============================================================== */}
           {activeTab === 'splash' && (
-            <div className="flex-1 flex flex-col items-center justify-between p-6 bg-[#15110e] text-white text-center min-h-[750px]">
-              {/* Brand Header */}
-              <div className="flex items-center gap-2 mt-4">
-                <div className="w-8 h-8 rounded border border-[#bd9661] flex items-center justify-center font-serif text-[#bd9661] text-base font-bold">
-                  T
-                </div>
-                <span className="font-serif text-lg tracking-wide text-white">Tap &amp; Toast</span>
-              </div>
+            <div
+              className="absolute inset-0 z-30 flex flex-col items-center justify-between text-white text-center select-none overflow-hidden pb-4"
+              style={{
+                background: currentTheme.stageBg,
+              }}
+            >
+              {/* Luxury Ambient Lighting Glow */}
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_20%,_rgba(255,255,255,0.08)_0%,_rgba(0,0,0,0.35)_100%)] pointer-events-none" />
 
-              {/* Arch Motif & Invitation Text */}
-              <div className="flex flex-col items-center my-auto w-full px-4">
-                {/* Dotted Arch SVG */}
-                <div className="w-24 h-14 mb-4 flex items-center justify-center text-[#bd9661]">
-                  <svg viewBox="0 0 100 60" width="90" height="54" fill="none" stroke="currentColor" strokeWidth="2.5" strokeDasharray="4 4">
-                    <path d="M 10 55 A 40 40 0 0 1 90 55" />
-                  </svg>
-                </div>
-
-                <div className="text-[11px] uppercase tracking-[0.25em] text-[#dfc194] font-bold mb-2">
-                  You're Invited
-                </div>
-                <h1 className="font-serif text-3xl font-bold text-white mb-2 leading-tight">
-                  Sophie <span className="text-[#dfc194] italic font-normal">&amp;</span> James
-                </h1>
-                <p className="text-xs text-[#c9bbae] mb-6">
-                  Saturday, 14 Nov 2026 &bull; Fernwood Estate
-                </p>
-
-                {/* White QR Card */}
-                <div className="bg-white p-4 rounded-2xl shadow-xl flex flex-col items-center justify-center mb-6 w-[200px] h-[200px]">
-                  <img
-                    src="https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=https://taptoast.demo/wedding/sophie-james?guest=priya"
-                    alt="Wedding QR Code"
-                    className="w-[170px] h-[170px] object-contain"
-                  />
+              {/* Top Spacer & Brand Header with Replay */}
+              <div className="flex items-center justify-between w-full px-5 pt-4 pb-1 z-40 shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded border border-[#bd9661] flex items-center justify-center font-serif text-[#bd9661] text-sm font-bold bg-black/40">
+                    T
+                  </div>
+                  <div className="text-left">
+                    <span className="font-serif text-sm tracking-wide text-white block leading-tight">
+                      Tap <span className="text-[#bd9661] italic">&amp;</span> Toast
+                    </span>
+                    <span className="text-[9px] uppercase tracking-widest text-[#bd9661] font-semibold">
+                      Digital Invitation
+                    </span>
+                  </div>
                 </div>
 
-                <div className="text-[11px] uppercase tracking-wider text-[#dfc194] font-bold mb-1">
-                  Scan to Open Your Invitation
-                </div>
-                <div className="text-xs text-[#c9bbae]">
-                  For the Whitfield family
-                </div>
-              </div>
-
-              {/* Enter Button */}
-              <div className="w-full pb-4">
                 <button
                   type="button"
-                  onClick={() => setActiveTab('hub')}
-                  className="w-full bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-serif font-bold text-base py-3.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  onClick={handleReplayAnimation}
+                  className="text-[10.5px] text-[#dfc194] hover:text-white flex items-center gap-1.5 cursor-pointer font-medium bg-black/30 hover:bg-black/50 px-3 py-1.5 rounded-full transition-all border border-white/10 active:scale-95"
+                  title="Replay invitation unboxing animation"
                 >
-                  Tap to Enter &rarr;
+                  <span>Replay</span>
+                  <span className="text-xs">↺</span>
                 </button>
+              </div>
+
+              {/* The Dedicated Animation Stage - FullScreen, no section wrapper box */}
+              <div className="w-full flex-1 flex flex-col items-center justify-center relative z-20 overflow-visible px-2 my-auto">
+                <div className={`w-full flex flex-col items-center origin-center transition-all duration-700 ${invitationThemeId === 'magnolia-gold' ? 'scale-[0.69] sm:scale-[0.73]' : 'scale-[0.73] sm:scale-[0.77]'}`}>
+                  <InvitationCardStage
+                    themeId={invitationThemeId}
+                    recipientName={guestLeadName}
+                    envelopeState={envelopeState}
+                    onExecuteOpen={handleExecuteOpen}
+                    invitationHeading="Together with their families"
+                    fullScreen={true}
+                  />
+                </div>
+              </div>
+
+              {/* Compact Enter Action Button (Appears smoothly after animation completes) */}
+              <div
+                className={`w-full z-40 flex flex-col items-center justify-center pt-1 pb-1 shrink-0 transition-all duration-700 ease-out ${
+                  envelopeState === 'opened'
+                    ? 'opacity-100 translate-y-0 pointer-events-auto'
+                    : 'opacity-0 translate-y-4 pointer-events-none'
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('hub');
+                    try { localStorage.removeItem('tt_show_invitation_animation'); } catch {}
+                  }}
+                  className="px-8 py-2.5 rounded-full bg-gradient-to-r from-[#dfc194] via-[#c59f60] to-[#bd9661] hover:brightness-110 active:scale-95 text-[#15110e] font-serif font-bold text-xs tracking-widest uppercase shadow-[0_6px_20px_rgba(0,0,0,0.5)] transition-all flex items-center justify-center gap-2 cursor-pointer border border-[#f5e6cc]/40"
+                >
+                  <span>Enter</span>
+                  <span className="text-sm font-sans font-bold">&rarr;</span>
+                </button>
+                <p className="text-[9.5px] text-[#c9bbae] text-center tracking-wide font-sans mt-1.5 drop-shadow-xs">
+                  Press enter to join the fun
+                </p>
               </div>
             </div>
           )}
@@ -420,10 +509,21 @@ export default function GuestMobileView() {
                     Welcome,
                   </div>
                   <h1 className="font-serif text-[32px] font-bold text-[#2a1612] leading-tight mb-1 flex items-center gap-1.5">
-                    Priya <span className="text-[#a87948] font-light text-[28px]">&#9825;</span>
+                    {guestLeadName.split(' ')[0] || 'Priya'} <span className="text-[#a87948] font-light text-[28px]">&#9825;</span>
                   </h1>
-                  <div className="text-[15px] text-[#2a1612] font-serif font-medium">
-                    Sophie <span className="text-[#c59f60] italic font-normal">&amp;</span> James's Wedding
+                  <div className="flex items-center justify-between pr-2">
+                    <div className="text-[15px] text-[#2a1612] font-serif font-medium">
+                      Sophie <span className="text-[#c59f60] italic font-normal">&amp;</span> James's Wedding
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('splash')}
+                      className="text-[10px] font-semibold text-[#bd9661] hover:text-[#916b38] flex items-center gap-1 cursor-pointer bg-[#faf6f0] px-2 py-0.5 rounded-full border border-[#ebdcc9] transition-all hover:scale-105 active:scale-95 shadow-2xs"
+                      title="Replay invitation unboxing animation"
+                    >
+                      <span>💌</span>
+                      <span>Invitation</span>
+                    </button>
                   </div>
                   <div className="text-xs text-[#8b7b6b] mt-1 flex items-center gap-1">
                     <svg viewBox="0 0 24 24" width="12" height="12" fill="#c59f60"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>

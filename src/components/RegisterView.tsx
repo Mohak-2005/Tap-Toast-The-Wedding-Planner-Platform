@@ -137,6 +137,24 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
   const selectedMcId = selectedMcIds[0] || '';
   const setSelectedMcId = (id: string) => setSelectedMcIds(id ? [id] : []);
   const [isMcDropdownOpen, setIsMcDropdownOpen] = useState(false);
+  const mcDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close MC dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (mcDropdownRef.current && !mcDropdownRef.current.contains(event.target as Node)) {
+        setIsMcDropdownOpen(false);
+      }
+    };
+
+    if (isMcDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMcDropdownOpen]);
+
   const [showMcInfoModal, setShowMcInfoModal] = useState(false);
   const [customMcEmail, setCustomMcEmail] = useState('');
 
@@ -793,12 +811,6 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
               <span><strong>Smart Guest Management</strong>: Adult &amp; kid party breakdown, seating builder, &amp; wishing well</span>
             </li>
           </ul>
-        </div>
-
-        {/* Bottom Trust Badge */}
-        <div className="pt-6 border-t border-[#29211a]/80 text-xs text-[#8b7b6b] flex items-center justify-between">
-          <span>Stripe Verified &amp; Secure Checkout</span>
-          <span className="text-[#bd9661] font-semibold">Sydney · Melbourne · Hunter Valley</span>
         </div>
       </div>
 
@@ -2237,7 +2249,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                       SELECT YOUR CERTIFIED WEDDING MC
                     </label>
 
-                    <div className="relative">
+                    <div className="relative" ref={mcDropdownRef}>
                       <button
                         type="button"
                         onClick={() => setIsMcDropdownOpen(!isMcDropdownOpen)}
@@ -2258,14 +2270,14 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                           <div>
                             <div className="font-serif font-bold text-sm text-[#15110e]">
                               {selectedMcIds.length === 0
-                                ? 'No MC Selected (Optional)'
+                                ? 'Select MC'
                                 : selectedMcIds.length > 1
                                 ? `${selectedMcIds.length} MCs Selected`
                                 : selectedMc.name}
                             </div>
                             <div className="text-[11.5px] text-[#7d654c] mt-0.5 flex items-center gap-1.5 font-medium">
                               {selectedMcIds.length === 0 ? (
-                                <span>Click to choose or proceed without an MC</span>
+                                <span>Choose a certified MC according to your preference, or proceed without one to assign later</span>
                               ) : selectedMcIds.length > 1 ? (
                                 <span>{selectedMcs.map(m => m.name).join(', ')}</span>
                               ) : (
@@ -2280,30 +2292,32 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                         </div>
 
                         <div className="flex items-center gap-2 text-xs text-[#8b7b6b]">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowMcInfoModal(true);
-                            }}
-                            title="View MC Details"
-                            aria-label="View MC Info"
-                            className="w-7 h-7 rounded-full bg-[#fbf8f3] hover:bg-[#ebdcc9] text-[#7d654c] hover:text-[#15110e] flex items-center justify-center transition-colors cursor-pointer border border-[#d5c7b5]"
-                          >
-                            <svg
-                              width="15"
-                              height="15"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
+                          {selectedMcIds.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowMcInfoModal(true);
+                              }}
+                              title="View MC Details"
+                              aria-label="View MC Info"
+                              className="w-7 h-7 rounded-full bg-[#fbf8f3] hover:bg-[#ebdcc9] text-[#7d654c] hover:text-[#15110e] flex items-center justify-center transition-colors cursor-pointer border border-[#d5c7b5]"
                             >
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                              <circle cx="12" cy="12" r="3" />
-                            </svg>
-                          </button>
+                              <svg
+                                width="15"
+                                height="15"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                              </svg>
+                            </button>
+                          )}
                           <svg
                             width="15"
                             height="15"
@@ -2320,20 +2334,54 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                         </div>
                       </button>
 
-                      {/* Dropdown Menu List */}
+                      {/* Dropdown Menu List with 'No MC' as First Option */}
                       {isMcDropdownOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#e8ded0] rounded-xl shadow-xl z-30 max-h-[300px] overflow-y-auto divide-y divide-[#f5f1eb]">
+                        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#e8ded0] rounded-xl shadow-xl z-30 max-h-[320px] overflow-y-auto divide-y divide-[#f5f1eb]">
+                          {/* Option 1: No MC */}
+                          <div
+                            onClick={() => {
+                              setSelectedMcIds([]);
+                              setIsMcDropdownOpen(false);
+                              showToast('Proceeding without an MC (Self-managed runsheet)', 'info');
+                            }}
+                            className={`p-3.5 hover:bg-[#faf7f2] transition-colors cursor-pointer flex items-center justify-between gap-3 ${
+                              selectedMcIds.length === 0 ? 'bg-[#fdfbf7]' : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full bg-[#15110e] border border-[#bd9661] flex items-center justify-center text-[#dfc194] font-serif font-bold text-xs shrink-0 shadow-2xs">
+                                🥂
+                              </div>
+                              <div>
+                                <div className="font-serif font-bold text-xs text-[#15110e] flex items-center gap-2">
+                                  <span>No MC</span>
+                                </div>
+                                <div className="text-[11px] text-[#7d654c] mt-0.5 font-medium">
+                                  Proceed without an MC and assign it later
+                                </div>
+                              </div>
+                            </div>
+                            {selectedMcIds.length === 0 ? (
+                              <span className="text-emerald-700 font-bold text-xs shrink-0 flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                                ✓ Selected
+                              </span>
+                            ) : (
+                              <span className="text-xs text-[#bd9661] hover:underline font-semibold shrink-0">
+                                Select →
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Directory MC Options */}
                           {availableMcs.map((mc) => {
                             const isSelected = selectedMcIds.includes(mc.id);
                             return (
                               <div
                                 key={mc.id}
                                 onClick={() => {
-                                  if (isSelected) {
-                                    setSelectedMcIds(selectedMcIds.filter(id => id !== mc.id));
-                                  } else {
-                                    setSelectedMcIds([...selectedMcIds, mc.id]);
-                                  }
+                                  setSelectedMcIds([mc.id]);
+                                  setIsMcDropdownOpen(false);
+                                  showToast(`Selected ${mc.name} as your Wedding MC`, 'success');
                                 }}
                                 className={`p-3.5 hover:bg-[#faf7f2] transition-colors cursor-pointer flex items-center justify-between gap-3 ${
                                   isSelected ? 'bg-[#fdfbf7]' : ''
@@ -2379,14 +2427,21 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                   <div className="bg-gradient-to-r from-[#fbf6ed] to-[#f6ede0] border-l-4 border-l-[#bd9661] border-y border-r border-[#dfcfb9] rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-xs">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#bd9661] bg-[#181310] flex items-center justify-center shrink-0 shadow-xs ring-2 ring-[#bd9661]/20">
-                        <img src="/chatbot-avatar.png" alt="Joey AI" className="w-full h-full object-cover" />
+                        <img
+                          src="./chatbot-avatar.png"
+                          alt="Joey AI"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
+                        />
+                        <span className="text-sm select-none">✨</span>
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
                           <h4 className="font-serif text-xs font-bold text-[#15110e]">
-                            Need help deciding? Ask Joey AI Concierge
+                            Need help deciding? Ask Joey AI
                           </h4>
-                          
                         </div>
                         <p className="text-[11px] text-[#786450] mt-0.5">
                           Chat live to compare host experience, 5-star reviews, and rates
@@ -2498,7 +2553,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                       ? 'Launching Dashboard...'
                       : mcChoiceMode === 'own'
                       ? 'Confirm Preferred MC & Launch Dashboard'
-                      : selectedMcIds.length > 1 ? `Confirm ${selectedMcIds.length} MCs & Launch Dashboard` : selectedMcIds.length === 0 ? 'Launch Dashboard' : 'Confirm MC & Launch Dashboard'}
+                      : selectedMcIds.length > 1 ? `Confirm ${selectedMcIds.length} MCs & Launch Dashboard` : selectedMcIds.length === 0 ? 'Skip & Launch Dashboard' : 'Confirm MC & Launch Dashboard'}
                   </span>
                   <span>→</span>
                 </button>

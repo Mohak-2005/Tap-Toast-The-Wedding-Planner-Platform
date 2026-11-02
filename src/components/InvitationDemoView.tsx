@@ -61,6 +61,12 @@ export const InvitationDemoView: React.FC<InvitationDemoViewProps> = ({ onSelect
   };
 
   const handleGoToGuestMobile = () => {
+    try {
+      localStorage.setItem('tt_invitation_theme', selectedThemeId);
+      const guestLeadName = selectedRecipient.name;
+      localStorage.setItem('tt_guest_name', guestLeadName);
+      localStorage.setItem('tt_show_invitation_animation', 'true');
+    } catch {}
     if (onSelectView) {
       onSelectView('guest-mobile');
     } else {
@@ -369,7 +375,13 @@ export const InvitationDemoView: React.FC<InvitationDemoViewProps> = ({ onSelect
                 value={selectedRecipient.name}
                 onChange={(e) => {
                   const found = DEMO_RECIPIENTS.find(r => r.name === e.target.value);
-                  if (found) setSelectedRecipient(found);
+                  if (found) {
+                    setSelectedRecipient(found);
+                    try {
+                      const guestLeadName = found.name;
+                      localStorage.setItem('tt_guest_name', guestLeadName);
+                    } catch {}
+                  }
                 }}
                 className="bg-transparent font-semibold text-[#15110e] outline-none cursor-pointer text-xs"
               >
@@ -452,7 +464,11 @@ export const InvitationDemoView: React.FC<InvitationDemoViewProps> = ({ onSelect
           {/* ========================================================= */}
           {/* THE OPENED INVITATION CARD (DIRECTLY SHOWN FOR EACH TEMPLATE) */}
           {/* ========================================================= */}
-          <div className="w-full max-w-lg my-2 flex flex-col items-center shrink-0">
+          <div
+            className="w-full max-w-lg my-2 flex flex-col items-center shrink-0 cursor-pointer"
+            onClick={handleGoToGuestMobile}
+            title="Click to open guest invitation"
+          >
             <InvitationCardStage
               themeId={selectedThemeId}
               recipientName={selectedRecipient.name}

@@ -89,7 +89,25 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
 export default function App() {
   const getInitialView = () => {
-    const hash = window.location.hash.replace('#', '');
+    const rawHash = window.location.hash.replace(/^#\/?/, '');
+    const cleanView = rawHash.split('?')[0];
+
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(rawHash.includes('?') ? rawHash.split('?')[1] : '');
+      const guestParam = urlParams.get('guest') || hashParams.get('guest');
+      const themeParam = urlParams.get('theme') || hashParams.get('theme');
+
+      if (guestParam) {
+        localStorage.setItem('tt_guest_name', decodeURIComponent(guestParam));
+        localStorage.setItem('tt_show_invitation_animation', 'true');
+      }
+      if (themeParam) {
+        localStorage.setItem('tt_invitation_theme', decodeURIComponent(themeParam));
+        localStorage.setItem('tt_show_invitation_animation', 'true');
+      }
+    } catch {}
+
     const validViews = [
       'showcase',
       'login',
@@ -106,8 +124,8 @@ export default function App() {
       'guest-web',
       'invitation-demo',
     ];
-    if (validViews.includes(hash)) {
-      return hash;
+    if (validViews.includes(cleanView)) {
+      return cleanView;
     }
     return 'guest-mobile';
   };
@@ -123,9 +141,27 @@ export default function App() {
   // Sync with browser hash changes
   useEffect(() => {
     const handleHash = () => {
-      const hash = window.location.hash.replace('#', '');
-      if (hash && hash !== currentView) {
-        setCurrentView(hash);
+      const rawHash = window.location.hash.replace(/^#\/?/, '');
+      const cleanView = rawHash.split('?')[0];
+
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(rawHash.includes('?') ? rawHash.split('?')[1] : '');
+        const guestParam = urlParams.get('guest') || hashParams.get('guest');
+        const themeParam = urlParams.get('theme') || hashParams.get('theme');
+
+        if (guestParam) {
+          localStorage.setItem('tt_guest_name', decodeURIComponent(guestParam));
+          localStorage.setItem('tt_show_invitation_animation', 'true');
+        }
+        if (themeParam) {
+          localStorage.setItem('tt_invitation_theme', decodeURIComponent(themeParam));
+          localStorage.setItem('tt_show_invitation_animation', 'true');
+        }
+      } catch {}
+
+      if (cleanView && cleanView !== currentView) {
+        setCurrentView(cleanView);
       }
     };
     window.addEventListener('hashchange', handleHash);

@@ -120,6 +120,7 @@ export interface InvitationCardStageProps {
   invitationHeading?: string;
   className?: string;
   disableAnimation?: boolean;
+  fullScreen?: boolean;
 }
 
 export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
@@ -130,6 +131,7 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
   invitationHeading = 'Together with their families',
   className = '',
   disableAnimation = false,
+  fullScreen = false,
 }) => {
   const transClass = disableAnimation ? 'transition-none' : 'transition-all duration-700';
   const transTransformClass = disableAnimation ? 'transition-none' : 'transition-transform duration-700';
@@ -142,14 +144,14 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
   // ==========================================================================
   const renderMagnoliaGoldTemplate = () => (
     <div
-      className="relative w-full rounded-2xl p-6 sm:p-7 border-[2px] border-[#c59a58] text-center shadow-2xl overflow-hidden select-none bg-[#fdfbf7] text-[#1c150c]"
+      className="relative w-full rounded-2xl p-5 sm:p-6 border-[2px] border-[#c59a58] text-center shadow-2xl overflow-hidden select-none bg-[#fdfbf7] text-[#1c150c]"
       style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)' }}
     >
-      <div className="absolute inset-2.5 border border-[#c59a58]/60 rounded-xl pointer-events-none" />
+      <div className="absolute inset-2 border border-[#c59a58]/60 rounded-xl pointer-events-none" />
 
       {/* Top-Left Magnolia & Eucalyptus Foliage */}
       <div className="absolute -top-3 -left-3 pointer-events-none select-none z-10">
-        <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+        <svg width="110" height="110" viewBox="0 0 120 120" fill="none">
           <ellipse cx="28" cy="40" rx="20" ry="10" transform="rotate(-30 28 40)" fill="#44614d" opacity="0.85" />
           <ellipse cx="45" cy="25" rx="18" ry="9" transform="rotate(-60 45 25)" fill="#5c7d67" opacity="0.9" />
           <ellipse cx="65" cy="20" rx="16" ry="8" transform="rotate(-15 65 20)" fill="#354e3d" opacity="0.8" />
@@ -162,7 +164,7 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
 
       {/* Bottom-Right Magnolia & Eucalyptus Foliage */}
       <div className="absolute -bottom-3 -right-3 pointer-events-none select-none z-10 rotate-180">
-        <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+        <svg width="110" height="110" viewBox="0 0 120 120" fill="none">
           <ellipse cx="28" cy="40" rx="20" ry="10" transform="rotate(-30 28 40)" fill="#44614d" opacity="0.85" />
           <ellipse cx="45" cy="25" rx="18" ry="9" transform="rotate(-60 45 25)" fill="#5c7d67" opacity="0.9" />
           <circle cx="36" cy="36" r="16" fill="#ffffff" stroke="#e8dfd1" strokeWidth="1.5" />
@@ -172,7 +174,7 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
       </div>
 
       {/* Top-Right & Bottom-Left Celebratory Golden Stars */}
-      <div className="absolute top-3 right-3 w-12 h-12 pointer-events-none select-none z-10">
+      <div className="absolute top-2.5 right-2.5 w-10 h-10 pointer-events-none select-none z-10">
         <svg viewBox="0 0 50 50" fill="none" className="w-full h-full">
           <path d="M25 12 L26.5 18 L32.5 19.5 L26.5 21 L25 27 L23.5 21 L17.5 19.5 L23.5 18 Z" fill="#c59a58" opacity="0.9" />
           <circle cx="25" cy="19.5" r="4.5" fill="#c59a58" opacity="0.25" />
@@ -180,7 +182,7 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
           <circle cx="15" cy="10" r="1.2" fill="#c59a58" />
         </svg>
       </div>
-      <div className="absolute bottom-3 left-3 w-12 h-12 pointer-events-none select-none z-10">
+      <div className="absolute bottom-2.5 left-2.5 w-10 h-10 pointer-events-none select-none z-10">
         <svg viewBox="0 0 50 50" fill="none" className="w-full h-full">
           <path d="M25 22 L26.5 28 L32.5 29.5 L26.5 31 L25 37 L23.5 31 L17.5 29.5 L23.5 28 Z" fill="#c59a58" opacity="0.9" />
           <circle cx="25" cy="29.5" r="4.5" fill="#c59a58" opacity="0.25" />
@@ -189,63 +191,63 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
         </svg>
       </div>
 
-      <div className="text-[10px] tracking-[2.5px] uppercase font-serif text-[#966d29] mb-1">
+      <div className="text-[9.5px] tracking-[2.5px] uppercase font-serif text-[#966d29]">
         {invitationHeading.toUpperCase()}
       </div>
 
-      <div className="my-2">
-        <h2 className="font-serif italic text-3xl sm:text-4xl text-[#966d29] leading-tight font-medium">
+      <div className="my-1">
+        <h2 className="font-serif italic text-2xl sm:text-3xl text-[#966d29] leading-tight font-medium">
           Sophie Taylor
         </h2>
-        <div className="text-[11px] font-serif uppercase tracking-[3px] text-[#665747] my-0.5">
+        <div className="text-[10px] font-serif uppercase tracking-[3px] text-[#665747] my-0.5">
           AND
         </div>
-        <h2 className="font-serif italic text-3xl sm:text-4xl text-[#966d29] leading-tight font-medium">
+        <h2 className="font-serif italic text-2xl sm:text-3xl text-[#966d29] leading-tight font-medium">
           Daniel Carter
         </h2>
       </div>
 
-      <div className="text-[11px] font-serif text-[#665747] my-2">
+      <div className="text-[10.5px] font-serif text-[#665747] my-1">
         INVITE YOU TO CELEBRATE THEIR WEDDING
       </div>
 
       {/* Date Bar: SATURDAY | 14 | NOVEMBER 2026 */}
-      <div className="flex items-center justify-center gap-3 my-2 text-[#966d29] font-serif">
-        <span className="text-[11px] uppercase tracking-wider font-semibold">SATURDAY</span>
+      <div className="flex items-center justify-center gap-2.5 my-1 text-[#966d29] font-serif">
+        <span className="text-[10px] uppercase tracking-wider font-semibold">SATURDAY</span>
         <span className="text-gray-300">|</span>
-        <span className="text-xl font-bold">14</span>
+        <span className="text-lg font-bold">14</span>
         <span className="text-gray-300">|</span>
-        <span className="text-[11px] uppercase tracking-wider font-semibold">NOVEMBER 2026</span>
+        <span className="text-[10px] uppercase tracking-wider font-semibold">NOVEMBER 2026</span>
       </div>
 
-      <div className="text-[11px] font-serif text-[#665747]">
+      <div className="text-[10px] font-serif text-[#665747]">
         AT 4:00 PM
       </div>
-      <div className="text-xs font-serif font-bold text-[#1c150c] mt-1">
+      <div className="text-[11px] font-serif font-bold text-[#1c150c] mt-0.5">
         THE BOTANICAL GARDEN &bull; SYDNEY, NSW
       </div>
 
-      <div className="flex items-center justify-center gap-2 my-2.5">
-        <div className="w-10 h-[1px] bg-[#c59a58]/50" />
-        <span className="text-[10px] text-[#966d29]">♥</span>
-        <div className="w-10 h-[1px] bg-[#c59a58]/50" />
+      <div className="flex items-center justify-center gap-2 my-1.5">
+        <div className="w-8 h-[1px] bg-[#c59a58]/50" />
+        <span className="text-[9px] text-[#966d29]">♥</span>
+        <div className="w-8 h-[1px] bg-[#c59a58]/50" />
       </div>
 
       {/* Elegant QR Code Section */}
-      <div className="flex flex-col items-center justify-center my-1.5 z-20 relative">
-        <div className="p-1.5 rounded-xl border border-[#c59a58] shadow-xs bg-white">
+      <div className="flex flex-col items-center justify-center my-1 z-20 relative">
+        <div className="p-1 rounded-xl border border-[#c59a58] shadow-xs bg-white">
           <img
             src={qrCodeUrl}
             alt="Wedding RSVP QR Code"
-            className="w-16 h-16 object-contain rounded-lg"
+            className="w-14 h-14 object-contain rounded-lg"
           />
         </div>
-        <div className="text-[9px] font-serif font-bold uppercase tracking-[2px] mt-1 text-[#966d29]">
+        <div className="text-[8.5px] font-serif font-bold uppercase tracking-[2px] mt-0.5 text-[#966d29]">
           DINNER &amp; DANCING TO FOLLOW &bull; SCAN TO RSVP
         </div>
       </div>
 
-      <div className="text-[10px] font-serif text-[#665747]">
+      <div className="text-[9.5px] font-serif text-[#665747]">
         Presented with honour to <strong className="text-[#1c150c] font-semibold">{recipientName}</strong>
       </div>
     </div>
@@ -1038,21 +1040,27 @@ export const InvitationCardStage: React.FC<InvitationCardStageProps> = ({
       case 'magnolia-gold':
       default:
         return envelopeState === 'opened'
-          ? 'relative -mt-64 scale-100 translate-y-0 opacity-100'
+          ? 'relative -mt-72 scale-100 translate-y-0 opacity-100'
           : 'absolute top-10 scale-90 translate-y-8 opacity-0 pointer-events-none';
     }
   };
 
   return (
     <div
-      className={`w-full max-w-lg min-h-[580px] rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center relative shadow-xl overflow-hidden border border-[#d5c7b5]/60 ${transClass} ${className}`}
+      className={
+        fullScreen
+          ? `w-full flex flex-col items-center justify-center relative overflow-visible ${transClass} ${className}`
+          : `w-full max-w-lg min-h-[580px] rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center relative shadow-xl overflow-hidden border border-[#d5c7b5]/60 ${transClass} ${className}`
+      }
       style={{
-        background: currentTheme.stageBg,
+        background: fullScreen ? 'transparent' : currentTheme.stageBg,
         perspective: '1200px',
       }}
     >
       {/* Ambient Lighting Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-white/30 pointer-events-none" />
+      {!fullScreen && (
+        <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-white/30 pointer-events-none" />
+      )}
 
       <div className="relative w-full max-w-md flex flex-col items-center select-none">
         {/* The Dedicated Envelope Structure & Animation for this Theme */}

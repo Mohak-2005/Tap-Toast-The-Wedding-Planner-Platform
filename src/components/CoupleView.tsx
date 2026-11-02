@@ -10,6 +10,7 @@ import { WeddingDayCelebrationSection } from './WeddingDayCelebrationSection';
 import { SeatingPlannerSection } from './SeatingPlannerSection';
 import { DietaryBadges, parseDietaryRequirements } from '../lib/dietaryHelper';
 import { ColorPicker2D } from './ColorPicker2D';
+import { SuperAdminCardStudio } from './SuperAdminCardStudio';
 
 export type CoupleTab =
   | 'overview'
@@ -4267,6 +4268,9 @@ export default function CoupleView({
                 />
               </div>
             </div>
+
+            {/* Section 4: Bespoke Invitation Card Designer & 3D Unboxing (Coming Soon) */}
+            <SuperAdminCardStudio mode="couple" isComingSoon={true} />
 
             {/* Section 4: Guest Digital Hub Feature Toggles */}
             <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-4">
