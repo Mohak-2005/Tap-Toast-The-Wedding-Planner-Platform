@@ -511,7 +511,7 @@ export const InvitationDemoView: React.FC<InvitationDemoViewProps> = ({ onSelect
                   onClick={handleGoToGuestMobile}
                   className="bg-gradient-to-r from-[#dfc194] to-[#bd9661] hover:brightness-105 text-[#15110e] px-5 py-1.5 rounded-xl font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 active:scale-95"
                 >
-                  <span>Continue</span>
+                  <span>Open</span>
                   <span>&rarr;</span>
                 </button>
               </div>
