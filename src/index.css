@@ -568,3 +568,30 @@ input:checked + .slider:before {
 .anim-particle-float {
   animation: floatUpParticle linear forwards;
 }
+
+@keyframes confettiFallDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.6) rotate(0deg);
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(60px) scale(1.2) rotate(15deg);
+  }
+  50% {
+    opacity: 0.95;
+    transform: translateY(420px) scale(1.05) rotate(-20deg);
+  }
+  80% {
+    opacity: 0.85;
+    transform: translateY(700px) scale(0.9) rotate(20deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(960px) scale(0.7) rotate(-35deg);
+  }
+}
+
+.anim-confetti-fall {
+  animation: confettiFallDown linear forwards;
+}

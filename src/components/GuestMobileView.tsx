@@ -61,6 +61,87 @@ export default function GuestMobileView() {
   });
 
   const [envelopeState, setEnvelopeState] = useState<'sealed' | 'opening' | 'opened'>('sealed');
+  const [splashRsvp, setSplashRsvp] = useState<'pending' | 'accepted' | 'declined'>('pending');
+
+  const handleSplashRsvp = (isAccept: boolean) => {
+    if (isAccept) {
+      setSplashRsvp('accepted');
+      setRsvpAttending(true);
+      setShowCelebrationBurst(true);
+      showToast('RSVP Confirmed: Joyfully accepted!', 'success');
+      setTimeout(() => {
+        setShowCelebrationBurst(false);
+      }, 4000);
+    } else {
+      setSplashRsvp('declined');
+      setRsvpAttending(false);
+      setShowCelebrationBurst(false);
+      showToast('RSVP Updated: Regretfully declined', 'info');
+    }
+
+    // Auto-update status in Couple's Guest List state
+    const activeWedId = state.weddings?.[0]?.id || 'w1';
+    const targetName = (guestLeadName || 'Priya Sharma').toLowerCase().trim();
+    let found = false;
+
+    const updatedGuests = (state.guests || []).map((g) => {
+      const gName = g.name.toLowerCase().trim();
+      if (
+        gName === targetName ||
+        gName.includes(targetName) ||
+        targetName.includes(gName) ||
+        (targetName.includes('priya') && g.id === 'priya')
+      ) {
+        found = true;
+        return {
+          ...g,
+          rsvpStatus: (isAccept ? 'confirmed' : 'declined') as 'confirmed' | 'declined' | 'awaiting',
+        };
+      }
+      return g;
+    });
+
+    if (!found) {
+      updatedGuests.push({
+        id: `g_${Date.now()}`,
+        weddingId: activeWedId,
+        name: guestLeadName || 'Priya Sharma',
+        initials: (guestLeadName || 'Priya Sharma')
+          .split(' ')
+          .map((n) => n[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase(),
+        household: `${guestLeadName || 'Priya Sharma'} Household`,
+        email: `${(guestLeadName || 'priya').toLowerCase().replace(/\s+/g, '.')}@example.com`,
+        phone: '0412 884 992',
+        rsvpStatus: isAccept ? 'confirmed' : 'declined',
+        guestCount: 2,
+        adults: 2,
+        kids: 0,
+        dietary: 'Vegetarian',
+        song: '',
+        reminderSent: false,
+        tableId: null,
+        seatIndex: null,
+      });
+    }
+
+    setState({
+      ...state,
+      guests: updatedGuests,
+    });
+
+    logAudit(
+      state,
+      setState,
+      isAccept ? 'RSVP Confirmed' : 'RSVP Declined',
+      guestLeadName || 'Priya Sharma',
+      'guest',
+      `${guestLeadName || 'Priya Sharma'} RSVP: ${isAccept ? 'Confirmed' : 'Declined'} via digital invitation`,
+      'RSVP'
+    );
+  };
 
   const handleExecuteOpen = () => {
     setEnvelopeState('opening');
@@ -97,6 +178,8 @@ export default function GuestMobileView() {
 
     if (activeTab === 'splash') {
       setEnvelopeState('sealed');
+      setSplashRsvp('pending');
+      setShowCelebrationBurst(false);
       const timer = setTimeout(() => {
         handleExecuteOpen();
       }, 500);
@@ -399,7 +482,7 @@ export default function GuestMobileView() {
   return (
     <div className="w-full flex-1 flex flex-col items-center justify-center p-2 sm:p-4 bg-[radial-gradient(circle_at_50%_25%,_#f6f3ed_0%,_#e5e0d6_100%)] min-h-[calc(100vh-45px)] overflow-hidden font-sans select-none">
       {/* 402x874 Phone Chassis matching Screenshot 1-9 & guest-mobile.html */}
-      <div className="w-[402px] max-w-[402px] h-[874px] max-h-[calc(100vh-60px)] rounded-[46px] border-[4px] border-[#1c1511] bg-[#f8f6f2] shadow-[0_20px_60px_rgba(21,17,14,0.22),_0_4px_14px_rgba(21,17,14,0.08)] overflow-hidden relative flex flex-col">
+      <div className="w-full max-w-[402px] h-[874px] max-h-[calc(100dvh-50px)] sm:max-h-[874px] rounded-[46px] border-[4px] border-[#1c1511] bg-[#f8f6f2] shadow-[0_20px_60px_rgba(21,17,14,0.22),_0_4px_14px_rgba(21,17,14,0.08)] overflow-hidden relative flex flex-col">
         
         {/* Phone Status Bar */}
         <div className={`flex justify-between items-center px-6 pt-3 pb-2 text-[13px] font-bold z-20 flex-shrink-0 transition-colors ${activeTab === 'splash' ? 'bg-[#15110e] text-white' : 'bg-[#f8f6f2] text-[#15110e]'}`}>
@@ -458,7 +541,7 @@ export default function GuestMobileView() {
 
               {/* The Dedicated Animation Stage - FullScreen, no section wrapper box */}
               <div className="w-full flex-1 flex flex-col items-center justify-center relative z-20 overflow-visible px-2 my-auto">
-                <div className={`w-full flex flex-col items-center origin-center transition-all duration-700 ${invitationThemeId === 'magnolia-gold' ? 'scale-[0.69] sm:scale-[0.73]' : 'scale-[0.73] sm:scale-[0.77]'}`}>
+                <div className={`w-full flex flex-col items-center origin-center transition-all duration-700 ${invitationThemeId === 'magnolia-gold' ? 'scale-[0.60] sm:scale-[0.65]' : 'scale-[0.63] sm:scale-[0.68]'}`}>
                   <InvitationCardStage
                     themeId={invitationThemeId}
                     recipientName={guestLeadName}
@@ -470,7 +553,7 @@ export default function GuestMobileView() {
                 </div>
               </div>
 
-              {/* Compact Enter Action Button (Appears smoothly after animation completes) */}
+              {/* Action Area: Accept / Decline -> Happy Animation + Continue Button OR "We will miss you" */}
               <div
                 className={`w-full z-40 flex flex-col items-center justify-center pt-1 pb-1 shrink-0 transition-all duration-700 ease-out ${
                   envelopeState === 'opened'
@@ -478,20 +561,92 @@ export default function GuestMobileView() {
                     : 'opacity-0 translate-y-4 pointer-events-none'
                 }`}
               >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('hub');
-                    try { localStorage.removeItem('tt_show_invitation_animation'); } catch {}
-                  }}
-                  className="px-8 py-2.5 rounded-full bg-gradient-to-r from-[#dfc194] via-[#c59f60] to-[#bd9661] hover:brightness-110 active:scale-95 text-[#15110e] font-serif font-bold text-xs tracking-widest uppercase shadow-[0_6px_20px_rgba(0,0,0,0.5)] transition-all flex items-center justify-center gap-2 cursor-pointer border border-[#f5e6cc]/40"
-                >
-                  <span>Enter</span>
-                  <span className="text-sm font-sans font-bold">&rarr;</span>
-                </button>
-                <p className="text-[9.5px] text-[#c9bbae] text-center tracking-wide font-sans mt-1.5 drop-shadow-xs">
-                  Press enter to join the fun
-                </p>
+                {splashRsvp === 'pending' && (
+                  <div className="flex flex-col items-center gap-1.5 w-full max-w-xs px-4 animate-in fade-in duration-300">
+                    <div className="flex items-center gap-3 w-full">
+                      <button
+                        type="button"
+                        onClick={() => handleSplashRsvp(true)}
+                        className="flex-1 py-2.5 px-4 rounded-full bg-gradient-to-r from-[#dfc194] via-[#c59f60] to-[#bd9661] hover:brightness-110 active:scale-95 text-[#15110e] font-serif font-bold text-xs tracking-wider uppercase shadow-[0_6px_20px_rgba(0,0,0,0.5)] transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-[#f5e6cc]/40"
+                      >
+                        <span className="text-sm font-bold">✓</span>
+                        <span>Accept</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSplashRsvp(false)}
+                        className="flex-1 py-2.5 px-4 rounded-full bg-black/45 hover:bg-black/65 active:scale-95 text-[#dfc194] hover:text-white font-serif font-bold text-xs tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-white/20 shadow-md backdrop-blur-xs"
+                      >
+                        <span className="text-sm font-bold">✕</span>
+                        <span>Decline</span>
+                      </button>
+                    </div>
+                    <p className="text-xs text-white font-serif font-medium text-center tracking-wider drop-shadow-[0_2px_5px_rgba(0,0,0,0.95)]">
+                      Will you be celebrating with us?
+                    </p>
+                  </div>
+                )}
+
+                {splashRsvp === 'accepted' && (
+                  <div className="flex flex-col items-center gap-2 w-full animate-in fade-in zoom-in-95 duration-300">
+                    {/* Happy Celebration Badge */}
+                    <div className="flex items-center justify-center gap-1.5 text-xs font-serif font-bold text-[#dfc194] bg-black/55 backdrop-blur-xs px-3.5 py-1 rounded-full border border-[#bd9661]/50 shadow-lg animate-bounce-in">
+                      <span className="text-sm">🎉</span>
+                      <span>Joyfully Accepted! Can't wait to celebrate!</span>
+                      <span className="text-xs">✨</span>
+                    </div>
+
+                    {/* Continue Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('hub');
+                        try { localStorage.removeItem('tt_show_invitation_animation'); } catch {}
+                      }}
+                      className="px-8 py-2.5 rounded-full bg-gradient-to-r from-[#dfc194] via-[#c59f60] to-[#bd9661] hover:brightness-110 active:scale-95 text-[#15110e] font-serif font-bold text-xs tracking-widest uppercase shadow-[0_6px_20px_rgba(0,0,0,0.5)] transition-all flex items-center justify-center gap-2 cursor-pointer border border-[#f5e6cc]/40"
+                    >
+                      <span>Continue</span>
+                      <span className="text-sm font-sans font-bold">&rarr;</span>
+                    </button>
+                    <p className="text-[11px] text-white/95 font-serif font-medium text-center tracking-wide mt-1 drop-shadow-[0_1.5px_4px_rgba(0,0,0,0.9)]">
+                      Press continue to join the fun
+                    </p>
+                  </div>
+                )}
+
+                {splashRsvp === 'declined' && (
+                  <div className="w-full max-w-xs px-4 animate-in fade-in zoom-in-95 duration-300">
+                    <div className="bg-black/70 backdrop-blur-md border border-[#bd9661]/40 rounded-2xl p-3.5 text-center shadow-2xl space-y-1.5">
+                      <div className="text-2xl animate-pulse">💌</div>
+                      <h4 className="font-serif text-sm font-bold text-white tracking-wide">
+                        We will miss you!
+                      </h4>
+                      <p className="text-[10px] text-[#dfc194] leading-relaxed">
+                        We're so sorry you can't celebrate with us in person, but you'll be warmly in our hearts.
+                      </p>
+                      <div className="pt-1.5 flex items-center justify-center gap-3 text-[10.5px]">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveTab('hub');
+                            try { localStorage.removeItem('tt_show_invitation_animation'); } catch {}
+                          }}
+                          className="text-[#dfc194] hover:text-white font-serif font-bold underline cursor-pointer"
+                        >
+                          Enter portal anyway &rarr;
+                        </button>
+                        <span className="text-white/30">&bull;</span>
+                        <button
+                          type="button"
+                          onClick={() => handleSplashRsvp(true)}
+                          className="text-white/80 hover:text-white underline cursor-pointer"
+                        >
+                          Changed mind? Accept
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -2437,7 +2592,7 @@ export default function GuestMobileView() {
             {CELEBRATION_PARTICLES.map((p) => (
               <div
                 key={p.id}
-                className="anim-particle-float absolute bottom-2 select-none"
+                className="anim-confetti-fall absolute -top-8 select-none drop-shadow-md"
                 style={{
                   left: p.left,
                   fontSize: p.size,
