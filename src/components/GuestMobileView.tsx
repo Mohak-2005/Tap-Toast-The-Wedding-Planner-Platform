@@ -666,19 +666,8 @@ export default function GuestMobileView() {
                   <h1 className="font-serif text-[32px] font-bold text-[#2a1612] leading-tight mb-1 flex items-center gap-1.5">
                     {guestLeadName.split(' ')[0] || 'Priya'} <span className="text-[#a87948] font-light text-[28px]">&#9825;</span>
                   </h1>
-                  <div className="flex items-center justify-between pr-2">
-                    <div className="text-[15px] text-[#2a1612] font-serif font-medium">
-                      Sophie <span className="text-[#c59f60] italic font-normal">&amp;</span> James's Wedding
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('splash')}
-                      className="text-[10px] font-semibold text-[#bd9661] hover:text-[#916b38] flex items-center gap-1 cursor-pointer bg-[#faf6f0] px-2 py-0.5 rounded-full border border-[#ebdcc9] transition-all hover:scale-105 active:scale-95 shadow-2xs"
-                      title="Replay invitation unboxing animation"
-                    >
-                      <span>💌</span>
-                      <span>Invitation</span>
-                    </button>
+                  <div className="text-[15px] text-[#2a1612] font-serif font-medium">
+                    Sophie <span className="text-[#c59f60] italic font-normal">&amp;</span> James's Wedding
                   </div>
                   <div className="text-xs text-[#8b7b6b] mt-1 flex items-center gap-1">
                     <svg viewBox="0 0 24 24" width="12" height="12" fill="#c59f60"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>
