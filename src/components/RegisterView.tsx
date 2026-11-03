@@ -915,7 +915,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
           )}
 
           {/* MC ONBOARDING PROGRESS STEPPER */}
-          {accountType === 'mc' && (
+          {accountType === 'mc' && mcStep === 'plan_payment' && (
             <div className="mb-6 pb-4 border-b border-[#ebdcc9]">
               <div className="flex items-center justify-center gap-3 text-xs max-w-sm mx-auto">
                 {/* Step 1 */}
@@ -962,7 +962,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
           )}
 
           {/* COUPLE ONBOARDING PROGRESS STEPPER */}
-          {accountType === 'couple' && (
+          {accountType === 'couple' && (coupleStep === 'payment' || coupleStep === 'choose_mc') && (
             <div className="mb-6 pb-4 border-b border-[#ebdcc9]">
               <div className="flex items-center justify-between text-xs">
                 {/* Step 1 */}
@@ -1039,7 +1039,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
               <form onSubmit={handleProceedToMcPlan} className="space-y-5">
                 <div>
                   <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-1">
-                    STEP 1 OF 2 · PRO MC &amp; COORDINATOR ACCOUNT
+                    PRO MC &amp; COORDINATOR ACCOUNT
                   </div>
                   <h2 className="font-serif text-[22px] font-bold text-[#15110e] leading-tight">
                     Register Certified MC Account
@@ -1212,7 +1212,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                     Please check your inbox (and spam folder) for an email from <strong>Tap &amp; Toast Security</strong>.
                   </p>
                   <p>
-                    Click the <strong>Verify email</strong> button inside that email to establish your account password. Once your password is set, you will sign in and proceed directly to choose your <strong>MC Subscription Plan</strong> to launch your MC Pro Portal.
+                    Click the <strong>Set password</strong> button inside that email to establish your account password. Once your password is set, you will sign in and proceed directly to choose your <strong>MC Subscription Plan</strong> to launch your MC Pro Portal.
                   </p>
                 </div>
 
@@ -1540,7 +1540,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
             <form onSubmit={handleProceedToPayment} noValidate className="space-y-4">
               <div>
                 <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-1">
-                  STEP 1 OF 3 · COUPLE ONBOARDING
+                  COUPLE ONBOARDING
                 </div>
                 <h2 className="font-serif text-[22px] font-bold text-[#15110e] leading-tight">
                   Couple Registration
@@ -1857,7 +1857,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                   Please check your inboxes (and spam folders) for an email from <strong>Tap &amp; Toast Security</strong>.
                 </p>
                 <p>
-                  Both partners will receive their own verification link. Click the <strong>Verify email</strong> button inside to set your private portal password. After setting your password, sign in to continue to <strong>Step 2: Choose Your Plan &amp; Payment</strong> and <strong>Step 3: MC Setup</strong>.
+                  Both partners will receive their own verification link. Click the <strong>Set password</strong> button inside to set your private portal password. After setting your password, sign in to continue to <strong>Step 2: Choose Your Plan &amp; Payment</strong> and <strong>Step 3: MC Setup</strong>.
                 </p>
               </div>
 

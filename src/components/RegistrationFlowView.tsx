@@ -239,7 +239,7 @@ export default function RegistrationFlowView({ onSelectView }: RegistrationFlowV
                     onClick={() => handleOpenSetPassword(currentRecipient)}
                     className="w-full sm:w-auto px-8 py-3.5 bg-[#15110e] hover:bg-[#2b2118] text-[#dfc194] hover:text-white rounded-xl text-xs sm:text-sm font-bold tracking-wide transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer transform hover:-translate-y-0.5"
                   >
-                    <span>Verify email</span>
+                    <span>Set password</span>
                   </button>
                 </div>
 

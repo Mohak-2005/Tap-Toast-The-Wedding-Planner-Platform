@@ -24,6 +24,7 @@ export default function LoginView({ onSelectView, targetRole = 'mc' }: LoginView
     const savedEmail = localStorage.getItem('tt_login_email');
     const savedRole = localStorage.getItem('tt_login_role') as 'mc' | 'couple' | 'superadmin' | null;
     if (savedEmail) {
+      setShowSwitchForm(true);
       setEmail(savedEmail);
       const savedPwd = localStorage.getItem('tt_user_pwd_' + savedEmail.toLowerCase());
       if (savedPwd) {

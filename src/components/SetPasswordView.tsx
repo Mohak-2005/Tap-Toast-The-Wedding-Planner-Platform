@@ -63,6 +63,7 @@ export default function SetPasswordView({ onSelectView, email: initialEmail, rol
       localStorage.setItem('tt_login_role', role);
       // Set the pending registration flow so login knows where to route
       localStorage.setItem('tt_pending_reg_flow', role === 'couple' ? 'couple_payment' : 'mc_plan');
+      localStorage.removeItem('tt_session');
 
       showToast('Password successfully set! Please sign in to activate your account.', 'success');
       if (onSelectView) {
@@ -103,16 +104,7 @@ export default function SetPasswordView({ onSelectView, email: initialEmail, rol
             ACCOUNT ACTIVATION · EMAIL VERIFIED
           </div>
 
-          <div className="bg-[#1f1914] border border-[#3d3126] rounded-xl p-4 text-xs text-[#c9bbae] space-y-2 max-w-[360px]">
-            <div className="flex items-center gap-2 text-white font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Email Verification Successful</span>
-            </div>
-            <p className="text-[11.5px] text-[#9b8b7b] leading-relaxed">
-              You clicked the secure verification link sent to <strong>{email}</strong>. Create your password below to finalize your credentials and sign in.
-            </p>
           </div>
-        </div>
 
         <div className="text-[11px] text-[#8b7b6b]">
           Tap &amp; Toast &bull; Australia's Premier Wedding Platform
