@@ -534,7 +534,7 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
             : "fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#dfc194] border-2 border-white flex items-center justify-center shadow-2xl hover:scale-105 transition-transform z-[990] overflow-hidden p-0"
         }
       >
-        <img src="/chatbot-avatar.png" alt="Joey AI" className="w-full h-full object-cover" />
+        <img src="./chatbot-avatar.png" alt="Joey AI" className="w-full h-full object-cover" />
       </button>
 
       {/* Chat Panel */}
@@ -551,7 +551,7 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
             <div className="flex items-center gap-2.5">
               <div className="relative">
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-[#bd9661] flex items-center justify-center">
-                  <img src="/chatbot-avatar.png" alt="Joey AI" className="w-full h-full object-cover" />
+                  <img src="./chatbot-avatar.png" alt="Joey AI" className="w-full h-full object-cover" />
                 </div>
                               </div>
               <div>

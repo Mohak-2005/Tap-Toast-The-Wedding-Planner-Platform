@@ -272,7 +272,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
       location: 'Sydney & Hunter Valley, NSW',
       vibe: 'Modern Luxury, High-Energy & Smooth Multilingual (EN/IT)',
       specialty: 'High-energy entrances, seamless timing, bilingual Italian/English',
-      image: '/chatbot-avatar.png',
+      image: '',
       unavailableDates: [
         '2026-11-20', '2026-11-21', '2026-11-28', '2026-12-12', '2026-12-25', '2026-12-31', '2027-01-01'
       ],
@@ -288,7 +288,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
       location: 'Melbourne & Yarra Valley, VIC',
       vibe: 'Classic Formal, Aristocratic & Eloquent Timing',
       specialty: 'Black-tie etiquette, historic estates, structured royal pacing',
-      image: '/chatbot-avatar.png',
+      image: '',
       unavailableDates: [
         '2026-11-14', '2026-11-15', '2026-12-24', '2026-12-25', '2027-01-01', '2027-02-14'
       ],
@@ -304,7 +304,7 @@ export default function SrMobileView({ onSelectView }: SrMobileViewProps) {
       location: 'Southern Highlands & NSW Coast',
       vibe: 'Warm, Romantic Storytelling & Bespoke Pacing',
       specialty: 'Heartfelt storytelling, intimate vineyard romance, emotional pacing',
-      image: '/chatbot-avatar.png',
+      image: '',
       unavailableDates: [
         '2026-11-07', '2026-11-14', '2026-11-28', '2026-12-25', '2026-12-31', '2027-03-20'
       ],

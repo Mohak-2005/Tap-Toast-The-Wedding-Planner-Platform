@@ -327,7 +327,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
       location: 'Sydney & Hunter Valley, NSW',
       vibe: 'Modern Luxury, High-Energy & Smooth Multilingual (EN/IT)',
       specialty: 'High-energy entrances, seamless timing, bilingual Italian/English',
-      image: '/chatbot-avatar.png',
+      image: '',
       recommended: true,
       unavailableDates: [
         '2026-11-20', '2026-11-21', '2026-11-28', '2026-12-12', '2026-12-25', '2026-12-31', '2027-01-01'
@@ -344,7 +344,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
       location: 'Melbourne & Yarra Valley, VIC',
       vibe: 'Classic Formal, Aristocratic & Eloquent Timing',
       specialty: 'Black-tie etiquette, historic estates, structured royal pacing',
-      image: '/chatbot-avatar.png',
+      image: '',
       recommended: false,
       unavailableDates: [
         '2026-11-14', '2026-11-15', '2026-12-24', '2026-12-25', '2027-01-01', '2027-02-14'
@@ -361,7 +361,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
       location: 'Southern Highlands & NSW Coast',
       vibe: 'Warm, Romantic Storytelling & Bespoke Pacing',
       specialty: 'Heartfelt storytelling, intimate vineyard romance, emotional pacing',
-      image: '/chatbot-avatar.png',
+      image: '',
       recommended: false,
       unavailableDates: [
         '2026-11-07', '2026-11-14', '2026-11-28', '2026-12-25', '2026-12-31', '2027-03-20'
@@ -378,7 +378,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
       location: 'Australia-wide',
       vibe: 'Send invitation link to your own MC with full run sheet access',
       specialty: 'Coordinate directly with your private family friend or professional MC ($0 fee)',
-      image: '/chatbot-avatar.png',
+      image: '',
       recommended: false,
       unavailableDates: [] as string[],
     },
@@ -2419,8 +2419,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                             (e.target as HTMLElement).style.display = 'none';
                           }}
                         />
-                        <span className="text-sm select-none">✨</span>
-                      </div>
+                        </div>
                       <div>
                         <div className="flex items-center gap-2">
                           <h4 className="font-serif text-xs font-bold text-[#15110e]">
@@ -2671,7 +2670,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
               <div className="bg-[#15110e] text-white p-3.5 flex items-center justify-between border-b border-[#29211a]">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-full overflow-hidden border border-[#bd9661] bg-[#181310] flex items-center justify-center shrink-0">
-                    <img src="/chatbot-avatar.png" alt="Joey AI" className="w-full h-full object-cover" />
+                    <img src="./chatbot-avatar.png" alt="Joey AI" className="w-full h-full object-cover" />
                   </div>
                   <div>
                     <h4 className="font-serif text-xs font-bold text-[#dfc194]">Joey AI · MC Concierge</h4>

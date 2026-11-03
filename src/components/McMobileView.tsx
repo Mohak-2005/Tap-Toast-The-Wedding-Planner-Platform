@@ -3230,7 +3230,7 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
             className="absolute bottom-20 right-4 w-12 h-12 rounded-full bg-[#dfc194] border-2 border-white shadow-lg flex items-center justify-center cursor-pointer hover:scale-105 transition-transform z-30 overflow-hidden p-0"
             title="Ask Joey"
           >
-            <img src="/chatbot-avatar.png" alt="Joey AI Assistant" className="w-full h-full object-cover" />
+            <img src="./chatbot-avatar.png" alt="Joey AI Assistant" className="w-full h-full object-cover" />
           </button>
         )}
 
@@ -3239,7 +3239,7 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
             <div className="bg-[#15110e] text-white p-3.5 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-[#bd9661] flex items-center justify-center flex-shrink-0">
-                  <img src="/chatbot-avatar.png" alt="Joey AI Assistant" className="w-full h-full object-cover" />
+                  <img src="./chatbot-avatar.png" alt="Joey AI Assistant" className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <div className="text-xs font-bold text-white">Joey</div>
