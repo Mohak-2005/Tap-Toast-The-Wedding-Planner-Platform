@@ -18,16 +18,42 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
 
   // Sync accountType if hash changes
   useEffect(() => {
-    const hash = window.location.hash.toLowerCase();
-    if (hash.includes('register-mc') || hash.includes('type=mc')) {
-      setAccountType('mc');
-    } else if (hash.includes('register-couple') || hash === '#register') {
-      setAccountType('couple');
-    }
+    const syncStep = () => {
+      const hash = window.location.hash.toLowerCase();
+      const savedStep = localStorage.getItem('tt_register_step');
+      if (savedStep === 'choose_mc' || hash.includes('step=choose_mc')) {
+        setCoupleStep('choose_mc');
+        localStorage.removeItem('tt_register_step');
+      } else if (savedStep === 'payment' || hash.includes('step=payment')) {
+        setCoupleStep('payment');
+        localStorage.removeItem('tt_register_step');
+      }
+      if (savedStep === 'plan_payment' || hash.includes('step=plan')) {
+        setMcStep('plan_payment');
+        localStorage.removeItem('tt_register_step');
+      }
+      if (hash.includes('register-mc') || hash.includes('type=mc')) {
+        setAccountType('mc');
+      } else if (hash.includes('register-couple') || hash === '#register') {
+        setAccountType('couple');
+      }
+    };
+    syncStep();
+    window.addEventListener('hashchange', syncStep);
+    return () => window.removeEventListener('hashchange', syncStep);
   }, []);
 
   // MC Multi-Step Flow: details -> plan_payment
-  const [mcStep, setMcStep] = useState<'details' | 'plan_payment'>('details');
+  const [mcStep, setMcStep] = useState<'details' | 'verify_email' | 'plan_payment'>(() => {
+    const savedStep = localStorage.getItem('tt_register_step');
+    if (savedStep === 'plan_payment') {
+      localStorage.removeItem('tt_register_step');
+      return 'plan_payment';
+    }
+    const hash = window.location.hash.toLowerCase();
+    if (hash.includes('step=plan')) return 'plan_payment';
+    return 'details';
+  });
   const [selectedMcPlanId, setSelectedMcPlanId] = useState<string>('mc_base');
   const [expandedMcPlanId, setExpandedMcPlanId] = useState<string | null>(null);
   const [mcCardName, setMcCardName] = useState('Robert Galati');
@@ -98,7 +124,21 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
   const [mcShowConfirm, setMcShowConfirm] = useState(false);
 
   // Couple Onboarding Multi-Step: registration -> payment -> choose_mc -> dashboard
-  const [coupleStep, setCoupleStep] = useState<'registration' | 'payment' | 'choose_mc'>('registration');
+  const [coupleStep, setCoupleStep] = useState<'registration' | 'verify_email' | 'payment' | 'choose_mc'>(() => {
+    const savedStep = localStorage.getItem('tt_register_step');
+    if (savedStep === 'choose_mc') {
+      localStorage.removeItem('tt_register_step');
+      return 'choose_mc';
+    }
+    if (savedStep === 'payment') {
+      localStorage.removeItem('tt_register_step');
+      return 'payment';
+    }
+    const hash = window.location.hash.toLowerCase();
+    if (hash.includes('step=payment')) return 'payment';
+    if (hash.includes('step=choose_mc') || hash.includes('step=mc')) return 'choose_mc';
+    return 'registration';
+  });
 
   // Couple fields
   const [groomName, setGroomName] = useState('James Wilson');
@@ -347,17 +387,17 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
   // Step 1: Proceed to MC Plan Selection
   const handleProceedToMcPlan = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!passwordsMatch) {
-      showToast('Passwords do not match', 'error');
-      return;
-    }
     if (!agreeTerms) {
       showToast('Please agree to the Terms of Service', 'error');
       return;
     }
-    setMcStep('plan_payment');
+    const emailToVerify = mcEmail.trim() || 'anthony@rossievents.demo';
+    localStorage.setItem('tt_verify_email', emailToVerify);
+    localStorage.setItem('tt_verify_role', 'mc');
+    localStorage.setItem('tt_pending_reg_flow', 'mc_plan');
+    showToast('Registration submitted! Please verify your email.', 'success');
+    setMcStep('verify_email');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    showToast('Host profile saved! Please select your MC SaaS Plan.', 'info');
   };
 
   // Step 2: Complete MC Registration & Activate SaaS Plan via Stripe
@@ -439,20 +479,19 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
   // Step 1: Proceed to Payment (Enforces Compulsory Wedding Date)
   const handleProceedToPayment = (e: React.FormEvent) => {
     e.preventDefault();
-// Wedding date is optional
     setWeddingDateError(false);
-    if (!couplePasswordsMatch) {
-      showToast('Passwords do not match', 'error');
-      return;
-    }
     if (!agreeTerms) {
       showToast('Please agree to the Terms of Service', 'error');
       return;
     }
-    setWeddingDateError(false);
-    setCoupleStep('payment');
+    const bride = brideEmail.trim() || 'sophie.carter@example.com';
+    const groom = groomEmail.trim() || 'james.wilson@example.com';
+    localStorage.setItem('tt_verify_email', bride);
+    localStorage.setItem('tt_verify_role', 'couple');
+    localStorage.setItem('tt_pending_reg_flow', 'couple_payment');
+    showToast('Registration submitted! Please verify your email.', 'success');
+    setCoupleStep('verify_email');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    showToast('Registration details saved. Please choose your Couple Plan.', 'info');
   };
 
   // Step 2: Proceed to MC & AI Setup
@@ -1122,96 +1161,6 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                   </div>
                 </div>
 
-                {/* Password & Security Card */}
-                <div className="bg-[#faf8f5] p-4 rounded-xl border border-[#e8ded0] space-y-3">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center gap-1.5">
-                    <svg className="w-3.5 h-3.5 text-[#bd9661]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                    <span>Account Security</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                        Password *
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={mcShowPwd ? 'text' : 'password'}
-                          required
-                          placeholder="Create a secure password"
-                          value={mcPassword}
-                          onChange={(e) => setMcPassword(e.target.value)}
-                          className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 pr-14 text-xs text-[#15110e] outline-none shadow-2xs"
-                        />
-                        <button
-  type="button"
-  onClick={() => setMcShowPwd(!mcShowPwd)}
-  aria-label={mcShowPwd ? 'Hide password' : 'Show password'}
-  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8b7b6b] hover:text-[#15110e] transition-colors cursor-pointer p-0.5"
->
-  {mcShowPwd ? (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
-    </svg>
-  ) : (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-    </svg>
-  )}
-</button>
-                      </div>
-                      <div className="w-full bg-[#e8ded0] h-1.5 rounded-full mt-2 overflow-hidden">
-                        <div
-                          className="h-full transition-all duration-300"
-                          style={{ width: `${(strengthScore / 4) * 100}%`, backgroundColor: strengthColor }}
-                        />
-                      </div>
-                      <div className="text-[10px] text-[#8b7b6b] mt-0.5">{strengthLabel}</div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                        Confirm Password *
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={mcShowConfirm ? 'text' : 'password'}
-                          required
-                          placeholder="Re-enter password"
-                          value={mcConfirmPassword}
-                          onChange={(e) => setMcConfirmPassword(e.target.value)}
-                          className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 pr-14 text-xs text-[#15110e] outline-none shadow-2xs"
-                        />
-                        <button
-  type="button"
-  onClick={() => setMcShowConfirm(!mcShowConfirm)}
-  aria-label={mcShowConfirm ? 'Hide password' : 'Show password'}
-  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8b7b6b] hover:text-[#15110e] transition-colors cursor-pointer p-0.5"
->
-  {mcShowConfirm ? (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
-    </svg>
-  ) : (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-    </svg>
-  )}
-</button>
-                      </div>
-                      {mcConfirmPassword && (
-                        <div className={`text-[10.5px] mt-1 font-semibold ${passwordsMatch ? 'text-emerald-700' : 'text-rose-600'}`}>
-                          {passwordsMatch ? '✓ Passwords match' : '✕ Passwords do not match'}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
                 {/* Terms Checkbox */}
                 <div className="pt-0.5">
                   <label className="flex items-start gap-2.5 text-xs text-[#6b5847] cursor-pointer">
@@ -1231,10 +1180,73 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                   type="submit"
                   className="w-full py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
                 >
-                  <span>Proceed to Choose MC Plan &amp; Billing</span>
+                  <span>Register MC Account</span>
                   <span>→</span>
                 </button>
               </form>
+            ) : mcStep === 'verify_email' ? (
+              /* MC STEP: VERIFY EMAIL NOTICE SCREEN */
+              <div className="space-y-6 py-4 animate-in fade-in duration-200">
+                <div className="text-center space-y-3">
+                  <div className="w-16 h-16 rounded-2xl bg-[#15110e] border border-[#bd9661] text-[#dfc194] flex items-center justify-center text-3xl shadow-sm mx-auto">
+                    ✉️
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-1">
+                      REGISTRATION SUBMITTED · ACTION REQUIRED
+                    </div>
+                    <h2 className="font-serif text-[26px] font-bold text-[#15110e] leading-tight">
+                      Please Verify Your Email
+                    </h2>
+                    <p className="text-xs text-[#8b7b6b] mt-1 max-w-md mx-auto">
+                      We have dispatched a verification email to your professional host contact address.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-[#faf8f5] border border-[#e8ded0] rounded-2xl p-5 space-y-2.5 max-w-lg mx-auto text-xs text-[#524436] leading-relaxed">
+                  <p>
+                    We have dispatched a verification email to <strong>{mcEmail || 'anthony@rossievents.demo'}</strong>.
+                  </p>
+                  <p>
+                    Please check your inbox (and spam folder) for an email from <strong>Tap &amp; Toast Security</strong>.
+                  </p>
+                  <p>
+                    Click the <strong>Verify email</strong> button inside that email to establish your account password. Once your password is set, you will sign in and proceed directly to choose your <strong>MC Subscription Plan</strong> to launch your MC Pro Portal.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-lg mx-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onSelectView) onSelectView('registration-flow');
+                      else window.location.hash = 'registration-flow';
+                    }}
+                    className="w-full sm:w-auto px-7 py-3.5 bg-[#15110e] hover:bg-[#2b2118] text-[#dfc194] hover:text-white rounded-xl text-xs font-bold tracking-wide transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>Check Email</span>
+                    <span>→</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => showToast('Verification email resent to ' + (mcEmail || 'anthony@rossievents.demo'), 'success')}
+                    className="w-full sm:w-auto px-5 py-3.5 border border-[#d5c7b5] hover:border-[#bd9661] text-[#5a493a] hover:text-[#15110e] rounded-xl text-xs font-semibold transition-all cursor-pointer bg-white"
+                  >
+                    <span>↻ Resend Email</span>
+                  </button>
+                </div>
+
+                <div className="text-center pt-2 border-t border-[#f0ede6] max-w-lg mx-auto">
+                  <button
+                    type="button"
+                    onClick={() => setMcStep('details')}
+                    className="text-xs text-[#8b7b6b] hover:text-[#15110e] underline cursor-pointer"
+                  >
+                    &larr; Back to edit host registration details
+                  </button>
+                </div>
+              </div>
             ) : (
               /* STEP 2: MC PLAN SELECTION & STRIPE BILLING */
               <form onSubmit={handleCompleteMcRegistration} className="space-y-4">
@@ -1794,97 +1806,6 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                 </div>
               </div>
 
-              {/* Password & Security Card */}
-              <div className="bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8ded0] space-y-3">
-                <div className="text-[10.5px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#bd9661]" />
-                    <span>Shared Portal Security</span>
-                  </div>
-                  <span className="text-[9.5px] text-[#8b7b6b] font-medium">Couple Login Passcode</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                      Password *
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={coupleShowPwd ? 'text' : 'password'}
-                        required
-                        placeholder="Create a password"
-                        value={couplePassword}
-                        onChange={(e) => setCouplePassword(e.target.value)}
-                        className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 pr-14 text-xs text-[#15110e] outline-none shadow-2xs"
-                      />
-                      <button
-  type="button"
-  onClick={() => setCoupleShowPwd(!coupleShowPwd)}
-  aria-label={coupleShowPwd ? 'Hide password' : 'Show password'}
-  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8b7b6b] hover:text-[#15110e] transition-colors cursor-pointer p-0.5"
->
-  {coupleShowPwd ? (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
-    </svg>
-  ) : (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-    </svg>
-  )}
-</button>
-                    </div>
-                    <div className="w-full bg-[#e8ded0] h-1.5 rounded-full mt-2 overflow-hidden">
-                      <div
-                        className="h-full transition-all duration-300"
-                        style={{ width: `${(coupleStrengthScore / 4) * 100}%`, backgroundColor: coupleStrengthColor }}
-                      />
-                    </div>
-                    <div className="text-[10px] text-[#8b7b6b] mt-0.5">{coupleStrengthLabel}</div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                      Confirm Password *
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={coupleShowConfirm ? 'text' : 'password'}
-                        required
-                        placeholder="Re-enter password"
-                        value={coupleConfirmPassword}
-                        onChange={(e) => setCoupleConfirmPassword(e.target.value)}
-                        className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 pr-14 text-xs text-[#15110e] outline-none shadow-2xs"
-                      />
-                      <button
-  type="button"
-  onClick={() => setCoupleShowConfirm(!coupleShowConfirm)}
-  aria-label={coupleShowConfirm ? 'Hide password' : 'Show password'}
-  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8b7b6b] hover:text-[#15110e] transition-colors cursor-pointer p-0.5"
->
-  {coupleShowConfirm ? (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
-    </svg>
-  ) : (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-    </svg>
-  )}
-</button>
-                    </div>
-                    {coupleConfirmPassword && (
-                      <div className={`text-[10.5px] mt-1 font-semibold ${couplePasswordsMatch ? 'text-emerald-700' : 'text-rose-600'}`}>
-                        {couplePasswordsMatch ? '✓ Passwords match' : '✕ Passwords do not match'}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
               {/* Terms Agreement */}
               <div className="pt-0.5">
                 <label className="flex items-start gap-2.5 text-xs text-[#6b5847] cursor-pointer">
@@ -1904,10 +1825,73 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                 type="submit"
                 className="w-full py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
               >
-                <span>Continue to Plan &amp; Payment</span>
+                <span>Register</span>
                 <span>→</span>
               </button>
             </form>
+          ) : coupleStep === 'verify_email' ? (
+            /* COUPLE STEP: VERIFY EMAIL NOTICE SCREEN */
+            <div className="space-y-6 py-4 animate-in fade-in duration-200">
+              <div className="text-center space-y-3">
+                <div className="w-16 h-16 rounded-2xl bg-[#15110e] border border-[#bd9661] text-[#dfc194] flex items-center justify-center text-3xl shadow-sm mx-auto">
+                  ✉️
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-1">
+                    REGISTRATION SUBMITTED · ACTION REQUIRED
+                  </div>
+                  <h2 className="font-serif text-[26px] font-bold text-[#15110e] leading-tight">
+                    Please Verify Your Email
+                  </h2>
+                  <p className="text-xs text-[#8b7b6b] mt-1 max-w-md mx-auto">
+                    We have dispatched email verification links to both bride and groom to secure your shared wedding suite.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-[#faf8f5] border border-[#e8ded0] rounded-2xl p-5 space-y-2.5 max-w-lg mx-auto text-xs text-[#524436] leading-relaxed">
+                <p>
+                  We have dispatched email verification links to both <strong>{brideEmail || 'sophie.carter@example.com'}</strong> (Bride) and <strong>{groomEmail || 'james.wilson@example.com'}</strong> (Groom).
+                </p>
+                <p>
+                  Please check your inboxes (and spam folders) for an email from <strong>Tap &amp; Toast Security</strong>.
+                </p>
+                <p>
+                  Both partners will receive their own verification link. Click the <strong>Verify email</strong> button inside to set your private portal password. After setting your password, sign in to continue to <strong>Step 2: Choose Your Plan &amp; Payment</strong> and <strong>Step 3: MC Setup</strong>.
+                </p>
+              </div>
+
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-lg mx-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onSelectView) onSelectView('registration-flow');
+                    else window.location.hash = 'registration-flow';
+                  }}
+                  className="w-full sm:w-auto px-7 py-3.5 bg-[#15110e] hover:bg-[#2b2118] text-[#dfc194] hover:text-white rounded-xl text-xs font-bold tracking-wide transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Check Email</span>
+                  <span>→</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => showToast('Verification emails resent to both partners!', 'success')}
+                  className="w-full sm:w-auto px-5 py-3.5 border border-[#d5c7b5] hover:border-[#bd9661] text-[#5a493a] hover:text-[#15110e] rounded-xl text-xs font-semibold transition-all cursor-pointer bg-white"
+                >
+                  <span>↻ Resend Emails</span>
+                </button>
+              </div>
+
+              <div className="text-center pt-2 border-t border-[#f0ede6] max-w-lg mx-auto">
+                <button
+                  type="button"
+                  onClick={() => setCoupleStep('registration')}
+                  className="text-xs text-[#8b7b6b] hover:text-[#15110e] underline cursor-pointer"
+                >
+                  &larr; Back to edit couple registration details
+                </button>
+              </div>
+            </div>
           ) : coupleStep === 'payment' ? (
             /* STEP 2: COUPLE SAAS SUBSCRIPTION & PAYMENT (With Feature Accordion / Dropdowns) */
             <form onSubmit={handleProceedToMcAndAi} className="space-y-4">

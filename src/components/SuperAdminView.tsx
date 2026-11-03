@@ -1275,17 +1275,7 @@ export default function SuperAdminView({ onSelectView }: SuperAdminViewProps) {
                                 </td>
 
                                 <td className="py-3.5 px-3">
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="font-bold text-[#15110e] text-xs">{planName}</span>
-                                    <span className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${
-                                      isCouture ? 'bg-purple-100 text-purple-800' : isEssential ? 'bg-[#e2d8cb] text-[#4a3b2c]' : 'bg-[#bd9661] text-[#15110e]'
-                                    }`}>
-                                      {isCouture ? 'COUTURE' : isEssential ? 'ESSENTIAL' : 'SIGNATURE PRO'}
-                                    </span>
-                                  </div>
-                                  <div className="font-mono text-[11px] text-[#bd9661] font-semibold mt-0.5">
-                                    ${planPrice}.00 AUD (One-Time)
-                                  </div>
+                                  <span className="font-bold text-[#15110e] text-xs">{planName}</span>
                                 </td>
 
                                 <td className="py-3.5 px-3">

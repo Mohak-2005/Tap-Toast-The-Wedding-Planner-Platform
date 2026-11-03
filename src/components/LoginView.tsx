@@ -21,6 +21,21 @@ export default function LoginView({ onSelectView, targetRole = 'mc' }: LoginView
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    const savedEmail = localStorage.getItem('tt_login_email');
+    const savedRole = localStorage.getItem('tt_login_role') as 'mc' | 'couple' | 'superadmin' | null;
+    if (savedEmail) {
+      setEmail(savedEmail);
+      const savedPwd = localStorage.getItem('tt_user_pwd_' + savedEmail.toLowerCase());
+      if (savedPwd) {
+        setPassword(savedPwd);
+      }
+    }
+    if (savedRole && (savedRole === 'mc' || savedRole === 'couple' || savedRole === 'superadmin')) {
+      setRole(savedRole);
+    }
+  }, []);
+
+  useEffect(() => {
     let interval: any;
     if (lockoutTimer > 0) {
       interval = setInterval(() => {
@@ -61,8 +76,12 @@ export default function LoginView({ onSelectView, targetRole = 'mc' }: LoginView
 
     setTimeout(() => {
       setIsSubmitting(false);
-      const user = state.users.find(u => u.email.toLowerCase() === email.toLowerCase());
-      if (!user || password !== 'Demo1234!') {
+      const savedPwd = localStorage.getItem('tt_user_pwd_' + email.toLowerCase());
+      const isPasswordValid = password === 'Demo1234!' || (savedPwd && password === savedPwd) || password.length >= 6;
+
+      let user = state.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+      if (!isPasswordValid) {
         const nextFailed = failedAttempts + 1;
         setFailedAttempts(nextFailed);
         if (nextFailed >= 5) {
@@ -74,7 +93,21 @@ export default function LoginView({ onSelectView, targetRole = 'mc' }: LoginView
         return;
       }
 
-      // Success
+      // If user not yet in state.users, create demo profile
+      if (!user) {
+        const inferredRole = role || (email.includes('rossi') ? 'mc' : 'couple');
+        user = {
+          id: 'user_' + Date.now(),
+          email: email,
+          role: inferredRole as any,
+          name: email.split('@')[0].replace('.', ' ').replace(/\b\w/g, c => c.toUpperCase()),
+          businessName: inferredRole === 'mc' ? 'Rossi Event Architecture' : undefined,
+          tenantId: 'tenant_demo',
+          weddingId: inferredRole === 'couple' ? 'w1' : null,
+        };
+      }
+
+      // Success - store session
       setStoredSession({
         role: user.role,
         email: user.email,
@@ -85,6 +118,33 @@ export default function LoginView({ onSelectView, targetRole = 'mc' }: LoginView
         keepSignedIn,
         at: Date.now()
       });
+
+      // Check if user has a pending registration flow (couple payment or MC plan)
+      const pendingFlow = localStorage.getItem('tt_pending_reg_flow');
+      if (pendingFlow === 'couple_payment' || (role === 'couple' && user.email.includes('sophie'))) {
+        localStorage.removeItem('tt_pending_reg_flow');
+        localStorage.setItem('tt_register_step', 'payment');
+        showToast(`Welcome ${user.name}! Please choose your Couple Plan & Payment.`, 'success');
+        if (onSelectView) {
+          onSelectView('register');
+        } else {
+          window.location.hash = 'register';
+        }
+        return;
+      }
+
+      if (pendingFlow === 'mc_plan' || (role === 'mc' && user.email.includes('rossi'))) {
+        localStorage.removeItem('tt_pending_reg_flow');
+        localStorage.setItem('tt_register_step', 'plan_payment');
+        showToast(`Welcome ${user.name}! Please select your MC Subscription Plan.`, 'success');
+        if (onSelectView) {
+          onSelectView('register-mc');
+        } else {
+          window.location.hash = 'register-mc';
+        }
+        return;
+      }
+
       showToast(`Welcome back, ${user.name}!`, 'success');
       if (onSelectView) {
         onSelectView(user.role === 'mc' ? 'mc' : user.role === 'couple' ? 'couple' : 'superadmin');

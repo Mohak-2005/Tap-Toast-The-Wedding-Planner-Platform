@@ -52,6 +52,7 @@ export interface Wedding {
   timeDisplay?: string;
   venue: string;
   venueAddress?: string;
+  googleMapsUrl?: string;
   parking?: string;
   dressCode?: string;
   registry?: string;

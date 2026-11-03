@@ -12,6 +12,9 @@ import LoginView from './components/LoginView';
 import RegisterView from './components/RegisterView';
 import PlannerView from './components/PlannerView';
 import InvitationDemoView from './components/InvitationDemoView';
+import RegistrationFlowView from './components/RegistrationFlowView';
+import SetPasswordView from './components/SetPasswordView';
+
 
 interface ToastItem {
   id: string;
@@ -123,6 +126,8 @@ export default function App() {
       'superadmin',
       'guest-web',
       'invitation-demo',
+      'registration-flow',
+      'set-password',
     ];
     if (validViews.includes(cleanView)) {
       return cleanView;
@@ -219,6 +224,10 @@ export default function App() {
         return <SuperAdminView onSelectView={handleSelectView} />;
       case 'guest-web':
         return <GuestWebView />;
+      case 'registration-flow':
+        return <RegistrationFlowView onSelectView={handleSelectView} />;
+      case 'set-password':
+        return <SetPasswordView onSelectView={handleSelectView} />;
       case 'invitation-demo':
         return <InvitationDemoView onSelectView={handleSelectView} />;
       case 'login':

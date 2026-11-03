@@ -732,8 +732,60 @@ export default function CoupleView({
   const [newThemeSub, setNewThemeSub] = useState('Rich Wine & Gold');
   const [newThemeColor, setNewThemeColor] = useState('#8B1E3F');
 
+  // Helper to extract embeddable Google Maps iframe URL
+  const getGoogleMapsEmbedUrl = (rawUrl?: string, fallbackVenue?: string, fallbackAddress?: string) => {
+    const trimmed = (rawUrl || '').trim();
+    if (!trimmed) {
+      const q = `${fallbackVenue || ''} ${fallbackAddress || ''}`.trim() || 'Fernwood Estate Mittagong NSW';
+      return `https://maps.google.com/maps?q=${encodeURIComponent(q)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+    }
+    // If user pasted an iframe embed code
+    if (trimmed.includes('<iframe') && trimmed.includes('src=')) {
+      const match = trimmed.match(/src=["']([^"']+)["']/);
+      if (match && match[1]) return match[1];
+    }
+    // If user provided a URL with output=embed already
+    if (trimmed.includes('output=embed')) {
+      return trimmed;
+    }
+    let query = trimmed;
+    try {
+      if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        const parsed = new URL(trimmed);
+        const qParam = parsed.searchParams.get('q') || parsed.searchParams.get('query');
+        if (qParam) {
+          query = qParam;
+        } else if (parsed.pathname.includes('/place/')) {
+          const parts = parsed.pathname.split('/place/')[1]?.split('/');
+          if (parts && parts[0]) {
+            query = decodeURIComponent(parts[0].replace(/\+/g, ' '));
+          }
+        }
+      }
+    } catch (e) {
+      // fallback to trimmed
+    }
+    return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+  };
+
+  const getGoogleMapsNavUrl = (rawUrl?: string, fallbackVenue?: string, fallbackAddress?: string) => {
+    const trimmed = (rawUrl || '').trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    const q = trimmed || `${fallbackVenue || ''} ${fallbackAddress || ''}`.trim() || 'Fernwood Estate Mittagong NSW';
+    return `https://maps.google.com/?q=${encodeURIComponent(q)}`;
+  };
+
   // Tab 11: Settings State (Screenshot 34)
-  const [weddingSettings, setWeddingSettings] = useState({
+  const [weddingSettings, setWeddingSettings] = useState(() => {
+    const saved = localStorage.getItem(`tt_wedding_settings_${wedding.id || 'default'}`);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return {
     partner1: 'Sophie',
     partner2: 'James',
     dateTime: '14-11-2026 14:00',
@@ -743,6 +795,7 @@ export default function CoupleView({
     themeColor: 'merlot',
     venueName: 'Fernwood Estate, Southern Highlands',
     venueAddress: '124 Range Road, Mittagong NSW 2575',
+    googleMapsUrl: wedding.googleMapsUrl || 'https://maps.google.com/?q=Fernwood+Estate+124+Range+Road+Mittagong+NSW+2575',
     parkingInstructions: 'Complimentary on-site guest parking is available at the Main Lawn entrance. Follow directional signage upon arrival.',
     valetInstructions: 'Attendants stationed at the porte-cochère from 1:15 PM.',
     shuttleSchedule: '1:15 PM Bowral Grand Hotel, 1:30 PM Milton Park Country House.',
@@ -755,7 +808,15 @@ export default function CoupleView({
     smsAlertsOnRsvp: true,
     dailyGiftDigest: true,
     hideSeatingUntilMorning: false,
+    };
   });
+
+  // Sync wedding settings to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(`tt_wedding_settings_${wedding.id || 'default'}`, JSON.stringify(weddingSettings));
+    } catch (e) {}
+  }, [weddingSettings, wedding.id]);
 
   // Scoped guests for this active wedding
   const weddingGuests = (state.guests || []).filter(g => g.weddingId === wedding.id || (!g.weddingId && wedding.id === 'w1'));
@@ -3929,44 +3990,58 @@ export default function CoupleView({
 
               {/* Card 4: Interactive Google Map */}
               <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661]">LIVE NAVIGATION</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661] flex items-center gap-1.5">
+                      <span>LIVE NAVIGATION</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    </div>
                     <h3 className="font-serif text-base font-bold text-[#15110e]">Interactive Google Map</h3>
                     <div className="text-[11px] text-[#8b7b6b]">Destination: {weddingSettings.venueName || wedding.venue}</div>
                   </div>
                   <a
-                    href={`https://maps.google.com/?q=${encodeURIComponent(`${weddingSettings.venueName || wedding.venue} ${weddingSettings.venueAddress}`.trim())}`}
+                    href={getGoogleMapsNavUrl(weddingSettings.googleMapsUrl, weddingSettings.venueName || wedding.venue, weddingSettings.venueAddress)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer shadow-xs transition-colors inline-flex items-center gap-1"
+                    className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-3.5 py-2 rounded-xl text-xs cursor-pointer shadow-xs transition-colors inline-flex items-center gap-1.5"
                   >
-                    Open in Google Maps ↗
+                    <span>Open in Google Maps</span>
+                    <span>↗</span>
                   </a>
                 </div>
 
-                {/* Map Graphic Container */}
-                <a
-                  href={`https://maps.google.com/?q=${encodeURIComponent(`${weddingSettings.venueName || wedding.venue} ${weddingSettings.venueAddress}`.trim())}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block relative bg-[#e5e3df] rounded-xl h-[160px] overflow-hidden border border-[#d5c7b5] cursor-pointer group"
-                >
-                  <div
-                    className="absolute inset-0 opacity-40 group-hover:scale-105 transition-transform"
-                    style={{
-                      backgroundImage: 'radial-gradient(#15110e 1px, transparent 1px)',
-                      backgroundSize: '16px 16px',
-                    }}
+                {/* Map Graphic Container with Live Google Maps Iframe */}
+                <div className="relative rounded-xl h-[260px] overflow-hidden border border-[#d5c7b5] shadow-inner bg-[#e5e3df] group">
+                  <iframe
+                    title="Interactive Venue Map"
+                    src={getGoogleMapsEmbedUrl(weddingSettings.googleMapsUrl, weddingSettings.venueName || wedding.venue, weddingSettings.venueAddress)}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    className="w-full h-full"
                   />
-                  <div className="absolute inset-x-4 bottom-4 bg-[#15110e]/90 text-white p-3 rounded-xl backdrop-blur-xs flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-sm shadow-sm">📍</span>
-                    <div className="text-left">
-                      <strong className="text-xs block">{weddingSettings.venueName || wedding.venue}</strong>
-                      <span className="text-[10px] text-[#c9bbae]">{weddingSettings.venueAddress} &bull; Click to open</span>
+                  {/* Floating venue pin bar overlay matching design */}
+                  <a
+                    href={getGoogleMapsNavUrl(weddingSettings.googleMapsUrl, weddingSettings.venueName || wedding.venue, weddingSettings.venueAddress)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute inset-x-3 bottom-3 bg-[#15110e]/95 hover:bg-[#15110e] text-white p-3 rounded-xl backdrop-blur-md flex items-center justify-between transition-all shadow-xl border border-white/10 group-hover:inset-x-2"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="w-7 h-7 rounded-full bg-red-600 flex items-center justify-center text-xs shadow-sm shrink-0">📍</span>
+                      <div className="text-left min-w-0">
+                        <strong className="text-xs block text-white truncate">{weddingSettings.venueName || wedding.venue}</strong>
+                        <span className="text-[10px] text-[#c9bbae] truncate block">{weddingSettings.venueAddress || 'Mittagong NSW'} &bull; Click for live turn-by-turn navigation</span>
+                      </div>
                     </div>
-                  </div>
-                </a>
+                    <span className="text-[11px] font-bold text-[#bd9661] whitespace-nowrap ml-2 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
+                      Directions ↗
+                    </span>
+                  </a>
+                </div>
               </div>
             </div>
           </section>
@@ -4075,6 +4150,36 @@ export default function CoupleView({
                     className="w-full bg-[#fdfbf7] border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
                   />
                 </div>
+              </div>
+
+              {/* Google Maps Link / Location URL Input */}
+              <div className="bg-[#faf7f2] border border-[#e8ded0] rounded-xl p-3.5 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider">
+                    📍 GOOGLE MAPS LINK / LOCATION URL
+                  </label>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    value={weddingSettings.googleMapsUrl || ''}
+                    onChange={(e) => setWeddingSettings({ ...weddingSettings, googleMapsUrl: e.target.value })}
+                    placeholder="Paste Google Maps URL or address (e.g. https://maps.app.goo.gl/... or https://maps.google.com/?q=...)"
+                    className="flex-1 bg-white border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs"
+                  />
+                  <a
+                    href={getGoogleMapsNavUrl(weddingSettings.googleMapsUrl, weddingSettings.venueName || wedding.venue, weddingSettings.venueAddress)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3.5 py-2.5 bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold rounded-xl text-xs flex items-center justify-center gap-1 shadow-xs transition-colors shrink-0"
+                  >
+                    <span>Open Map</span>
+                    <span>↗</span>
+                  </a>
+                </div>
+                <p className="text-[11px] text-[#8b7b6b] leading-relaxed">
+                  Enter or paste any Google Maps share link, place URL, or coordinate link. The Interactive Google Map card in <strong>Venue &amp; Travel</strong> and guest directions will automatically sync to this exact location.
+                </p>
               </div>
 
               <div>
