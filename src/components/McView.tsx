@@ -778,9 +778,7 @@ export default function McView({ onSelectView }: McViewProps) {
               Tap <span className="gold-amp">&amp;</span> Toast
             </span>
           </div>
-          <div className="text-[9.5px] tracking-[2px] uppercase text-[#bd9661] font-bold px-5 pb-3">
-            PRO ACCOUNT
-          </div>
+          
 
           {/* Navigation Links */}
           <nav className="p-2 flex flex-col gap-1">
@@ -897,9 +895,7 @@ export default function McView({ onSelectView }: McViewProps) {
             {/* Header */}
             <div className="flex items-start justify-between flex-wrap gap-4">
               <div>
-                <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1">
-                  PRO ACCOUNT
-                </div>
+                
                 <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#15110e] leading-tight">
                   Your Weddings
                 </h1>

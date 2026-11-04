@@ -186,9 +186,7 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
             </span>
           </div>
 
-          <div className="px-5 py-2 text-[10px] font-bold uppercase tracking-[2px] text-[#bd9661]">
-            PLANNER ACCOUNT
-          </div>
+          
 
           {/* Navigation Links */}
           <nav className="p-2 flex flex-col gap-1">
@@ -288,9 +286,7 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
               {/* Header */}
               <div className="flex items-start justify-between flex-wrap gap-4">
                 <div>
-                  <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1">
-                    PLANNER ACCOUNT
-                  </div>
+                  
                   <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#15110e] leading-tight">
                     Your Weddings
                   </h1>
