@@ -66,6 +66,7 @@ export interface Wedding {
   vendors?: WeddingVendor[];
   runSheet?: RunSheetItem[];
   privateRunSheet?: PrivateRunSheetItem[];
+  plannerDaySheet?: PrivateRunSheetItem[];
   tenantId?: string;
   tablesTotal?: number;
   giftsTotal?: number;

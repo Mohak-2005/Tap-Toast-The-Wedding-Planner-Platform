@@ -14,7 +14,7 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
   // Active Wedding Selection (null = All Weddings home mode)
   const [selectedWeddingId, setSelectedWeddingId] = useState<string | null>(null);
   const [plannerInitialTab, setPlannerInitialTab] = useState<'mc_runsheet' | 'seating' | 'venue' | 'vendors'>('mc_runsheet');
-  const [activeTab, setActiveTab] = useState<'weddings' | 'calendar' | 'clients' | 'referrals' | 'settings'>('weddings');
+  const [activeTab, setActiveTab] = useState<'weddings' | 'calendar' | 'clients' | 'settings'>('weddings');
 
   // Calendar State
   const [calMonth, setCalMonth] = useState(10); // Nov (0-indexed = 10)
@@ -229,16 +229,7 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
                   </svg>
                 ),
               },
-              {
-                id: 'referrals',
-                label: 'Referrals & Discounts',
-                icon: (
-                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-                    <line x1="7" y1="7" x2="7.01" y2="7" />
-                  </svg>
-                ),
-              },
+              
               {
                 id: 'settings',
                 label: 'Settings',
@@ -304,13 +295,7 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
                     Your Weddings
                   </h1>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => showToast('New wedding booking draft created!', 'success')}
-                  className="btn btn-primary"
-                >
-                  + New Wedding
-                </button>
+                
               </div>
 
               {/* 4 Metric Cards matching Image 2 */}
@@ -402,7 +387,7 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
                               }}
                               className="btn btn-outline btn-xs"
                             >
-                              📋 Run Sheet &rarr;
+                              📋 Day Sheet &rarr;
                             </button>
                           </td>
                         </tr>
@@ -556,10 +541,7 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
             </section>
           )}
 
-          {/* TAB 4: REFERRALS */}
-          {activeTab === 'referrals' && (
-            <McReferralsSection state={state} setState={setState} />
-          )}
+          
 
           {/* TAB 5: SETTINGS */}
           {activeTab === 'settings' && (
@@ -717,7 +699,7 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
                 <div className="bg-white border border-[#e8ded0] rounded-xl p-6 shadow-sm space-y-4">
                   <div className="flex items-center gap-2 pb-2 border-b border-[#f0ede4]">
                     <span className="text-lg">⏱️</span>
-                    <h3 className="font-serif text-base font-bold text-[#15110e]">Timeline &amp; Run Sheet Defaults</h3>
+                    <h3 className="font-serif text-base font-bold text-[#15110e]">Timeline &amp; Day Sheet Defaults</h3>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -739,7 +721,7 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
 
                     <div>
                       <label className="text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider block mb-1">
-                        Run Sheet Time Display
+                        Day Sheet Time Display
                       </label>
                       <select
                         value={profileForm.timeFormat || '12h'}
@@ -880,7 +862,7 @@ export default function PlannerView({ onSelectView }: PlannerViewProps) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider block mb-1">
-                        Run Sheet Lock Window
+                        Day Sheet Lock Window
                       </label>
                       <select
                         value={profileForm.timelineLockWindow || '48h'}

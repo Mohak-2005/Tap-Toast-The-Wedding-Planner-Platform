@@ -31,6 +31,9 @@ export function getStoredState(): DemoState {
               privateRunSheet: (Array.isArray(w.privateRunSheet) && w.privateRunSheet.length > 0)
                 ? w.privateRunSheet
                 : (seedW?.privateRunSheet || []),
+              plannerDaySheet: (Array.isArray(w.plannerDaySheet) && w.plannerDaySheet.length > 0)
+                ? w.plannerDaySheet
+                : (seedW?.plannerDaySheet || []),
               savedSeatingArrangements: (Array.isArray(w.savedSeatingArrangements) && w.savedSeatingArrangements.length > 0)
                 ? w.savedSeatingArrangements.map((a: any) => ({
                     ...a,

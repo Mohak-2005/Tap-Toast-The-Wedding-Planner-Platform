@@ -11,6 +11,7 @@ import { SeatingPlannerSection } from './SeatingPlannerSection';
 import { DietaryBadges, parseDietaryRequirements } from '../lib/dietaryHelper';
 import { ColorPicker2D } from './ColorPicker2D';
 import { SuperAdminCardStudio } from './SuperAdminCardStudio';
+import PlannerDaySheetSection from './PlannerDaySheetSection';
 
 export type CoupleTab =
   | 'overview'
@@ -1198,7 +1199,7 @@ export default function CoupleView({
             {(isMcOrPlanner ? [
               {
                 id: 'mc_runsheet' as const,
-                label: 'Run Sheet',
+                label: isPlannerView ? 'Day Sheet' : 'Run Sheet',
                 icon: (
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
@@ -4153,10 +4154,14 @@ export default function CoupleView({
               </div>
 
               {/* Google Maps Link / Location URL Input */}
-              <div className="bg-[#faf7f2] border border-[#e8ded0] rounded-xl p-3.5 space-y-1.5">
+              <div className="bg-[#faf7f2] border border-[#e8ded0] rounded-xl p-3.5 space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider">
-                    📍 GOOGLE MAPS LINK / LOCATION URL
+                  <label className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#8b7b6b] uppercase tracking-wider">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/>
+                      <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    <span>GOOGLE MAPS LINK / LOCATION URL</span>
                   </label>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -4167,19 +4172,16 @@ export default function CoupleView({
                     placeholder="Paste Google Maps URL or address (e.g. https://maps.app.goo.gl/... or https://maps.google.com/?q=...)"
                     className="flex-1 bg-white border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs"
                   />
-                  <a
-                    href={getGoogleMapsNavUrl(weddingSettings.googleMapsUrl, weddingSettings.venueName || wedding.venue, weddingSettings.venueAddress)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3.5 py-2.5 bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold rounded-xl text-xs flex items-center justify-center gap-1 shadow-xs transition-colors shrink-0"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      showToast('✓ Location link saved successfully!', 'success');
+                    }}
+                    className="px-5 py-2.5 bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold rounded-xl text-xs flex items-center justify-center gap-1 shadow-xs transition-colors shrink-0 cursor-pointer"
                   >
-                    <span>Open Map</span>
-                    <span>↗</span>
-                  </a>
+                    <span>Save</span>
+                  </button>
                 </div>
-                <p className="text-[11px] text-[#8b7b6b] leading-relaxed">
-                  Enter or paste any Google Maps share link, place URL, or coordinate link. The Interactive Google Map card in <strong>Venue &amp; Travel</strong> and guest directions will automatically sync to this exact location.
-                </p>
               </div>
 
               <div>
@@ -4468,12 +4470,22 @@ export default function CoupleView({
         {/* TAB MC 1: PRIVATE MC RUN SHEET                                   */}
         {/* ================================================================ */}
         {activeTab === 'mc_runsheet' && (
+          isPlannerView ? (
+            <PlannerDaySheetSection
+              wedding={wedding}
+              onUpdateWedding={(updated) => {
+                const updatedWeddings = (state.weddings || []).map(w => w.id === updated.id ? updated : w);
+                setState({ ...state, weddings: updatedWeddings });
+              }}
+              onSelectView={onSelectView}
+            />
+          ) : (
           <section className="space-y-6 animate-in fade-in duration-200">
             {/* Header */}
             <div className="flex items-start justify-between flex-wrap gap-4">
               <div>
                 <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1 flex items-center gap-2">
-                  <span>{isPlannerView || session?.role === 'planner' ? '📋 COORDINATION SUITE' : '🔒 PRIVATE CONSOLE'}</span>
+                  <span className="inline-flex items-center gap-1.5"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{isPlannerView || session?.role === 'planner' ? 'COORDINATION SUITE' : 'PRIVATE CONSOLE'}</span>
                   <span className="text-[#8b7b6b]">•</span>
                   <span className="text-[#15110e] font-semibold">{wedding.couple}</span>
                 </div>
@@ -4491,14 +4503,14 @@ export default function CoupleView({
                   onClick={() => window.print()}
                   className="bg-white border border-[#d5c7b5] hover:bg-[#f5ede0] text-[#15110e] font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
                 >
-                  <span>🖨️</span> Print Run Sheet
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg><span>Print Run Sheet</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddCueModal(true)}
                   className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
                 >
-                  <span>+</span> Add Cue Entry
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add Cue Entry</span>
                 </button>
               </div>
             </div>
@@ -4508,12 +4520,18 @@ export default function CoupleView({
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-3">
                   <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8b7b6b] pointer-events-none">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <circle cx="11" cy="11" r="8"/>
+                          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                      </span>
                     <input
                       type="text"
                       placeholder="Search cues & notes..."
                       value={runSheetSearch}
                       onChange={(e) => setRunSheetSearch(e.target.value)}
-                      className="bg-[#faf8f5] border border-[#d5c7b5] rounded-xl px-3.5 py-1.5 text-xs text-[#15110e] placeholder-[#a09080] focus:outline-none focus:border-[#bd9661] w-56 md:w-64"
+                      className="bg-[#faf8f5] border border-[#d5c7b5] rounded-xl pl-8 pr-7 py-1.5 text-xs text-[#15110e] placeholder-[#a09080] focus:outline-none focus:border-[#bd9661] w-48 sm:w-60"
                     />
                     {runSheetSearch && (
                       <button
@@ -4525,21 +4543,19 @@ export default function CoupleView({
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1 bg-[#faf8f5] p-1 rounded-xl border border-[#e8ded0]">
-                    {(['all', 'pending', 'done'] as const).map(st => (
-                      <button
-                        key={st}
-                        type="button"
-                        onClick={() => setRunSheetFilter(st)}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold capitalize transition-colors cursor-pointer ${
-                          runSheetFilter === st
-                            ? 'bg-[#15110e] text-[#dfc194]'
-                            : 'text-[#8b7b6b] hover:text-[#15110e]'
-                        }`}
-                      >
-                        {st}
-                      </button>
-                    ))}
+                  <div className="relative">
+                    <select
+                      value={runSheetFilter}
+                      onChange={(e) => setRunSheetFilter(e.target.value as 'all' | 'pending' | 'done')}
+                      className="appearance-none bg-[#faf8f5] border border-[#d5c7b5] focus:border-[#bd9661] text-[#15110e] text-xs font-semibold rounded-xl pl-3 pr-7 py-1.5 outline-none cursor-pointer"
+                    >
+                      <option value="all">All Statuses</option>
+                      <option value="pending">Pending Only</option>
+                      <option value="done">Completed / Done</option>
+                    </select>
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8b7b6b] pointer-events-none">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
+                    </span>
                   </div>
                 </div>
 
@@ -4547,9 +4563,7 @@ export default function CoupleView({
                   <div className="bg-[#faf6f0] border border-[#ebd3a8] px-3 py-1.5 rounded-xl font-medium text-[#15110e]">
                     <span className="font-bold text-[#bd9661]">{runSheet.filter(c => c.done).length}</span> / {runSheet.length} Completed
                   </div>
-                  <div className="text-xs text-[#8b7b6b]">
-                    {runSheet.filter(c => !c.done).length} cues remaining
-                  </div>
+                  
                 </div>
               </div>
 
@@ -4566,7 +4580,7 @@ export default function CoupleView({
                     <div
                       key={cue.id}
                       className={`border rounded-xl p-4 transition-all ${
-                        cue.done ? 'bg-emerald-50/20 border-emerald-200/80 opacity-75' : 'bg-[#faf8f5] border-[#ebd8c3] shadow-xs'
+                        'bg-[#faf8f5] border-[#ebd8c3] shadow-xs ' + (cue.done ? 'opacity-80' : '')
                       }`}
                     >
                       <div className="flex items-start gap-3.5">
@@ -4646,7 +4660,7 @@ export default function CoupleView({
                           {/* Row 3: Private MC Stage & Audio Directions */}
                           <div className="bg-[#fff8ee] border border-[#ebd4b8] rounded-xl p-3 space-y-1">
                             <span className="block text-[10px] font-bold uppercase tracking-wider text-[#bd9661]">
-                              🔒 Private Cue &amp; Stage Direction
+                              <span className="inline-flex items-center gap-1.5"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Private Cue &amp; Stage Direction</span>
                             </span>
                             <input
                               type="text"
@@ -4666,8 +4680,8 @@ export default function CoupleView({
 
             {/* Add Cue Modal */}
             {showAddCueModal && (
-              <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-                <div className="bg-white border border-[#bd9661] rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+              <div className="fixed inset-0 z-[2000] bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+                <div className="bg-white border border-[#bd9661] rounded-2xl p-5 sm:p-6 max-w-lg w-full max-h-[90vh] my-auto flex flex-col shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150 overflow-y-auto">
                   <div className="flex items-center justify-between border-b border-[#e8ded0] pb-3">
                     <h3 className="font-serif text-xl font-bold text-[#15110e]">
                       Add Schedule Cue Entry
@@ -4751,6 +4765,7 @@ export default function CoupleView({
               </div>
             )}
           </section>
+          )
         )}
 
         {/* ================================================================ */}
