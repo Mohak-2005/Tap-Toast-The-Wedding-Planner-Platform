@@ -879,30 +879,26 @@ export default function PlannerDaySheetSection({
                     <IconClipboard />
                     <span>Planner &amp; Vendor Activity</span>
                   </button>
-                  <button
+                                    <button
                     type="button"
-                    onClick={() => {
-                      setIsNewMcCue(true);
-                      setNewVendorRole('Master of Ceremonies');
-                    }}
-                    className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                      isNewMcCue
-                        ? 'bg-[#15110e] text-[#dfc194] border-[#15110e] shadow-xs'
-                        : 'bg-white text-[#8b7b6b] border-[#d5c7b5] hover:bg-[#faf8f5]'
-                    }`}
+                    disabled
+                    className="py-2 px-3 rounded-xl border text-xs font-semibold transition-all flex items-center justify-center gap-2 bg-[#f4eee6]/80 text-[#9b8a78] border-[#dfd4c5] cursor-not-allowed opacity-85 select-none"
+                    title="MC Run Sheet cue creation is locked for the wedding planner"
                   >
                     <IconMicrophone />
                     <span>MC Run Sheet Cue</span>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-[#e8ded0] text-[#7d6c5b] px-1.5 py-0.5 rounded ml-0.5">
+                      <IconLock />
+                      <span>Locked</span>
+                    </span>
                   </button>
                 </div>
                 <div className="flex items-center gap-1.5 text-[11px] text-[#8b7b6b] mt-1.5">
                   <span className="text-[#bd9661] shrink-0">
-                    <IconInfo />
+                    <IconLock />
                   </span>
                   <span>
-                    {isNewMcCue
-                      ? 'This cue will automatically sync to the MC Run Sheet portal.'
-                      : 'This entry will be tracked on the Planner Day Sheet for vendor logistics & bump-out.'}
+                    MC Run Sheet cues are managed by the Master of Ceremonies and synchronized to your Day Sheet. Cue creation is currently locked.
                   </span>
                 </div>
               </div>
