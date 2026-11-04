@@ -225,6 +225,11 @@ export interface CustomCardTemplate {
   showEnvelopeBackdrop?: boolean;
   cardShape: 'classic-rounded' | 'arch-dome' | 'sharp-regal' | 'scallop-ornate' | 'cameo-oval';
   cardShimmer?: 'none' | 'gold-dust' | 'diamond-sparkle' | 'champagne-sheen';
+  backgroundImage?: string | null;
+  backgroundPosX?: number;
+  backgroundPosY?: number;
+  backgroundScale?: number;
+  backgroundOpacity?: number;
   elements: CanvasElement[];
   fileName?: string;
   fileSize?: string;
@@ -561,11 +566,11 @@ const SVG_ASSETS: Record<
 // CARD SHAPES
 // =============================================================================
 const CARD_SHAPES: { id: CustomCardTemplate['cardShape']; name: string; desc: string; roundedClass: string }[] = [
-  { id: 'arch-dome', name: 'Arch Dome Top', desc: 'Architectural arched dome top with smooth curve', roundedClass: 'rounded-t-[140px] rounded-b-2xl' },
+  { id: 'arch-dome', name: 'Arch Dome Top', desc: 'Architectural arched dome top with smooth curve', roundedClass: 'rounded-t-[190px] rounded-b-2xl' },
   { id: 'classic-rounded', name: 'Classic Rounded', desc: 'Timeless smooth luxury rounded corners', roundedClass: 'rounded-2xl' },
   { id: 'scallop-ornate', name: 'Scalloped Flap', desc: 'Ornate curved corners with double border outline', roundedClass: 'rounded-3xl border-double border-[3px]' },
   { id: 'sharp-regal', name: 'Sharp Regal Rectangle', desc: 'Formal high-society crisp rectangular styling', roundedClass: 'rounded-none' },
-  { id: 'cameo-oval', name: 'Cameo Oval', desc: 'Romantic pill oval curved top and bottom', roundedClass: 'rounded-[50px]' },
+  { id: 'cameo-oval', name: 'Cameo Oval', desc: 'Romantic pill oval curved top and bottom', roundedClass: 'rounded-[190px]' },
 ];
 
 // =============================================================================
@@ -850,6 +855,17 @@ export const SuperAdminCardStudio: React.FC<SuperAdminCardStudioProps> = ({
   const [envelopeColor, setEnvelopeColor] = useState('#15110e');
   const [elements, setElements] = useState<CanvasElement[]>(INITIAL_TEMPLATES[0].elements);
 
+  // Background Photo Wallpaper State
+  const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
+  const [bgPosX, setBgPosX] = useState(50); // percentage 0 - 100
+  const [bgPosY, setBgPosY] = useState(50); // percentage 0 - 100
+  const [bgScale, setBgScale] = useState(1); // 1.0 to 2.5
+  const [bgOpacity, setBgOpacity] = useState(1); // 0.3 to 1.0
+  const [isRepositioningBg, setIsRepositioningBg] = useState(false);
+  const [isDraggingBg, setIsDraggingBg] = useState(false);
+  const bgDragStartRef = useRef<{ startX: number; startY: number; initialPosX: number; initialPosY: number } | null>(null);
+  const bgFileInputRef = useRef<HTMLInputElement>(null);
+
   // Zoom scale state for whiteboard
   const [zoomLevel, setZoomLevel] = useState(100);
 
@@ -907,6 +923,83 @@ export const SuperAdminCardStudio: React.FC<SuperAdminCardStudioProps> = ({
     }
   };
 
+  // Background Photo Wallpaper Handlers
+  const handleBgImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.match(/^image\/(jpeg|png|webp|jpg)$/)) {
+      showToast('Please upload a valid JPG, PNG, or WEBP image', 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (loadEvent) => {
+      const result = loadEvent.target?.result as string;
+      if (result) {
+        setBackgroundImage(result);
+        setBgPosX(50);
+        setBgPosY(50);
+        setBgScale(1);
+        setBgOpacity(1);
+        setIsRepositioningBg(true);
+        showToast('Photo uploaded! Drag on the card to fit silhouette.', 'success');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveBgImage = () => {
+    setBackgroundImage(null);
+    setIsRepositioningBg(false);
+    if (bgFileInputRef.current) {
+      bgFileInputRef.current.value = '';
+    }
+    showToast('Background photo removed', 'info');
+  };
+
+  const handleBgPointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    setIsDraggingBg(true);
+    bgDragStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialPosX: bgPosX,
+      initialPosY: bgPosY,
+    };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handleBgPointerMove = (e: React.PointerEvent) => {
+    if (!isDraggingBg || !bgDragStartRef.current || !canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const deltaX = e.clientX - bgDragStartRef.current.startX;
+    const deltaY = e.clientY - bgDragStartRef.current.startY;
+
+    const deltaPercentX = (deltaX / rect.width) * 100;
+    const deltaPercentY = (deltaY / rect.height) * 100;
+
+    const newX = Math.round(bgDragStartRef.current.initialPosX + deltaPercentX);
+    const newY = Math.round(bgDragStartRef.current.initialPosY + deltaPercentY);
+
+    setBgPosX(Math.max(-50, Math.min(150, newX)));
+    setBgPosY(Math.max(-50, Math.min(150, newY)));
+  };
+
+  const handleBgPointerUp = (e: React.PointerEvent) => {
+    if (isDraggingBg) {
+      setIsDraggingBg(false);
+      bgDragStartRef.current = null;
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch (_) {}
+    }
+  };
+
+  const handleBgWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const zoomDelta = e.deltaY < 0 ? 0.05 : -0.05;
+    setBgScale((prev) => Math.max(0.4, Math.min(3.0, parseFloat((prev + zoomDelta).toFixed(2)))));
+  };
+
   // Close full window on ESC key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -943,6 +1036,12 @@ export const SuperAdminCardStudio: React.FC<SuperAdminCardStudioProps> = ({
     setFoilColor(tpl.foilColor);
     setEnvelopeColor(tpl.envelopeColor);
     setShowEnvelopeBackdrop(tpl.showEnvelopeBackdrop ?? (tpl.id === 'botanical-classic'));
+    setBackgroundImage(tpl.backgroundImage || null);
+    setBgPosX(tpl.backgroundPosX ?? 50);
+    setBgPosY(tpl.backgroundPosY ?? 50);
+    setBgScale(tpl.backgroundScale ?? 1);
+    setBgOpacity(tpl.backgroundOpacity ?? 1);
+    setIsRepositioningBg(false);
     const initialEls = JSON.parse(JSON.stringify(tpl.elements));
     setElements(initialEls);
     setHistory([initialEls]);
@@ -963,6 +1062,12 @@ export const SuperAdminCardStudio: React.FC<SuperAdminCardStudioProps> = ({
     setBaseColor('#fdfbf7');
     setFoilColor('#bd9661');
     setEnvelopeColor('#15110e');
+    setBackgroundImage(null);
+    setBgPosX(50);
+    setBgPosY(50);
+    setBgScale(1);
+    setBgOpacity(1);
+    setIsRepositioningBg(false);
     const newEls: CanvasElement[] = [
       { id: 'txt-1', type: 'text', content: 'TOGETHER WITH THEIR FAMILIES', x: 50, y: 15, fontSize: 9, fontFamily: 'sans', letterSpacing: '2px', isBold: true, color: '#bd9661' },
       { id: 'txt-2', type: 'text', content: 'Sophie & Daniel', x: 50, y: 28, fontSize: 26, fontFamily: 'serif', isItalic: true, color: '#bd9661' },
@@ -1007,6 +1112,11 @@ export const SuperAdminCardStudio: React.FC<SuperAdminCardStudioProps> = ({
         foilColor,
         envelopeColor,
         showEnvelopeBackdrop,
+        backgroundImage,
+        backgroundPosX: bgPosX,
+        backgroundPosY: bgPosY,
+        backgroundScale: bgScale,
+        backgroundOpacity: bgOpacity,
         elements,
         duration: '1.5s',
       } : t)));
@@ -1024,6 +1134,11 @@ export const SuperAdminCardStudio: React.FC<SuperAdminCardStudioProps> = ({
         foilColor,
         envelopeColor,
         showEnvelopeBackdrop,
+        backgroundImage,
+        backgroundPosX: bgPosX,
+        backgroundPosY: bgPosY,
+        backgroundScale: bgScale,
+        backgroundOpacity: bgOpacity,
         elements,
         duration: '1.5s',
         active: true,
@@ -1351,6 +1466,15 @@ export const SuperAdminCardStudio: React.FC<SuperAdminCardStudioProps> = ({
                     className="absolute -bottom-3 inset-x-2 h-10 rounded-t-xl opacity-30 pointer-events-none"
                     style={{ backgroundColor: tpl.envelopeColor }}
                   />
+
+                  {/* Background photo preview if uploaded */}
+                  {tpl.backgroundImage && (
+                    <img
+                      src={tpl.backgroundImage}
+                      alt=""
+                      className="absolute inset-0 w-full h-full object-cover pointer-events-none opacity-80"
+                    />
+                  )}
 
                   {/* Inner gilded silhouette frame */}
                   <div
@@ -1816,11 +1940,11 @@ export const SuperAdminCardStudio: React.FC<SuperAdminCardStudioProps> = ({
                     )}
                   </div>
 
-                  {/* 2. Card Background Paper */}
-                  <div className="pt-3 border-t border-[#ede5d8] space-y-2">
+                  {/* 2. Card Background (Paper Color & Photo Wallpaper) */}
+                  <div className="pt-3 border-t border-[#ede5d8] space-y-2.5">
                     <div className="flex items-center justify-between">
                       <div className="text-[10px] font-bold uppercase tracking-[1.4px] text-[#8c6b3e]">
-                        Card Background Paper
+                        Card Background
                       </div>
                       <button
                         type="button"
@@ -1833,7 +1957,7 @@ export const SuperAdminCardStudio: React.FC<SuperAdminCardStudioProps> = ({
                         title="Pick custom paper color from spectrum"
                       >
                         <PaletteIcon className="w-2.5 h-2.5 text-[#bd9661]" />
-                        <span>Custom Color</span>
+                        <span>Paper Color</span>
                       </button>
                     </div>
 
@@ -1845,7 +1969,7 @@ export const SuperAdminCardStudio: React.FC<SuperAdminCardStudioProps> = ({
                     )}
 
                     {/* Quick Curated Paper Swatches */}
-                    <div className="grid grid-cols-7 gap-1.5 pt-1">
+                    <div className="grid grid-cols-7 gap-1.5 pt-0.5">
                       {[
                         { hex: '#fcfbf7', name: 'Linen Ivory' },
                         { hex: '#faf5ec', name: 'Warm Ecru' },
@@ -1869,6 +1993,156 @@ export const SuperAdminCardStudio: React.FC<SuperAdminCardStudioProps> = ({
                         />
                       ))}
                     </div>
+
+                    {/* Hidden File Input for Background Photo */}
+                    <input
+                      ref={bgFileInputRef}
+                      type="file"
+                      accept="image/png, image/jpeg, image/jpg, image/webp"
+                      className="hidden"
+                      onChange={handleBgImageUpload}
+                    />
+
+                    {/* Photo Wallpaper State: Upload Button or Active Controls */}
+                    {!backgroundImage ? (
+                      <button
+                        type="button"
+                        onClick={() => bgFileInputRef.current?.click()}
+                        className="w-full mt-1 py-2 px-3 rounded-xl border border-dashed border-[#bd9661]/60 hover:border-[#bd9661] bg-[#fbf8f2] hover:bg-[#f6eee2] text-[#4a3b2c] flex items-center justify-center gap-2 text-xs font-semibold transition-all cursor-pointer shadow-2xs group"
+                      >
+                        <UploadCloudIcon className="w-4 h-4 text-[#bd9661] group-hover:scale-110 transition-transform" />
+                        <span>Upload custom background</span>
+                      </button>
+                    ) : (
+                      <div className="mt-2 p-3 bg-white border border-[#e4dcd0] rounded-xl space-y-3 shadow-2xs">
+                        {/* Thumbnail & Title */}
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-12 h-16 shrink-0 border border-[#bd9661]/60 overflow-hidden relative shadow-xs bg-[#15110e] ${activeShapeObj.roundedClass}`}
+                          >
+                            <img
+                              src={backgroundImage}
+                              alt="Thumbnail"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-bold text-[#15110e] truncate">Background Photo</div>
+                            <div className="text-[10px] text-[#8b7b6b] mt-0.5">Auto-fits card silhouette</div>
+                          </div>
+                        </div>
+
+                        {/* Minimize / Maximize Zoom Scale Controls */}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-[10px] font-medium text-[#5c4632]">
+                            <span>Minimize / Maximize (Zoom)</span>
+                            <span className="font-bold text-[#15110e]">{Math.round(bgScale * 100)}%</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setBgScale((prev) => Math.max(0.4, parseFloat((prev - 0.1).toFixed(2))))}
+                              className="w-7 h-7 rounded-lg border border-[#d5c7b5] bg-white hover:bg-[#faf7f2] text-[#4a3b2c] flex items-center justify-center text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[#bd9661]"
+                              title="Minimize / Zoom Out (-10%)"
+                            >
+                              −
+                            </button>
+                            <input
+                              type="range"
+                              min="0.4"
+                              max="3.0"
+                              step="0.05"
+                              value={bgScale}
+                              onChange={(e) => setBgScale(parseFloat(e.target.value))}
+                              className="flex-1 h-1.5 bg-[#e5dcce] rounded-lg appearance-none cursor-pointer accent-[#bd9661]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setBgScale((prev) => Math.min(3.0, parseFloat((prev + 0.1).toFixed(2))))}
+                              className="w-7 h-7 rounded-lg border border-[#d5c7b5] bg-white hover:bg-[#faf7f2] text-[#4a3b2c] flex items-center justify-center text-xs font-bold transition-all cursor-pointer shadow-2xs hover:border-[#bd9661]"
+                              title="Maximize / Zoom In (+10%)"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Photo Opacity Slider */}
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between text-[10px] font-medium text-[#5c4632]">
+                            <span>Photo Opacity</span>
+                            <span className="font-bold">{Math.round(bgOpacity * 100)}%</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0.3"
+                            max="1"
+                            step="0.05"
+                            value={bgOpacity}
+                            onChange={(e) => setBgOpacity(parseFloat(e.target.value))}
+                            className="w-full h-1.5 bg-[#e5dcce] rounded-lg appearance-none cursor-pointer accent-[#bd9661]"
+                          />
+                        </div>
+
+                        {/* Reset to Center */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBgPosX(50);
+                            setBgPosY(50);
+                            setBgScale(1);
+                            showToast('Position reset to center', 'info');
+                          }}
+                          className="w-full py-1.5 rounded-lg border border-[#e0d6c8] bg-white hover:bg-[#faf7f2] text-[#5c4632] text-[10px] font-medium transition-all cursor-pointer text-center"
+                        >
+                          Reset Position to Center
+                        </button>
+
+                        {/* Below Reset Position: Save / Reposition Button & Replace / Remove Buttons */}
+                        <div className="pt-1 border-t border-[#ede5d8] space-y-2">
+                          {/* Direct Drag Reposition Mode Toggle (Save / Drag) */}
+                          <button
+                            type="button"
+                            onClick={() => setIsRepositioningBg(!isRepositioningBg)}
+                            className={`w-full py-2 px-3 rounded-lg border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs ${
+                              isRepositioningBg
+                                ? 'bg-[#15110e] text-[#fce4ca] border-[#bd9661] shadow-xs ring-1 ring-[#bd9661]'
+                                : 'bg-[#faf7f2] hover:bg-[#f3ede3] text-[#2c221a] border-[#d5c7b5]'
+                            }`}
+                          >
+                            <span className="text-sm">{isRepositioningBg ? '✓' : '⠿'}</span>
+                            <span>{isRepositioningBg ? 'Save' : 'Drag to Reposition on Card'}</span>
+                          </button>
+
+                          {/* Replace and Remove buttons */}
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => bgFileInputRef.current?.click()}
+                              className="py-1.5 px-2 rounded-lg text-[10.5px] font-bold bg-white hover:bg-[#fbf8f2] border border-[#d5c7b5] text-[#5c4632] hover:text-[#15110e] transition-all cursor-pointer shadow-2xs flex items-center justify-center gap-1.5"
+                              title="Choose a different image file"
+                            >
+                              <svg className="w-3.5 h-3.5 text-[#bd9661]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                                <path d="M3 3v5h5" />
+                                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                                <path d="M16 21h5v-5" />
+                              </svg>
+                              <span>Replace</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleRemoveBgImage}
+                              className="py-1.5 px-2 rounded-lg text-[10.5px] font-bold bg-[#fff8f8] hover:bg-[#fee2e2] border border-[#fca5a5]/70 text-[#dc2626] transition-all cursor-pointer shadow-2xs flex items-center justify-center gap-1.5"
+                              title="Remove photo and return to paper color"
+                            >
+                              <TrashIcon className="w-3.5 h-3.5 text-[#dc2626]" />
+                              <span>Remove</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* 3. Default Foil & Border Color */}
@@ -2022,9 +2296,9 @@ export const SuperAdminCardStudio: React.FC<SuperAdminCardStudioProps> = ({
                       <ChevronDownIcon className={`w-4 h-4 text-[#8c6b3e] shrink-0 transition-transform ${isMotionDropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
 
-                    {/* Motion Dropdown Menu */}
+                    {/* Motion Dropdown Menu (In-flow right below button, pushes Simulate & Upload down) */}
                     {isMotionDropdownOpen && (
-                      <div className="absolute bottom-full mb-1 left-0 right-0 z-30 bg-[#fefdfb] border border-[#dfd4c5] rounded-xl shadow-xl overflow-hidden p-1.5 space-y-1 animate-fadeIn">
+                      <div className="mt-1.5 bg-[#fefdfb] border border-[#dfd4c5] rounded-xl shadow-lg max-h-[260px] overflow-y-auto p-1.5 space-y-1 animate-fadeIn">
                         {PREDEFINED_ANIMATIONS.map((anim) => (
                           <button
                             key={anim.id}
@@ -2051,7 +2325,8 @@ export const SuperAdminCardStudio: React.FC<SuperAdminCardStudioProps> = ({
                       </div>
                     )}
 
-                    <div className="pt-2 flex items-center gap-2">
+                    {/* Simulate and Upload buttons (always below the dropdown) */}
+                    <div className="pt-2.5 flex items-center gap-2">
                       <button
                         type="button"
                         onClick={handlePlayAnimation}
@@ -2138,7 +2413,91 @@ export const SuperAdminCardStudio: React.FC<SuperAdminCardStudioProps> = ({
                       setSelectedElementId(null);
                     }
                   }}
+                  onDoubleClick={(e) => {
+                    if (backgroundImage && (e.target === canvasRef.current || (e.target as HTMLElement).tagName === 'IMG')) {
+                      setIsRepositioningBg(true);
+                    }
+                  }}
                 >
+                  {/* Background Photo Wallpaper (Auto-fitted to card silhouette and freely repositionable) */}
+                  {backgroundImage && (
+                    <div
+                      className={`absolute inset-0 pointer-events-none select-none overflow-hidden ${activeShapeObj.roundedClass}`}
+                    >
+                      <img
+                        src={backgroundImage}
+                        alt="Card Background Wallpaper"
+                        draggable={false}
+                        className="absolute max-w-none select-none transition-transform will-change-transform"
+                        style={{
+                          left: `${bgPosX}%`,
+                          top: `${bgPosY}%`,
+                          transform: `translate(-50%, -50%) scale(${bgScale})`,
+                          minWidth: '100%',
+                          minHeight: '100%',
+                          width: 'auto',
+                          height: 'auto',
+                          objectFit: 'cover',
+                          opacity: bgOpacity,
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Repositioning Interaction Overlay & Floating Guide */}
+                  {isRepositioningBg && backgroundImage && (
+                    <>
+                      {/* Full-canvas drag surface with pointer capture */}
+                      <div
+                        onPointerDown={handleBgPointerDown}
+                        onPointerMove={handleBgPointerMove}
+                        onPointerUp={handleBgPointerUp}
+                        onWheel={handleBgWheel}
+                        className="absolute inset-0 z-35 cursor-grab active:cursor-grabbing touch-none select-none"
+                        title="Click and drag to reposition photo within card silhouette"
+                      />
+
+                      {/* Floating pill guide with minimize, maximize zoom controls and Save */}
+                      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[340px] z-40 flex items-center justify-between px-3 py-1.5 rounded-full bg-[#15110e]/95 backdrop-blur-md border border-[#bd9661] text-white shadow-2xl animate-fadeIn pointer-events-auto">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-[#bd9661] text-xs font-mono shrink-0">⠿</span>
+                          <span className="font-semibold text-[11px] text-[#fce4ca] truncate">Drag to move</span>
+                        </div>
+
+                        {/* Minimize & Maximize controls directly on floating guide */}
+                        <div className="flex items-center gap-1 shrink-0 px-2 py-0.5 rounded-full bg-white/10 border border-white/15">
+                          <button
+                            type="button"
+                            onClick={() => setBgScale((prev) => Math.max(0.4, parseFloat((prev - 0.1).toFixed(2))))}
+                            className="w-5 h-5 rounded-full hover:bg-white/20 text-[#fce4ca] text-xs font-bold flex items-center justify-center transition-colors cursor-pointer"
+                            title="Minimize / Zoom out"
+                          >
+                            −
+                          </button>
+                          <span className="text-[10px] font-mono font-bold text-[#fce4ca] min-w-[32px] text-center">
+                            {Math.round(bgScale * 100)}%
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setBgScale((prev) => Math.min(3.0, parseFloat((prev + 0.1).toFixed(2))))}
+                            className="w-5 h-5 rounded-full hover:bg-white/20 text-[#fce4ca] text-xs font-bold flex items-center justify-center transition-colors cursor-pointer"
+                            title="Maximize / Zoom in"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setIsRepositioningBg(false)}
+                          className="px-3 py-1 rounded-full bg-[#bd9661] hover:bg-[#d4a870] text-[#15110e] text-[11px] font-bold transition-all shadow-xs cursor-pointer shrink-0 ml-1.5"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </>
+                  )}
+
                   {/* Inset Gilded Border Frame */}
                   <div
                     className={`absolute inset-3 border pointer-events-none transition-all ${activeShapeObj.roundedClass}`}
@@ -2203,6 +2562,7 @@ export const SuperAdminCardStudio: React.FC<SuperAdminCardStudioProps> = ({
                           opacity: el.opacity ?? 1,
                           zIndex: isSelected ? 40 : el.zIndex || 10,
                           cursor: isDragging && isSelected ? 'grabbing' : 'grab',
+                          pointerEvents: isRepositioningBg ? 'none' : 'auto',
                         }}
                         className={`absolute group touch-none ${
                           isSelected ? 'ring-2 ring-[#bd9661] ring-offset-2 ring-offset-transparent rounded-sm' : ''
