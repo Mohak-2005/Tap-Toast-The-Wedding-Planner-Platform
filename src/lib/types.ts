@@ -3,6 +3,7 @@ export interface Task {
   text: string;
   completed: boolean;
   due: string;
+  priority?: 'urgent' | 'pending';
 }
 
 export interface RunSheetItem {
@@ -168,6 +169,11 @@ export interface Wedding {
   savedSeatingArrangements?: SavedSeatingArrangement[];
   danceFloorPos?: { x: number; y: number };
   allowGuestsSeeTablemates?: boolean;
+  instagramHandle?: string;
+  hashtag?: string;
+  socialLinks?: Array<{ label: string; url: string }>;
+  unpluggedCeremonyNote?: string;
+  giftRegistryUrl?: string;
 }
 
 export interface SavedSeatingArrangement {
@@ -247,6 +253,7 @@ export interface Gift {
   message: string;
   thankYouSent: boolean;
   thankYouStatus?: 'Not Started' | 'Drafted' | 'Sent' | 'Completed' | 'Due';
+  source?: 'stripe' | 'manual';
 }
 
 export interface Tenant {

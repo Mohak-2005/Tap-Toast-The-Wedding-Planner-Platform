@@ -394,6 +394,10 @@ export const SEED_DATA: DemoState = {
       ],
 danceFloorPos: { x: 50, y: 50 },
       allowGuestsSeeTablemates: true,
+      instagramHandle: "@sophieandjames2026",
+      hashtag: "#SophieAndJames",
+      unpluggedCeremonyNote: "We kindly ask you to be fully present during the ceremony. Please silence your phones and refrain from photography — our photographer will capture every moment.",
+      giftRegistryUrl: "https://myer.com.au/registry/sophieandjames2026",
       savedSeatingArrangements: [
         {
           id: 'arr_1',
@@ -521,8 +525,8 @@ danceFloorPos: { x: 50, y: 50 },
       ],
       tasks: [
         { id: "t1", text: "Send save-the-dates", completed: true, due: "" },
-        { id: "t2", text: "Finalise table 9 & 10 seating", completed: false, due: "Due Fri" },
-        { id: "t3", text: "Send RSVP reminder to 22 guests", completed: false, due: "Due Mon" }
+        { id: "t2", text: "Finalise table 9 & 10 seating", completed: false, due: "Due Fri", priority: "urgent" as const },
+        { id: "t3", text: "Send RSVP reminder to 22 guests", completed: false, due: "Due Mon", priority: "pending" as const }
       ],
             events: [
         {
@@ -1186,10 +1190,10 @@ danceFloorPos: { x: 50, y: 50 },
     { id: "g_w3_6", weddingId: "w3", name: "Chloe Taylor", initials: "CT", household: "Chloe Taylor", email: "chloe.t@example.com", phone: "0433 222 006", rsvpStatus: "confirmed", guestCount: 1, dietary: "Gluten-free", reminderSent: false, tableId: null, seatIndex: null }
   ],
   gifts: [
-    { id: "gf1", guestName: "The Whitfield family", amount: 250, type: "wishing-well", date: "Today", message: "Wishing you both a lifetime of love and happiness!", thankYouSent: false, thankYouStatus: "Drafted" },
-    { id: "gf2", guestName: "Sarah & Michael Chen", amount: 300, type: "wishing-well", date: "Yesterday", message: "So thrilled for you Sophie and James!", thankYouSent: false, thankYouStatus: "Drafted" },
-    { id: "gf3", guestName: "Aunty Carol & Uncle Peter", amount: 500, type: "wishing-well", date: "2 days ago", message: "With all our love and blessings on your special day.", thankYouSent: false, thankYouStatus: "Not Started" },
-    { id: "gf4", guestName: "Emma & David Wilson", amount: 200, type: "wishing-well", date: "3 days ago", message: "Congratulations to the wonderful couple!", thankYouSent: false, thankYouStatus: "Not Started" },
+    { id: "gf1", guestName: "The Whitfield family", amount: 250, type: "wishing-well", date: "Today", message: "Wishing you both a lifetime of love and happiness!", thankYouSent: false, thankYouStatus: "Drafted", source: "stripe" as const },
+    { id: "gf2", guestName: "Sarah & Michael Chen", amount: 300, type: "wishing-well", date: "Yesterday", message: "So thrilled for you Sophie and James!", thankYouSent: false, thankYouStatus: "Drafted", source: "stripe" as const },
+    { id: "gf3", guestName: "Aunty Carol & Uncle Peter", amount: 500, type: "wishing-well", date: "2 days ago", message: "With all our love and blessings on your special day.", thankYouSent: false, thankYouStatus: "Not Started", source: "manual" as const },
+    { id: "gf4", guestName: "Emma & David Wilson", amount: 200, type: "wishing-well", date: "3 days ago", message: "Congratulations to the wonderful couple!", thankYouSent: false, thankYouStatus: "Not Started", source: "manual" as const },
     { id: "gf5", guestName: "Marcus & Olivia Vance", amount: 350, type: "wishing-well", date: "4 days ago", message: "Enjoy every second of the celebration!", thankYouSent: true, thankYouStatus: "Sent" },
     { id: "gf6", guestName: "The O'Connor Family", amount: 400, type: "wishing-well", date: "5 days ago", message: "Huge congratulations Sophie and James!", thankYouSent: false, thankYouStatus: "Not Started" },
     { id: "gf7", guestName: "Jessica & Liam Taylor", amount: 180, type: "wishing-well", date: "6 days ago", message: "Can't wait to raise a glass to you both!", thankYouSent: false, thankYouStatus: "Not Started" },

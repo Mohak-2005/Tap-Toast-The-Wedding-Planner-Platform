@@ -8,6 +8,8 @@ interface VendorDirectorySectionProps {
   onUpdateWedding?: (updatedWedding: Wedding) => void;
   readOnly?: boolean;
   initialSubView?: 'directory' | 'documents';
+  hideSwitcher?: boolean;
+  hideMetricsCards?: boolean;
 }
 
 const DEFAULT_VENDORS: WeddingVendor[] = [
@@ -98,6 +100,8 @@ export const VendorDirectorySection: React.FC<VendorDirectorySectionProps> = ({
   onUpdateWedding,
   readOnly = false,
   initialSubView = 'directory',
+  hideSwitcher = false,
+  hideMetricsCards = false,
 }) => {
   const { state, setState } = useAppState();
 
@@ -664,34 +668,35 @@ export const VendorDirectorySection: React.FC<VendorDirectorySectionProps> = ({
       </div>
 
       {/* Sub-view Navigation Switcher Pills */}
-      <div className="flex items-center gap-2 border-b border-[#e8ded0] pb-2">
-        <button
-          type="button"
-          onClick={() => setActiveSubView('directory')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeSubView === 'directory'
-              ? 'bg-[#15110e] text-[#faf8f5] shadow-xs'
-              : 'bg-white text-[#736355] border border-[#e8ded0] hover:bg-[#faf8f5]'
-          }`}
-        >
-          <span>📋</span>
-          <span>Supplier Directory</span>
-        </button>
+      {!hideSwitcher && (
+        <div className="flex items-center gap-2 border-b border-[#e8ded0] pb-2">
+          <button
+            type="button"
+            onClick={() => setActiveSubView('directory')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeSubView === 'directory'
+                ? 'bg-[#15110e] text-[#faf8f5] shadow-xs'
+                : 'bg-white text-[#736355] border border-[#e8ded0] hover:bg-[#faf8f5]'
+            }`}
+          >
+            <span>📋</span>
+            <span>Supplier Directory</span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveSubView('documents')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-            activeSubView === 'documents'
-              ? 'bg-[#15110e] text-[#faf8f5] shadow-xs'
-              : 'bg-white text-[#736355] border border-[#e8ded0] hover:bg-[#faf8f5]'
-          }`}
-        >
-          <span>📄</span>
-          <span>Vendor Documents &amp; Vault</span>
-        </button>
-      </div>
-
+          <button
+            type="button"
+            onClick={() => setActiveSubView('documents')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeSubView === 'documents'
+                ? 'bg-[#15110e] text-[#faf8f5] shadow-xs'
+                : 'bg-white text-[#736355] border border-[#e8ded0] hover:bg-[#faf8f5]'
+            }`}
+          >
+            <span>📄</span>
+            <span>Vendor Documents &amp; Vault</span>
+          </button>
+        </div>
+      )}
       {/* =================================================================== */}
       {/* 1. SUPPLIER DIRECTORY SUB-VIEW                                     */}
       {/* =================================================================== */}
@@ -984,49 +989,6 @@ export const VendorDirectorySection: React.FC<VendorDirectorySectionProps> = ({
       {/* =================================================================== */}
       {activeSubView === 'documents' && (
         <div className="space-y-6">
-          {/* Key Metrics Row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-xs">
-              <div className="text-[10.5px] uppercase font-bold text-[#8b7b6b] tracking-wider mb-1">
-                Total Documents
-              </div>
-              <div className="font-serif text-2xl sm:text-3xl font-bold text-[#15110e]">
-                {allDocs.length}
-              </div>
-              <div className="text-[11px] text-[#8b7b6b] mt-0.5">On file in secure vault</div>
-            </div>
-
-            <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-xs">
-              <div className="text-[10.5px] uppercase font-bold text-[#8b7b6b] tracking-wider mb-1">
-                Insurance Policies
-              </div>
-              <div className="font-serif text-2xl sm:text-3xl font-bold text-[#bd9661]">
-                {insuranceCount}
-              </div>
-              <div className="text-[11px] text-emerald-700 font-medium mt-0.5">Public liability verified</div>
-            </div>
-
-            <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-xs">
-              <div className="text-[10.5px] uppercase font-bold text-[#8b7b6b] tracking-wider mb-1">
-                Suppliers Covered
-              </div>
-              <div className="font-serif text-2xl sm:text-3xl font-bold text-[#15110e]">
-                {uniqueVendorsCount}
-              </div>
-              <div className="text-[11px] text-[#8b7b6b] mt-0.5">Photographers, Florists &amp; Crew</div>
-            </div>
-
-            <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-xs">
-              <div className="text-[10.5px] uppercase font-bold text-[#8b7b6b] tracking-wider mb-1">
-                Contracts &amp; Permits
-              </div>
-              <div className="font-serif text-2xl sm:text-3xl font-bold text-[#15110e]">
-                {contractCount + permitCount}
-              </div>
-              <div className="text-[11px] text-[#8b7b6b] mt-0.5">Signed agreements &amp; hygiene</div>
-            </div>
-          </div>
-
           {/* Search & Filter Bar */}
           <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-xs flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2.5 flex-wrap flex-1 min-w-[280px]">

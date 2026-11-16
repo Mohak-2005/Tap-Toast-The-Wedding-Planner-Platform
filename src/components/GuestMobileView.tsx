@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAppState, showToast, getWeddingCountdown, logAudit } from '../lib/state';
 import { GuestEventRsvp, WeddingEvent } from '../lib/types';
 import { WeddingCountdownCard } from './WeddingCountdownCard';
@@ -433,7 +433,58 @@ export default function GuestMobileView() {
   const [isCustomizePresetsOpen, setIsCustomizePresetsOpen] = useState<boolean>(false);
   const [editPresets, setEditPresets] = useState<string[]>(['50', '100', '150', '250']);
 
+  // Seating Change Request State
+  const [showSeatRequestModal, setShowSeatRequestModal] = useState(false);
+  const [seatRequestNote, setSeatRequestNote] = useState('');
+  const [seatRequestSubmitted, setSeatRequestSubmitted] = useState(false);
+
+  const handleSubmitSeatRequest = () => {
+    if (!seatRequestNote.trim()) return;
+    // Add a task to the couple's task list
+    const priya = state.guests.find(g => g.id === 'priya' || g.name.toLowerCase().includes('priya'));
+    const guestDisplayName = priya?.name || guestLeadName || 'Guest';
+    const newTask = {
+      id: 'task_seat_' + Date.now(),
+      text: `Seating change request from ${guestDisplayName}: ${seatRequestNote.trim()}`,
+      completed: false,
+      due: 'Review soon',
+      priority: 'pending' as const,
+    };
+    const updatedWeddings = state.weddings.map(w => ({
+      ...w,
+      tasks: [...(w.tasks || []), newTask],
+    }));
+    setState({ ...state, weddings: updatedWeddings });
+    setSeatRequestSubmitted(true);
+    setSeatRequestNote('');
+    setTimeout(() => {
+      setShowSeatRequestModal(false);
+      setSeatRequestSubmitted(false);
+    }, 2000);
+    showToast('Seating request sent to the couple 💌', 'success');
+  };
+
   // Photos State
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [uploadPrivacy, setUploadPrivacy] = useState<'public' | 'private'>('public');
+  const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const newPhoto = {
+      id: 'ph_' + Date.now(),
+      title: file.name.replace(/\.[^/.]+$/, ''),
+      preview: uploadPrivacy === 'private' ? '🔒 Private (Sent to Couple)' : (file.name.length > 20 ? file.name.slice(0, 20) + '...' : file.name),
+      bg: '#e8ded0',
+    };
+    setPhotosList(prev => [newPhoto, ...prev]);
+    showToast(
+      uploadPrivacy === 'private'
+        ? 'Photo uploaded privately to the couple 🔒'
+        : 'Photo uploaded to live wedding gallery wall! 📷',
+      'success'
+    );
+    if (e.target) e.target.value = '';
+  };
   const [photosList, setPhotosList] = useState([
     {
       id: 'ph1',
@@ -992,6 +1043,32 @@ export default function GuestMobileView() {
                 />
               </button>
 
+              {/* Social Links & Unplugged Note */}
+              {(wedding?.instagramHandle || wedding?.hashtag || wedding?.unpluggedCeremonyNote) && (
+                <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-xs space-y-3">
+                  <div className="text-[10px] font-bold tracking-widest uppercase text-[#bd9661]">Connect & Celebrate</div>
+                  <div className="flex flex-wrap gap-2">
+                    {wedding?.hashtag && (
+                      <div className="flex items-center gap-1.5 bg-[#faf8f5] border border-[#e8ded0] rounded-full px-3 py-1.5">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="#bd9661"><path d="M5.1 20.5 8 7H5L5.5 4H8.5l.7-3.5H12l-.7 3.5h3l.7-3.5H18l-.7 3.5H20L19.5 7H17l-2.9 13.5h-2.8L14.2 7h-3L8.3 20.5H5.1z"/></svg>
+                        <span className="text-[11px] font-bold text-[#15110e]">{wedding.hashtag}</span>
+                      </div>
+                    )}
+                    {wedding?.instagramHandle && (
+                      <div className="flex items-center gap-1.5 bg-[#faf8f5] border border-[#e8ded0] rounded-full px-3 py-1.5">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="#bd9661"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" fill="none" stroke="#bd9661" strokeWidth="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="#bd9661" strokeWidth="2"/><circle cx="17.5" cy="6.5" r="1.2" fill="#bd9661"/></svg>
+                        <span className="text-[11px] font-bold text-[#15110e]">{wedding.instagramHandle}</span>
+                      </div>
+                    )}
+                  </div>
+                  {wedding?.unpluggedCeremonyNote && (
+                    <div className="text-[11px] text-[#6b5849] leading-relaxed italic border-t border-[#f0ede4] pt-2.5">
+                      📵 {wedding.unpluggedCeremonyNote}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Celebration Feed Section Preview */}
               <div className="pt-1">
                 <div className="flex justify-between items-center mb-2 px-1">
@@ -1109,7 +1186,7 @@ export default function GuestMobileView() {
                       key={evt.id}
                       className={`bg-white border rounded-2xl p-3.5 shadow-xs transition-all ${
                         isConfirmed
-                          ? 'border-emerald-300 ring-1 ring-emerald-200'
+                          ? 'border-[#bd9661] ring-1 ring-[#bd9661]/40'
                           : isDeclined
                           ? 'border-rose-200 opacity-80'
                           : 'border-[#e8ded0]'
@@ -1127,7 +1204,7 @@ export default function GuestMobileView() {
                         <span
                           className={`text-[9.5px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                             isConfirmed
-                              ? 'bg-emerald-100 text-emerald-800'
+                              ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]/50'
                               : isDeclined
                               ? 'bg-rose-100 text-rose-800'
                               : 'bg-amber-100 text-amber-800'
@@ -1159,8 +1236,8 @@ export default function GuestMobileView() {
                           onClick={() => handleToggleEventRsvp(evt.id, true)}
                           className={`py-2 px-2 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 ${
                             isConfirmed
-                              ? 'bg-emerald-700 text-white shadow-xs'
-                              : 'bg-[#faf8f5] text-[#15110e] border border-[#e8ded0] hover:bg-emerald-50'
+                              ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661] shadow-xs'
+                              : 'bg-[#faf8f5] text-[#15110e] border border-[#e8ded0] hover:bg-[#faf6f0]'
                           }`}
                         >
                           <span>🥂</span>
@@ -1231,13 +1308,13 @@ export default function GuestMobileView() {
                 <div key="rsvp-attending-box" className="space-y-4 anim-guest-slide">
                   {/* Celebratory Acceptance Confirmation Banner (Appears for 3.5s upon accepting then vanishes) */}
                   {showAcceptAnimation && (
-                    <div className="bg-[#f0f9f2] border border-[#a3d9b1] rounded-2xl p-3.5 flex items-center gap-3 shadow-xs anim-guest-pop">
-                      <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 anim-check">
+                    <div className="bg-[#15110e] border border-[#bd9661] rounded-2xl p-3.5 flex items-center gap-3 shadow-md anim-guest-pop">
+                      <div className="w-8 h-8 rounded-full bg-[#bd9661] text-[#15110e] flex items-center justify-center font-bold text-sm shadow-xs shrink-0 anim-check">
                         ✓
                       </div>
                       <div className="text-left">
-                        <div className="text-xs font-bold text-emerald-950">You're Attending! 🥂</div>
-                        <div className="text-[10.5px] text-emerald-800 leading-tight">We can't wait to celebrate together at Fernwood Estate.</div>
+                        <div className="text-xs font-bold text-[#dfc194]">You're Attending! 🥂</div>
+                        <div className="text-[10.5px] text-[#e8ded0] leading-tight">We can't wait to celebrate together at Fernwood Estate.</div>
                       </div>
                     </div>
                   )}
@@ -1400,7 +1477,7 @@ export default function GuestMobileView() {
                 }}
                 className={`w-full py-3 rounded-xl text-xs font-bold shadow-sm transition-all duration-300 cursor-pointer active:scale-98 flex items-center justify-center gap-2 ${
                   isRsvpSaved
-                    ? 'bg-emerald-600 text-white'
+                    ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]'
                     : 'bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e]'
                 }`}
               >
@@ -1719,7 +1796,7 @@ export default function GuestMobileView() {
                                   <span
                                     className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full shrink-0 ${
                                       isAttending
-                                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                        ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]/50'
                                         : 'bg-rose-50 text-rose-800 border border-rose-200'
                                     }`}
                                   >
@@ -2015,7 +2092,69 @@ export default function GuestMobileView() {
                     )}
                   </div>
                 )}
+              {/* Request Seat Change */}
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSeatRequestModal(true)}
+                  className="w-full border border-[#e8ded0] bg-white hover:bg-[#faf8f5] text-[#15110e] font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-xs"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                  Request Seat Change
+                </button>
               </div>
+
+              {/* Seat Change Request Modal */}
+              {showSeatRequestModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center" onClick={(e) => { if (e.target === e.currentTarget) setShowSeatRequestModal(false); }}>
+                  <div className="bg-white w-full max-w-sm rounded-t-3xl p-5 shadow-2xl space-y-4">
+                    <div className="w-10 h-1 bg-[#e8ded0] rounded-full mx-auto mb-1" />
+                    {seatRequestSubmitted ? (
+                      <div className="text-center py-6 space-y-2">
+                        <div className="text-3xl">✅</div>
+                        <div className="font-serif text-base font-bold text-[#15110e]">Request Sent!</div>
+                        <p className="text-xs text-[#8b7b6b]">Sophie & James will review your request and make any changes.</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <div className="text-[10px] font-bold tracking-widest uppercase text-[#bd9661] mb-0.5">Table</div>
+                          <h2 className="font-serif text-lg font-bold text-[#15110e]">Request Seat Change</h2>
+                          <p className="text-xs text-[#8b7b6b] mt-1">Your request will go to the couple's task list. They'll make any changes directly.</p>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b] mb-1.5">Your reason or preference</label>
+                          <textarea
+                            rows={3}
+                            value={seatRequestNote}
+                            onChange={(e) => setSeatRequestNote(e.target.value)}
+                            placeholder="e.g. I'd prefer to sit closer to the dance floor, or near the Thompson family..."
+                            className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl p-3 text-xs text-[#15110e] outline-none focus:border-[#bd9661] resize-none leading-relaxed"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setShowSeatRequestModal(false)}
+                            className="flex-1 border border-[#e8ded0] text-[#8b7b6b] font-bold py-2.5 rounded-xl text-xs cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSubmitSeatRequest}
+                            disabled={!seatRequestNote.trim()}
+                            className="flex-1 bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold py-2.5 rounded-xl text-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          >
+                            Send Request
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             );
           })()}
 
@@ -2036,23 +2175,70 @@ export default function GuestMobileView() {
                 </div>
               </div>
 
-              {/* Upload a Photo Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  const newPhoto = {
-                    id: 'ph_' + Date.now(),
-                    title: 'New guest snapshot',
-                    preview: 'Uploaded just now...',
-                    bg: '#ded6cc',
-                  };
-                  setPhotosList([newPhoto, ...photosList]);
-                  showToast('Photo uploaded to wedding gallery!', 'success');
-                }}
-                className="w-full bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold py-3 rounded-xl text-xs shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-all"
-              >
-                <span>📷</span> Upload a Photo
-              </button>
+              {/* Upload Info Bar */}
+              <div className="flex items-center justify-between bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2.5">
+                <div className="text-[10px] text-[#8b7b6b]">
+                  <span className="font-bold text-[#15110e]">{photosList.length}</span> / 10 photos uploaded
+                </div>
+                <div className="w-24 h-1.5 bg-[#e8ded0] rounded-full overflow-hidden">
+                  <div className="h-full bg-[#bd9661] rounded-full transition-all" style={{ width: `${Math.min(100, (photosList.length / 10) * 100)}%` }} />
+                </div>
+              </div>
+
+              {/* Hidden Native File Input */}
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoFileChange}
+              />
+
+              {/* Privacy Option Toggle */}
+              <div className="flex items-center justify-between bg-[#faf8f5] border border-[#e8ded0] p-2 rounded-xl text-xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b]">Upload Privacy:</span>
+                <div className="flex items-center gap-1 bg-white border border-[#e8ded0] p-0.5 rounded-lg shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => setUploadPrivacy('public')}
+                    className={`px-2.5 py-1 rounded-md text-[10.5px] font-bold transition-all cursor-pointer ${
+                      uploadPrivacy === 'public'
+                        ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
+                        : 'text-[#8b7b6b] hover:text-[#15110e]'
+                    }`}
+                  >
+                    Public Wall
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUploadPrivacy('private')}
+                    className={`px-2.5 py-1 rounded-md text-[10.5px] font-bold transition-all cursor-pointer ${
+                      uploadPrivacy === 'private'
+                        ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
+                        : 'text-[#8b7b6b] hover:text-[#15110e]'
+                    }`}
+                  >
+                    🔒 Private
+                  </button>
+                </div>
+              </div>
+
+              {/* Single Button: Upload Photo */}
+              <div className="space-y-1.5">
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  className="w-full bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold py-3 rounded-xl text-xs shadow-sm flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
+                >
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  Upload Photo
+                </button>
+                <div className="text-[10px] text-[#8b7b6b] text-center">
+                  {uploadPrivacy === 'public'
+                    ? 'Selected photo will be shared to the live wedding gallery wall'
+                    : 'Selected photo will be sent privately — only the couple will see it'}
+                </div>
+              </div>
 
               {/* 2x2 Photo Cards Grid */}
               <div className="grid grid-cols-2 gap-3 pt-1">
@@ -2093,6 +2279,19 @@ export default function GuestMobileView() {
                   Your presence is our present. If you would like to contribute towards our honeymoon in Queenstown, you can gift securely below.
                 </div>
               </div>
+
+              {/* External Registry Link */}
+              {wedding?.giftRegistryUrl && (
+                <a
+                  href={wedding.giftRegistryUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-xs no-underline"
+                >
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  View Registry
+                </a>
+              )}
 
               {/* Customizable Presets Header */}
               <div className="flex items-center justify-between pt-1 px-0.5">

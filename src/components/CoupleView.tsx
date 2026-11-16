@@ -27,6 +27,7 @@ export type CoupleTab =
   | 'guests'
   | 'seating'
   | 'mc_runsheet'
+  | 'vendor_documents'
   | 'mc_catering'
   | 'pages'
   | 'invitations'
@@ -100,10 +101,23 @@ export default function CoupleView({
 
   // Overview Tasks
   const [newTaskInput, setNewTaskInput] = useState('');
+  const [newTaskPriority, setNewTaskPriority] = useState<'urgent' | 'pending'>('pending');
+  const [taskFilter, setTaskFilter] = useState<'all' | 'urgent' | 'pending' | 'completed'>('all');
   const handleToggleTask = (taskId: string) => {
     const updatedTasks = wedding.tasks.map(t => (t.id === taskId ? { ...t, completed: !t.completed } : t));
     const updatedWeddings = state.weddings.map(w => (w.id === wedding.id ? { ...w, tasks: updatedTasks } : w));
     setState({ ...state, weddings: updatedWeddings });
+  };
+  const handleSetTaskPriority = (taskId: string, priority: 'urgent' | 'pending') => {
+    const updatedTasks = wedding.tasks.map(t => (t.id === taskId ? { ...t, priority } : t));
+    const updatedWeddings = state.weddings.map(w => (w.id === wedding.id ? { ...w, tasks: updatedTasks } : w));
+    setState({ ...state, weddings: updatedWeddings });
+  };
+  const handleDeleteTask = (taskId: string) => {
+    const updatedTasks = wedding.tasks.filter(t => t.id !== taskId);
+    const updatedWeddings = state.weddings.map(w => (w.id === wedding.id ? { ...w, tasks: updatedTasks } : w));
+    setState({ ...state, weddings: updatedWeddings });
+    showToast('Task removed', 'info');
   };
   const handleAddTask = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -113,6 +127,7 @@ export default function CoupleView({
       text: newTaskInput.trim(),
       completed: false,
       due: 'This week',
+      priority: newTaskPriority,
     };
     const updatedWeddings = state.weddings.map(w => (w.id === wedding.id ? { ...w, tasks: [...w.tasks, newTask] } : w));
     setState({ ...state, weddings: updatedWeddings });
@@ -1215,10 +1230,10 @@ export default function CoupleView({
   };
 
   // Tab 4: Content & Stories State (Screenshot 25)
-  const [contentSubTab, setContentSubTab] = useState<'ourStory' | 'inMemoriam' | 'diningMenu' | 'meetTheTeam' | 'honeymoonUpdates' | 'vendorDirectory'>('ourStory');
+  const [contentSubTab, setContentSubTab] = useState<'ourStory' | 'inMemoriam' | 'diningMenu' | 'meetTheTeam' | 'honeymoonUpdates'>('ourStory');
   const [previewPhotoIndex, setPreviewPhotoIndex] = useState<number>(0);
   const [contentPages, setContentPages] = useState<{
-    [key in 'ourStory' | 'inMemoriam' | 'diningMenu' | 'meetTheTeam' | 'honeymoonUpdates' | 'vendorDirectory']: {
+    [key in 'ourStory' | 'inMemoriam' | 'diningMenu' | 'meetTheTeam' | 'honeymoonUpdates']: {
       title: string;
       subtitle: string;
       content: string;
@@ -1284,15 +1299,6 @@ export default function CoupleView({
       photos: [
         'https://images.unsplash.com/photo-1507692049790-de58290a4334?auto=format&fit=crop&w=800&q=80',
       ],
-    },
-    vendorDirectory: {
-      title: 'Wedding Vendor Directory',
-      subtitle: 'Directory of all contracted wedding vendors and contact information',
-      content: '',
-      caption: 'Wedding Vendors',
-      icon: '💐',
-      status: 'Published',
-      photos: [],
     },
   });
 
@@ -1373,6 +1379,7 @@ export default function CoupleView({
     msg: string;
     status: 'Sent' | 'Due' | 'Drafted' | 'Completed';
     noteDraft?: string;
+    source?: 'stripe' | 'manual';
   }
 
   const [coupleGifts, setCoupleGifts] = useState<CoupleGiftItem[]>([
@@ -2248,6 +2255,19 @@ export default function CoupleView({
                 ),
               },
               {
+                id: 'vendor_documents' as const,
+                label: 'Vendor Documents',
+                icon: (
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" />
+                  </svg>
+                ),
+              },
+              {
                 id: 'pages',
                 label: 'Content & Stories',
                 icon: (
@@ -2529,46 +2549,153 @@ export default function CoupleView({
             {/* Checklist & Activity Split */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Checklist */}
+              {/* Planning Tasks (Urgent, Pending, Completed) */}
               <div className="bg-white border border-[#e8ded0] rounded-xl p-6 shadow-sm space-y-4">
-                <h3 className="font-serif text-lg font-bold text-[#15110e]">This Week's Checklist</h3>
-                <div className="space-y-2.5">
-                  {wedding.tasks.map((t) => (
-                    <label
-                      key={t.id}
-                      className={`flex items-center gap-3 text-xs p-2 rounded-xl cursor-pointer transition-all duration-250 ${
-                        t.completed
-                          ? 'bg-emerald-50/60 text-[#8b7b6b] border border-emerald-200/50'
-                          : 'bg-white hover:bg-[#faf8f5] text-[#15110e] border border-transparent hover:border-[#ebd8c3]'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={t.completed}
-                        onChange={() => handleToggleTask(t.id)}
-                        className="accent-[#bd9661] w-4 h-4 cursor-pointer active:scale-90 transition-transform duration-150"
-                      />
-                      <span className={`transition-all duration-250 ${t.completed ? 'line-through text-[#8b7b6b]' : 'font-medium'}`}>
-                        {t.text}
-                      </span>
-                      {t.completed && (
-                        <span className="ml-auto text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded-full animate-in fade-in duration-200">
-                          Done ✓
-                        </span>
-                      )}
-                    </label>
-                  ))}
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <h3 className="font-serif text-lg font-bold text-[#15110e]">Planning Tasks &amp; Checklist</h3>
+                    <div className="text-[11px] text-[#8b7b6b]">Track urgent deadlines, pending tasks, and guest requests</div>
+                  </div>
+                  {/* Priority Filter Pills */}
+                  <div className="flex items-center gap-1 bg-[#faf8f5] p-1 rounded-xl border border-[#e8ded0] text-xs">
+                    {(
+                      [
+                        { id: 'all', label: 'All', count: wedding.tasks.length },
+                        { id: 'urgent', label: 'Urgent', count: wedding.tasks.filter(t => !t.completed && t.priority === 'urgent').length, color: 'text-rose-600' },
+                        { id: 'pending', label: 'Pending', count: wedding.tasks.filter(t => !t.completed && t.priority !== 'urgent').length, color: 'text-amber-600' },
+                        { id: 'completed', label: 'Done', count: wedding.tasks.filter(t => t.completed).length, color: 'text-emerald-600' },
+                      ] as const
+                    ).map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => setTaskFilter(f.id)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                          taskFilter === f.id
+                            ? 'bg-[#15110e] text-[#dfc194] shadow-2xs'
+                            : 'text-[#8b7b6b] hover:text-[#15110e]'
+                        }`}
+                      >
+                        <span>{f.label}</span>
+                        <span className={`ml-1 text-[10px] ${taskFilter === f.id ? 'text-[#dfc194]' : ((f as any).color || 'text-[#8b7b6b]')}`}>({f.count})</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <form onSubmit={handleAddTask} className="flex gap-2 pt-2 border-t border-[#f0ede4]">
-                  <input
-                    type="text"
-                    value={newTaskInput}
-                    onChange={(e) => setNewTaskInput(e.target.value)}
-                    placeholder="Add a new wedding task..."
-                    className="flex-1 bg-white border border-[#e8ded0] rounded-lg px-3 py-1.5 text-xs outline-none focus:border-[#bd9661]"
-                  />
-                  <button type="submit" className="bg-[#bd9661] text-[#15110e] font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer">
-                    Add Task
-                  </button>
+
+                <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+                  {wedding.tasks
+                    .filter((t) => {
+                      if (taskFilter === 'urgent') return !t.completed && t.priority === 'urgent';
+                      if (taskFilter === 'pending') return !t.completed && t.priority !== 'urgent';
+                      if (taskFilter === 'completed') return t.completed;
+                      return true;
+                    })
+                    .map((t) => {
+                      const isUrgent = !t.completed && t.priority === 'urgent';
+                      return (
+                        <div
+                          key={t.id}
+                          className={`flex items-start gap-2.5 text-xs p-2.5 rounded-xl transition-all duration-200 border ${
+                            t.completed
+                              ? 'bg-emerald-50/50 text-[#8b7b6b] border-emerald-200/50'
+                              : isUrgent
+                              ? 'bg-rose-50/60 text-[#15110e] border-rose-200 hover:border-rose-300'
+                              : 'bg-white hover:bg-[#faf8f5] text-[#15110e] border-[#ebd8c3]/80'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={t.completed}
+                            onChange={() => handleToggleTask(t.id)}
+                            className="accent-[#bd9661] w-4 h-4 cursor-pointer mt-0.5 shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className={`leading-snug transition-all ${t.completed ? 'line-through text-[#8b7b6b]' : 'font-medium text-[#15110e]'}`}>
+                                {t.text}
+                              </span>
+                              {/* Priority / Status Badge */}
+                              {t.completed ? (
+                                <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+                                  Done ✓
+                                </span>
+                              ) : isUrgent ? (
+                                <span className="text-[9.5px] font-bold text-rose-700 bg-rose-100/90 border border-rose-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
+                                  Urgent
+                                </span>
+                              ) : (
+                                <span className="text-[9.5px] font-bold text-amber-700 bg-amber-100/80 border border-amber-200 px-2 py-0.5 rounded-full">
+                                  Pending
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1 text-[10px] text-[#8b7b6b]">
+                              <span>Due: {t.due || 'This week'}</span>
+                              {!t.completed && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSetTaskPriority(t.id, t.priority === 'urgent' ? 'pending' : 'urgent')}
+                                  className="text-[10px] font-semibold text-[#bd9661] hover:underline cursor-pointer"
+                                >
+                                  Mark as {t.priority === 'urgent' ? 'Pending' : 'Urgent'}
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteTask(t.id)}
+                                className="text-[10px] text-[#8b7b6b] hover:text-rose-600 cursor-pointer ml-auto"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+
+                {/* Add Task Form with Priority Selector */}
+                <form onSubmit={handleAddTask} className="space-y-2 pt-2 border-t border-[#f0ede4]">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newTaskInput}
+                      onChange={(e) => setNewTaskInput(e.target.value)}
+                      placeholder="Add a new planning task or guest request..."
+                      className="flex-1 bg-white border border-[#e8ded0] rounded-xl px-3 py-2 text-xs outline-none focus:border-[#bd9661]"
+                    />
+                    <button
+                      type="submit"
+                      className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-4 py-2 rounded-xl text-xs cursor-pointer shadow-xs transition-colors shrink-0"
+                    >
+                      + Add Task
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-[#8b7b6b] px-0.5">
+                    <span className="font-semibold text-[#15110e]">Priority:</span>
+                    <label className="flex items-center gap-1 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="taskPriority"
+                        checked={newTaskPriority === 'pending'}
+                        onChange={() => setNewTaskPriority('pending')}
+                        className="accent-[#bd9661]"
+                      />
+                      <span className="text-amber-800 font-medium">Pending</span>
+                    </label>
+                    <label className="flex items-center gap-1 cursor-pointer ml-2">
+                      <input
+                        type="radio"
+                        name="taskPriority"
+                        checked={newTaskPriority === 'urgent'}
+                        onChange={() => setNewTaskPriority('urgent')}
+                        className="accent-rose-600"
+                      />
+                      <span className="text-rose-700 font-medium">Urgent</span>
+                    </label>
+                  </div>
                 </form>
               </div>
 
@@ -4323,6 +4450,25 @@ export default function CoupleView({
         )}
 
         {/* ================================================================ */}
+        {/* ================================================================ */}
+        {/* TAB: VENDOR DOCUMENTS                                            */}
+        {/* ================================================================ */}
+        {activeTab === 'vendor_documents' && (
+          <section className="space-y-6 animate-in fade-in duration-200">
+            <VendorDirectorySection
+              wedding={wedding}
+              onUpdateWeddingVendors={handleUpdateWeddingVendors}
+              onUpdateWedding={(updated) => {
+                const updatedWeddings = (state.weddings || []).map(w => w.id === updated.id ? updated : w);
+                setState({ ...state, weddings: updatedWeddings });
+              }}
+              initialSubView="documents"
+              hideSwitcher={true}
+              hideMetricsCards={true}
+            />
+          </section>
+        )}
+
         {/* TAB 4: CONTENT & STORIES (Screenshot 25: 172910.png)             */}
         {/* ================================================================ */}
         {activeTab === 'pages' && !isMcOrPlanner && (
@@ -4347,7 +4493,6 @@ export default function CoupleView({
                 { id: 'diningMenu', label: '🍽️ Dining & Menu' },
                 { id: 'meetTheTeam', label: '👥 Meet the Team' },
                 { id: 'honeymoonUpdates', label: '✈️ Honeymoon Updates' },
-                { id: 'vendorDirectory', label: '💐 Vendor Directory' },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -4364,17 +4509,7 @@ export default function CoupleView({
               ))}
             </div>
 
-            {contentSubTab === 'vendorDirectory' ? (
-              <VendorDirectorySection
-                wedding={wedding}
-                onUpdateWeddingVendors={handleUpdateWeddingVendors}
-                onUpdateWedding={(updated) => {
-                  const updatedWeddings = (state.weddings || []).map(w => w.id === updated.id ? updated : w);
-                  setState({ ...state, weddings: updatedWeddings });
-                }}
-              />
-            ) : (
-              /* Split: Editor Card vs Live Preview Card */
+              {/* Split: Editor Card vs Live Preview Card */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left: Editor Card */}
               <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-4">
@@ -5000,7 +5135,6 @@ export default function CoupleView({
                 </div>
               </div>
             </div>
-            )}
           </section>
         )}
 
@@ -5073,6 +5207,30 @@ export default function CoupleView({
               </button>
             </div>
 
+            {/* External Gift Registry Card with Solid Gold View Registry Button */}
+            {wedding?.giftRegistryUrl && (
+              <div className="bg-white border border-[#e8ded0] rounded-2xl p-4 shadow-sm flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#faf8f5] border border-[#e8ded0] flex items-center justify-center text-lg">
+                    🎁
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-[#15110e]">External Gift Registry</div>
+                    <div className="text-[11px] text-[#8b7b6b]">{wedding.giftRegistryUrl}</div>
+                  </div>
+                </div>
+                <a
+                  href={wedding.giftRegistryUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-colors no-underline cursor-pointer"
+                >
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  <span>View Registry</span>
+                </a>
+              </div>
+            )}
+
             {/* 3 Metric Cards matching Screenshot 27 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white border border-[#e8ded0] rounded-2xl p-6 shadow-sm">
@@ -5095,6 +5253,7 @@ export default function CoupleView({
                 <thead>
                   <tr className="border-b border-[#e8ded0] text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b]">
                     <th className="py-2.5 px-3">FROM</th>
+                    <th className="py-2.5 px-3">SOURCE</th>
                     <th className="py-2.5 px-3">AMOUNT</th>
                     <th className="py-2.5 px-3">DATE</th>
                     <th className="py-2.5 px-3">MESSAGE</th>
@@ -5106,6 +5265,13 @@ export default function CoupleView({
                   {coupleGifts.map((row) => (
                     <tr key={row.id} className="hover:bg-[#faf8f5]">
                       <td className="py-3 px-3 font-bold text-[#15110e]">{row.from}</td>
+                      <td className="py-3 px-3">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          row.source === 'manual' ? 'bg-[#f7ede2] text-[#8b5a2b]' : 'bg-[#e8eee4] text-[#3c6a42]'
+                        }`}>
+                          {row.source === 'manual' ? 'Manual Gift' : 'Online / Stripe'}
+                        </span>
+                      </td>
                       <td className="py-3 px-3 font-bold text-[#15110e]">{row.amount}</td>
                       <td className="py-3 px-3 text-[#8b7b6b]">{row.date}</td>
                       <td className="py-3 px-3 italic text-[#6b5849] max-w-[280px]">{row.msg}</td>
