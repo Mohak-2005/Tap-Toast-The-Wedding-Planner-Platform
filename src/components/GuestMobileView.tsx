@@ -160,7 +160,20 @@ export default function GuestMobileView() {
     });
 
     const evt = (wedding?.events || []).find(e => e.id === eventId);
-    showToast(isAccept ? `Attending ${evt?.name || 'event'}! 🥂` : `Declined ${evt?.name || 'event'}`, isAccept ? 'success' : 'info');
+    const guestDisplayName = guestLeadName || 'Priya Sharma';
+    logAudit(
+      'RSVP',
+      isAccept
+        ? `${guestDisplayName} confirmed attendance for ${evt?.name || 'event'}`
+        : `${guestDisplayName} regretfully declined ${evt?.name || 'event'}`,
+      'guest'
+    );
+    showToast(
+      isAccept
+        ? `Attending ${evt?.name || 'event'}! Updated to couple 🥂`
+        : `Declined ${evt?.name || 'event'}. Sophie & James have been notified 💌`,
+      isAccept ? 'success' : 'info'
+    );
   };
 
   const handleBulkAcceptAllEvents = (isAccept: boolean) => {
@@ -1230,31 +1243,46 @@ export default function GuestMobileView() {
                         )}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#f0ede4]">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleEventRsvp(evt.id, true)}
-                          className={`py-2 px-2 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 ${
-                            isConfirmed
-                              ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661] shadow-xs'
-                              : 'bg-[#faf8f5] text-[#15110e] border border-[#e8ded0] hover:bg-[#faf6f0]'
-                          }`}
-                        >
-                          <span>🥂</span>
-                          <span>Attending</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleToggleEventRsvp(evt.id, false)}
-                          className={`py-2 px-2 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 ${
-                            isDeclined
-                              ? 'bg-rose-700 text-white shadow-xs'
-                              : 'bg-[#faf8f5] text-[#15110e] border border-[#e8ded0] hover:bg-rose-50'
-                          }`}
-                        >
-                          <span>💌</span>
-                          <span>Decline</span>
-                        </button>
+                      {/* RSVP Actions or Warm Declined Message */}
+                      <div className="pt-2 border-t border-[#f0ede4]">
+                        {isDeclined ? (
+                          <div className="bg-[#faf8f5] border border-[#ebdcc9] rounded-xl p-3 text-center space-y-1 anim-guest-pop">
+                            <p className="text-xs font-serif italic text-[#6b5849] leading-snug">
+                              💌 Sophie &amp; James have received your warm wishes. You will be dearly missed!
+                            </p>
+                            <span className="text-[10px] text-[#9c8979] font-medium block">
+                              Attendance declined &bull; Status finalized
+                            </span>
+                          </div>
+                        ) : isConfirmed ? (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleEventRsvp(evt.id, false)}
+                            className="w-full py-2.5 px-3 rounded-xl font-semibold text-xs text-[#8b7b6b] hover:text-[#15110e] bg-[#faf8f5] hover:bg-[#f4efe8] border border-[#e8ded0] hover:border-[#bd9661] transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-98 shadow-2xs"
+                          >
+                            <span>💌</span>
+                            <span>Decline</span>
+                          </button>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleEventRsvp(evt.id, true)}
+                              className="py-2.5 px-2 rounded-xl font-bold text-xs bg-[#15110e] hover:bg-[#251e18] text-[#dfc194] border border-[#bd9661] transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 shadow-xs"
+                            >
+                              <span>🥂</span>
+                              <span>Attending</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleEventRsvp(evt.id, false)}
+                              className="py-2.5 px-2 rounded-xl font-bold text-xs bg-[#faf8f5] hover:bg-[#f4efe8] text-[#15110e] border border-[#e8ded0] transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs"
+                            >
+                              <span>💌</span>
+                              <span>Decline</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -1866,14 +1894,20 @@ export default function GuestMobileView() {
                                   <span className="text-[11px] text-[#8b7b6b]">
                                     {isAttending ? 'Attendance confirmed' : 'RSVP: Regretfully declined'}
                                   </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleToggleEventRsvp(ev.id, !isAttending)}
-                                    className="text-[11px] font-bold text-[#bd9661] hover:text-[#997441] hover:underline cursor-pointer flex items-center gap-1 active:scale-95 transition-transform"
-                                  >
-                                    <span>{isAttending ? 'Change to Decline' : 'Confirm Attendance'}</span>
-                                    <span>&rarr;</span>
-                                  </button>
+                                  {isAttending ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleEventRsvp(ev.id, false)}
+                                      className="text-[11px] font-bold text-[#bd9661] hover:text-[#997441] hover:underline cursor-pointer flex items-center gap-1 active:scale-95 transition-transform"
+                                    >
+                                      <span>Change to Decline</span>
+                                      <span>&rarr;</span>
+                                    </button>
+                                  ) : (
+                                    <span className="text-[10.5px] italic text-[#8b7b6b]">
+                                      Status finalized &bull; Warm wishes sent 💌
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             );
@@ -2762,10 +2796,11 @@ export default function GuestMobileView() {
           <button
             type="button"
             onClick={() => setShowJoey(!showJoey)}
-            className="absolute bottom-18 right-4 w-12 h-12 rounded-full bg-[#dfc194] border-2 border-white shadow-lg flex items-center justify-center cursor-pointer hover:scale-105 transition-transform z-30 overflow-hidden p-0"
+            style={{ width: '48px', height: '48px', position: 'absolute', bottom: '4.5rem', right: '1rem', zIndex: 30 }}
+            className="rounded-full bg-[#dfc194] border-2 border-white shadow-lg flex items-center justify-center cursor-pointer hover:scale-105 transition-transform overflow-hidden p-0"
             title="Chat with Joey Assistant"
           >
-            <img src="./chatbot-avatar.png" alt="Joey AI Assistant" className="w-full h-full object-cover" />
+            <img src="./chatbot-avatar.png" alt="Joey AI Assistant" style={{ width: '48px', height: '48px', objectFit: 'cover' }} className="w-full h-full object-cover" />
           </button>
         )}
 
@@ -2778,7 +2813,7 @@ export default function GuestMobileView() {
             <div className="bg-[#15110e] text-white p-3.5 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-[#bd9661] flex items-center justify-center flex-shrink-0">
-                  <img src="./chatbot-avatar.png" alt="Joey AI Assistant" className="w-full h-full object-cover" />
+                  <img src="./chatbot-avatar.png" alt="Joey AI Assistant" style={{ width: '32px', height: '32px', objectFit: 'cover' }} className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <div className="text-xs font-bold text-white flex items-center gap-1.5">
