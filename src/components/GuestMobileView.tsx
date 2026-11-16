@@ -31,6 +31,46 @@ const CELEBRATION_PARTICLES = [
   { id: 16, char: '🎊', left: '26%', delay: '0.55s', duration: '2.0s', size: '29px' },
 ];
 
+
+function formatEventDateHeading(dateStr: string): string {
+  if (!dateStr) return 'Wedding Celebration';
+  try {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const d = new Date(year, month, day);
+      return d.toLocaleDateString('en-GB', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    }
+  } catch {}
+  return dateStr;
+}
+
+function formatEventDatePill(dateStr: string): string {
+  if (!dateStr) return 'Day';
+  try {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const d = new Date(year, month, day);
+      return d.toLocaleDateString('en-GB', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short'
+      });
+    }
+  } catch {}
+  return dateStr;
+}
+
 export default function GuestMobileView() {
   const { state, setState } = useAppState();
 
@@ -299,6 +339,7 @@ export default function GuestMobileView() {
     return () => window.removeEventListener('hashchange', handleHashTab);
   }, [activeTab]);
   const [storyFilter, setStoryFilter] = useState<'all' | 'story' | 'menu' | 'memoriam' | 'party' | 'honeymoon'>('all');
+  const [selectedEventDateFilter, setSelectedEventDateFilter] = useState<string>('all');
   const [showJoey, setShowJoey] = useState(false);
   
   // RSVP State
@@ -1530,76 +1571,244 @@ export default function GuestMobileView() {
           )}
 
           {/* ============================================================== */}
-          {/* TAB: EVENTS / SCHEDULE (Screenshot 6: 172606.png)              */}
+          {/* TAB: EVENTS / SCHEDULE (Arranged Luxury Itinerary)          */}
           {/* ============================================================== */}
-          {activeTab === 'events' && (
-            <div className="p-4 space-y-4">
-              <div className="mt-1 px-1">
-                <div className="text-[10px] font-bold tracking-widest uppercase text-[#bd9661] mb-0.5">
-                  Order of Events
-                </div>
-                <h1 className="font-serif text-2xl font-bold text-[#15110e] leading-tight mb-1">
-                  Today's Schedule
-                </h1>
-                <div className="text-xs text-[#8b7b6b]">
-                  Saturday, 14 November 2026 &bull; Fernwood Estate
-                </div>
-              </div>
+          {activeTab === 'events' && (() => {
+            const uniqueDates = Array.from(new Set(guestEvents.map(e => e.date).filter(Boolean))).sort();
+            const filteredEvents = selectedEventDateFilter === 'all'
+              ? guestEvents
+              : guestEvents.filter(e => e.date === selectedEventDateFilter);
 
-              {/* Timeline Container */}
-              <div className="relative pl-6 space-y-6 pt-2">
-                {/* Continuous Vertical Timeline Line */}
-                <div className="absolute left-[11px] top-3 bottom-3 w-[2px] bg-[#bd9661]" />
+            const groupedEventsByDate = selectedEventDateFilter === 'all'
+              ? (uniqueDates.length > 0
+                  ? uniqueDates.map(dateKey => ({
+                      date: dateKey,
+                      events: guestEvents.filter(e => e.date === dateKey),
+                    }))
+                  : [{ date: '', events: guestEvents }])
+              : [{
+                  date: selectedEventDateFilter,
+                  events: filteredEvents,
+                }];
 
+            const attendingCount = guestEvents.filter(ev => {
+              const rsvp = activeGuest?.eventRsvps?.[ev.id];
+              return rsvp ? rsvp.status === 'confirmed' : activeGuest?.rsvpStatus === 'confirmed';
+            }).length;
+
+            return (
+              <div className="p-4 space-y-4">
+                {/* Header Section */}
+                <div className="mt-1 px-1">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-[10px] font-bold tracking-widest uppercase text-[#bd9661]">
+                      Celebration Itinerary
+                    </span>
+                    <span className="text-[10.5px] font-bold text-[#8b7b6b] bg-white px-2.5 py-0.5 rounded-full border border-[#ebdcc9] shadow-2xs">
+                      {attendingCount} of {guestEvents.length} Attending
+                    </span>
+                  </div>
+                  <h1 className="font-serif text-2xl font-bold text-[#15110e] leading-tight mb-1">
+                    Order of Events
+                  </h1>
+                  <p className="text-xs text-[#8b7b6b] leading-relaxed">
+                    {activeGuest?.name ? `Personalized schedule for ${activeGuest.name}` : 'Your personalized wedding celebration schedule'}
+                  </p>
+                </div>
+
+                {/* Day Filter Pills (if multiple dates) */}
+                {uniqueDates.length > 1 && (
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedEventDateFilter('all')}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                        selectedEventDateFilter === 'all'
+                          ? 'bg-[#15110e] text-white shadow-xs'
+                          : 'bg-white text-[#705e4d] border border-[#ebdcc9] hover:bg-[#faf8f5]'
+                      }`}
+                    >
+                      All Days ({guestEvents.length})
+                    </button>
+                    {uniqueDates.map((dStr) => {
+                      const dayCount = guestEvents.filter(e => e.date === dStr).length;
+                      const isSelected = selectedEventDateFilter === dStr;
+                      return (
+                        <button
+                          key={dStr}
+                          type="button"
+                          onClick={() => setSelectedEventDateFilter(dStr)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                            isSelected
+                              ? 'bg-[#bd9661] text-white shadow-xs'
+                              : 'bg-white text-[#705e4d] border border-[#ebdcc9] hover:bg-[#faf8f5]'
+                          }`}
+                        >
+                          <span>{formatEventDatePill(dStr)}</span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                              isSelected ? 'bg-white/25 text-white' : 'bg-[#f4ece1] text-[#7a5933]'
+                            }`}
+                          >
+                            {dayCount}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Event Schedule Container */}
                 {guestEvents.length === 0 ? (
-                  <div className="text-xs text-[#8b7b6b] py-6">
-                    No scheduled events found for your invitation.
+                  <div className="bg-white rounded-2xl border border-[#ebdcc9] p-8 text-center space-y-2">
+                    <div className="text-3xl">📅</div>
+                    <h3 className="font-serif font-bold text-[#15110e]">No Events Scheduled</h3>
+                    <p className="text-xs text-[#8b7b6b]">
+                      No scheduled celebrations found for your invitation.
+                    </p>
                   </div>
                 ) : (
-                  guestEvents.map((ev) => {
-                    const rsvp = activeGuest?.eventRsvps?.[ev.id];
-                    const isAttending = rsvp ? rsvp.status === 'confirmed' : activeGuest?.rsvpStatus === 'confirmed';
+                  <div className="space-y-5">
+                    {groupedEventsByDate.map((group) => (
+                      <div key={group.date || 'all'} className="space-y-3">
+                        {/* Date Group Heading Divider */}
+                        {group.date && (
+                          <div className="flex items-center gap-2 pt-1">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f4ece1] border border-[#ebdcc9] text-xs font-bold text-[#6d4e28] shadow-2xs">
+                              <svg width="14" height="14" className="w-3.5 h-3.5 text-[#bd9661] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              <span>{formatEventDateHeading(group.date)}</span>
+                            </div>
+                            {wedding?.date && wedding.date.startsWith(group.date) && (
+                              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#bd9661]/15 text-[#8b6528] border border-[#bd9661]/30">
+                                Wedding Day
+                              </span>
+                            )}
+                            <div className="flex-1 h-[1px] bg-gradient-to-r from-[#ebdcc9] to-transparent" />
+                          </div>
+                        )}
 
-                    return (
-                      <div key={ev.id} className="relative">
-                        <div className="absolute -left-[19px] top-1.5 w-3 h-3 rounded-full bg-[#bd9661] border-2 border-white ring-2 ring-[#bd9661]/40" />
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-xs font-bold text-[#bd9661]">
-                            {ev.time}{ev.endTime ? ` - ${ev.endTime}` : ''}
-                          </span>
-                          <span className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#f4ece1] text-[#7a5933]">
-                            {ev.category || 'Event'}
-                          </span>
-                          {rsvp && (
-                            <span className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded ml-auto ${
-                              isAttending ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                            }`}>
-                              {isAttending ? '✓ Attending' : '✕ Declined'}
-                            </span>
-                          )}
+                        {/* Event Cards */}
+                        <div className="space-y-3">
+                          {group.events.map((ev) => {
+                            const rsvp = activeGuest?.eventRsvps?.[ev.id];
+                            const isAttending = rsvp ? rsvp.status === 'confirmed' : activeGuest?.rsvpStatus === 'confirmed';
+
+                            return (
+                              <div
+                                key={ev.id}
+                                className="bg-white rounded-2xl border border-[#ebdcc9] p-4 shadow-[0_2px_10px_rgba(21,17,14,0.03)] space-y-3 relative overflow-hidden transition-all hover:border-[#bd9661]/60"
+                              >
+                                {/* Top Accent Strip */}
+                                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#bd9661] via-[#d8b584] to-[#f4ece1]" />
+
+                                {/* Header: Time, Category & Attendance Status */}
+                                <div className="flex items-center justify-between gap-2 pt-0.5">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#faf8f5] border border-[#ebdcc9] text-xs font-semibold text-[#15110e]">
+                                      <svg width="14" height="14" className="w-3.5 h-3.5 text-[#bd9661] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                      <span>{ev.time}{ev.endTime ? ` – ${ev.endTime}` : ''}</span>
+                                    </span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#f4ece1] text-[#7a5933]">
+                                      {ev.category || 'Celebration'}
+                                    </span>
+                                  </div>
+                                  <span
+                                    className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full shrink-0 ${
+                                      isAttending
+                                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                        : 'bg-rose-50 text-rose-800 border border-rose-200'
+                                    }`}
+                                  >
+                                    {isAttending ? '✓ Attending' : '✕ Declined'}
+                                  </span>
+                                </div>
+
+                                {/* Event Title */}
+                                <div>
+                                  <h3 className="font-serif text-lg font-bold text-[#15110e] leading-snug tracking-tight">
+                                    {ev.name}
+                                  </h3>
+                                </div>
+
+                                {/* Location Box */}
+                                <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-[#faf8f5] border border-[#ebdcc9]/70">
+                                  <div className="w-6 h-6 rounded-full bg-white border border-[#ebdcc9] flex items-center justify-center shrink-0 text-[#bd9661] mt-0.5 shadow-2xs">
+                                    <svg width="14" height="14" className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-semibold text-xs text-[#15110e] leading-snug">{ev.venue}</div>
+                                    {ev.address && (
+                                      <div className="text-[11px] text-[#7a695a] mt-0.5 leading-tight">{ev.address}</div>
+                                    )}
+                                  </div>
+                                  <a
+                                    href={`https://maps.google.com/?q=${encodeURIComponent(ev.venue + (ev.address ? ', ' + ev.address : ''))}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="shrink-0 text-[10.5px] font-semibold text-[#bd9661] hover:underline flex items-center gap-0.5 pt-0.5"
+                                  >
+                                    <span>Maps</span>
+                                    <svg width="12" height="12" className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                  </a>
+                                </div>
+
+                                {/* Dress Code */}
+                                {ev.dressCode && (
+                                  <div className="flex items-center gap-2 text-xs text-[#5c4a3d] px-0.5">
+                                    <div className="w-5 h-5 rounded-full bg-[#f4ece1] flex items-center justify-center shrink-0 text-[#7a5933]">
+                                      <svg width="12" height="12" className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                      </svg>
+                                    </div>
+                                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                                      <span className="text-[10.5px] font-bold text-[#8b7b6b] uppercase tracking-wider">Dress Code:</span>
+                                      <span className="text-xs font-medium text-[#15110e]">{ev.dressCode}</span>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Description */}
+                                {ev.description && (
+                                  <div className="pt-2 border-t border-[#f4ece1] flex items-start gap-2 text-xs text-[#6e5d4f] leading-relaxed italic">
+                                    <span className="text-base font-serif text-[#bd9661] not-italic select-none leading-none mt-0.5">“</span>
+                                    <p className="flex-1">{ev.description}</p>
+                                  </div>
+                                )}
+
+                                {/* Attendance Status & Quick Toggle */}
+                                <div className="pt-2 border-t border-[#f4ece1] flex items-center justify-between text-xs">
+                                  <span className="text-[11px] text-[#8b7b6b]">
+                                    {isAttending ? 'Attendance confirmed' : 'RSVP: Regretfully declined'}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleEventRsvp(ev.id, !isAttending)}
+                                    className="text-[11px] font-bold text-[#bd9661] hover:text-[#997441] hover:underline cursor-pointer flex items-center gap-1 active:scale-95 transition-transform"
+                                  >
+                                    <span>{isAttending ? 'Change to Decline' : 'Confirm Attendance'}</span>
+                                    <span>&rarr;</span>
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                        <h3 className="font-bold text-sm text-[#15110e]">
-                          {ev.name}
-                        </h3>
-                        <p className="text-xs text-[#6b5847] font-medium mt-0.5">
-                          📍 {ev.venue}{ev.address ? ` • ${ev.address}` : ''}
-                        </p>
-                        {ev.dressCode && (
-                          <p className="text-[11px] text-[#8b7b6b] mt-0.5">
-                            👔 Dress: {ev.dressCode}
-                          </p>
-                        )}
-                        {ev.description && (
-                          <p className="text-xs text-[#8b7b6b] mt-1 leading-relaxed bg-[#faf8f5] p-2 rounded-lg border border-[#e8ded0]">
-                            {ev.description}
-                          </p>
-                        )}
                       </div>
-                    );
-                  })
-                )}              </div>
-            </div>
-          )}
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ============================================================== */}
           {/* TAB: TABLE (Screenshot 7: 172617.png)                           */}

@@ -2463,7 +2463,7 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
               {/* OVAL TABLE VISUALIZATION */}
               {activeTable.shape === 'oval' && (
                 <div className="relative w-full max-w-[480px] h-[360px] flex items-center justify-center">
-                  <div className="absolute w-[360px] h-[240px] rounded-[180px/120px] border-2 border-dashed border-[#bd9661]/40 pointer-events-none" />
+                  <div style={{ borderRadius: '50%' }} className="absolute w-[360px] h-[240px] border-2 border-dashed border-[#bd9661]/40 pointer-events-none" />
                   <div
                     onDragOver={(e) => {
                       e.preventDefault();
@@ -2472,7 +2472,8 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                     }}
                     onDragLeave={() => setDragOverTarget(null)}
                     onDrop={(e) => handleDropOnTable(e, activeTable.id)}
-                    className={`w-[220px] h-[130px] rounded-[110px/65px] bg-white border-2 shadow-lg flex flex-col items-center justify-center text-center z-10 p-3 select-none transition-all cursor-pointer ${
+                    style={{ borderRadius: '50%' }}
+                    className={`w-[230px] h-[145px] bg-white border-2 shadow-lg flex flex-col items-center justify-center text-center z-10 p-3 select-none transition-all cursor-pointer ${
                       dragOverTarget?.type === 'table' && dragOverTarget?.tableId === activeTable.id
                         ? 'border-[#bd9661] ring-4 ring-[#bd9661]/40 bg-[#faf5ee] scale-105 shadow-xl'
                         : 'border-[#bd9661]'
@@ -3214,10 +3215,13 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                           const isFull = seatedCount >= tbl.capacity;
                           const isEmpty = seatedCount === 0;
                           const isRound = tbl.shape === 'round';
+                          const isOval = tbl.shape === 'oval';
                           const isKing = tbl.shape === 'king';
 
                           const shapeClasses = isKing
                             ? 'min-w-[125px] h-[64px] rounded-xl px-2.5 py-1.5'
+                            : isOval
+                            ? 'w-[120px] h-[70px] px-3.5 py-1.5 border-2'
                             : isRound
                             ? 'w-[82px] h-[82px] rounded-full aspect-square p-2'
                             : 'min-w-[105px] h-[58px] rounded-lg px-2.5 py-1.5';
@@ -3252,6 +3256,7 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                               style={{
                                 left: `${tbl.x}%`,
                                 top: `${tbl.y}%`,
+                                borderRadius: isOval ? '50%' : undefined,
                               }}
                               className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing hover:scale-105 transition-all flex flex-col items-center justify-center text-center shadow-xs select-none ${shapeClasses} ${themeClasses}`}
                               title={`${tbl.name} (${tbl.shape}) — ${seatedCount}/${tbl.capacity} seated. Click to view table seats, or drag/drop guests here.`}
@@ -3406,7 +3411,7 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                   const shapeGeometryClass = isKing
                     ? 'min-w-[155px] sm:min-w-[170px] h-[78px] sm:h-[82px] rounded-xl px-4 py-2'
                     : isOval
-                    ? 'min-w-[145px] sm:min-w-[160px] h-[78px] sm:h-[84px] rounded-[48px/28px] px-4 py-2 border-2'
+                    ? 'w-[155px] sm:w-[175px] h-[88px] sm:h-[98px] px-4 py-2 border-2'
                     : isRound
                     ? 'w-[98px] h-[98px] sm:w-[106px] sm:h-[106px] rounded-full aspect-square p-2.5'
                     : 'min-w-[130px] sm:min-w-[145px] h-[72px] sm:h-[76px] rounded-lg px-3.5 py-1.5';
@@ -3444,6 +3449,7 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                         left: `${tbl.x}%`,
                         top: `${tbl.y}%`,
                         zIndex: draggingTableId === tbl.id ? 30 : 10,
+                        borderRadius: isOval ? '50%' : undefined,
                       }}
                       className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing select-none shadow-md flex flex-col items-center justify-center text-center transition-all hover:scale-105 ${shapeGeometryClass} ${shapeThemeClass} ${draggingTableId === tbl.id ? 'opacity-50 ring-2 ring-[#bd9661] scale-105' : ''}`}
                       title={`${(tbl.name || '').replace(/\s*\([^)]*\)/g, '').trim()} • ${seatedCount} / ${tbl.capacity} Seated`}
