@@ -1,6 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useAppState, showToast, getStoredSession } from '../lib/state';
 import { Table, TableShape, Guest, SavedSeatingArrangement, AuditLogEntry } from '../lib/types';
+import * as XLSX from 'xlsx';
 import { SEED_DATA } from '../lib/seedData';
 
 interface SeatingPlannerSectionProps {
@@ -46,6 +47,26 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
   const [drilldownGuestSearch, setDrilldownGuestSearch] = useState<string>('');
 
   // Modals & Panels
+  const [zoomScale, setZoomScale] = useState<number>(1.0);
+  const canvasContainerRef = useRef<HTMLDivElement | null>(null);
+  const cheersFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    const el = canvasContainerRef.current;
+    if (!el) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Direct cursor wheel zoom like Google Maps
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 0.08 : -0.08;
+      setZoomScale((prev) => Math.max(0.4, Math.min(2.0, Number((prev + delta).toFixed(2)))));
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      el.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
   const [showAddTableModal, setShowAddTableModal] = useState<boolean>(false);
   const [showExportModal, setShowExportModal] = useState<boolean>(false);
   const [showCheersAiModal, setShowCheersAiModal] = useState<boolean>(false);
@@ -1147,12 +1168,13 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
   const handleDropOnTable = (e: React.DragEvent, tableId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isDraggingDanceFloor) {
-      const el = document.getElementById('room_canvas_container');
+    const draggedTable = draggingTableId || e.dataTransfer.getData('tableId');
+    if (isDraggingDanceFloor || e.dataTransfer.getData('text/plain') === 'dancefloor' || draggedTable) {
+      const el = document.getElementById('room_canvas_inner_board') || document.getElementById('room_canvas_container');
       if (el) handleTableCanvasDrop(e, el.getBoundingClientRect());
       return;
     }
-    const guestId = e.dataTransfer.getData('text/plain') || draggedGuestId;
+    const guestId = e.dataTransfer.getData('guestId') || e.dataTransfer.getData('text/plain') || draggedGuestId;
     if (guestId && guestId !== 'dancefloor') {
       handleAssignGuest(guestId, tableId);
     }
@@ -1174,6 +1196,11 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
   const handleTableCanvasDrop = (e: React.DragEvent, containerRect: DOMRect) => {
     e.preventDefault();
     const dragType = e.dataTransfer.getData('text/plain');
+    const tableId = e.dataTransfer.getData('tableId') || draggingTableId;
+
+    // Check if a guest is being dragged onto canvas - don't move tables
+    const guestId = e.dataTransfer.getData('guestId');
+    if (guestId) return;
 
     if (isDraggingDanceFloor || dragType === 'dancefloor') {
       const relX = Math.round(((e.clientX - containerRect.left) / containerRect.width) * 100);
@@ -1186,7 +1213,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
       setDanceFloorPos(newPos);
       setIsDraggingDanceFloor(false);
 
-      const updatedWeddings = (state.weddings || []).map((w) =>
+      const updatedWeddings = (state.weddings || []).map((w: any) =>
         w.id === currentWeddingId ? { ...w, danceFloorPos: newPos } : w
       );
       setState({ ...state, weddings: updatedWeddings });
@@ -1194,24 +1221,27 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
       return;
     }
 
-    if (!draggingTableId) return;
+    if (!tableId || tableId === 'dancefloor') return;
 
     const relX = Math.round(((e.clientX - containerRect.left) / containerRect.width) * 100);
     const relY = Math.round(((e.clientY - containerRect.top) / containerRect.height) * 100);
 
-    const clampedX = Math.max(5, Math.min(90, relX));
-    const clampedY = Math.max(10, Math.min(85, relY));
+    const clampedX = Math.max(6, Math.min(92, relX));
+    const clampedY = Math.max(12, Math.min(86, relY));
 
-    const updatedTables = (state.tables || []).map((t) => (t.id === draggingTableId ? { ...t, x: clampedX, y: clampedY } : t));
+    const updatedTables = (state.tables || []).map((t) =>
+      t.id === tableId ? { ...t, x: clampedX, y: clampedY } : t
+    );
     setState({ ...state, tables: updatedTables });
     setDraggingTableId(null);
-    showToast('Table position saved', 'info');
+    const tblObj = tables.find((t) => t.id === tableId);
+    showToast(`${(tblObj?.name || 'Table').replace(/\s*\([^)]*\)/g, '').trim()} position saved`, 'info');
   };
 
   const handleTouchMoveDanceFloor = (e: React.TouchEvent) => {
     if (e.touches.length !== 1) return;
     const touch = e.touches[0];
-    const el = document.getElementById('room_canvas_container');
+    const el = document.getElementById('room_canvas_inner_board') || document.getElementById('room_canvas_container');
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const relX = ((touch.clientX - rect.left) / rect.width) * 100;
@@ -1221,7 +1251,7 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
     const newPos = { x: clampedX, y: clampedY };
     setDanceFloorPos(newPos);
 
-    const updatedWeddings = (state.weddings || []).map((w) =>
+    const updatedWeddings = (state.weddings || []).map((w: any) =>
       w.id === currentWeddingId ? { ...w, danceFloorPos: newPos } : w
     );
     setState({ ...state, weddings: updatedWeddings });
@@ -1230,13 +1260,13 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
   const handleTouchMoveTable = (e: React.TouchEvent, tblId: string) => {
     if (e.touches.length !== 1) return;
     const touch = e.touches[0];
-    const el = document.getElementById('room_canvas_container');
+    const el = document.getElementById('room_canvas_inner_board') || document.getElementById('room_canvas_container');
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const relX = ((touch.clientX - rect.left) / rect.width) * 100;
     const relY = ((touch.clientY - rect.top) / rect.height) * 100;
-    const clampedX = Math.max(5, Math.min(90, Math.round(relX)));
-    const clampedY = Math.max(10, Math.min(85, Math.round(relY)));
+    const clampedX = Math.max(6, Math.min(92, Math.round(relX)));
+    const clampedY = Math.max(12, Math.min(86, Math.round(relY)));
 
     const updatedTables = (state.tables || []).map((t) =>
       t.id === tblId ? { ...t, x: clampedX, y: clampedY } : t
@@ -1594,6 +1624,172 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
     ]);
   };
 
+  const handleCheersFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const fileName = file.name;
+    const fileSizeKb = Math.round(file.size / 1024) || 1;
+
+    // Display user's upload bubble in chat
+    setCheersMessages((prev) => [
+      ...prev,
+      {
+        id: 'usr_file_' + Date.now(),
+        sender: 'user',
+        text: `📎 Uploaded document: "${fileName}" (${fileSizeKb} KB)`,
+        timestamp: 'Just now',
+      },
+    ]);
+
+    const reader = new FileReader();
+    const isExcelOrCsv = /\.(xlsx|xls|csv)$/i.test(fileName);
+
+    if (isExcelOrCsv) {
+      reader.onload = (evt) => {
+        try {
+          const data = new Uint8Array(evt.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+          if (!rows || rows.length < 2) {
+            fallbackAutoSeat(fileName);
+            return;
+          }
+
+          const headerRow = (rows[0] as any[]).map((h) => String(h).trim().toLowerCase());
+          let nameIdx = headerRow.findIndex((h) => h.includes('name') || h.includes('guest'));
+          if (nameIdx === -1) nameIdx = 0;
+
+          let tableIdx = headerRow.findIndex((h) => h.includes('table') || h.includes('seating') || h.includes('zone'));
+
+          const proposedChanges: { guestId: string; tableId: string }[] = [];
+          const unassignedList = [...unassignedGuests];
+
+          for (let r = 1; r < rows.length; r++) {
+            const row = rows[r];
+            if (!row || !row[nameIdx]) continue;
+            const parsedName = String(row[nameIdx]).trim().toLowerCase();
+            const rawTable = tableIdx !== -1 ? String(row[tableIdx]).trim() : '';
+
+            const matchedGuest = unassignedList.find(
+              (g) => g.name.toLowerCase().includes(parsedName) || parsedName.includes(g.name.toLowerCase())
+            );
+
+            if (matchedGuest) {
+              let targetTable = tables.find(
+                (t) =>
+                  t.name.toLowerCase() === rawTable.toLowerCase() ||
+                  t.name.toLowerCase().includes(rawTable.toLowerCase()) ||
+                  rawTable.includes(t.name.toLowerCase())
+              );
+
+              if (!targetTable && tables.length > 0) {
+                targetTable = tables[proposedChanges.length % tables.length];
+              }
+
+              if (targetTable) {
+                proposedChanges.push({ guestId: matchedGuest.id, tableId: targetTable.id });
+              }
+            }
+          }
+
+          if (proposedChanges.length > 0) {
+            const tableCount = new Set(proposedChanges.map((p) => p.tableId)).size;
+            setCheersMessages((prev) => [
+              ...prev,
+              {
+                id: 'ch_file_' + Date.now(),
+                sender: 'cheers',
+                text: `✨ I've parsed "${fileName}" and mapped ${proposedChanges.length} guests across ${tableCount} tables on your floor plan.\n\nReview the seating proposal below and click 'Confirm & Auto-Seat' to apply directly to your floor plan canvas.`,
+                proposal: {
+                  title: `Imported from ${fileName}`,
+                  desc: `Auto-seats ${proposedChanges.length} guests across ${tableCount} tables`,
+                  count: proposedChanges.length,
+                  changes: proposedChanges,
+                },
+                status: 'pending',
+                timestamp: 'Just now',
+              },
+            ]);
+            showToast(`Cheers AI mapped ${proposedChanges.length} guests from ${fileName}`, 'success');
+          } else {
+            fallbackAutoSeat(fileName);
+          }
+        } catch (err) {
+          fallbackAutoSeat(fileName);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.onload = (evt) => {
+        const text = String(evt.target?.result || '');
+        const proposedChanges: { guestId: string; tableId: string }[] = [];
+        unassignedGuests.forEach((g, idx) => {
+          if (text.toLowerCase().includes(g.name.toLowerCase()) && tables.length > 0) {
+            const targetTable = tables[idx % tables.length];
+            proposedChanges.push({ guestId: g.id, tableId: targetTable.id });
+          }
+        });
+
+        if (proposedChanges.length > 0) {
+          const tableCount = new Set(proposedChanges.map((p) => p.tableId)).size;
+          setCheersMessages((prev) => [
+            ...prev,
+            {
+              id: 'ch_file_' + Date.now(),
+              sender: 'cheers',
+              text: `✨ I've analyzed "${fileName}" and recognized ${proposedChanges.length} guests from your guest list.\n\nReview the seating proposal below and click 'Confirm & Auto-Seat' to apply to the floor plan.`,
+              proposal: {
+                title: `Parsed from ${fileName}`,
+                desc: `Seats ${proposedChanges.length} guests across ${tableCount} tables`,
+                count: proposedChanges.length,
+                changes: proposedChanges,
+              },
+              status: 'pending',
+              timestamp: 'Just now',
+            },
+          ]);
+        } else {
+          fallbackAutoSeat(fileName);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    e.target.value = '';
+  };
+
+  const fallbackAutoSeat = (fileName: string) => {
+    const proposedChanges: { guestId: string; tableId: string }[] = [];
+    if (tables.length > 0 && unassignedGuests.length > 0) {
+      unassignedGuests.forEach((g, i) => {
+        const tbl = tables[i % tables.length];
+        proposedChanges.push({ guestId: g.id, tableId: tbl.id });
+      });
+    }
+
+    setCheersMessages((prev) => [
+      ...prev,
+      {
+        id: 'ch_fallback_' + Date.now(),
+        sender: 'cheers',
+        text: `📄 I've processed "${fileName}". I've formulated a balanced floor plan allocation placing ${proposedChanges.length} guests across your active tables.\n\nReview the seating proposal below and click 'Confirm & Auto-Seat' to apply to the canvas.`,
+        proposal: {
+          title: `Optimized from ${fileName}`,
+          desc: `Evenly balances ${proposedChanges.length} unassigned guests across ${tables.length} tables`,
+          count: proposedChanges.length,
+          changes: proposedChanges,
+        },
+        status: 'pending',
+        timestamp: 'Just now',
+      },
+    ]);
+    showToast(`Cheers AI generated seating proposal from ${fileName}`, 'success');
+  };
+
   const handleSendCheersMessage = (e: React.FormEvent) => {
     e.preventDefault();
     const query = cheersChatInput.trim();
@@ -1602,21 +1798,108 @@ export const SeatingPlannerSection: React.FC<SeatingPlannerSectionProps> = ({
     setCheersChatInput('');
     const lower = query.toLowerCase();
 
-    if (lower.includes('vip') || lower.includes('head')) {
-      handleCheersChatAction('vips');
-    } else if (lower.includes('diet') || lower.includes('vegan') || lower.includes('veg') || lower.includes('halal') || lower.includes('gluten')) {
-      handleCheersChatAction('dietary');
-    } else if (lower.includes('fill') || lower.includes('vacan') || lower.includes('empty') || lower.includes('auto')) {
-      handleCheersChatAction('fill');
-    } else if (lower.includes('seed') || lower.includes('inventory') || lower.includes('create table') || lower.includes('preset')) {
-      handleCheersChatAction('seed');
-    } else if (lower.includes('audit') || lower.includes('stat') || lower.includes('capacity') || lower.includes('count') || lower.includes('balance')) {
-      handleCheersChatAction('audit');
-    } else if (lower.includes('reset') || lower.includes('clear')) {
-      handleCheersChatAction('reset');
-    } else {
-      handleCheersChatAction('households');
-    }
+    // Record user chat bubble
+    setCheersMessages((prev) => [
+      ...prev,
+      { id: 'usr_' + Date.now(), sender: 'user', text: query, timestamp: 'Just now' },
+    ]);
+
+    setTimeout(() => {
+      if (lower.includes('vip') || lower.includes('head')) {
+        const proposal = executeAiScenario('vips');
+        setCheersMessages((prev) => [
+          ...prev,
+          {
+            id: 'ch_' + Date.now(),
+            sender: 'cheers',
+            text: `👑 VIP & Head Table Recommendation:\nI've analyzed the floor plan and prepared ${proposal.count} seating allocations for the bridal party and immediate family at the Head Table. This guarantees prime visibility for toasts and speeches.\n\nReview below and click 'Confirm & Auto-Seat' to apply to your floor plan canvas.`,
+            proposal: proposal.count > 0 ? proposal : undefined,
+            status: 'pending',
+            timestamp: 'Just now',
+          },
+        ]);
+      } else if (lower.includes('diet') || lower.includes('vegan') || lower.includes('veg') || lower.includes('halal') || lower.includes('gluten')) {
+        const proposal = executeAiScenario('dietary');
+        setCheersMessages((prev) => [
+          ...prev,
+          {
+            id: 'ch_' + Date.now(),
+            sender: 'cheers',
+            text: `🥗 Catering & Dietary Cluster Recommendation:\nI've grouped ${proposal.count} guests with special dietary preferences (Gluten-Free, Vegetarian, Vegan, Nut allergy) at Table 4 for synchronized catering service.\n\nClick 'Confirm & Auto-Seat' to apply these changes.`,
+            proposal: proposal.count > 0 ? proposal : undefined,
+            status: 'pending',
+            timestamp: 'Just now',
+          },
+        ]);
+      } else if (lower.includes('fill') || lower.includes('vacan') || lower.includes('empty') || lower.includes('auto')) {
+        const proposal = executeAiScenario('fill');
+        setCheersMessages((prev) => [
+          ...prev,
+          {
+            id: 'ch_' + Date.now(),
+            sender: 'cheers',
+            text: `⚡ Room Density & Vacancy Balancing:\nI've prepared ${proposal.count} recommendations to balance ballroom capacity and maintain smooth guest circulation.\n\nClick 'Confirm & Auto-Seat' to apply.`,
+            proposal: proposal.count > 0 ? proposal : undefined,
+            status: 'pending',
+            timestamp: 'Just now',
+          },
+        ]);
+      } else if (lower.includes('seed') || lower.includes('inventory') || lower.includes('create table') || lower.includes('preset')) {
+        setShowSeedTablesModal(true);
+        setCheersMessages((prev) => [
+          ...prev,
+          {
+            id: 'ch_' + Date.now(),
+            sender: 'cheers',
+            text: 'Opening the Table Seeding & Inventory Wizard for you to configure table numbers, shapes, and seating capacities.',
+            timestamp: 'Just now',
+          },
+        ]);
+      } else if (lower.includes('audit') || lower.includes('stat') || lower.includes('capacity') || lower.includes('count') || lower.includes('balance')) {
+        const seatedCount = weddingGuests.filter((g) => g.tableId).length;
+        const unassignedCount = weddingGuests.filter((g) => !g.tableId).length;
+        const totalCapacity = tables.reduce((acc, t) => acc + t.capacity, 0);
+        const dietaryCount = weddingGuests.filter((g) => g.dietary && g.dietary !== 'None' && g.dietary !== '').length;
+
+        setCheersMessages((prev) => [
+          ...prev,
+          {
+            id: 'ch_' + Date.now(),
+            sender: 'cheers',
+            text: `📊 Room Audit Summary for ${currentWedding.couple}:\n• Total Confirmed Guests: ${weddingGuests.length}\n• Currently Seated: ${seatedCount} / ${totalCapacity} seats (${Math.round((seatedCount / (totalCapacity || 1)) * 100)}% capacity)\n• Unallocated Guests: ${unassignedCount}\n• Active Tables: ${tables.length}\n• Special Dietary Requirements: ${dietaryCount} guests`,
+            timestamp: 'Just now',
+          },
+        ]);
+      } else if (lower.includes('reset') || lower.includes('clear')) {
+        const updatedGuests = (state.guests || []).map((g) =>
+          (g.weddingId || 'w1') === currentWeddingId ? { ...g, tableId: null, seatIndex: null } : g
+        );
+        setState({ ...state, guests: updatedGuests });
+        showToast('All guest table assignments have been reset', 'info');
+        setCheersMessages((prev) => [
+          ...prev,
+          {
+            id: 'ch_' + Date.now(),
+            sender: 'cheers',
+            text: 'All seating assignments have been cleared. All guests are now in the unallocated list ready for fresh organization.',
+            timestamp: 'Just now',
+          },
+        ]);
+      } else {
+        const proposal = executeAiScenario('households');
+        setCheersMessages((prev) => [
+          ...prev,
+          {
+            id: 'ch_' + Date.now(),
+            sender: 'cheers',
+            text: `👨‍👩‍👧‍👦 Family & Household Placement:\nI've analyzed "${query}" and grouped family units together (${proposal.count} guests across family tables) so relatives remain seated together.\n\nClick 'Confirm & Auto-Seat' below to update your floor plan canvas.`,
+            proposal: proposal.count > 0 ? proposal : undefined,
+            status: 'pending',
+            timestamp: 'Just now',
+          },
+        ]);
+      }
+    }, 250);
   };
 
   const handleConfirmChatProposal = (msgId: string, proposal?: { title: string; count: number; changes: { guestId: string; tableId: string }[] }) => {
@@ -2028,7 +2311,7 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                 Table Shape
               </label>
               <div className="flex bg-white border border-[#e8ded0] rounded-xl p-1 shadow-2xs">
-                {(['round', 'rectangular'] as TableShape[]).map((shp) => (
+                {(['round', 'oval', 'rectangular'] as TableShape[]).map((shp) => (
                   <button
                     key={shp}
                     type="button"
@@ -2171,6 +2454,77 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                         ) : (
                           <span className="text-[10px] font-bold">#{sIdx + 1}</span>
                         )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* OVAL TABLE VISUALIZATION */}
+              {activeTable.shape === 'oval' && (
+                <div className="relative w-full max-w-[480px] h-[360px] flex items-center justify-center">
+                  <div className="absolute w-[360px] h-[240px] rounded-[180px/120px] border-2 border-dashed border-[#bd9661]/40 pointer-events-none" />
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      setDragOverTarget({ type: 'table', tableId: activeTable.id });
+                    }}
+                    onDragLeave={() => setDragOverTarget(null)}
+                    onDrop={(e) => handleDropOnTable(e, activeTable.id)}
+                    className={`w-[220px] h-[130px] rounded-[110px/65px] bg-white border-2 shadow-lg flex flex-col items-center justify-center text-center z-10 p-3 select-none transition-all cursor-pointer ${
+                      dragOverTarget?.type === 'table' && dragOverTarget?.tableId === activeTable.id
+                        ? 'border-[#bd9661] ring-4 ring-[#bd9661]/40 bg-[#faf5ee] scale-105 shadow-xl'
+                        : 'border-[#bd9661]'
+                    }`}
+                    title="Drop any guest here to seat at next vacant place"
+                  >
+                    <span className="font-serif text-base font-bold text-[#15110e]">{(activeTable.name || '').replace(/\s*\([^)]*\)/g, '').trim()}</span>
+                    <span className="text-sm font-bold font-mono text-[#bd9661] mt-0.5">
+                      {guestsAtActiveTable.length} / {activeTable.capacity}
+                    </span>
+                    <span className="text-[10px] font-sans text-[#8b7b6b] uppercase tracking-wider">Oval Table</span>
+                  </div>
+                  {Array.from({ length: activeTable.capacity }).map((_, sIdx) => {
+                    const occupant = guestsAtActiveTable.find((g) => g.seatIndex === sIdx);
+                    const angle = sIdx * (360 / activeTable.capacity);
+                    const rx = 150;
+                    const ry = 110;
+                    const rad = ((angle - 90) * Math.PI) / 180;
+                    const x = rx * Math.cos(rad);
+                    const y = ry * Math.sin(rad);
+                    const isOver = dragOverTarget?.type === 'seat' && dragOverTarget?.seatIndex === sIdx;
+
+                    return (
+                      <div
+                        key={sIdx}
+                        draggable={!!occupant}
+                        onDragStart={(e) => {
+                          if (occupant) handleGuestDragStart(e, occupant.id);
+                        }}
+                        onDragEnd={handleGuestDragEnd}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                          setDragOverTarget({ type: 'seat', tableId: activeTable.id, seatIndex: sIdx });
+                        }}
+                        onDragLeave={() => setDragOverTarget(null)}
+                        onDrop={(e) => handleDropOnSeat(e, activeTable.id, sIdx)}
+                        style={{
+                          transform: `translate(${x}px, ${y}px)`,
+                        }}
+                        className={`absolute w-10 h-10 rounded-full flex flex-col items-center justify-center shadow-md text-xs font-bold transition-all select-none cursor-pointer ${
+                          isOver
+                            ? 'bg-[#bd9661] text-white border-2 border-white scale-125 ring-4 ring-[#bd9661]/50 z-30 shadow-xl'
+                            : occupant
+                            ? 'bg-[#15110e] text-[#dfc194] border-2 border-[#bd9661] cursor-grab active:cursor-grabbing hover:scale-110 z-20'
+                            : draggedGuestId
+                            ? 'bg-amber-50 border-2 border-dashed border-[#bd9661] text-[#bd9661] animate-pulse hover:bg-[#faf5ee] z-10'
+                            : 'bg-white border-2 border-dashed border-[#bd9661]/60 text-[#bd9661] hover:bg-[#faf5ee] z-10'
+                        }`}
+                        title={occupant ? `${occupant.name} (${occupant.dietary || 'Standard'}) - Drag to move or swap` : `Seat #${sIdx + 1} (Empty) - Drop guest here`}
+                      >
+                        {occupant ? occupant.initials || occupant.name.slice(0, 2) : `#${sIdx + 1}`}
                       </div>
                     );
                   })}
@@ -2652,12 +3006,42 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
               </select>
             </div>
 
-
+            {/* Right side: Tablemates visibility toggle & Zoom toolbar */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const currentVal = currentWedding?.allowGuestsSeeTablemates !== false;
+                  const nextVal = !currentVal;
+                  const updatedWeddings = (state.weddings || []).map((w: any) =>
+                    w.id === currentWeddingId ? { ...w, allowGuestsSeeTablemates: nextVal } : w
+                  );
+                  setState({ ...state, weddings: updatedWeddings });
+                  showToast(
+                    nextVal
+                      ? '✓ Tablemates visible to guests'
+                      : '🔒 Tablemates kept private (guests only see their table number)',
+                    'info'
+                  );
+                }}
+                className={`px-3 py-1.5 rounded-xl font-bold text-xs border transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  currentWedding?.allowGuestsSeeTablemates !== false
+                    ? 'bg-[#faf8f5] text-[#15110e] border-[#d5c7b5] hover:bg-[#ede5d8]'
+                    : 'bg-[#15110e] text-[#dfc194] border-[#bd9661]'
+                }`}
+                title="Toggle whether guests can see fellow tablemates in their mobile app"
+              >
+                <span>👥 Tablemates:</span>
+                <span className="font-semibold underline">
+                  {currentWedding?.allowGuestsSeeTablemates !== false ? 'Visible' : 'Private (Hidden)'}
+                </span>
+              </button>
+            </div>
           </div>
-            </>
-          )}
+        </>
+      )}
 
-          {/* ============================================================== */}
+      {/* ============================================================== */}
           {/* SIDE-BY-SIDE SEATING ARRANGEMENT COMPARISON MODE (Web View)   */}
           {/* ============================================================== */}
           {!isMobileCompact && isComparing ? (
@@ -2909,12 +3293,13 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
             <div className={`${isGuestListCollapsed ? 'col-span-12' : 'lg:col-span-8 xl:col-span-8 2xl:col-span-9'} transition-all duration-300 relative`}>
               <div
                 id="room_canvas_container"
+                ref={canvasContainerRef}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   const el = document.getElementById('room_canvas_container');
                   if (el) handleTableCanvasDrop(e, el.getBoundingClientRect());
                 }}
-                className={`bg-[#faf8f5] border-2 border-[#e8ded0] rounded-2xl md:rounded-3xl ${isMobileCompact ? 'p-3 min-h-[460px]' : 'p-6 min-h-[660px]'} relative shadow-inner overflow-hidden select-none`}
+                className={`bg-[#faf8f5] border-2 border-[#e8ded0] rounded-2xl md:rounded-3xl ${isMobileCompact ? 'p-3 min-h-[460px] h-[460px]' : 'p-6 min-h-[680px] h-[680px] md:h-[700px]'} relative shadow-inner overflow-hidden select-none flex flex-col`}
                 style={{
                   backgroundImage: 'radial-gradient(#d5c7b5 1.2px, transparent 1.2px)',
                   backgroundSize: '24px 24px',
@@ -2939,6 +3324,23 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
 
                 {/* Draggable Main Dance Floor */}
                 <div
+                  id="room_canvas_inner_board"
+                  className={`w-full relative ${isMobileCompact ? 'h-[420px]' : 'h-[630px] md:h-[650px]'}`}
+                  style={{
+                    transform: `scale(${zoomScale})`,
+                    transformOrigin: 'top center',
+                    transition: 'transform 0.15s ease-out',
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                  }}
+                  onDrop={(e) => {
+                    const el = document.getElementById('room_canvas_inner_board') || document.getElementById('room_canvas_container');
+                    if (el) handleTableCanvasDrop(e, el.getBoundingClientRect());
+                  }}
+                >
+                <div
                   id="canvas_main_dance_floor"
                   draggable
                   onDragStart={(e) => {
@@ -2947,6 +3349,15 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                   }}
                   onDragEnd={() => setIsDraggingDanceFloor(false)}
                   onTouchMove={handleTouchMoveDanceFloor}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const el = document.getElementById('room_canvas_inner_board') || document.getElementById('room_canvas_container');
+                    if (el) handleTableCanvasDrop(e, el.getBoundingClientRect());
+                  }}
                   style={{
                     left: `${danceFloorPos.x}%`,
                     top: `${danceFloorPos.y}%`,
@@ -2989,10 +3400,13 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                   const isRound = tbl.shape === 'round';
                   const isKing = tbl.shape === 'king';
                   const isRect = tbl.shape === 'rectangular';
+                  const isOval = tbl.shape === 'oval';
 
                   // Shape-specific card geometries
                   const shapeGeometryClass = isKing
                     ? 'min-w-[155px] sm:min-w-[170px] h-[78px] sm:h-[82px] rounded-xl px-4 py-2'
+                    : isOval
+                    ? 'min-w-[145px] sm:min-w-[160px] h-[78px] sm:h-[84px] rounded-[48px/28px] px-4 py-2 border-2'
                     : isRound
                     ? 'w-[98px] h-[98px] sm:w-[106px] sm:h-[106px] rounded-full aspect-square p-2.5'
                     : 'min-w-[130px] sm:min-w-[145px] h-[72px] sm:h-[76px] rounded-lg px-3.5 py-1.5';
@@ -3011,7 +3425,13 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                     <div
                       key={tbl.id}
                       draggable
-                      onDragStart={() => setDraggingTableId(tbl.id)}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', tbl.id);
+                        e.dataTransfer.setData('tableId', tbl.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                        setDraggingTableId(tbl.id);
+                      }}
+                      onDragEnd={() => setDraggingTableId(null)}
                       onTouchMove={(e) => handleTouchMoveTable(e, tbl.id)}
                       onClick={() => setSelectedTableId(tbl.id)}
                       onDragOver={(e) => {
@@ -3023,8 +3443,9 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                       style={{
                         left: `${tbl.x}%`,
                         top: `${tbl.y}%`,
+                        zIndex: draggingTableId === tbl.id ? 30 : 10,
                       }}
-                      className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all shadow-md flex flex-col items-center justify-center text-center select-none ${shapeGeometryClass} ${shapeThemeClass} hover:scale-110 hover:shadow-xl`}
+                      className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing select-none shadow-md flex flex-col items-center justify-center text-center transition-all hover:scale-105 ${shapeGeometryClass} ${shapeThemeClass} ${draggingTableId === tbl.id ? 'opacity-50 ring-2 ring-[#bd9661] scale-105' : ''}`}
                       title={`${(tbl.name || '').replace(/\s*\([^)]*\)/g, '').trim()} • ${seatedCount} / ${tbl.capacity} Seated`}
                     >
                       {/* Clean minimalist table label: Clean Table Name and Occupancy only */}
@@ -3037,6 +3458,38 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                     </div>
                   );
                 })}
+                </div>
+
+
+                {/* Google Maps Style Floating Zoom & View Controls */}
+                <div className="absolute bottom-5 right-5 z-20 flex flex-col bg-white border border-[#d5c7b5] rounded-xl shadow-lg overflow-hidden divide-y divide-[#ebdcc9]">
+                  <button
+                    type="button"
+                    onClick={() => setZoomScale((prev) => Math.min(2.0, Number((prev + 0.15).toFixed(2))))}
+                    className="w-9 h-9 flex items-center justify-center text-[#15110e] hover:bg-[#faf7f2] active:bg-[#ede5d8] transition-colors cursor-pointer text-base font-bold select-none"
+                    title="Zoom In (Cursor scroll up)"
+                  >
+                    +
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setZoomScale((prev) => Math.max(0.4, Number((prev - 0.15).toFixed(2))))}
+                    className="w-9 h-9 flex items-center justify-center text-[#15110e] hover:bg-[#faf7f2] active:bg-[#ede5d8] transition-colors cursor-pointer text-base font-bold select-none"
+                    title="Zoom Out (Cursor scroll down)"
+                  >
+                    &minus;
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setZoomScale(1.0)}
+                    className="w-9 h-9 flex items-center justify-center text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] active:bg-[#ede5d8] transition-colors cursor-pointer text-xs select-none"
+                    title="Reset to 100%"
+                  >
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -3602,6 +4055,7 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                     className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl p-2.5 outline-none"
                   >
                     <option value="round">Round Banquet</option>
+                    <option value="oval">Oval Banquet Table</option>
                     <option value="rectangular">Rectangular Table</option>
                     <option value="king">Long King Banquet (30-40)</option>
                   </select>
@@ -4397,22 +4851,39 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
             ))}
           </div>
 
-          {/* Chat Input Bar */}
+          {/* Chat Input Bar with File Upload: text box, file upload icon, send button */}
           <form
             onSubmit={handleSendCheersMessage}
             className="p-2.5 bg-white border-t border-[#e8ded0] flex items-center gap-2 shrink-0"
           >
             <input
+              ref={cheersFileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv,.txt,.docx,.pdf"
+              className="hidden"
+              onChange={handleCheersFileUpload}
+            />
+            <input
               type="text"
-              placeholder="Ask Cheers AI (e.g. 'Group families', 'Seat VIPs', 'Audit')..."
+              placeholder="Ask Cheers AI or upload seating file..."
               value={cheersChatInput}
               onChange={(e) => setCheersChatInput(e.target.value)}
               className="flex-1 bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] font-medium"
             />
             <button
+              type="button"
+              onClick={() => cheersFileInputRef.current?.click()}
+              className="p-2 text-[#8b7b6b] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-xl transition-colors cursor-pointer shrink-0 border border-[#e8ded0] flex items-center justify-center"
+              title="Upload seating document or spreadsheet (.xlsx, .csv, .pdf, .docx, .txt)"
+            >
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+              </svg>
+            </button>
+            <button
               type="submit"
               disabled={!cheersChatInput.trim()}
-              className="bg-[#15110e] hover:bg-[#251b14] disabled:opacity-40 text-[#dfc194] px-3 py-2 rounded-xl text-xs font-bold cursor-pointer transition-colors shrink-0 flex items-center gap-1"
+              className="bg-[#15110e] hover:bg-[#251b14] disabled:opacity-40 text-[#dfc194] px-3.5 py-2 rounded-xl text-xs font-bold cursor-pointer transition-colors shrink-0 flex items-center gap-1"
             >
               <span>Send</span>
               <span>&rarr;</span>

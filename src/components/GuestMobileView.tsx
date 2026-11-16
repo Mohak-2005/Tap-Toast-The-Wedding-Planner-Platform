@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppState, showToast, getWeddingCountdown, logAudit } from '../lib/state';
+import { GuestEventRsvp, WeddingEvent } from '../lib/types';
 import { WeddingCountdownCard } from './WeddingCountdownCard';
 import {
   ENVELOPE_SCHEDULE,
@@ -59,6 +60,105 @@ export default function GuestMobileView() {
       return 'Priya Sharma';
     }
   });
+
+  const wedding = state.weddings?.[0];
+
+  // Dynamic active guest and invited events
+  const activeGuest = (state.guests || []).find((g) => {
+    const gName = g.name.toLowerCase().trim();
+    const target = (guestLeadName || 'Priya Sharma').toLowerCase().trim();
+    return (
+      gName === target ||
+      gName.includes(target) ||
+      target.includes(gName) ||
+      (target.includes('priya') && g.id === 'priya')
+    );
+  }) || (state.guests || [])[0];
+
+  const invitedEventIds = (activeGuest && activeGuest.invitedEventIds && activeGuest.invitedEventIds.length > 0)
+    ? activeGuest.invitedEventIds
+    : (wedding?.events || []).map(e => e.id);
+
+  const guestEvents = (wedding?.events || []).filter(e => invitedEventIds.includes(e.id));
+
+  const handleToggleEventRsvp = (eventId: string, isAccept: boolean) => {
+    const targetName = (guestLeadName || 'Priya Sharma').toLowerCase().trim();
+
+    const updatedGuests = (state.guests || []).map((g) => {
+      const gName = g.name.toLowerCase().trim();
+      if (
+        gName === targetName ||
+        gName.includes(targetName) ||
+        targetName.includes(gName) ||
+        (targetName.includes('priya') && g.id === 'priya')
+      ) {
+        const currentRsvps = g.eventRsvps || {};
+        const updatedRsvps = {
+          ...currentRsvps,
+          [eventId]: {
+            status: (isAccept ? 'confirmed' : 'declined') as 'confirmed' | 'declined',
+            attending: isAccept,
+            updatedAt: new Date().toISOString(),
+          },
+        };
+        const hasAnyConfirmed = Object.values(updatedRsvps).some(r => r.status === 'confirmed');
+        const hasAllDeclined = Object.values(updatedRsvps).length > 0 && Object.values(updatedRsvps).every(r => r.status === 'declined');
+        const newOverallStatus = hasAnyConfirmed ? 'confirmed' : hasAllDeclined ? 'declined' : 'awaiting';
+
+        return {
+          ...g,
+          rsvpStatus: newOverallStatus as 'confirmed' | 'declined' | 'awaiting',
+          eventRsvps: updatedRsvps,
+        };
+      }
+      return g;
+    });
+
+    setState({
+      ...state,
+      guests: updatedGuests,
+    });
+
+    const evt = (wedding?.events || []).find(e => e.id === eventId);
+    showToast(isAccept ? `Attending ${evt?.name || 'event'}! 🥂` : `Declined ${evt?.name || 'event'}`, isAccept ? 'success' : 'info');
+  };
+
+  const handleBulkAcceptAllEvents = (isAccept: boolean) => {
+    const targetName = (guestLeadName || 'Priya Sharma').toLowerCase().trim();
+    const updatedGuests = (state.guests || []).map((g) => {
+      const gName = g.name.toLowerCase().trim();
+      if (
+        gName === targetName ||
+        gName.includes(targetName) ||
+        targetName.includes(gName) ||
+        (targetName.includes('priya') && g.id === 'priya')
+      ) {
+        const eventsToUpdate = (g.invitedEventIds && g.invitedEventIds.length > 0)
+          ? g.invitedEventIds
+          : (wedding?.events || []).map(e => e.id);
+
+        const newRsvps: Record<string, GuestEventRsvp> = {};
+        eventsToUpdate.forEach(id => {
+          newRsvps[id] = {
+            status: isAccept ? 'confirmed' : 'declined',
+            attending: isAccept,
+            updatedAt: new Date().toISOString(),
+          };
+        });
+
+        return {
+          ...g,
+          rsvpStatus: (isAccept ? 'confirmed' : 'declined') as 'confirmed' | 'declined',
+          eventRsvps: newRsvps,
+        };
+      }
+      return g;
+    });
+
+    setState({ ...state, guests: updatedGuests });
+    setRsvpAttending(isAccept);
+    showToast(isAccept ? 'Accepted invitations to all your events! 🥂' : 'Declined all events', isAccept ? 'success' : 'info');
+  };
 
   const [envelopeState, setEnvelopeState] = useState<'sealed' | 'opening' | 'opened'>('sealed');
   const [splashRsvp, setSplashRsvp] = useState<'pending' | 'accepted' | 'declined'>('pending');
@@ -159,8 +259,11 @@ export default function GuestMobileView() {
 
   const [activeTab, setActiveTab] = useState<'splash' | 'hub' | 'rsvp' | 'feed' | 'events' | 'table' | 'photos' | 'gifts' | 'story'>(() => {
     try {
-      const shouldAnimate = localStorage.getItem('tt_show_invitation_animation') === 'true';
       const hash = window.location.hash;
+      if (hash.includes('tab=rsvp')) return 'rsvp';
+      if (hash.includes('tab=events')) return 'events';
+      if (hash.includes('tab=hub')) return 'hub';
+      const shouldAnimate = localStorage.getItem('tt_show_invitation_animation') === 'true';
       if (shouldAnimate || hash.includes('invite') || hash.includes('animate=true')) {
         return 'splash';
       }
@@ -185,6 +288,15 @@ export default function GuestMobileView() {
       }, 500);
       return () => clearTimeout(timer);
     }
+
+    const handleHashTab = () => {
+      const hash = window.location.hash;
+      if (hash.includes('tab=rsvp')) setActiveTab('rsvp');
+      else if (hash.includes('tab=events')) setActiveTab('events');
+      else if (hash.includes('tab=hub')) setActiveTab('hub');
+    };
+    window.addEventListener('hashchange', handleHashTab);
+    return () => window.removeEventListener('hashchange', handleHashTab);
   }, [activeTab]);
   const [storyFilter, setStoryFilter] = useState<'all' | 'story' | 'menu' | 'memoriam' | 'party' | 'honeymoon'>('all');
   const [showJoey, setShowJoey] = useState(false);
@@ -481,6 +593,20 @@ export default function GuestMobileView() {
 
   return (
     <div className="w-full flex-1 flex flex-col items-center justify-center p-2 sm:p-4 bg-[radial-gradient(circle_at_50%_25%,_#f6f3ed_0%,_#e5e0d6_100%)] min-h-[calc(100vh-45px)] overflow-hidden font-sans select-none">
+      {/* Demo Guest Switcher Pill (for instant testing of event-specific schedule & RSVP) */}
+      <div className="mb-2 flex items-center gap-2 text-xs bg-white/90 backdrop-blur-md border border-[#e8ded0] px-3.5 py-1.5 rounded-full shadow-2xs z-30">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661]">Viewing As Guest:</span>
+        <select
+          value={guestLeadName}
+          onChange={(e) => setGuestLeadName(e.target.value)}
+          className="bg-transparent text-xs font-bold text-[#15110e] outline-none cursor-pointer"
+        >
+          <option value="Priya Sharma">Priya Sharma (4 events: Sangeet, Ceremony, Reception, After-party)</option>
+          <option value="Mark Johnson">Mark Johnson (3 events: Ceremony, Reception, Recovery Brunch)</option>
+          <option value="Sophie Bell">Sophie Bell (5 events: All celebrations)</option>
+        </select>
+      </div>
+
       {/* 402x874 Phone Chassis matching Screenshot 1-9 & guest-mobile.html */}
       <div className="w-full max-w-[402px] h-[874px] max-h-[calc(100dvh-50px)] sm:max-h-[874px] rounded-[46px] border-[4px] border-[#1c1511] bg-[#f8f6f2] shadow-[0_20px_60px_rgba(21,17,14,0.22),_0_4px_14px_rgba(21,17,14,0.08)] overflow-hidden relative flex flex-col">
         
@@ -895,8 +1021,126 @@ export default function GuestMobileView() {
               {/* Greeting */}
               <div className="text-center px-2">
                 <p className="text-xs text-[#15110e] font-medium leading-relaxed">
-                  Hi <strong>Priya</strong> &mdash; we'd love for you to celebrate with us. Let us know if you can make it.
+                  Hi <strong>{activeGuest?.name || guestLeadName || 'Priya'}</strong> &mdash; we'd love for you to celebrate with us. You're invited to {guestEvents.length} celebration{guestEvents.length === 1 ? '' : 's'}. Please confirm your attendance for each event below.
                 </p>
+              </div>
+
+              {/* Quick Bulk Action Bar */}
+              <div className="bg-[#faf7f2] border border-[#ebd3a8] rounded-2xl p-3 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-[#15110e]">Your Event Invitations</span>
+                  <span className="text-[10.5px] font-bold text-[#bd9661] bg-white px-2 py-0.5 rounded-full border border-[#e8ded0]">
+                    {guestEvents.length} Events
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleBulkAcceptAllEvents(true)}
+                    className="py-2 px-2 bg-[#15110e] hover:bg-[#231c17] text-[#dfc194] font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer transition-all active:scale-95"
+                  >
+                    <span>🥂</span>
+                    <span>Accept All</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleBulkAcceptAllEvents(false)}
+                    className="py-2 px-2 bg-white hover:bg-[#fbf9f6] text-[#6b5847] font-semibold border border-[#e8ded0] rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                  >
+                    <span>💌</span>
+                    <span>Decline All</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Event-Specific RSVP Cards */}
+              <div className="space-y-3">
+                <div className="text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] px-1">
+                  RSVP PER CELEBRATION ({guestEvents.length})
+                </div>
+                {guestEvents.map((evt) => {
+                  const rsvp = activeGuest?.eventRsvps?.[evt.id];
+                  const isConfirmed = rsvp ? rsvp.status === 'confirmed' : activeGuest?.rsvpStatus === 'confirmed';
+                  const isDeclined = rsvp ? rsvp.status === 'declined' : activeGuest?.rsvpStatus === 'declined';
+
+                  return (
+                    <div
+                      key={evt.id}
+                      className={`bg-white border rounded-2xl p-3.5 shadow-xs transition-all ${
+                        isConfirmed
+                          ? 'border-emerald-300 ring-1 ring-emerald-200'
+                          : isDeclined
+                          ? 'border-rose-200 opacity-80'
+                          : 'border-[#e8ded0]'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <div>
+                          <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#f4ece1] text-[#7a5933] border border-[#e4d6c4]">
+                            {evt.category || 'Celebration'}
+                          </span>
+                          <h4 className="font-serif font-bold text-sm text-[#15110e] mt-1">
+                            {evt.name}
+                          </h4>
+                        </div>
+                        <span
+                          className={`text-[9.5px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                            isConfirmed
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : isDeclined
+                              ? 'bg-rose-100 text-rose-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {isConfirmed ? '✓ Attending' : isDeclined ? '✕ Declined' : 'Pending'}
+                        </span>
+                      </div>
+
+                      <div className="text-xs text-[#6b5847] space-y-0.5 mb-2.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[#bd9661]">🗓️</span>
+                          <span className="font-medium text-[#15110e]">{evt.date || '14 Nov 2026'} &bull; {evt.time}{evt.endTime ? ` - ${evt.endTime}` : ''}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[#bd9661]">📍</span>
+                          <span className="truncate">{evt.venue}</span>
+                        </div>
+                        {evt.dressCode && (
+                          <div className="text-[10.5px] text-[#8b7b6b]">
+                            👔 Dress: {evt.dressCode}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#f0ede4]">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleEventRsvp(evt.id, true)}
+                          className={`py-2 px-2 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 ${
+                            isConfirmed
+                              ? 'bg-emerald-700 text-white shadow-xs'
+                              : 'bg-[#faf8f5] text-[#15110e] border border-[#e8ded0] hover:bg-emerald-50'
+                          }`}
+                        >
+                          <span>🥂</span>
+                          <span>Attending</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleEventRsvp(evt.id, false)}
+                          className={`py-2 px-2 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 ${
+                            isDeclined
+                              ? 'bg-rose-700 text-white shadow-xs'
+                              : 'bg-[#faf8f5] text-[#15110e] border border-[#e8ded0] hover:bg-rose-50'
+                          }`}
+                        >
+                          <span>💌</span>
+                          <span>Decline</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Decision Buttons with Interactive Micro-Transitions */}
@@ -1307,56 +1551,53 @@ export default function GuestMobileView() {
                 {/* Continuous Vertical Timeline Line */}
                 <div className="absolute left-[11px] top-3 bottom-3 w-[2px] bg-[#bd9661]" />
 
-                {/* Event 1 */}
-                <div className="relative">
-                  <div className="absolute -left-[19px] top-1.5 w-3 h-3 rounded-full bg-[#bd9661] border-2 border-white ring-2 ring-[#bd9661]/40" />
-                  <div className="text-xs font-bold text-[#bd9661] mb-0.5">2:00 PM</div>
-                  <h3 className="font-bold text-sm text-[#15110e]">Wedding Ceremony</h3>
-                  <p className="text-xs text-[#8b7b6b] mt-0.5 leading-relaxed">
-                    The Meadow Lawn. Please be seated 15 minutes prior.
-                  </p>
-                </div>
+                {guestEvents.length === 0 ? (
+                  <div className="text-xs text-[#8b7b6b] py-6">
+                    No scheduled events found for your invitation.
+                  </div>
+                ) : (
+                  guestEvents.map((ev) => {
+                    const rsvp = activeGuest?.eventRsvps?.[ev.id];
+                    const isAttending = rsvp ? rsvp.status === 'confirmed' : activeGuest?.rsvpStatus === 'confirmed';
 
-                {/* Event 2 */}
-                <div className="relative">
-                  <div className="absolute -left-[19px] top-1.5 w-3 h-3 rounded-full bg-[#bd9661] border-2 border-white ring-2 ring-[#bd9661]/40" />
-                  <div className="text-xs font-bold text-[#bd9661] mb-0.5">2:45 PM</div>
-                  <h3 className="font-bold text-sm text-[#15110e]">Cocktails &amp; Canap&eacute;s</h3>
-                  <p className="text-xs text-[#8b7b6b] mt-0.5 leading-relaxed">
-                    The Verandah &amp; Estate Gardens.
-                  </p>
-                </div>
-
-                {/* Event 3 */}
-                <div className="relative">
-                  <div className="absolute -left-[19px] top-1.5 w-3 h-3 rounded-full bg-[#bd9661] border-2 border-white ring-2 ring-[#bd9661]/40" />
-                  <div className="text-xs font-bold text-[#bd9661] mb-0.5">4:00 PM</div>
-                  <h3 className="font-bold text-sm text-[#15110e]">Grand Reception Seating</h3>
-                  <p className="text-xs text-[#8b7b6b] mt-0.5 leading-relaxed">
-                    The Grand Pavilion. Welcome toasts and entrance.
-                  </p>
-                </div>
-
-                {/* Event 4 */}
-                <div className="relative">
-                  <div className="absolute -left-[19px] top-1.5 w-3 h-3 rounded-full bg-[#bd9661] border-2 border-white ring-2 ring-[#bd9661]/40" />
-                  <div className="text-xs font-bold text-[#bd9661] mb-0.5">5:30 PM</div>
-                  <h3 className="font-bold text-sm text-[#15110e]">Dinner &amp; Speeches</h3>
-                  <p className="text-xs text-[#8b7b6b] mt-0.5 leading-relaxed">
-                    Main dining hall. Three-course seasonal dining.
-                  </p>
-                </div>
-
-                {/* Event 5 */}
-                <div className="relative">
-                  <div className="absolute -left-[19px] top-1.5 w-3 h-3 rounded-full bg-[#bd9661] border-2 border-white ring-2 ring-[#bd9661]/40" />
-                  <div className="text-xs font-bold text-[#bd9661] mb-0.5">7:15 PM</div>
-                  <h3 className="font-bold text-sm text-[#15110e]">Cake Cutting &amp; First Dance</h3>
-                  <p className="text-xs text-[#8b7b6b] mt-0.5 leading-relaxed">
-                    Dance floor opens with live band.
-                  </p>
-                </div>
-              </div>
+                    return (
+                      <div key={ev.id} className="relative">
+                        <div className="absolute -left-[19px] top-1.5 w-3 h-3 rounded-full bg-[#bd9661] border-2 border-white ring-2 ring-[#bd9661]/40" />
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-xs font-bold text-[#bd9661]">
+                            {ev.time}{ev.endTime ? ` - ${ev.endTime}` : ''}
+                          </span>
+                          <span className="text-[9.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#f4ece1] text-[#7a5933]">
+                            {ev.category || 'Event'}
+                          </span>
+                          {rsvp && (
+                            <span className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded ml-auto ${
+                              isAttending ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                            }`}>
+                              {isAttending ? '✓ Attending' : '✕ Declined'}
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="font-bold text-sm text-[#15110e]">
+                          {ev.name}
+                        </h3>
+                        <p className="text-xs text-[#6b5847] font-medium mt-0.5">
+                          📍 {ev.venue}{ev.address ? ` • ${ev.address}` : ''}
+                        </p>
+                        {ev.dressCode && (
+                          <p className="text-[11px] text-[#8b7b6b] mt-0.5">
+                            👔 Dress: {ev.dressCode}
+                          </p>
+                        )}
+                        {ev.description && (
+                          <p className="text-xs text-[#8b7b6b] mt-1 leading-relaxed bg-[#faf8f5] p-2 rounded-lg border border-[#e8ded0]">
+                            {ev.description}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })
+                )}              </div>
             </div>
           )}
 
@@ -1369,6 +1610,8 @@ export default function GuestMobileView() {
             const tableGuests = myTable ? state.guests.filter(g => g.tableId === myTable.id) : [];
             const capacity = myTable?.capacity || 8;
             const mySeatIndex = priyaGuest?.seatIndex ?? 3;
+            const currentWedding = state.weddings?.[0];
+            const allowTablemates = currentWedding?.allowGuestsSeeTablemates !== false;
 
             return (
               <div className="p-4 space-y-4">
@@ -1422,7 +1665,13 @@ export default function GuestMobileView() {
 
                           const occupant = tableGuests.find((g) => g.seatIndex === idx) || (idx === mySeatIndex ? priyaGuest : null);
                           const isMe = occupant?.id === priyaGuest?.id || idx === mySeatIndex;
-                          const initials = isMe ? 'PS' : occupant ? (occupant.initials || occupant.name.slice(0, 2).toUpperCase()) : `#${idx + 1}`;
+                          const initials = isMe
+                            ? 'PS'
+                            : !allowTablemates
+                            ? `#${idx + 1}`
+                            : occupant
+                            ? (occupant.initials || occupant.name.slice(0, 2).toUpperCase())
+                            : `#${idx + 1}`;
 
                           return (
                             <div
@@ -1433,11 +1682,21 @@ export default function GuestMobileView() {
                               className={`absolute w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shadow-xs cursor-pointer ${
                                 isMe
                                   ? 'bg-[#dfc194] text-[#15110e] border-2 border-[#15110e] ring-2 ring-[#bd9661] z-20'
-                                  : occupant
+                                  : occupant && allowTablemates
                                   ? 'bg-[#15110e] text-[#dfc194] border border-[#3d2e24]'
+                                  : occupant && !allowTablemates
+                                  ? 'bg-[#faf6ee] text-[#8b7b6b] border border-[#d5c7b5]'
                                   : 'bg-white text-[#8b7b6b] border border-dashed border-[#d5c7b5]'
                               }`}
-                              title={occupant ? `${occupant.name}${isMe ? ' (You)' : ''}` : `Vacant Seat ${idx + 1}`}
+                              title={
+                                isMe
+                                  ? `${priyaGuest?.name || 'Priya Sharma'} (You)`
+                                  : !allowTablemates
+                                  ? `Seat ${idx + 1} (Private)`
+                                  : occupant
+                                  ? occupant.name
+                                  : `Vacant Seat ${idx + 1}`
+                              }
                             >
                               {initials}
                             </div>
@@ -1468,46 +1727,83 @@ export default function GuestMobileView() {
                         Your Tablemates
                       </h3>
                       <span className="text-xs text-[#8b7b6b]">
-                        {tableGuests.length} Guests
+                        {allowTablemates ? `${tableGuests.length} Guests` : 'Private Setting'}
                       </span>
                     </div>
 
-                    {tableGuests.map((guest, idx) => {
-                      const isMe = guest.id === priyaGuest?.id;
-                      return (
-                        <div
-                          key={guest.id || idx}
-                          className={`bg-white border rounded-xl p-3 flex items-center justify-between shadow-xs ${
-                            isMe ? 'border-[#bd9661] bg-[#faf8f5]' : 'border-[#e8ded0]'
-                          }`}
-                        >
+                    {allowTablemates ? (
+                      tableGuests.map((guest, idx) => {
+                        const isMe = guest.id === priyaGuest?.id;
+                        return (
+                          <div
+                            key={guest.id || idx}
+                            className={`bg-white border rounded-xl p-3 flex items-center justify-between shadow-xs ${
+                              isMe ? 'border-[#bd9661] bg-[#faf8f5]' : 'border-[#e8ded0]'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${
+                                  isMe ? 'bg-[#bd9661] text-[#15110e]' : 'bg-[#15110e] text-[#dfc194]'
+                                }`}
+                              >
+                                {guest.initials || guest.name.slice(0, 2).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="text-xs font-bold text-[#15110e] flex items-center gap-1.5">
+                                  <span>{guest.name}</span>
+                                  {isMe && <span className="text-[10px] bg-[#bd9661]/20 text-[#916c3d] px-1 rounded font-bold">You</span>}
+                                </div>
+                                <div className="text-[10px] text-[#8b7b6b]">
+                                  Seat {(guest.seatIndex !== undefined && guest.seatIndex !== null) ? guest.seatIndex + 1 : idx + 1}
+                                  {guest.household && ` • ${guest.household}`}
+                                </div>
+                              </div>
+                            </div>
+                            {guest.dietary && guest.dietary !== 'None' && (
+                              <span className="text-[9.5px] bg-[#fff1f0] text-[#c93b2b] px-2 py-0.5 rounded-full font-semibold">
+                                {guest.dietary}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="bg-[#faf7f2] border border-[#e8dfd1] rounded-xl p-3.5 text-center space-y-1">
+                          <span className="text-lg">🔒</span>
+                          <div className="font-serif text-sm font-bold text-[#15110e]">
+                            Tablemates Kept Private
+                          </div>
+                          <p className="text-xs text-[#7d6c5b] leading-relaxed max-w-xs mx-auto">
+                            The couple has chosen to keep other table guest names private until reception seating. Your table assignment is confirmed above!
+                          </p>
+                        </div>
+
+                        {/* Show only the current guest row */}
+                        <div className="bg-[#faf8f5] border border-[#bd9661] rounded-xl p-3 flex items-center justify-between shadow-xs">
                           <div className="flex items-center gap-3">
-                            <div
-                              className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${
-                                isMe ? 'bg-[#bd9661] text-[#15110e]' : 'bg-[#15110e] text-[#dfc194]'
-                              }`}
-                            >
-                              {guest.initials || guest.name.slice(0, 2).toUpperCase()}
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold bg-[#bd9661] text-[#15110e]">
+                              {priyaGuest?.initials || 'PS'}
                             </div>
                             <div>
                               <div className="text-xs font-bold text-[#15110e] flex items-center gap-1.5">
-                                <span>{guest.name}</span>
-                                {isMe && <span className="text-[10px] bg-[#bd9661]/20 text-[#916c3d] px-1 rounded font-bold">You</span>}
+                                <span>{priyaGuest?.name || 'Priya Sharma'}</span>
+                                <span className="text-[10px] bg-[#bd9661]/20 text-[#916c3d] px-1 rounded font-bold">You</span>
                               </div>
                               <div className="text-[10px] text-[#8b7b6b]">
-                                Seat {(guest.seatIndex !== undefined && guest.seatIndex !== null) ? guest.seatIndex + 1 : idx + 1}
-                                {guest.household && ` • ${guest.household}`}
+                                Seat {(priyaGuest?.seatIndex !== undefined && priyaGuest?.seatIndex !== null) ? priyaGuest.seatIndex + 1 : mySeatIndex + 1}
                               </div>
                             </div>
                           </div>
-                          {guest.dietary && guest.dietary !== 'None' && (
+                          {priyaGuest?.dietary && priyaGuest.dietary !== 'None' && (
                             <span className="text-[9.5px] bg-[#fff1f0] text-[#c93b2b] px-2 py-0.5 rounded-full font-semibold">
-                              {guest.dietary}
+                              {priyaGuest.dietary}
                             </span>
                           )}
                         </div>
-                      );
-                    })}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

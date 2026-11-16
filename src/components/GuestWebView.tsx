@@ -82,21 +82,31 @@ export default function GuestWebView() {
               Order of Events
             </h3>
             <div className="space-y-4">
-              {[
-                { time: '1:30 PM', title: 'Arrival & Welcome Drinks', desc: 'Main lawn seating, acoustic strings' },
-                { time: '2:00 PM', title: 'Marriage Ceremony', desc: 'Exchange of vows at the garden arch' },
-                { time: '2:45 PM', title: 'Cocktail Reception', desc: 'Canapés, champagne & lawn games' },
-                { time: '4:00 PM', title: 'Grand Pavilion Banquet', desc: 'Entrée service and celebration toasts' },
-                { time: '7:15 PM', title: 'Cake Cutting & Dancing', desc: 'First dance and live entertainment' },
-                { time: '10:15 PM', title: 'Courtyard Send-Off', desc: 'Farewell Sophie & James!' },
-              ].map((ev, i) => (
-                <div key={i} className="flex items-start gap-4 pb-3 border-b border-[#f2ede7] last:border-none">
-                  <span className="font-mono text-xs font-bold text-[#bd9661] w-20 flex-shrink-0 pt-0.5">
-                    {ev.time}
+              {(wedding?.events && wedding.events.length > 0
+                ? wedding.events
+                : [
+                    { id: '1', time: '1:30 PM', name: 'Arrival & Welcome Drinks', venue: 'Main lawn seating', category: 'welcome', description: 'Acoustic strings & champagne' },
+                    { id: '2', time: '2:00 PM', name: 'Marriage Ceremony', venue: 'Garden Arch', category: 'ceremony', description: 'Exchange of vows at the garden arch' },
+                    { id: '3', time: '2:45 PM', name: 'Cocktail Reception', venue: 'Estate Verandah', category: 'cocktail', description: 'Canapés, champagne & lawn games' },
+                    { id: '4', time: '4:00 PM', name: 'Grand Pavilion Banquet', venue: 'The Grand Pavilion', category: 'reception', description: 'Entrée service and celebration toasts' },
+                    { id: '5', time: '7:15 PM', name: 'Cake Cutting & Dancing', venue: 'Main Hall', category: 'party', description: 'First dance and live entertainment' },
+                  ]
+              ).map((ev) => (
+                <div key={ev.id} className="flex items-start gap-4 pb-3 border-b border-[#f2ede7] last:border-none">
+                  <span className="font-mono text-xs font-bold text-[#bd9661] w-24 flex-shrink-0 pt-0.5">
+                    {ev.time}{'endTime' in ev && ev.endTime ? ` - ${ev.endTime}` : ''}
                   </span>
                   <div>
-                    <h5 className="font-serif font-bold text-sm text-[#15110e]">{ev.title}</h5>
-                    <p className="text-xs text-[#8b7b6b] mt-0.5">{ev.desc}</p>
+                    <div className="flex items-center gap-2">
+                      <h5 className="font-serif font-bold text-sm text-[#15110e]">{ev.name}</h5>
+                      <span className="text-[10px] uppercase font-bold text-[#bd9661] bg-[#faf8f5] px-1.5 py-0.5 rounded border border-[#e8ded0]">
+                        {ev.category}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#8b7b6b] mt-0.5">
+                      {ev.venue} {'dressCode' in ev && ev.dressCode ? `• Dress: ${ev.dressCode}` : ''}
+                    </p>
+                    {ev.description && <p className="text-xs text-[#594939] mt-0.5">{ev.description}</p>}
                   </div>
                 </div>
               ))}

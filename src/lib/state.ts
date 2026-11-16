@@ -27,6 +27,9 @@ export function getStoredState(): DemoState {
             const seedW = (SEED_DATA.weddings || []).find((sw: Wedding) => sw.id === w.id);
             return {
               ...w,
+              events: (Array.isArray(w.events) && w.events.length > 0)
+                ? w.events
+                : (seedW?.events || []),
               danceFloorPos: w.danceFloorPos || seedW?.danceFloorPos || { x: 50, y: 50 },
               privateRunSheet: (Array.isArray(w.privateRunSheet) && w.privateRunSheet.length > 0)
                 ? w.privateRunSheet
@@ -176,7 +179,18 @@ export function getStoredState(): DemoState {
               });
             });
 
-            return sanitizedGuests;
+            return sanitizedGuests.map((g: Guest) => {
+              const seedG = (SEED_DATA.guests || []).find((sg: Guest) => sg.id === g.id);
+              return {
+                ...g,
+                invitedEventIds: (Array.isArray(g.invitedEventIds) && g.invitedEventIds.length > 0)
+                  ? g.invitedEventIds
+                  : (seedG?.invitedEventIds || ['evt_ceremony', 'evt_reception']),
+                eventRsvps: (g.eventRsvps && Object.keys(g.eventRsvps).length > 0)
+                  ? g.eventRsvps
+                  : (seedG?.eventRsvps || {}),
+              };
+            });
           })(),
           gifts: Array.isArray(parsed.gifts) ? parsed.gifts : SEED_DATA.gifts,
           users: Array.isArray(parsed.users) ? parsed.users : SEED_DATA.users,
@@ -474,8 +488,9 @@ export function logAudit(
     channel: channel || 'Web Portal',
     status: status || 'Success'
   };
+  const latestState = getStoredState();
   setState({
-    ...state,
-    auditLog: [newEntry, ...(state.auditLog || [])]
+    ...latestState,
+    auditLog: [newEntry, ...(latestState.auditLog || state.auditLog || [])]
   });
 }

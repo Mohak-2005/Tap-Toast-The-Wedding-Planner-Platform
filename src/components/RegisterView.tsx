@@ -124,7 +124,88 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
   const [mcShowConfirm, setMcShowConfirm] = useState(false);
 
   // Couple Onboarding Multi-Step: registration -> payment -> choose_mc -> dashboard
-  const [coupleStep, setCoupleStep] = useState<'registration' | 'verify_email' | 'payment' | 'choose_mc'>(() => {
+  // Guided Onboarding Step (1: Couple, 2: Date & Venue, 3: Guests & Style)
+  const [guidedOnboardingStep, setGuidedOnboardingStep] = useState<1 | 2 | 3>(() => {
+    try {
+      const draft = localStorage.getItem('tt_couple_draft_registration');
+      if (draft) {
+        const p = JSON.parse(draft);
+        if (p.step) return p.step as 1 | 2 | 3;
+      }
+    } catch {}
+    return 1;
+  });
+  const [savedDraftNotice, setSavedDraftNotice] = useState<boolean>(() => {
+    try {
+      return !!localStorage.getItem('tt_couple_draft_registration');
+    } catch {
+      return false;
+    }
+  });
+
+  // Restore saved draft values on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('tt_couple_draft_registration');
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d.groomName) setGroomName(d.groomName);
+        if (d.groomEmail) setGroomEmail(d.groomEmail);
+        if (d.groomMobile) setGroomMobile(d.groomMobile);
+        if (d.brideName) setBrideName(d.brideName);
+        if (d.brideEmail) setBrideEmail(d.brideEmail);
+        if (d.brideMobile) setBrideMobile(d.brideMobile);
+        if (d.weddingDate !== undefined) setWeddingDate(d.weddingDate);
+        if (d.venue) setVenue(d.venue);
+        if (d.guestCount) setGuestCount(d.guestCount);
+        if (d.weddingStyle) setWeddingStyle(d.weddingStyle);
+      }
+    } catch {}
+  }, []);
+
+  const handleSaveAndExit = () => {
+    try {
+      const draft = {
+        step: guidedOnboardingStep,
+        groomName,
+        groomEmail,
+        groomMobile,
+        brideName,
+        brideEmail,
+        brideMobile,
+        weddingDate,
+        venue,
+        guestCount,
+        weddingStyle,
+        savedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      localStorage.setItem('tt_couple_draft_registration', JSON.stringify(draft));
+      showToast('Progress saved! You can return and complete onboarding anytime.', 'success');
+    } catch {}
+    if (onSelectView) onSelectView('showcase');
+    else window.location.hash = 'showcase';
+  };
+
+  const handleClearDraft = () => {
+    try {
+      localStorage.removeItem('tt_couple_draft_registration');
+      setSavedDraftNotice(false);
+      setGuidedOnboardingStep(1);
+      setGroomName('James Wilson');
+      setGroomEmail('james.wilson@example.com');
+      setGroomMobile('0412 345 678');
+      setBrideName('Sophie Carter');
+      setBrideEmail('sophie.carter@example.com');
+      setBrideMobile('0423 456 789');
+      setWeddingDate('');
+      setVenue('Fernwood Estate, Hunter Valley');
+      setGuestCount(110);
+      setWeddingStyle('Modern Luxury & Black Tie');
+      showToast('Reset to clean template', 'info');
+    } catch {}
+  };
+
+  const [coupleStep, setCoupleStep] = useState<'registration' | 'verify_email' | 'payment'>(() => {
     const savedStep = localStorage.getItem('tt_register_step');
     if (savedStep === 'choose_mc') {
       localStorage.removeItem('tt_register_step');
@@ -492,6 +573,105 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
     showToast('Registration submitted! Please verify your email.', 'success');
     setCoupleStep('verify_email');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Step 2: Complete Payment & Enter Dashboard (MCs invited later from dashboard)
+  const handleFinishCouplePaymentAndEnter = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setTimeout(() => {
+      setIsSubmitting(false);
+      const chosenPlan = COUPLE_PLANS.find(p => p.id === selectedPlanId) || COUPLE_PLANS[1];
+      const newWeddingId = 'wedding_' + Date.now();
+      const partner1Clean = groomName.trim() || 'James Wilson';
+      const partner2Clean = brideName.trim() || 'Sophie Carter';
+      const coupleName = `${partner2Clean.split(' ')[0]} & ${partner1Clean.split(' ')[0]}`;
+      const primaryEmail = brideEmail.trim() || 'sophie.carter@example.com';
+
+      const newWedding = {
+        id: newWeddingId,
+        couple: coupleName,
+        partner1: partner1Clean,
+        partner2: partner2Clean,
+        brideName: partner2Clean,
+        groomName: partner1Clean,
+        brideEmail: brideEmail.trim() || 'sophie.carter@example.com',
+        groomEmail: groomEmail.trim() || 'james.wilson@example.com',
+        weddingName: `${coupleName}'s Wedding`,
+        date: weddingDate || '2026-11-14',
+        dateDisplay: weddingDate ? new Date(weddingDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Date to be confirmed',
+        timeDisplay: '2:00 PM',
+        venue: venue || 'Fernwood Estate, Southern Highlands',
+        dressCode: weddingStyle,
+        invited: guestCount || 110,
+        confirmed: 0,
+        declined: 0,
+        status: 'Planning',
+        tasks: [
+          { id: 't1', text: 'Customize Our Story & Personal Pages with Cheers AI', completed: false, due: 'In 3 days' },
+          { id: 't2', text: 'Review event schedule & send event-specific digital invitations', completed: false, due: 'In 1 week' },
+          { id: 't3', text: 'Invite wedding planner or MC from dashboard directory', completed: false, due: 'In 2 weeks' },
+        ],
+        events: (state.weddings[0]?.events || []),
+        subscriptionPlan: {
+          id: chosenPlan.id,
+          name: chosenPlan.name,
+          price: chosenPlan.price,
+          status: 'Active',
+          activatedAt: new Date().toISOString(),
+        },
+        selectedMc: null,
+      };
+
+      const coupleUsers = [
+        {
+          id: 'usr_' + Date.now() + '_bride',
+          email: brideEmail.trim() || 'sophie.carter@example.com',
+          name: partner2Clean,
+          role: 'couple' as const,
+          weddingId: newWeddingId,
+        },
+        {
+          id: 'usr_' + Date.now() + '_groom',
+          email: groomEmail.trim() || 'james.wilson@example.com',
+          name: partner1Clean,
+          role: 'couple' as const,
+          weddingId: newWeddingId,
+        }
+      ];
+
+      const auditEntry = {
+        id: 'aud_' + Date.now(),
+        timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
+        action: 'Couple Onboarding Completed',
+        user: coupleName,
+        role: 'couple' as const,
+        category: 'Onboarding',
+        details: `Registered ${coupleName} for ${newWedding.venue}. Selected plan ${chosenPlan.name}. Onboarding completed.`,
+      };
+
+      setState({
+        ...state,
+        weddings: [...state.weddings, newWedding as any],
+        users: [...state.users, ...coupleUsers],
+        auditLog: [auditEntry, ...(state.auditLog || [])],
+      });
+
+      setStoredSession({
+        role: 'couple',
+        email: primaryEmail,
+        name: coupleName,
+        tenantId: 'tenant_galati',
+        weddingId: newWeddingId,
+        keepSignedIn: true,
+        at: Date.now(),
+      });
+
+      try { localStorage.removeItem('tt_couple_draft_registration'); } catch {}
+
+      showToast(`Welcome, ${coupleName}! Your wedding portal is now active.`, 'success');
+      if (onSelectView) onSelectView('couple');
+    }, 450);
   };
 
   // Step 2: Proceed to MC & AI Setup
@@ -871,8 +1051,8 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
         </div>
 
         <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-2xl w-full max-w-[680px] p-5 sm:p-7 md:p-8 shadow-sm relative my-1 sm:my-2 transition-all duration-200">
-          {/* Account Mode Selector (Only on Step 1) */}
-          {coupleStep === 'registration' && (
+          {/* Account Mode Selector (Only shown if user explicitly opened #register-mc) */}
+          {accountType === 'mc' && coupleStep === 'registration' && (
             <div className="grid grid-cols-2 gap-2 bg-[#f0ebe3] p-1.5 rounded-xl mb-6 border border-[#e2d8cb]">
               <button
                 type="button"
@@ -961,71 +1141,32 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
             </div>
           )}
 
-          {/* COUPLE ONBOARDING PROGRESS STEPPER */}
-          {accountType === 'couple' && (coupleStep === 'payment' || coupleStep === 'choose_mc') && (
+          {/* COUPLE ONBOARDING PROGRESS STEPPER (PAYMENT STAGE) */}
+          {accountType === 'couple' && coupleStep === 'payment' && (
             <div className="mb-6 pb-4 border-b border-[#ebdcc9]">
-              <div className="flex items-center justify-between text-xs">
-                {/* Step 1 */}
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
-                      coupleStep === 'registration'
-                        ? 'bg-[#15110e] text-[#dfc194] ring-2 ring-[#bd9661]'
-                        : 'bg-[#bd9661] text-[#15110e]'
-                    }`}
-                  >
-                    {coupleStep !== 'registration' ? '✓' : '1'}
+              <div className="flex items-center justify-center gap-4 text-xs max-w-sm mx-auto">
+                {/* Step 1: Registration (Done) */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs bg-[#bd9661] text-[#15110e]">
+                    ✓
                   </div>
-                  <span className={`text-xs font-semibold ${coupleStep === 'registration' ? 'text-[#15110e]' : 'text-[#8b7b6b]'}`}>
+                  <span className="text-xs font-semibold text-[#8b7b6b]">
                     Registration
                   </span>
                 </div>
 
-                <div className="h-0.5 flex-1 bg-[#ebdcc9] mx-2">
-                  <div
-                    className="h-full bg-[#bd9661] transition-all duration-300"
-                    style={{ width: coupleStep === 'registration' ? '0%' : coupleStep === 'payment' ? '50%' : '100%' }}
-                  />
+                {/* Connector */}
+                <div className="w-16 sm:w-24 h-0.5 bg-[#ebdcc9] overflow-hidden rounded-full shrink-0">
+                  <div className="h-full bg-[#bd9661] w-full" />
                 </div>
 
-                {/* Step 2 */}
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
-                      coupleStep === 'payment'
-                        ? 'bg-[#15110e] text-[#dfc194] ring-2 ring-[#bd9661]'
-                        : coupleStep === 'choose_mc'
-                        ? 'bg-[#bd9661] text-[#15110e]'
-                        : 'bg-[#ebdcc9] text-[#8b7b6b]'
-                    }`}
-                  >
-                    {coupleStep === 'choose_mc' ? '✓' : '2'}
+                {/* Step 2: Plan & Payment (Active) */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs bg-[#15110e] text-[#dfc194] ring-2 ring-[#bd9661]">
+                    2
                   </div>
-                  <span className={`text-xs font-semibold ${coupleStep === 'payment' ? 'text-[#15110e]' : 'text-[#8b7b6b]'}`}>
+                  <span className="text-xs font-bold text-[#15110e]">
                     Plan &amp; Payment
-                  </span>
-                </div>
-
-                <div className="h-0.5 flex-1 bg-[#ebdcc9] mx-2">
-                  <div
-                    className="h-full bg-[#bd9661] transition-all duration-300"
-                    style={{ width: coupleStep === 'choose_mc' ? '100%' : '0%' }}
-                  />
-                </div>
-
-                {/* Step 3 */}
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
-                      coupleStep === 'choose_mc'
-                        ? 'bg-[#15110e] text-[#dfc194] ring-2 ring-[#bd9661]'
-                        : 'bg-[#ebdcc9] text-[#8b7b6b]'
-                    }`}
-                  >
-                    3
-                  </div>
-                  <span className={`text-xs font-semibold ${coupleStep === 'choose_mc' ? 'text-[#15110e]' : 'text-[#8b7b6b]'}`}>
-                    MC Setup
                   </span>
                 </div>
               </div>
@@ -1535,300 +1676,434 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
               </form>
             )
           ) : coupleStep === 'registration' ? (
-            /* STEP 1: COUPLE REGISTRATION (POLISHED LUXURY UI) */
-/* STEP 1: COUPLE REGISTRATION (POLISHED LUXURY UI) */
-            <form onSubmit={handleProceedToPayment} noValidate className="space-y-4">
-              <div>
-                <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-1">
-                  COUPLE ONBOARDING
-                </div>
-                <h2 className="font-serif text-[22px] font-bold text-[#15110e] leading-tight">
-                  Couple Registration
-                </h2>
-                <p className="text-xs text-[#8b7b6b] mt-0.5">
-                  Enter details for both partners to configure guest management, digital RSVPs, and live runsheet sync.
-                </p>
-              </div>
-
-              {/* Groom / Partner 1 Card */}
-              <div className="bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8ded0] space-y-3">
-                <div className="text-[10.5px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#bd9661]" />
-                    <span>Groom / Partner 1</span>
-                  </div>
-                  <span className="text-[9.5px] text-[#8b7b6b] font-medium">Co-Host Access</span>
-                </div>
-
+            /* STEP 1: COUPLE REGISTRATION - GUIDED STEP-BY-STEP ONBOARDING */
+            <div className="space-y-4">
+              {/* Guided Header with Step Tracker & Save & Exit */}
+              <div className="flex items-center justify-between pb-3 border-b border-[#ebdcc9]">
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                    Full Name *
-                  </label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3 text-[#bd9661]">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </span>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. James Wilson"
-                      value={groomName}
-                      onChange={(e) => setGroomName(e.target.value)}
-                      className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
-                    />
+                  <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-0.5">
+                    COUPLE ONBOARDING &bull; STEP {guidedOnboardingStep} OF 3
+                  </div>
+                  <div className="text-xs font-semibold text-[#8b7b6b]">
+                    {guidedOnboardingStep === 1
+                      ? 'Step 1: The Couple'
+                      : guidedOnboardingStep === 2
+                      ? 'Step 2: Date & Venue'
+                      : 'Step 3: Celebration Details'}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                      Email Address *
-                    </label>
-                    <div className="relative flex items-center">
-                      <span className="absolute left-3 text-[#bd9661]">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                      </span>
-                      <input
-                        type="email"
-                        required
-                        placeholder="james.wilson@example.com"
-                        value={groomEmail}
-                        onChange={(e) => setGroomEmail(e.target.value)}
-                        className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                      Australian Mobile *
-                    </label>
-                    <div className="flex rounded-lg overflow-hidden border border-[#d5c7b5] focus-within:border-[#bd9661] focus-within:ring-1 focus-within:ring-[#bd9661] bg-white shadow-2xs">
-                      <span className="inline-flex items-center px-3 bg-[#f5ede2] text-xs font-bold text-[#6b5847] border-r border-[#e2d8cb] select-none">
-                        +61
-                      </span>
-                      <input
-                        type="tel"
-                        required
-                        placeholder="0412 345 678"
-                        value={groomMobile}
-                        onChange={(e) => setGroomMobile(formatAuMobile(e.target.value))}
-                        className="w-full px-3 py-2 text-xs text-[#15110e] outline-none bg-white"
-                      />
-                    </div>
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleSaveAndExit}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#6b5847] hover:text-[#15110e] bg-[#f5efe6] hover:bg-[#ebdcc9] rounded-lg transition-all cursor-pointer border border-[#d5c7b5] shadow-2xs"
+                  title="Save progress and exit to finish later"
+                >
+                  <span>💾</span>
+                  <span>Save &amp; Exit</span>
+                </button>
               </div>
 
-              {/* Bride / Partner 2 Card */}
-              <div className="bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8ded0] space-y-3">
-                <div className="text-[10.5px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#bd9661]" />
-                    <span>Bride / Partner 2</span>
-                  </div>
-                  <span className="text-[9.5px] text-[#8b7b6b] font-medium">Co-Host Access</span>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                    Full Name *
-                  </label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3 text-[#bd9661]">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </span>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Sophie Carter"
-                      value={brideName}
-                      onChange={(e) => setBrideName(e.target.value)}
-                      className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                      Email Address *
-                    </label>
-                    <div className="relative flex items-center">
-                      <span className="absolute left-3 text-[#bd9661]">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                      </span>
-                      <input
-                        type="email"
-                        required
-                        placeholder="sophie.carter@example.com"
-                        value={brideEmail}
-                        onChange={(e) => setBrideEmail(e.target.value)}
-                        className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                      Australian Mobile *
-                    </label>
-                    <div className="flex rounded-lg overflow-hidden border border-[#d5c7b5] focus-within:border-[#bd9661] focus-within:ring-1 focus-within:ring-[#bd9661] bg-white shadow-2xs">
-                      <span className="inline-flex items-center px-3 bg-[#f5ede2] text-xs font-bold text-[#6b5847] border-r border-[#e2d8cb] select-none">
-                        +61
-                      </span>
-                      <input
-                        type="tel"
-                        required
-                        placeholder="0423 456 789"
-                        value={brideMobile}
-                        onChange={(e) => setBrideMobile(formatAuMobile(e.target.value))}
-                        className="w-full px-3 py-2 text-xs text-[#15110e] outline-none bg-white"
-                      />
-                    </div>
-                  </div>
-                </div>
+              {/* Visual Progress Bar (33% -> 66% -> 100%) */}
+              <div className="w-full bg-[#ebdcc9] h-1.5 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#bd9661] transition-all duration-300"
+                  style={{ width: guidedOnboardingStep === 1 ? '33%' : guidedOnboardingStep === 2 ? '66%' : '100%' }}
+                />
               </div>
 
-              {/* Wedding & Celebration Details Card */}
-              <div className="bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8ded0] space-y-3">
-                <div className="text-[10.5px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#bd9661]" />
-                    <span>Celebration Details</span>
-                  </div>
-                  <span className="text-[9.5px] text-[#8b7b6b] font-medium">Venue &amp; Schedule</span>
+              {/* Saved Draft Notice */}
+              {savedDraftNotice && (
+                <div className="px-3 py-1.5 rounded-lg bg-[#faf4ec] border border-[#e8d5be] flex items-center justify-between text-[11px] text-[#7d654c]">
+                  <span>📝 Saved draft restored from your previous session</span>
+                  <button
+                    type="button"
+                    onClick={handleClearDraft}
+                    className="text-[#a8382c] hover:underline font-semibold text-[10.5px] cursor-pointer"
+                  >
+                    Start Fresh
+                  </button>
                 </div>
+              )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* SUB-STEP 1: THE COUPLE */}
+              {guidedOnboardingStep === 1 && (
+                <div className="space-y-4 animate-in fade-in duration-200">
                   <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c]">
-                        Wedding Date
+                    <h2 className="font-serif text-[22px] font-bold text-[#15110e] leading-tight">
+                      Who is celebrating?
+                    </h2>
+                    <p className="text-xs text-[#8b7b6b] mt-0.5">
+                      Let's begin with the two of you. Enter details for both partners to enable shared dashboard access.
+                    </p>
+                  </div>
+
+                  {/* Partner 1 Card */}
+                  <div className="bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8ded0] space-y-3">
+                    <div className="text-[10.5px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#bd9661]" />
+                        <span>Groom / Partner 1</span>
+                      </div>
+                      <span className="text-[9.5px] text-[#8b7b6b] font-medium">Co-Host Access</span>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
+                        Full Name *
                       </label>
-                      <span className="text-[10px] font-medium text-[#8b7b6b] bg-[#faf8f5] border border-[#e8ded0] px-1.5 py-0.5 rounded">
-                        Optional
-                      </span>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3 text-[#bd9661]">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        </span>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. James Wilson"
+                          value={groomName}
+                          onChange={(e) => setGroomName(e.target.value)}
+                          className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
+                        />
+                      </div>
                     </div>
-                    <div className="relative flex items-center">
-                      <span className="absolute left-3 text-[#bd9661]">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </span>
-                      <input
-                        type="date"
-                        value={weddingDate}
-                        onChange={(e) => {
-                          setWeddingDate(e.target.value);
-                        }}
-                        className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs font-semibold"
-                      />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
+                          Email Address *
+                        </label>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-3 text-[#bd9661]">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                          </span>
+                          <input
+                            type="email"
+                            required
+                            placeholder="james.wilson@example.com"
+                            value={groomEmail}
+                            onChange={(e) => setGroomEmail(e.target.value)}
+                            className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
+                          Australian Mobile *
+                        </label>
+                        <div className="flex rounded-lg overflow-hidden border border-[#d5c7b5] focus-within:border-[#bd9661] focus-within:ring-1 focus-within:ring-[#bd9661] bg-white shadow-2xs">
+                          <span className="inline-flex items-center px-3 bg-[#f5ede2] text-xs font-bold text-[#6b5847] border-r border-[#e2d8cb] select-none">
+                            +61
+                          </span>
+                          <input
+                            type="tel"
+                            required
+                            placeholder="0412 345 678"
+                            value={groomMobile}
+                            onChange={(e) => setGroomMobile(formatAuMobile(e.target.value))}
+                            className="w-full px-3 py-2 text-xs text-[#15110e] outline-none bg-white"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                      Estimated Guest Count
-                    </label>
-                    <div className="relative flex items-center">
-                      <span className="absolute left-3 text-[#bd9661]">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                      </span>
-                      <input
-                        type="number"
-                        min={10}
-                        max={800}
-                        value={guestCount}
-                        onChange={(e) => setGuestCount(Number(e.target.value))}
-                        className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs font-bold"
-                      />
+                  {/* Partner 2 Card */}
+                  <div className="bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8ded0] space-y-3">
+                    <div className="text-[10.5px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#bd9661]" />
+                        <span>Bride / Partner 2</span>
+                      </div>
+                      <span className="text-[9.5px] text-[#8b7b6b] font-medium">Co-Host Access</span>
                     </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
+                        Full Name *
+                      </label>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3 text-[#bd9661]">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        </span>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Sophie Carter"
+                          value={brideName}
+                          onChange={(e) => setBrideName(e.target.value)}
+                          className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
+                          Email Address *
+                        </label>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-3 text-[#bd9661]">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                          </span>
+                          <input
+                            type="email"
+                            required
+                            placeholder="sophie.carter@example.com"
+                            value={brideEmail}
+                            onChange={(e) => setBrideEmail(e.target.value)}
+                            className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
+                          Australian Mobile *
+                        </label>
+                        <div className="flex rounded-lg overflow-hidden border border-[#d5c7b5] focus-within:border-[#bd9661] focus-within:ring-1 focus-within:ring-[#bd9661] bg-white shadow-2xs">
+                          <span className="inline-flex items-center px-3 bg-[#f5ede2] text-xs font-bold text-[#6b5847] border-r border-[#e2d8cb] select-none">
+                            +61
+                          </span>
+                          <input
+                            type="tel"
+                            required
+                            placeholder="0423 456 789"
+                            value={brideMobile}
+                            onChange={(e) => setBrideMobile(formatAuMobile(e.target.value))}
+                            className="w-full px-3 py-2 text-xs text-[#15110e] outline-none bg-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleSaveAndExit}
+                      className="px-4 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                    >
+                      Save &amp; Exit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!groomName.trim() || !groomEmail.trim() || !brideName.trim() || !brideEmail.trim()) {
+                          showToast('Please provide names and emails for both partners', 'error');
+                          return;
+                        }
+                        setGuidedOnboardingStep(2);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="flex-1 py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
+                    >
+                      <span>Continue to Date &amp; Venue</span>
+                      <span>→</span>
+                    </button>
                   </div>
                 </div>
+              )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* SUB-STEP 2: DATE & VENUE */}
+              {guidedOnboardingStep === 2 && (
+                <div className="space-y-4 animate-in fade-in duration-200">
                   <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                      Venue Location *
-                    </label>
-                    <div className="relative flex items-center">
-                      <span className="absolute left-3 text-[#bd9661]">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                      </span>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. Fernwood Estate, Hunter Valley"
-                        value={venue}
-                        onChange={(e) => setVenue(e.target.value)}
-                        className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
-                      />
+                    <h2 className="font-serif text-[22px] font-bold text-[#15110e] leading-tight">
+                      When &amp; where is the big day?
+                    </h2>
+                    <p className="text-xs text-[#8b7b6b] mt-0.5">
+                      Tell us about your celebration date and venue. Date is optional — you can always confirm it later.
+                    </p>
+                  </div>
+
+                  <div className="bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8ded0] space-y-3.5">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c]">
+                          Wedding Date
+                        </label>
+                        <span className="text-[10px] font-semibold text-[#8b7b6b] bg-white border border-[#e8ded0] px-2 py-0.5 rounded-full">
+                          Optional
+                        </span>
+                      </div>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3 text-[#bd9661]">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        </span>
+                        <input
+                          type="date"
+                          value={weddingDate}
+                          onChange={(e) => setWeddingDate(e.target.value)}
+                          className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs font-semibold"
+                        />
+                      </div>
+                      <p className="text-[10.5px] text-[#8b7b6b] mt-1">
+                        Haven't set a date yet? You can leave this blank and add it anytime from your dashboard.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
+                        Celebration Venue Location *
+                      </label>
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3 text-[#bd9661]">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        </span>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Fernwood Estate, Hunter Valley or Sydney NSW"
+                          value={venue}
+                          onChange={(e) => setVenue(e.target.value)}
+                          className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
+                        />
+                      </div>
+                      <p className="text-[10.5px] text-[#8b7b6b] mt-1">
+                        Used to provide Google Maps links and travel directions for your wedding guests.
+                      </p>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
-                      Celebration Style / Theme
-                    </label>
-                    <div className="relative flex items-center">
-                      <span className="absolute left-3 text-[#bd9661]">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                        </svg>
-                      </span>
-                      <select
-                        value={weddingStyle}
-                        onChange={(e) => setWeddingStyle(e.target.value)}
-                        className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs cursor-pointer"
-                      >
-                        <option value="Modern Luxury & Black Tie">Modern Luxury &amp; Black Tie</option>
-                        <option value="Classic Ballroom Romance">Classic Ballroom Romance</option>
-                        <option value="Rustic Vineyard & Estate">Rustic Vineyard &amp; Estate</option>
-                        <option value="Bespoke Bohemian Garden">Bespoke Bohemian Garden</option>
-                        <option value="Coastal Waterfront Elegance">Coastal Waterfront Elegance</option>
-                      </select>
-                    </div>
+                  <div className="flex items-center justify-between gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setGuidedOnboardingStep(1)}
+                      className="px-4 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveAndExit}
+                      className="px-3 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                    >
+                      Save &amp; Exit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!venue.trim()) {
+                          showToast('Please enter your venue or city', 'error');
+                          return;
+                        }
+                        setGuidedOnboardingStep(3);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="flex-1 py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
+                    >
+                      <span>Continue to Celebration Vibe</span>
+                      <span>→</span>
+                    </button>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Terms Agreement */}
-              <div className="pt-0.5">
-                <label className="flex items-start gap-2.5 text-xs text-[#6b5847] cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={agreeTerms}
-                    onChange={(e) => setAgreeTerms(e.target.checked)}
-                    className="mt-0.5 rounded text-[#bd9661] focus:ring-[#bd9661]"
-                  />
-                  <span>
-                    I agree to the <a href="#terms" className="text-[#bd9661] underline font-semibold">Terms of Service</a> and <a href="#privacy" className="text-[#bd9661] underline font-semibold">Privacy Policy</a>
-                  </span>
-                </label>
-              </div>
+              {/* SUB-STEP 3: CELEBRATION DETAILS & VIBE */}
+              {guidedOnboardingStep === 3 && (
+                <form onSubmit={handleProceedToPayment} noValidate className="space-y-4 animate-in fade-in duration-200">
+                  <div>
+                    <h2 className="font-serif text-[22px] font-bold text-[#15110e] leading-tight">
+                      Celebration size &amp; style
+                    </h2>
+                    <p className="text-xs text-[#8b7b6b] mt-0.5">
+                      Tell us your estimated guest count and theme so we can tailor your guest list and RSVP tools.
+                    </p>
+                  </div>
 
-              <button
-                type="submit"
-                className="w-full py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
-              >
-                <span>Register</span>
-                <span>→</span>
-              </button>
-            </form>
+                  <div className="bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8ded0] space-y-3.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
+                          Estimated Guest Count
+                        </label>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-3 text-[#bd9661]">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                          </span>
+                          <input
+                            type="number"
+                            min={10}
+                            max={800}
+                            value={guestCount}
+                            onChange={(e) => setGuestCount(Number(e.target.value))}
+                            className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs font-bold"
+                          />
+                        </div>
+                        <p className="text-[10px] text-[#8b7b6b] mt-1">
+                          Includes all adult and child attendees.
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
+                          Celebration Style / Theme
+                        </label>
+                        <div className="relative flex items-center">
+                          <span className="absolute left-3 text-[#bd9661]">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                          </span>
+                          <select
+                            value={weddingStyle}
+                            onChange={(e) => setWeddingStyle(e.target.value)}
+                            className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg pl-9 pr-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs cursor-pointer"
+                          >
+                            <option value="Modern Luxury & Black Tie">Modern Luxury &amp; Black Tie</option>
+                            <option value="Classic Ballroom Romance">Classic Ballroom Romance</option>
+                            <option value="Rustic Vineyard & Estate">Rustic Vineyard &amp; Estate</option>
+                            <option value="Bespoke Bohemian Garden">Bespoke Bohemian Garden</option>
+                            <option value="Coastal Waterfront Elegance">Coastal Waterfront Elegance</option>
+                          </select>
+                        </div>
+                        <p className="text-[10px] text-[#8b7b6b] mt-1">
+                          Sets your default card aesthetic and palette.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Terms Agreement */}
+                    <div className="pt-1 border-t border-[#ebdcc9]">
+                      <label className="flex items-start gap-2.5 text-xs text-[#6b5847] cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={agreeTerms}
+                          onChange={(e) => setAgreeTerms(e.target.checked)}
+                          className="mt-0.5 rounded text-[#bd9661] focus:ring-[#bd9661]"
+                        />
+                        <span>
+                          I agree to the <a href="#terms" className="text-[#bd9661] underline font-semibold">Terms of Service</a> and <a href="#privacy" className="text-[#bd9661] underline font-semibold">Privacy Policy</a>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setGuidedOnboardingStep(2)}
+                      className="px-4 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveAndExit}
+                      className="px-3 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                    >
+                      Save &amp; Exit
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
+                    >
+                      <span>Complete Registration</span>
+                      <span>→</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           ) : coupleStep === 'verify_email' ? (
             /* COUPLE STEP: VERIFY EMAIL NOTICE SCREEN */
             <div className="space-y-6 py-4 animate-in fade-in duration-200">
@@ -1857,7 +2132,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                   Please check your inboxes (and spam folders) for an email from <strong>Tap &amp; Toast Security</strong>.
                 </p>
                 <p>
-                  Both partners will receive their own verification link. Click the <strong>Set password</strong> button inside to set your private portal password. After setting your password, sign in to continue to <strong>Step 2: Choose Your Plan &amp; Payment</strong> and <strong>Step 3: MC Setup</strong>.
+                  Both partners will receive their own verification link. Click the <strong>Set password</strong> button inside to set your private portal password. After setting your password, sign in to continue to <strong>Step 2: Choose Your Plan &amp; Payment</strong> to activate your wedding suite.
                 </p>
               </div>
 
@@ -1894,7 +2169,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
             </div>
           ) : coupleStep === 'payment' ? (
             /* STEP 2: COUPLE SAAS SUBSCRIPTION & PAYMENT (With Feature Accordion / Dropdowns) */
-            <form onSubmit={handleProceedToMcAndAi} className="space-y-4">
+            <form onSubmit={handleFinishCouplePaymentAndEnter} className="space-y-4">
               <div>
                 <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-1">
                   COUPLE WEDDING SAAS PLANS
@@ -2167,382 +2442,12 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                   disabled={isSubmitting}
                   className="flex-1 py-2.5 px-4 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-[4px] text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
                 >
-                  <span>{isSubmitting ? 'Processing Payment...' : `Pay $${finalPrice} & Proceed to MC Setup`}</span>
+                  <span>{isSubmitting ? 'Activating Wedding Suite...' : `Pay ${finalPrice} & Launch Wedding Portal`}</span>
                   <span>→</span>
                 </button>
               </div>
             </form>
-          ) : (
-            /* STEP 3: MC SETUP (CHOOSE CERTIFIED MC OR BRING OWN MC) */
-            <div className="space-y-4">
-              <div>
-                <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#bd9661] mb-1">
-                  COUPLE ONBOARDING · STEP 3 OF 3
-                </div>
-                <h2 className="font-serif text-[22px] font-bold text-[#15110e] leading-tight mb-1">
-                  MC Setup
-                </h2>
-                <p className="text-xs text-[#8b7b6b]">
-                  Choose from our certified wedding MCs or prefer your own host. SuperAdmin will dispatch platform credentials accordingly.
-                </p>
-              </div>
-
-              {/* MC CHOICE MODE SELECTOR: CERTIFIED VS PREFER OWN MC */}
-              <div className="grid grid-cols-2 gap-2 bg-[#f4efe8] p-1.5 rounded-xl border border-[#ebdcc9]">
-                <button
-                  type="button"
-                  onClick={() => setMcChoiceMode('certified')}
-                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    mcChoiceMode === 'certified'
-                      ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
-                      : 'text-[#6b5847] hover:text-[#15110e]'
-                  }`}
-                >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                  </svg>
-                  <span>Choose Certified MC</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMcChoiceMode('own');
-                    setIsFloatingChatOpen(false);
-                  }}
-                  className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    mcChoiceMode === 'own'
-                      ? 'bg-[#15110e] text-[#dfc194] shadow-xs'
-                      : 'text-[#6b5847] hover:text-[#15110e]'
-                  }`}
-                >
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <line x1="19" y1="8" x2="19" y2="14" />
-                    <line x1="22" y1="11" x2="16" y2="11" />
-                  </svg>
-                  <span>Prefer / Bring Our Own MC</span>
-                </button>
-              </div>
-
-              {/* OPTION A: CHOOSE FROM CERTIFIED WEDDING MCS */}
-              {mcChoiceMode === 'certified' ? (
-                <div className="space-y-3.5 animate-in fade-in duration-200">
-                  <div className="space-y-1.5">
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-[#15110e]">
-                      SELECT YOUR CERTIFIED WEDDING MC
-                    </label>
-
-                    <div className="relative" ref={mcDropdownRef}>
-                      <button
-                        type="button"
-                        onClick={() => setIsMcDropdownOpen(!isMcDropdownOpen)}
-                        className="w-full bg-white border border-[#d5c7b5] hover:border-[#bd9661] rounded-xl p-3.5 flex items-center justify-between text-left transition-all cursor-pointer shadow-2xs"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-[#15110e] border border-[#bd9661] flex items-center justify-center text-[#dfc194] font-serif font-bold text-xs shrink-0 overflow-hidden">
-                            {selectedMcIds.length === 0 ? (
-                              <span>🥂</span>
-                            ) : selectedMcIds.length > 1 ? (
-                              <span>👥</span>
-                            ) : selectedMc.image ? (
-                              <img src={selectedMc.image} alt={selectedMc.name} className="w-full h-full object-cover" />
-                            ) : (
-                              selectedMc.name.split(' ').map(n => n[0]).join('')
-                            )}
-                          </div>
-                          <div>
-                            <div className="font-serif font-bold text-sm text-[#15110e]">
-                              {selectedMcIds.length === 0
-                                ? 'Select MC'
-                                : selectedMcIds.length > 1
-                                ? `${selectedMcIds.length} MCs Selected`
-                                : selectedMc.name}
-                            </div>
-                            <div className="text-[11.5px] text-[#7d654c] mt-0.5 flex items-center gap-1.5 font-medium">
-                              {selectedMcIds.length === 0 ? (
-                                <span>Choose a certified MC according to your preference, or proceed without one to assign later</span>
-                              ) : selectedMcIds.length > 1 ? (
-                                <span>{selectedMcs.map(m => m.name).join(', ')}</span>
-                              ) : (
-                                <>
-                                  <span>{selectedMc.business}</span>
-                                  <span className="text-[#c5b5a2]">&bull;</span>
-                                  <span className="text-[#bd9661] font-bold">⭐ {selectedMc.rating}</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 text-xs text-[#8b7b6b]">
-                          {selectedMcIds.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setShowMcInfoModal(true);
-                              }}
-                              title="View MC Details"
-                              aria-label="View MC Info"
-                              className="w-7 h-7 rounded-full bg-[#fbf8f3] hover:bg-[#ebdcc9] text-[#7d654c] hover:text-[#15110e] flex items-center justify-center transition-colors cursor-pointer border border-[#d5c7b5]"
-                            >
-                              <svg
-                                width="15"
-                                height="15"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                <circle cx="12" cy="12" r="3" />
-                              </svg>
-                            </button>
-                          )}
-                          <svg
-                            width="15"
-                            height="15"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className={`transition-transform duration-200 ${isMcDropdownOpen ? 'rotate-180 text-[#bd9661]' : ''}`}
-                          >
-                            <polyline points="6 9 12 15 18 9" />
-                          </svg>
-                        </div>
-                      </button>
-
-                      {/* Dropdown Menu List with 'No MC' as First Option */}
-                      {isMcDropdownOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-[#e8ded0] rounded-xl shadow-xl z-30 max-h-[320px] overflow-y-auto divide-y divide-[#f5f1eb]">
-                          {/* Option 1: No MC */}
-                          <div
-                            onClick={() => {
-                              setSelectedMcIds([]);
-                              setIsMcDropdownOpen(false);
-                              showToast('Proceeding without an MC (Self-managed runsheet)', 'info');
-                            }}
-                            className={`p-3.5 hover:bg-[#faf7f2] transition-colors cursor-pointer flex items-center justify-between gap-3 ${
-                              selectedMcIds.length === 0 ? 'bg-[#fdfbf7]' : ''
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-full bg-[#15110e] border border-[#bd9661] flex items-center justify-center text-[#dfc194] font-serif font-bold text-xs shrink-0 shadow-2xs">
-                                🥂
-                              </div>
-                              <div>
-                                <div className="font-serif font-bold text-xs text-[#15110e] flex items-center gap-2">
-                                  <span>No MC</span>
-                                </div>
-                                <div className="text-[11px] text-[#7d654c] mt-0.5 font-medium">
-                                  Proceed without an MC and assign it later
-                                </div>
-                              </div>
-                            </div>
-                            {selectedMcIds.length === 0 ? (
-                              <span className="text-emerald-700 font-bold text-xs shrink-0 flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                                ✓ Selected
-                              </span>
-                            ) : (
-                              <span className="text-xs text-[#bd9661] hover:underline font-semibold shrink-0">
-                                Select →
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Directory MC Options */}
-                          {availableMcs.map((mc) => {
-                            const isSelected = selectedMcIds.includes(mc.id);
-                            return (
-                              <div
-                                key={mc.id}
-                                onClick={() => {
-                                  setSelectedMcIds([mc.id]);
-                                  setIsMcDropdownOpen(false);
-                                  showToast(`Selected ${mc.name} as your Wedding MC`, 'success');
-                                }}
-                                className={`p-3.5 hover:bg-[#faf7f2] transition-colors cursor-pointer flex items-center justify-between gap-3 ${
-                                  isSelected ? 'bg-[#fdfbf7]' : ''
-                                }`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className="w-9 h-9 rounded-full bg-[#15110e] border border-[#bd9661] flex items-center justify-center text-[#dfc194] font-serif font-bold text-xs shrink-0 overflow-hidden">
-                                    {mc.image ? (
-                                      <img src={mc.image} alt={mc.name} className="w-full h-full object-cover" />
-                                    ) : (
-                                      mc.name.split(' ').map(n => n[0]).join('')
-                                    )}
-                                  </div>
-                                  <div>
-                                    <div className="font-serif font-bold text-xs text-[#15110e]">
-                                      {mc.name}
-                                    </div>
-                                    <div className="text-[11px] text-[#7d654c] mt-0.5 flex items-center gap-1.5 font-medium">
-                                      <span>{mc.business}</span>
-                                      <span className="text-[#c5b5a2]">&bull;</span>
-                                      <span className="text-[#bd9661] font-bold">⭐ {mc.rating}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                {isSelected ? (
-                                  <span className="text-emerald-700 font-bold text-xs shrink-0 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                                    ✓ Selected
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-[#bd9661] hover:underline font-semibold shrink-0">
-                                    Select →
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* DISTINCT STYLED AI CONCIERGE BANNER (ONLY IN CERTIFIED MC VIEW) */}
-                  <div className="bg-gradient-to-r from-[#fbf6ed] to-[#f6ede0] border-l-4 border-l-[#bd9661] border-y border-r border-[#dfcfb9] rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-xs">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#bd9661] bg-[#181310] flex items-center justify-center shrink-0 shadow-xs ring-2 ring-[#bd9661]/20">
-                        <img
-                          src="./chatbot-avatar.png"
-                          alt="Joey AI"
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = 'none';
-                          }}
-                        />
-                        </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-serif text-xs font-bold text-[#15110e]">
-                            Need help deciding? Ask Joey AI
-                          </h4>
-                        </div>
-                        <p className="text-[11px] text-[#786450] mt-0.5">
-                          Chat live to compare host experience, 5-star reviews, and rates
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsFloatingChatOpen(!isFloatingChatOpen)}
-                      className="px-3.5 py-2 bg-[#15110e] hover:bg-[#2b221a] text-[#dfc194] hover:text-white border border-[#bd9661]/40 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs"
-                    >
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                      <span>{isFloatingChatOpen ? 'Close Chat' : 'Open Chat'}</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* OPTION B: PREFER / BRING OWN MC */
-                <div className="bg-[#faf8f5] border border-[#ebdcc9] rounded-2xl p-4 sm:p-5 space-y-4 shadow-2xs animate-in fade-in duration-200">
-                  <div className="border-b border-[#f0ede4] pb-2.5">
-                    <h3 className="font-serif font-bold text-base text-[#15110e]">
-                      Couple's Preferred Wedding MC
-                    </h3>
-                    <p className="text-xs text-[#8b7b6b] mt-1 leading-relaxed">
-                      Prefer to have your own friend, family member, or professional MC host your wedding? Enter their contact details below.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
-                    <div>
-                      <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
-                        MC Full Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={ownMcName}
-                        onChange={(e) => setOwnMcName(e.target.value)}
-                        placeholder="e.g. Anthony Rossi"
-                        className="w-full bg-white border border-[#d5c7b5] rounded-lg p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
-                        MC Mobile / Phone Number
-                      </label>
-                      <div className="flex">
-                        <span className="inline-flex items-center px-3 border border-r-0 border-[#d5c7b5] bg-[#f5ede2] text-xs font-bold font-mono text-[#6b5847] rounded-l-lg select-none">
-                          +61
-                        </span>
-                        <input
-                          type="tel"
-                          value={ownMcPhone}
-                          onChange={(e) => setOwnMcPhone(e.target.value)}
-                          placeholder="0412 888 777"
-                          className="w-full bg-white border border-[#d5c7b5] rounded-r-lg rounded-l-none p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
-                        MC Email Address <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        value={ownMcEmail}
-                        onChange={(e) => setOwnMcEmail(e.target.value)}
-                        placeholder="e.g. anthony.rossi@mcservices.com.au"
-                        className="w-full bg-white border border-[#d5c7b5] rounded-lg p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
-                        Business / Agency Name (Optional)
-                      </label>
-                      <input
-                        type="text"
-                        value={ownMcAgency}
-                        onChange={(e) => setOwnMcAgency(e.target.value)}
-                        placeholder="e.g. Rossi Event Hosting"
-                        className="w-full bg-white border border-[#d5c7b5] rounded-lg p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Navigation CTA Buttons */}
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setCoupleStep('payment')}
-                  className="px-4 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer"
-                >
-                  ← Back to Plan
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCompleteCoupleOnboarding}
-                  disabled={isSubmitting || (mcChoiceMode === 'own' && (!ownMcName.trim() || !ownMcEmail.trim()))}
-                  className="flex-1 py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  <span>
-                    {isSubmitting
-                      ? 'Launching Dashboard...'
-                      : mcChoiceMode === 'own'
-                      ? 'Confirm Preferred MC & Launch Dashboard'
-                      : selectedMcIds.length > 1 ? `Confirm ${selectedMcIds.length} MCs & Launch Dashboard` : selectedMcIds.length === 0 ? 'Skip & Launch Dashboard' : 'Confirm MC & Launch Dashboard'}
-                  </span>
-                  <span>→</span>
-                </button>
-              </div>
-            </div>
-          )}
+          ) : null}
 
           {/* Bottom link to Login (Displayed only on initial registration step, not on payment or MC step) */}
           {(accountType === 'couple' ? coupleStep === 'registration' : mcStep === 'details') && (

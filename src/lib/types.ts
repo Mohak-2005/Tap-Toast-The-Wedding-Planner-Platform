@@ -12,6 +12,17 @@ export interface RunSheetItem {
   done: boolean;
 }
 
+export interface RunSheetChangeRequest {
+  id: string;
+  proposedTime?: string;
+  proposedActivity?: string;
+  notes?: string;
+  status: 'pending' | 'accepted' | 'declined';
+  requestedBy: 'Planner' | 'MC' | string;
+  requestedAt: string;
+  respondedAt?: string;
+}
+
 export interface PrivateRunSheetItem {
   id: string;
   time: string;
@@ -20,6 +31,10 @@ export interface PrivateRunSheetItem {
   privateNotes: string;
   done: boolean;
   order: number;
+  section?: 'morning' | 'afternoon' | 'evening';
+  category?: 'mc' | 'vendor' | 'ceremony' | 'setup' | 'reception' | 'packdown' | string;
+  vendorRole?: string;
+  changeRequest?: RunSheetChangeRequest;
 }
 
 export interface WeddingVendor {
@@ -35,6 +50,21 @@ export interface WeddingVendor {
   cost?: number;
   paidAmount?: number;
   notes?: string;
+}
+
+export interface WeddingEvent {
+  id: string;
+  weddingId?: string;
+  name: string;
+  category?: 'ceremony' | 'reception' | 'sangeet' | 'after-party' | 'breakfast' | 'other' | string;
+  date: string;
+  time: string;
+  endTime?: string;
+  venue: string;
+  address?: string;
+  dressCode?: string;
+  description?: string;
+  order?: number;
 }
 
 export interface Wedding {
@@ -63,6 +93,7 @@ export interface Wedding {
   daysRemaining?: number;
   status?: 'Finalising' | 'On track' | 'Planning' | string;
   tasks: Task[];
+  events?: WeddingEvent[];
   vendors?: WeddingVendor[];
   runSheet?: RunSheetItem[];
   privateRunSheet?: PrivateRunSheetItem[];
@@ -118,6 +149,7 @@ export interface Wedding {
   giftingPresets?: number[];
   savedSeatingArrangements?: SavedSeatingArrangement[];
   danceFloorPos?: { x: number; y: number };
+  allowGuestsSeeTablemates?: boolean;
 }
 
 export interface SavedSeatingArrangement {
@@ -137,7 +169,7 @@ export interface SavedSeatingArrangement {
   }>;
 }
 
-export type TableShape = 'round' | 'rectangular' | 'king';
+export type TableShape = 'round' | 'rectangular' | 'king' | 'oval';
 
 export interface Table {
   id: string;
@@ -152,6 +184,15 @@ export interface Table {
   mobileY?: number;
   category?: string;
   zone?: string;
+}
+
+export interface GuestEventRsvp {
+  status: 'confirmed' | 'declined' | 'awaiting';
+  attending?: boolean;
+  mealPreference?: string;
+  dietary?: string;
+  notes?: string;
+  updatedAt?: string;
 }
 
 export interface Guest {
@@ -175,6 +216,8 @@ export interface Guest {
   seatIndex?: number | null;
   category?: string;
   notes?: string;
+  invitedEventIds?: string[];
+  eventRsvps?: Record<string, GuestEventRsvp>;
 }
 
 export interface Gift {

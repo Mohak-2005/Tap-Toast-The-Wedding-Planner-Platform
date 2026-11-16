@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppState, useSession, getWeddingCountdown, formatAUD, showToast } from '../lib/state';
 import JoeyChatbot from './JoeyChatbot';
-import { Guest, PrivateRunSheetItem, WeddingVendor } from '../lib/types';
+import { Guest, PrivateRunSheetItem, WeddingVendor, WeddingEvent, GuestEventRsvp } from '../lib/types';
 import { VendorDirectorySection } from './VendorDirectorySection';
 import { WeddingCountdownCard } from './WeddingCountdownCard';
 import { logAudit } from '../lib/state';
@@ -12,9 +12,18 @@ import { DietaryBadges, parseDietaryRequirements } from '../lib/dietaryHelper';
 import { ColorPicker2D } from './ColorPicker2D';
 import { SuperAdminCardStudio } from './SuperAdminCardStudio';
 import PlannerDaySheetSection from './PlannerDaySheetSection';
+import { CheersAiRunSheetChatbot } from './CheersAiRunSheetChatbot';
+import {
+  STANDARD_RUN_SHEET_TEMPLATES,
+  RunSheetTemplate,
+  generateAiRunSheetDraft,
+  parseRawRunSheetText,
+} from '../lib/runSheetTemplates';
+import * as XLSX from 'xlsx';
 
 export type CoupleTab =
   | 'overview'
+  | 'events'
   | 'guests'
   | 'seating'
   | 'mc_runsheet'
@@ -111,6 +120,302 @@ export default function CoupleView({
     showToast('New planning task added!', 'success');
   };
 
+  // Tab: Events & Schedule State (Event-Specific Invitations)
+  const [showAddEventModal, setShowAddEventModal] = useState<boolean>(false);
+  const [editingEvent, setEditingEvent] = useState<WeddingEvent | null>(null);
+  const [managingEventGuests, setManagingEventGuests] = useState<WeddingEvent | null>(null);
+  const [eventGuestSearch, setEventGuestSearch] = useState<string>('');
+  const [guestEventFilter, setGuestEventFilter] = useState<string>('all');
+  const [newGuestEventIds, setNewGuestEventIds] = useState<string[]>([]);
+
+  // Add / Edit Event Form State
+  const [eventFormName, setEventFormName] = useState('');
+  const [eventFormCategory, setEventFormCategory] = useState<string>('ceremony');
+  const [eventFormDate, setEventFormDate] = useState('2026-11-14');
+  const [eventFormTime, setEventFormTime] = useState('14:00');
+  const [eventFormEndTime, setEventFormEndTime] = useState('15:00');
+  const [eventFormVenue, setEventFormVenue] = useState('Fernwood Estate');
+  const [eventFormAddress, setEventFormAddress] = useState('124 Range Road, Mittagong NSW');
+  const [eventFormDressCode, setEventFormDressCode] = useState('Cocktail / Black Tie Optional');
+  const [eventFormDesc, setEventFormDesc] = useState('');
+
+  // Guided Story Prompts & Cheers AI State
+  const [showCheersAiModal, setShowCheersAiModal] = useState<boolean>(false);
+  const [storyPromptHowWeMet, setStoryPromptHowWeMet] = useState('A rainy autumn afternoon in Bowral at a small corner bookstore.');
+  const [storyPromptProposal, setStoryPromptProposal] = useState('During a sunset hike overlooking Lake Wakatipu in Queenstown with champagne.');
+  const [storyPromptCherish, setStoryPromptCherish] = useState('Cooking pasta on Sunday mornings, road trips to coastal towns, and laughing through every adventure.');
+  const [storyAiTone, setStoryAiTone] = useState<'romantic' | 'warm' | 'playful'>('romantic');
+  const [cheersDraftOutput, setCheersDraftOutput] = useState<string>('');
+  const [storyChatInput, setStoryChatInput] = useState<string>('');
+  const [storyChatMessages, setStoryChatMessages] = useState<Array<{
+    id: string;
+    sender: 'user' | 'cheers';
+    text: string;
+    draft?: string;
+    timestamp: string;
+  }>>([
+    {
+      id: 'sc_init',
+      sender: 'cheers',
+      text: "Hello! I'm Cheers AI, your storytelling concierge. I can turn your romantic moments, milestone memories, and vows into a beautifully written 'Our Story' section for your wedding website. You can chat with me, choose a style, or upload notes from a file (.docx, .txt, .pdf)!",
+      timestamp: 'Just now',
+    },
+  ]);
+  const storyFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [cheersIsDrafting, setCheersIsDrafting] = useState<boolean>(false);
+
+  const resetEventForm = () => {
+    setEventFormName('');
+    setEventFormCategory('ceremony');
+    setEventFormDate('2026-11-14');
+    setEventFormTime('14:00');
+    setEventFormEndTime('15:00');
+    setEventFormVenue('Fernwood Estate');
+    setEventFormAddress('124 Range Road, Mittagong NSW');
+    setEventFormDressCode('Cocktail / Black Tie Optional');
+    setEventFormDesc('');
+    setEditingEvent(null);
+  };
+
+  const handleOpenAddEventModal = () => {
+    resetEventForm();
+    setShowAddEventModal(true);
+  };
+
+  const handleOpenEditEventModal = (evt: WeddingEvent) => {
+    setEditingEvent(evt);
+    setEventFormName(evt.name || '');
+    setEventFormCategory(evt.category || 'ceremony');
+    setEventFormDate(evt.date || '2026-11-14');
+    setEventFormTime(evt.time || '14:00');
+    setEventFormEndTime(evt.endTime || '');
+    setEventFormVenue(evt.venue || '');
+    setEventFormAddress(evt.address || '');
+    setEventFormDressCode(evt.dressCode || '');
+    setEventFormDesc(evt.description || '');
+    setShowAddEventModal(true);
+  };
+
+  const handleSaveEvent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!eventFormName.trim()) return;
+
+    const currentEvents = wedding.events || [];
+    let updatedEvents: WeddingEvent[];
+
+    if (editingEvent) {
+      updatedEvents = currentEvents.map(ev => ev.id === editingEvent.id ? {
+        ...ev,
+        name: eventFormName.trim(),
+        category: eventFormCategory,
+        date: eventFormDate,
+        time: eventFormTime,
+        endTime: eventFormEndTime,
+        venue: eventFormVenue.trim(),
+        address: eventFormAddress.trim(),
+        dressCode: eventFormDressCode.trim(),
+        description: eventFormDesc.trim(),
+      } : ev);
+      showToast(`Updated "${eventFormName.trim()}"`, 'success');
+    } else {
+      const newEventId = 'evt_' + Date.now();
+      const newEvt: WeddingEvent = {
+        id: newEventId,
+        weddingId: wedding.id,
+        name: eventFormName.trim(),
+        category: eventFormCategory,
+        date: eventFormDate,
+        time: eventFormTime,
+        endTime: eventFormEndTime,
+        venue: eventFormVenue.trim(),
+        address: eventFormAddress.trim(),
+        dressCode: eventFormDressCode.trim(),
+        description: eventFormDesc.trim(),
+        order: currentEvents.length + 1,
+      };
+      updatedEvents = [...currentEvents, newEvt];
+      // Automatically invite all current wedding guests by default
+      const updatedGuests = (state.guests || []).map(g => ({
+        ...g,
+        invitedEventIds: g.invitedEventIds ? [...g.invitedEventIds, newEventId] : [newEventId],
+      }));
+      setState(prev => ({
+        ...prev,
+        guests: updatedGuests,
+        weddings: (prev.weddings || []).map(w => w.id === wedding.id ? { ...w, events: updatedEvents } : w),
+      }));
+      setShowAddEventModal(false);
+      resetEventForm();
+      showToast(`Created "${eventFormName.trim()}" and added to guest schedule`, 'success');
+      return;
+    }
+
+    setState(prev => ({
+      ...prev,
+      weddings: (prev.weddings || []).map(w => w.id === wedding.id ? { ...w, events: updatedEvents } : w),
+    }));
+    setShowAddEventModal(false);
+    resetEventForm();
+  };
+
+  const handleDeleteEvent = (eventId: string, eventName: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${eventName}"? Invited guests will no longer see it on their schedule.`)) {
+      return;
+    }
+    const currentEvents = wedding.events || [];
+    const updatedEvents = currentEvents.filter(e => e.id !== eventId);
+    const updatedGuests = (state.guests || []).map(g => ({
+      ...g,
+      invitedEventIds: (g.invitedEventIds || []).filter(id => id !== eventId),
+    }));
+    setState(prev => ({
+      ...prev,
+      guests: updatedGuests,
+      weddings: (prev.weddings || []).map(w => w.id === wedding.id ? { ...w, events: updatedEvents } : w),
+    }));
+    showToast(`Event "${eventName}" deleted`, 'info');
+  };
+
+  const handleToggleGuestEventInvitation = (guestId: string, eventId: string) => {
+    const updatedGuests = (state.guests || []).map(g => {
+      if (g.id !== guestId) return g;
+      const currentList = g.invitedEventIds || (wedding.events || []).map(e => e.id);
+      const isInvited = currentList.includes(eventId);
+      const updatedList = isInvited ? currentList.filter(id => id !== eventId) : [...currentList, eventId];
+      return {
+        ...g,
+        invitedEventIds: updatedList,
+      };
+    });
+    setState(prev => ({ ...prev, guests: updatedGuests }));
+  };
+
+  const handleBulkGuestEventInvitation = (eventId: string, inviteAll: boolean) => {
+    const updatedGuests = (state.guests || []).map(g => {
+      const currentList = g.invitedEventIds || [];
+      let updatedList: string[];
+      if (inviteAll) {
+        updatedList = currentList.includes(eventId) ? currentList : [...currentList, eventId];
+      } else {
+        updatedList = currentList.filter(id => id !== eventId);
+      }
+      return { ...g, invitedEventIds: updatedList };
+    });
+    setState(prev => ({ ...prev, guests: updatedGuests }));
+    showToast(inviteAll ? 'All guests invited to this event' : 'All guests removed from this event', 'info');
+  };
+
+  const handleDraftWithCheers = () => {
+    setCheersIsDrafting(true);
+    setTimeout(() => {
+      let draft = '';
+      if (storyAiTone === 'romantic') {
+        draft = `From the moment we met—${storyPromptHowWeMet.toLowerCase().replace(/\.$/, '')}—our lives began intertwining in ways neither of us could have anticipated.\n\nYears of quiet laughter and shared dreams led us to that unforgettable milestone: ${storyPromptProposal.toLowerCase().replace(/\.$/, '')}. With the world standing still around us, answering 'yes' was the easiest decision of our lives.\n\nToday, what we cherish most is the everyday magic we build together—${storyPromptCherish.toLowerCase().replace(/\.$/, '')}. As we begin this next chapter, we are deeply grateful to celebrate our love alongside our dearest family and friends.`;
+      } else if (storyAiTone === 'playful') {
+        draft = `It all started simply enough: ${storyPromptHowWeMet}\n\nBefore we knew it, coffee dates turned into road trips, inside jokes, and an unforgettable proposal—${storyPromptProposal.toLowerCase().replace(/\.$/, '')}. She/He said yes before the question was even fully out!\n\nWhat keeps us going? ${storyPromptCherish} We couldn't imagine tying the knot without the people who have laughed and celebrated with us along the way.`;
+      } else {
+        draft = `Our journey together began with ${storyPromptHowWeMet.toLowerCase().replace(/\.$/, '')}. That spark quickly grew into a partnership built on trust, genuine warmth, and unconditional support.\n\nWhen the moment came—${storyPromptProposal.toLowerCase().replace(/\.$/, '')}—we both knew our futures were forever bound.\n\nAs we look ahead, what matters most to us is ${storyPromptCherish.toLowerCase().replace(/\.$/, '')}. Thank you for being part of our story and celebrating this day with us.`;
+      }
+      setCheersDraftOutput(draft);
+      setCheersIsDrafting(false);
+      showToast('Cheers AI crafted your love story draft!', 'success');
+    }, 700);
+  };
+
+  const handleSendStoryChatMessage = (customQuery?: string) => {
+    const query = (customQuery || storyChatInput).trim();
+    if (!query) return;
+
+    if (!customQuery) setStoryChatInput('');
+
+    // Add user bubble
+    setStoryChatMessages((prev) => [
+      ...prev,
+      { id: 'usr_st_' + Date.now(), sender: 'user', text: query, timestamp: 'Just now' },
+    ]);
+
+    setTimeout(() => {
+      let toneWord = 'romantic and timeless';
+      let draftText = '';
+
+      if (query.toLowerCase().includes('playful') || query.toLowerCase().includes('fun') || query.toLowerCase().includes('humor')) {
+        toneWord = 'playful and joyful';
+        draftText = `It all began simply enough: ${storyPromptHowWeMet}\n\nBefore we knew it, casual afternoon coffee turned into cross-country road trips, hundreds of inside jokes, and an unforgettable proposal—${storyPromptProposal.toLowerCase().replace(/\.$/, '')}. The answer was an immediate 'yes' before the question could even finish!\n\nWhat keeps us going? ${storyPromptCherish} We couldn't imagine celebrating this next chapter without the wonderful family and friends who have filled our journey with laughter.`;
+      } else if (query.toLowerCase().includes('short') || query.toLowerCase().includes('concise') || query.toLowerCase().includes('brief')) {
+        toneWord = 'warm and concise';
+        draftText = `From our first meeting—${storyPromptHowWeMet.toLowerCase().replace(/\.$/, '')}—to our dream proposal—${storyPromptProposal.toLowerCase().replace(/\.$/, '')}—every moment has brought us closer.\n\nToday, what we cherish most is ${storyPromptCherish.toLowerCase().replace(/\.$/, '')}. We are overjoyed to celebrate our vows with those we love most.`;
+      } else {
+        draftText = `From the quiet moment we first met—${storyPromptHowWeMet.toLowerCase().replace(/\.$/, '')}—our paths aligned in ways neither of us could have predicted.\n\nYears of shared laughter, quiet evenings, and spontaneous adventures culminated in an unforgettable milestone: ${storyPromptProposal.toLowerCase().replace(/\.$/, '')}. In that moment, looking into each other's eyes, saying 'yes' felt as natural as breathing.\n\nWhat we cherish most today is the gentle magic of our everyday life—${storyPromptCherish.toLowerCase().replace(/\.$/, '')}. As we step forward into marriage, we are deeply grateful to share this celebration with everyone who has touched our hearts.`;
+      }
+
+      setCheersDraftOutput(draftText);
+      setStoryChatMessages((prev) => [
+        ...prev,
+        {
+          id: 'ch_st_' + Date.now(),
+          sender: 'cheers',
+          text: `✨ I've crafted a ${toneWord} version of your love story tailored to your request:\n\nReview the draft below and click 'Apply to Our Story' to publish it to your wedding website.`,
+          draft: draftText,
+          timestamp: 'Just now',
+        },
+      ]);
+      showToast('Cheers AI drafted your couple story!', 'success');
+    }, 300);
+  };
+
+  const handleStoryFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const fileName = file.name;
+    const reader = new FileReader();
+
+    setStoryChatMessages((prev) => [
+      ...prev,
+      {
+        id: 'usr_st_file_' + Date.now(),
+        sender: 'user',
+        text: `📎 Uploaded notes: "${fileName}" (${Math.round(file.size / 1024) || 1} KB)`,
+        timestamp: 'Just now',
+      },
+    ]);
+
+    reader.onload = (evt) => {
+      const textContent = String(evt.target?.result || '').slice(0, 1000);
+      const generatedDraft = `Our journey together is written in the moments that matter most—from our first chapter in Bowral to the sunset hike where forever was promised.\n\n"${textContent ? textContent.slice(0, 220) + '...' : storyPromptCherish}"\n\nWe are endlessly grateful for the warmth, humor, and unwavering love that our families and dearest friends bring to our lives as we begin this marriage.`;
+
+      setCheersDraftOutput(generatedDraft);
+      setStoryChatMessages((prev) => [
+        ...prev,
+        {
+          id: 'ch_st_fres_' + Date.now(),
+          sender: 'cheers',
+          text: `📄 I've analyzed your notes from "${fileName}". I've woven your memories into an evocative couple story for your guests to enjoy.`,
+          draft: generatedDraft,
+          timestamp: 'Just now',
+        },
+      ]);
+      showToast(`Story draft generated from ${fileName}`, 'success');
+    };
+
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleApplyCheersDraft = () => {
+    if (!cheersDraftOutput.trim()) return;
+    setContentPages(prev => ({
+      ...prev,
+      ourStory: {
+        ...prev.ourStory,
+        content: cheersDraftOutput,
+        status: 'Published',
+      },
+    }));
+    setShowCheersAiModal(false);
+    showToast('Love story updated with Cheers AI draft!', 'success');
+  };
+
   // Tab 2: Guest List State & Actions (Screenshot 23)
   const [guestSearch, setGuestSearch] = useState('');
   const [guestFilter, setGuestFilter] = useState<'all' | 'confirmed' | 'declined' | 'awaiting'>('all');
@@ -186,6 +491,486 @@ export default function CoupleView({
     showToast(`Removed ${householdKey} (${count} guest${count > 1 ? 's' : ''}) from list`, 'info');
   };
 
+  // -------------------------------------------------------------
+  // Guest List Import Types & State (CSV / XLSX with Cheers AI)
+  // -------------------------------------------------------------
+  interface ImportGuestRow {
+    id: string;
+    selected: boolean;
+    name: string;
+    household: string;
+    email: string;
+    phone: string;
+    category: string;
+    adults: number;
+    kids: number;
+    dietary: string;
+    invitedEventIds: string[];
+    status: 'ready' | 'review';
+    warning?: string;
+  }
+
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importStep, setImportStep] = useState<'upload' | 'review'>('upload');
+  const [importFileName, setImportFileName] = useState('');
+  const [importRows, setImportRows] = useState<ImportGuestRow[]>([]);
+  const [importSendMode, setImportSendMode] = useState<'drafts' | 'immediate'>('drafts');
+  const [importDetectedMappings, setImportDetectedMappings] = useState<string[]>([]);
+  const [importFilterStatus, setImportFilterStatus] = useState<'all' | 'ready' | 'review'>('all');
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const importFileInputRef = useRef<HTMLInputElement>(null);
+
+  const normalizeImportKey = (key: string) => key.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  const detectColumnMappings = (headers: string[]): Record<string, string> => {
+    const map: Record<string, string> = {};
+    const patterns: Record<string, RegExp> = {
+      name: /^(name|fullname|guestname|guest|attendee|person|whoscoming|primaryguest)$/i,
+      firstName: /^(firstname|first)$/i,
+      lastName: /^(lastname|last|surname)$/i,
+      household: /^(household|family|group|familygroup|familyname|party|tablegroup)$/i,
+      email: /^(email|emailaddress|mail|e-mail)$/i,
+      phone: /^(phone|mobile|cell|telephone|contact|phonenumber|mobilenumber|cellphone)$/i,
+      category: /^(category|group|side|relationship|circle|guestcategory|type|relation)$/i,
+      adults: /^(adults|adult|pax|partysize|adultcount|numberofadults|paxadults|guests)$/i,
+      kids: /^(kids|children|child|infants|kidcount|numberofkids)$/i,
+      dietary: /^(dietary|diet|allergies|allergy|food|specialmeal|foodrequirements|restrictions|dietaryrequirements|foodrestrictions)$/i,
+      events: /^(events|invitedevents|celebrations|functions|whichevents)$/i,
+    };
+
+    headers.forEach(header => {
+      const clean = normalizeImportKey(header);
+      for (const [field, reg] of Object.entries(patterns)) {
+        if (!map[field] && (reg.test(clean) || clean.includes(field.toLowerCase()))) {
+          map[field] = header;
+          break;
+        }
+      }
+    });
+
+    return map;
+  };
+
+  const normalizeImportPhone = (raw: any): string => {
+    if (!raw) return '';
+    const str = String(raw).trim();
+    const digits = str.replace(/[^\d+]/g, '');
+    if (digits.startsWith('04') && digits.length === 10) {
+      return `+61 ${digits.slice(1, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`;
+    }
+    if (digits.startsWith('4') && digits.length === 9) {
+      return `+61 4${digits.slice(1, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+    }
+    return str;
+  };
+
+  const mapImportCategory = (raw: string): string => {
+    if (!raw) return "Mutual Friends";
+    const s = raw.toLowerCase();
+    if (s.includes('bridal') || s.includes('groomsmen') || s.includes('bridesmaid') || s.includes('party')) return "Bridal Party";
+    if (s.includes('bride')) return "Bride's Family";
+    if (s.includes('groom')) return "Groom's Family";
+    if (s.includes('colleague') || s.includes('work')) return "Work Colleagues";
+    if (s.includes('vip') || s.includes('extended')) return "VIP / Extended";
+    return "Mutual Friends";
+  };
+
+  const handleProcessFileData = (data: ArrayBuffer | string, fileName: string) => {
+    try {
+      const workbook = XLSX.read(data, { type: typeof data === 'string' ? 'string' : 'array' });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const rawRows = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, { defval: '' });
+
+      if (!rawRows || rawRows.length === 0) {
+        showToast('Spreadsheet appears to be empty or has no data rows', 'error');
+        return;
+      }
+
+      const headers = Object.keys(rawRows[0] || {});
+      const mapping = detectColumnMappings(headers);
+      const mappingsList: string[] = [];
+
+      if (mapping.name) mappingsList.push(`${mapping.name} ➔ Name`);
+      else if (mapping.firstName) mappingsList.push(`${mapping.firstName} + ${mapping.lastName || ''} ➔ Name`);
+      if (mapping.household) mappingsList.push(`${mapping.household} ➔ Household`);
+      if (mapping.email) mappingsList.push(`${mapping.email} ➔ Email`);
+      if (mapping.phone) mappingsList.push(`${mapping.phone} ➔ Phone`);
+      if (mapping.category) mappingsList.push(`${mapping.category} ➔ Category`);
+      if (mapping.dietary) mappingsList.push(`${mapping.dietary} ➔ Dietary`);
+      if (mapping.events) mappingsList.push(`${mapping.events} ➔ Events`);
+
+      const weddingEvents = wedding.events || [];
+      const allEventIds = weddingEvents.map(e => e.id);
+
+      const parsed: ImportGuestRow[] = rawRows.map((row, idx) => {
+        let name = '';
+        if (mapping.name && row[mapping.name]) {
+          name = String(row[mapping.name]).trim();
+        } else if (mapping.firstName && row[mapping.firstName]) {
+          name = `${String(row[mapping.firstName]).trim()} ${String(row[mapping.lastName] || '').trim()}`.trim();
+        } else {
+          const possibleNameKey = Object.keys(row).find(k => /name/i.test(k));
+          if (possibleNameKey) name = String(row[possibleNameKey]).trim();
+        }
+
+        let household = mapping.household && row[mapping.household] ? String(row[mapping.household]).trim() : '';
+        if (!household && name) {
+          household = `${name} Household`;
+        }
+
+        const email = mapping.email && row[mapping.email] ? String(row[mapping.email]).trim() : '';
+        const phone = normalizeImportPhone(mapping.phone ? row[mapping.phone] : '');
+        const category = mapImportCategory(mapping.category ? String(row[mapping.category]) : '');
+
+        let adults = 1;
+        if (mapping.adults && row[mapping.adults]) {
+          const parsedAdults = parseInt(String(row[mapping.adults]), 10);
+          if (!isNaN(parsedAdults) && parsedAdults > 0) adults = parsedAdults;
+        }
+
+        let kids = 0;
+        if (mapping.kids && row[mapping.kids]) {
+          const parsedKids = parseInt(String(row[mapping.kids]), 10);
+          if (!isNaN(parsedKids) && parsedKids >= 0) kids = parsedKids;
+        }
+
+        const dietary = mapping.dietary && row[mapping.dietary] ? String(row[mapping.dietary]).trim() : '';
+
+        // Match events if specified in spreadsheet
+        let invitedEventIds: string[] = allEventIds;
+        if (mapping.events && row[mapping.events]) {
+          const rawEvtStr = String(row[mapping.events]).toLowerCase();
+          const matched = weddingEvents.filter(evt => rawEvtStr.includes(evt.name.toLowerCase()) || rawEvtStr.includes(evt.name.split(' ')[0].toLowerCase()));
+          if (matched.length > 0) {
+            invitedEventIds = matched.map(m => m.id);
+          }
+        }
+
+        let status: 'ready' | 'review' = 'ready';
+        let warning = '';
+        if (!name) {
+          status = 'review';
+          warning = 'Missing guest name';
+        } else if (!email && !phone) {
+          status = 'review';
+          warning = 'Missing contact info';
+        } else if (email && !email.includes('@')) {
+          status = 'review';
+          warning = 'Check email format';
+        }
+
+        return {
+          id: `row_${Date.now()}_${idx}`,
+          selected: true,
+          name,
+          household,
+          email,
+          phone,
+          category,
+          adults,
+          kids,
+          dietary,
+          invitedEventIds,
+          status,
+          warning
+        };
+      });
+
+      setImportFileName(fileName);
+      setImportDetectedMappings(mappingsList);
+      setImportRows(parsed);
+      setImportStep('review');
+      showToast(`✨ Cheers AI mapped ${parsed.length} guests from ${fileName}`, 'success');
+    } catch (err: any) {
+      console.error('Failed to parse spreadsheet:', err);
+      showToast('Could not parse spreadsheet. Please verify the file format.', 'error');
+    }
+  };
+
+  const handleLoadSampleSpreadsheet = () => {
+    const sampleData = [
+      {
+        "Guest Name": "Dr. Evelyn Reed",
+        "Family Unit": "The Reed Family",
+        "Contact Email": "evelyn.reed@monash.edu",
+        "Cell Phone": "0488 221 443",
+        "Relation": "Bride's Family",
+        "Pax Adults": 2,
+        "Children": 1,
+        "Food Restrictions": "Gluten-Free, Celiac",
+        "Events": "Ceremony, Reception"
+      },
+      {
+        "Guest Name": "Siddharth Mehta",
+        "Family Unit": "Mehta Household",
+        "Contact Email": "sid.mehta@sydneytech.io",
+        "Cell Phone": "0419 555 782",
+        "Relation": "Bridal Party",
+        "Pax Adults": 2,
+        "Children": 0,
+        "Food Restrictions": "Vegan",
+        "Events": "Ceremony, Sangeet, Reception, After-party"
+      },
+      {
+        "Guest Name": "Claire & Oliver Dubois",
+        "Family Unit": "Dubois Family",
+        "Contact Email": "claire.dubois@artgallery.nsw",
+        "Cell Phone": "0402 998 112",
+        "Relation": "Mutual Friends",
+        "Pax Adults": 2,
+        "Children": 2,
+        "Food Restrictions": "Dairy-Free for 1 child",
+        "Events": "Ceremony, Reception, Breakfast"
+      },
+      {
+        "Guest Name": "Thomas 'Tom' Henderson",
+        "Family Unit": "Henderson",
+        "Contact Email": "tom.hendo@melbournegym.com",
+        "Cell Phone": "0433 112 904",
+        "Relation": "Groom's Family",
+        "Pax Adults": 1,
+        "Children": 0,
+        "Food Restrictions": "None",
+        "Events": "Ceremony, Reception"
+      },
+      {
+        "Guest Name": "Zara Al-Mansoor",
+        "Family Unit": "Al-Mansoor",
+        "Contact Email": "zara.m@canberralaw.com.au",
+        "Cell Phone": "0421 776 339",
+        "Relation": "VIP / Extended",
+        "Pax Adults": 1,
+        "Children": 0,
+        "Food Restrictions": "Halal strictly",
+        "Events": "Ceremony, Sangeet, Reception"
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(sampleData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const arrayBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    handleProcessFileData(arrayBuffer, 'sample_wedding_guests.xlsx');
+  };
+
+  const handleDownloadTemplate = (format: 'xlsx' | 'csv') => {
+    const weddingEvents = wedding.events || [];
+    const eventNames = weddingEvents.map(e => e.name).join(', ') || 'Ceremony, Reception';
+
+    const templateRows = [
+      {
+        "Full Name": "Liam Chen",
+        "Household / Group": "Chen Family",
+        "Email Address": "liam.chen@example.com",
+        "Mobile Phone": "+61 412 889 123",
+        "Category": "Bridal Party",
+        "Adults": 2,
+        "Kids": 1,
+        "Dietary Requirements": "Vegetarian",
+        "Invited Events": eventNames
+      },
+      {
+        "Full Name": "Aaliyah Patel",
+        "Household / Group": "Patel Household",
+        "Email Address": "aaliyah.patel@example.com",
+        "Mobile Phone": "+61 423 456 789",
+        "Category": "Bride's Family",
+        "Adults": 2,
+        "Kids": 0,
+        "Dietary Requirements": "Halal, Nut Allergy",
+        "Invited Events": eventNames
+      },
+      {
+        "Full Name": "Marcus Vance",
+        "Household / Group": "Marcus Vance",
+        "Email Address": "marcus.vance@example.com",
+        "Mobile Phone": "+61 434 567 890",
+        "Category": "Mutual Friends",
+        "Adults": 1,
+        "Kids": 0,
+        "Dietary Requirements": "None",
+        "Invited Events": eventNames
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(templateRows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Guests");
+
+    const fileName = `Tap_and_Toast_Guest_List_Template.${format}`;
+    XLSX.writeFile(wb, fileName, { bookType: format });
+    showToast(`Downloaded ${fileName}`, 'success');
+  };
+
+  const handleImportFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const buffer = event.target?.result as ArrayBuffer;
+      if (buffer) {
+        handleProcessFileData(buffer, file.name);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = '';
+  };
+
+  const handleImportDropFile = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingFile(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const buffer = event.target?.result as ArrayBuffer;
+      if (buffer) {
+        handleProcessFileData(buffer, file.name);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const updateImportRow = (rowId: string, field: keyof ImportGuestRow, value: any) => {
+    setImportRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const updated = { ...r, [field]: value };
+      let status: 'ready' | 'review' = 'ready';
+      let warning = '';
+      if (!updated.name.trim()) {
+        status = 'review';
+        warning = 'Missing guest name';
+      } else if (!updated.email.trim() && !updated.phone.trim()) {
+        status = 'review';
+        warning = 'Missing contact info';
+      } else if (updated.email && !updated.email.includes('@')) {
+        status = 'review';
+        warning = 'Check email format';
+      }
+      updated.status = status;
+      updated.warning = warning;
+      return updated;
+    }));
+  };
+
+  const toggleImportRowEvent = (rowId: string, eventId: string) => {
+    setImportRows(prev => prev.map(r => {
+      if (r.id !== rowId) return r;
+      const exists = r.invitedEventIds.includes(eventId);
+      const updatedEventIds = exists
+        ? r.invitedEventIds.filter(id => id !== eventId)
+        : [...r.invitedEventIds, eventId];
+      return { ...r, invitedEventIds: updatedEventIds };
+    }));
+  };
+
+  const handleAddBlankImportRow = () => {
+    const newRow: ImportGuestRow = {
+      id: `row_manual_${Date.now()}`,
+      selected: true,
+      name: '',
+      household: '',
+      email: '',
+      phone: '',
+      category: 'Mutual Friends',
+      adults: 1,
+      kids: 0,
+      dietary: '',
+      invitedEventIds: (wedding.events || []).map(e => e.id),
+      status: 'review',
+      warning: 'Enter guest name'
+    };
+    setImportRows(prev => [newRow, ...prev]);
+  };
+
+  const handleDeleteImportRow = (rowId: string) => {
+    setImportRows(prev => prev.filter(r => r.id !== rowId));
+  };
+
+  const handleCommitImport = () => {
+    const selectedRows = importRows.filter(r => r.selected);
+    console.log('[Import] Commit button clicked. Selected rows:', selectedRows.length);
+    if (selectedRows.length === 0) {
+      showToast('Please select at least one guest to import', 'error');
+      return;
+    }
+
+    const currentWeddingId = wedding?.id || 'w1';
+
+    const newGuests: Guest[] = selectedRows.map((r, idx) => {
+      const initials = r.name
+        .split(' ')
+        .map(p => p[0])
+        .filter(Boolean)
+        .slice(0, 2)
+        .join('')
+        .toUpperCase() || 'G';
+
+      const guestId = `guest_imported_${Date.now()}_${idx}`;
+
+      const eventRsvps: Record<string, GuestEventRsvp> = {};
+      (r.invitedEventIds || []).forEach(eventId => {
+        eventRsvps[eventId] = {
+          status: 'awaiting',
+          dietary: r.dietary || '',
+          updatedAt: new Date().toISOString()
+        };
+      });
+
+      return {
+        id: guestId,
+        weddingId: wedding.id,
+        name: r.name.trim() || 'Unnamed Guest',
+        initials,
+        household: r.household.trim() || `${r.name.trim()} Household`,
+        email: r.email.trim(),
+        phone: r.phone.trim(),
+        rsvpStatus: 'awaiting' as const,
+        adults: r.adults || 1,
+        kids: r.kids || 0,
+        partySize: (r.adults || 1) + (r.kids || 0),
+        guestCount: (r.adults || 1) + (r.kids || 0),
+        dietary: r.dietary.trim(),
+        category: r.category || 'Mutual Friends',
+        invitedEventIds: r.invitedEventIds && r.invitedEventIds.length > 0
+          ? r.invitedEventIds
+          : (wedding.events || []).map(e => e.id),
+        eventRsvps,
+        reminderSent: importSendMode === 'immediate',
+        notes: importSendMode === 'drafts' ? 'Imported as Draft' : 'Invitation Dispatched on Import'
+      };
+    });
+
+    const updatedGuests = [...newGuests, ...state.guests];
+    const nextState = {
+      ...state,
+      guests: updatedGuests
+    };
+    setState(nextState);
+
+    logAudit(
+      nextState,
+      setState,
+      'GUESTS_IMPORTED',
+      'Couple',
+      'couple',
+      `Imported ${newGuests.length} guests (${importSendMode === 'drafts' ? 'Drafts' : 'Immediate Dispatch'}) from ${importFileName || 'spreadsheet'}`,
+      'Guests'
+    );
+
+    setShowImportModal(false);
+    setImportRows([]);
+    setImportFileName('');
+
+    if (importSendMode === 'drafts') {
+      showToast(`Successfully imported ${newGuests.length} guests as drafts!`, 'success');
+    } else {
+      showToast(`Imported ${newGuests.length} guests and dispatched digital invitations!`, 'success');
+    }
+  };
+
   const handleAddNewGuest = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGuestName.trim()) return;
@@ -209,6 +994,8 @@ export default function CoupleView({
       seatIndex: null,
       category: newGuestCategory || 'Uncategorised',
       reminderSent: false,
+      invitedEventIds: newGuestEventIds.length > 0 ? newGuestEventIds : (wedding.events || []).map(e => e.id),
+      eventRsvps: {},
     };
     setState({
       ...state,
@@ -837,7 +1624,8 @@ export default function CoupleView({
         : guestCategoryFilter === 'needs_category'
         ? (!g.category || g.category === 'Uncategorised')
         : g.category === guestCategoryFilter;
-    return matchSearch && matchFilter && matchCat;
+    const matchEvent = guestEventFilter === 'all' || (g.invitedEventIds || []).includes(guestEventFilter);
+    return matchSearch && matchFilter && matchCat && matchEvent;
   });
 
   // Group wedding guests into families / households
@@ -1097,6 +1885,158 @@ export default function CoupleView({
     showToast('Cue removed from run sheet', 'info');
   };
 
+  // MC Response to Planner Change Request
+  const handleAcceptChangeRequest = (cueId: string) => {
+    const cue = runSheet.find(c => c.id === cueId);
+    if (!cue || !cue.changeRequest) return;
+    const updated = runSheet.map(c => {
+      if (c.id === cueId && c.changeRequest) {
+        return {
+          ...c,
+          time: c.changeRequest.proposedTime || c.time,
+          activity: c.changeRequest.proposedActivity || c.activity,
+          changeRequest: {
+            ...c.changeRequest,
+            status: 'accepted' as const,
+            respondedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        };
+      }
+      return c;
+    });
+    updateWeddingRunSheet(updated);
+    logAudit(state, setState, 'Change Request Accepted', 'Robert Galati', 'mc', `Accepted planner change request for "${cue.activity}": time set to ${cue.changeRequest.proposedTime}`, 'Run Sheet');
+    showToast(`Accepted change request: updated to ${cue.changeRequest.proposedTime}`, 'success');
+  };
+
+  const handleDeclineChangeRequest = (cueId: string) => {
+    const cue = runSheet.find(c => c.id === cueId);
+    if (!cue || !cue.changeRequest) return;
+    const updated = runSheet.map(c => {
+      if (c.id === cueId && c.changeRequest) {
+        return {
+          ...c,
+          changeRequest: {
+            ...c.changeRequest,
+            status: 'declined' as const,
+            respondedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        };
+      }
+      return c;
+    });
+    updateWeddingRunSheet(updated);
+    logAudit(state, setState, 'Change Request Declined', 'Robert Galati', 'mc', `Declined planner change request for "${cue.activity}"`, 'Run Sheet');
+    showToast('Declined change request: original schedule retained', 'info');
+  };
+
+  // MC Standard Template & Cheers AI & Vendor Share states
+  const [showMcTemplateModal, setShowMcTemplateModal] = useState(false);
+  const [selectedMcTemplateId, setSelectedMcTemplateId] = useState('classic-vineyard');
+  const [mcTemplateImportMode, setMcTemplateImportMode] = useState<'replace' | 'append'>('append');
+  const [mcTemplateRows, setMcTemplateRows] = useState<Array<Omit<PrivateRunSheetItem, 'id' | 'order' | 'done'> & { selected: boolean }>>([]);
+
+  const handleOpenMcTemplateModal = () => {
+    const defTpl = STANDARD_RUN_SHEET_TEMPLATES[0];
+    setSelectedMcTemplateId(defTpl.id);
+    setMcTemplateRows(defTpl.items.map(i => ({ ...i, selected: true })));
+    setShowMcTemplateModal(true);
+  };
+
+  const handleApplyMcTemplate = () => {
+    const selected = mcTemplateRows.filter(r => r.selected);
+    if (selected.length === 0) {
+      showToast('Select at least one activity', 'error');
+      return;
+    }
+    const newItems: PrivateRunSheetItem[] = selected.map((s, idx) => ({
+      id: 'pmc_tpl_' + Date.now() + '_' + idx,
+      time: s.time,
+      activity: s.activity,
+      notes: s.notes || '',
+      privateNotes: s.privateNotes || '',
+      done: false,
+      order: runSheet.length + idx + 1,
+    }));
+    const nextCues = mcTemplateImportMode === 'replace' ? newItems : [...runSheet, ...newItems];
+    updateWeddingRunSheet(nextCues);
+    showToast(`Imported ${newItems.length} cues from template`, 'success');
+    setShowMcTemplateModal(false);
+  };
+
+  const [showMcAiModal, setShowMcAiModal] = useState(false);
+  const [mcAiModalTab, setMcAiModalTab] = useState<'draft' | 'import'>('draft');
+  const [mcAiCeremonyTime, setMcAiCeremonyTime] = useState('15:30');
+  const [mcAiReceptionTime, setMcAiReceptionTime] = useState('18:00');
+  const [mcAiRawText, setMcAiRawText] = useState('');
+  const [mcAiParsedRows, setMcAiParsedRows] = useState<Array<Omit<PrivateRunSheetItem, 'id' | 'order' | 'done'> & { selected: boolean }>>([]);
+
+  const handleOpenMcAiModal = () => {
+    setShowMcAiModal(true);
+    if (mcAiParsedRows.length === 0) {
+      const draft = generateAiRunSheetDraft({
+        ceremonyTime: mcAiCeremonyTime,
+        receptionTime: mcAiReceptionTime,
+        sunsetTime: '17:45',
+        style: 'seated',
+        speechesCount: 3,
+      });
+      setMcAiParsedRows(draft.map(d => ({ ...d, selected: true })));
+    }
+  };
+
+  const handleApplyMcAiChatbotItems = (
+    items: Array<Omit<PrivateRunSheetItem, 'id' | 'order' | 'done'>>,
+    mode: 'replace' | 'append'
+  ) => {
+    const newItems: PrivateRunSheetItem[] = items.map((item, idx) => ({
+      id: 'pmc_ai_' + Date.now() + '_' + idx,
+      time: item.time,
+      activity: item.activity,
+      notes: item.notes || '',
+      privateNotes: item.privateNotes || '',
+      done: false,
+      order: mode === 'replace' ? idx + 1 : runSheet.length + idx + 1,
+      section: item.section || 'afternoon',
+    }));
+
+    const nextCues = mode === 'replace' ? newItems : [...runSheet, ...newItems];
+    updateWeddingRunSheet(nextCues);
+    logAudit(
+      state,
+      setState,
+      'Cheers AI MC Run Sheet Saved',
+      'Robert Galati (MC)',
+      'mc',
+      `Saved ${newItems.length} activities via Cheers AI Chatbot (${mode} mode)`,
+      'Run Sheet'
+    );
+    showToast(`Saved ${newItems.length} activities to MC Run Sheet`, 'success');
+  };
+
+  const handleApplyMcAiRows = () => {
+    const selected = mcAiParsedRows.filter(r => r.selected);
+    if (selected.length === 0) {
+      showToast('Select at least one activity', 'error');
+      return;
+    }
+    const newItems: PrivateRunSheetItem[] = selected.map((s, idx) => ({
+      id: 'pmc_ai_' + Date.now() + '_' + idx,
+      time: s.time,
+      activity: s.activity,
+      notes: s.notes || '',
+      privateNotes: s.privateNotes || '',
+      done: false,
+      order: runSheet.length + idx + 1,
+    }));
+    updateWeddingRunSheet([...runSheet, ...newItems]);
+    showToast(`Saved ${newItems.length} AI activities to Run Sheet`, 'success');
+    setShowMcAiModal(false);
+  };
+
+  const [showMcShareModal, setShowMcShareModal] = useState(false);
+  const [mcShareCopied, setMcShareCopied] = useState(false);
+
   const handleAddCue = (e: React.FormEvent) => {
     e.preventDefault();
     if (!cueTime || !cueActivity) return;
@@ -1260,6 +2200,18 @@ export default function CoupleView({
                 ),
               },
               {
+                id: 'events' as const,
+                label: 'Events & Schedule',
+                icon: (
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                ),
+              },
+              {
                 id: 'guests',
                 label: 'Guest List',
                 icon: (
@@ -1413,11 +2365,7 @@ export default function CoupleView({
                     </span>
                     <span className="truncate">{tab.label}</span>
                   </div>
-                  {(tab as any).badge && (
-                    <span className="text-[9px] font-bold bg-[#bd9661] text-[#15110e] px-1.5 py-0.5 rounded-md uppercase tracking-wider">
-                      {(tab as any).badge}
-                    </span>
-                  )}
+
                 </button>
               );
             })}
@@ -1667,6 +2615,478 @@ export default function CoupleView({
         {/* ================================================================ */}
         {/* TAB 2: GUEST LIST (Screenshot 23: 172854.png)                     */}
         {/* ================================================================ */}
+        {/* ================================================================ */}
+        {/* TAB: EVENTS & SCHEDULE (EVENT-SPECIFIC INVITATIONS)             */}
+        {/* ================================================================ */}
+        {activeTab === 'events' && !isMcOrPlanner && (
+          <section className="space-y-6">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1">
+                  CELEBRATION TIMELINE &amp; INVITATIONS
+                </div>
+                <h1 className="font-serif text-3xl font-bold text-[#15110e]">
+                  Events &amp; Schedule
+                </h1>
+                <p className="text-xs text-[#8b7b6b] mt-1">
+                  Create wedding events and customize exactly which guests receive invitations and see them on their private digital itinerary.
+                </p>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleOpenAddEventModal}
+                  className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-3.5 py-2 rounded-lg text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                >
+                  <span>+</span>
+                  <span>Create Wedding Event</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick KPI Overview */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-white border border-[#e8ded0] rounded-xl p-3.5 shadow-2xs">
+                <div className="text-[10px] font-bold uppercase text-[#8b7b6b]">TOTAL EVENTS</div>
+                <div className="font-serif text-2xl font-bold text-[#15110e] mt-0.5">
+                  {(wedding.events || []).length}
+                </div>
+                <div className="text-[10px] text-[#8b7b6b]">Across wedding schedule</div>
+              </div>
+              <div className="bg-white border border-[#e8ded0] rounded-xl p-3.5 shadow-2xs">
+                <div className="text-[10px] font-bold uppercase text-[#8b7b6b]">TOTAL GUESTS</div>
+                <div className="font-serif text-2xl font-bold text-[#15110e] mt-0.5">
+                  {weddingGuests.length}
+                </div>
+                <div className="text-[10px] text-[#8b7b6b]">On your master guest list</div>
+              </div>
+              <div className="bg-white border border-[#e8ded0] rounded-xl p-3.5 shadow-2xs">
+                <div className="text-[10px] font-bold uppercase text-[#8b7b6b]">CEREMONY ATTENDEES</div>
+                <div className="font-serif text-2xl font-bold text-emerald-700 mt-0.5">
+                  {weddingGuests.filter(g => (g.invitedEventIds || []).includes('evt_ceremony')).length}
+                </div>
+                <div className="text-[10px] text-emerald-800 font-semibold">Invited to exchange of vows</div>
+              </div>
+              <div className="bg-white border border-[#e8ded0] rounded-xl p-3.5 shadow-2xs">
+                <div className="text-[10px] font-bold uppercase text-[#8b7b6b]">RECEPTION BANQUET</div>
+                <div className="font-serif text-2xl font-bold text-[#bd9661] mt-0.5">
+                  {weddingGuests.filter(g => (g.invitedEventIds || []).includes('evt_reception')).length}
+                </div>
+                <div className="text-[10px] text-[#8b7b6b]">Invited to dinner &amp; dancing</div>
+              </div>
+            </div>
+
+            {/* Event Table View matching User Request 3 */}
+            <div className="bg-white border border-[#e8ded0] rounded-2xl shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-[#faf8f5] border-b border-[#e8ded0] text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b]">
+                      <th className="py-3.5 px-4 font-bold">Event Name</th>
+                      <th className="py-3.5 px-4 font-bold">Event Date</th>
+                      <th className="py-3.5 px-4 font-bold">Time</th>
+                      <th className="py-3.5 px-4 font-bold">Loc</th>
+                      <th className="py-3.5 px-4 font-bold">Confirmed Guests</th>
+                      <th className="py-3.5 px-4 font-bold text-center">Guest List</th>
+                      <th className="py-3.5 px-4 font-bold text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#f0ede6]">
+                    {(wedding.events || []).map((evt) => {
+                      const invitedGuests = weddingGuests.filter(g => (g.invitedEventIds || []).includes(evt.id));
+                      const confirmedGuests = invitedGuests.filter(g => {
+                        const rsvp = g.eventRsvps?.[evt.id];
+                        return rsvp ? rsvp.status === 'confirmed' : g.rsvpStatus === 'confirmed';
+                      });
+
+                      return (
+                        <tr
+                          key={evt.id}
+                          className="hover:bg-[#faf7f2] transition-colors"
+                        >
+                          {/* Event Name: Just event name (clean, no category box, dress code box, or text below) */}
+                          <td className="py-4 px-4">
+                            <span className="font-serif font-bold text-sm text-[#15110e]">
+                              {evt.name}
+                            </span>
+                          </td>
+
+                          {/* Event Date */}
+                          <td className="py-4 px-4 text-xs text-[#15110e] font-medium whitespace-nowrap">
+                            🗓️ {evt.date || 'Saturday, 14 Nov 2026'}
+                          </td>
+
+                          {/* Time */}
+                          <td className="py-4 px-4 font-mono text-xs font-bold text-[#bd9661] whitespace-nowrap">
+                            {evt.time}{evt.endTime ? ` - ${evt.endTime}` : ''}
+                          </td>
+
+                          {/* Loc */}
+                          <td className="py-4 px-4 text-xs text-[#15110e]">
+                            <div className="font-medium truncate max-w-[200px]">{evt.venue || 'Fernwood Estate'}</div>
+                            {evt.address && (
+                              <div className="text-[10.5px] text-[#8b7b6b] truncate max-w-[200px]">{evt.address}</div>
+                            )}
+                          </td>
+
+                          {/* Confirmed Guests: shown as confirmed / total with no extra invited text or green box */}
+                          <td className="py-4 px-4 whitespace-nowrap font-mono text-xs font-semibold text-[#15110e]">
+                            {confirmedGuests.length} / {weddingGuests.length}
+                          </td>
+
+                          {/* Guest List Column with button called 'Manage' */}
+                          <td className="py-4 px-4 text-center whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setManagingEventGuests(evt);
+                                setEventGuestSearch('');
+                              }}
+                              className="bg-[#15110e] hover:bg-[#251e18] text-[#dfc194] hover:text-white px-3.5 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+                            >
+                              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                              </svg>
+                              <span>Manage</span>
+                            </button>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="py-4 px-4 text-right whitespace-nowrap">
+                            <div className="inline-flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditEventModal(evt)}
+                                title="Edit Event"
+                                className="p-1.5 text-xs text-[#8b7b6b] hover:text-[#15110e] hover:bg-[#faf8f5] rounded-md transition-colors cursor-pointer"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteEvent(evt.id, evt.name)}
+                                title="Delete Event"
+                                className="p-1.5 text-xs text-[#a8382c] hover:bg-[#fbeae8] rounded-md transition-colors cursor-pointer"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Modal: Create or Edit Event */}
+            {showAddEventModal && (
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+                  <div className="flex justify-between items-center pb-2 border-b border-[#e8ded0]">
+                    <div>
+                      <h3 className="font-serif text-lg font-bold text-[#15110e]">
+                        {editingEvent ? 'Edit Wedding Event' : 'Create Wedding Event'}
+                      </h3>
+                      <p className="text-xs text-[#8b7b6b]">
+                        Define schedule details and dress code for this celebration
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddEventModal(false)}
+                      className="text-gray-400 hover:text-black font-bold text-lg cursor-pointer"
+                    >
+                      &times;
+                    </button>
+                  </div>
+
+                  {/* Preset Suggestions for quick creation */}
+                  {!editingEvent && (
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b] block mb-1.5">
+                        QUICK SUGGESTIONS:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { name: 'Wedding Ceremony', cat: 'ceremony', time: '14:00', end: '15:00', dress: 'Formal' },
+                          { name: 'Sangeet Night', cat: 'sangeet', time: '18:00', end: '22:30', dress: 'Festive Traditional' },
+                          { name: 'Evening Reception & Dinner', cat: 'reception', time: '17:30', end: '23:30', dress: 'Black Tie Optional' },
+                          { name: 'After-Party', cat: 'after-party', time: '23:30', end: '02:00', dress: 'Party Casual' },
+                          { name: 'Recovery Brunch', cat: 'breakfast', time: '10:00', end: '13:00', dress: 'Smart Casual' },
+                        ].map(preset => (
+                          <button
+                            key={preset.name}
+                            type="button"
+                            onClick={() => {
+                              setEventFormName(preset.name);
+                              setEventFormCategory(preset.cat);
+                              setEventFormTime(preset.time);
+                              setEventFormEndTime(preset.end);
+                              setEventFormDressCode(preset.dress);
+                            }}
+                            className="text-[11px] px-2.5 py-1 rounded-full border border-[#e8ded0] bg-[#faf8f5] hover:bg-[#f2ece3] text-[#15110e] transition-colors"
+                          >
+                            + {preset.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSaveEvent} className="space-y-3.5 text-xs">
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                        EVENT NAME *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={eventFormName}
+                        onChange={(e) => setEventFormName(e.target.value)}
+                        placeholder="e.g. Sangeet Celebration, Wedding Ceremony, After-Party"
+                        className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 outline-none focus:border-[#bd9661]"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                          CATEGORY
+                        </label>
+                        <select
+                          value={eventFormCategory}
+                          onChange={(e) => setEventFormCategory(e.target.value)}
+                          className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 outline-none focus:border-[#bd9661]"
+                        >
+                          <option value="ceremony">Ceremony</option>
+                          <option value="sangeet">Sangeet</option>
+                          <option value="reception">Reception</option>
+                          <option value="after-party">After-Party</option>
+                          <option value="breakfast">Recovery Brunch / Breakfast</option>
+                          <option value="other">Other Celebration</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                          DATE
+                        </label>
+                        <input
+                          type="date"
+                          value={eventFormDate}
+                          onChange={(e) => setEventFormDate(e.target.value)}
+                          className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 outline-none focus:border-[#bd9661]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                          START TIME
+                        </label>
+                        <input
+                          type="time"
+                          value={eventFormTime}
+                          onChange={(e) => setEventFormTime(e.target.value)}
+                          className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 outline-none focus:border-[#bd9661]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                          END TIME (OPTIONAL)
+                        </label>
+                        <input
+                          type="time"
+                          value={eventFormEndTime}
+                          onChange={(e) => setEventFormEndTime(e.target.value)}
+                          className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 outline-none focus:border-[#bd9661]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                          VENUE / LOCATION
+                        </label>
+                        <input
+                          type="text"
+                          value={eventFormVenue}
+                          onChange={(e) => setEventFormVenue(e.target.value)}
+                          placeholder="e.g. Fernwood Estate Lawn"
+                          className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 outline-none focus:border-[#bd9661]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                          DRESS CODE
+                        </label>
+                        <input
+                          type="text"
+                          value={eventFormDressCode}
+                          onChange={(e) => setEventFormDressCode(e.target.value)}
+                          placeholder="e.g. Festive Traditional, Cocktail"
+                          className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 outline-none focus:border-[#bd9661]"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">
+                        DESCRIPTION / NOTES FOR GUESTS
+                      </label>
+                      <textarea
+                        value={eventFormDesc}
+                        onChange={(e) => setEventFormDesc(e.target.value)}
+                        rows={3}
+                        placeholder="Provide any instructions, arrival tips, or dietary notes for your invited guests..."
+                        className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 outline-none focus:border-[#bd9661] resize-none"
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-3 border-t border-[#e8ded0]">
+                      <button
+                        type="button"
+                        onClick={() => setShowAddEventModal(false)}
+                        className="px-4 py-2 rounded-xl border border-[#e8ded0] text-[#8b7b6b] hover:bg-gray-50 font-semibold"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-5 py-2 rounded-xl bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold shadow-xs transition-colors"
+                      >
+                        {editingEvent ? 'Save Event Changes' : 'Create Event'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
+            {/* Modal: Manage Guest List for an Event */}
+            {managingEventGuests && (
+              <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+                  <div className="flex justify-between items-center pb-2 border-b border-[#e8ded0]">
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661]">
+                        MANAGE INVITATIONS
+                      </div>
+                      <h3 className="font-serif text-lg font-bold text-[#15110e]">
+                        {managingEventGuests.name}
+                      </h3>
+                      <p className="text-xs text-[#8b7b6b]">
+                        Choose which guests receive invitations and can view this event
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setManagingEventGuests(null)}
+                      className="text-gray-400 hover:text-black font-bold text-lg cursor-pointer"
+                    >
+                      &times;
+                    </button>
+                  </div>
+
+                  {/* Search and Bulk Select Actions */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                    <input
+                      type="text"
+                      placeholder="Search guests by name or household..."
+                      value={eventGuestSearch}
+                      onChange={(e) => setEventGuestSearch(e.target.value)}
+                      className="flex-1 min-w-[200px] bg-white border border-[#e8ded0] rounded-xl px-3 py-1.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661]"
+                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleBulkGuestEventInvitation(managingEventGuests.id, true)}
+                        className="px-2.5 py-1 text-[11px] font-bold bg-[#faf8f5] hover:bg-[#f0ede6] text-[#15110e] border border-[#e8ded0] rounded-lg cursor-pointer transition-colors"
+                      >
+                        Select All ({weddingGuests.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleBulkGuestEventInvitation(managingEventGuests.id, false)}
+                        className="px-2.5 py-1 text-[11px] font-bold bg-[#faf8f5] hover:bg-[#f0ede6] text-[#a8382c] border border-[#f2a89f] rounded-lg cursor-pointer transition-colors"
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Scrollable Guest Checklist */}
+                  <div className="flex-1 overflow-y-auto space-y-1.5 border border-[#e8ded0] rounded-xl p-3 bg-[#fdfbf8] divide-y divide-[#f2ece3]">
+                    {weddingGuests
+                      .filter(g =>
+                        g.name.toLowerCase().includes(eventGuestSearch.toLowerCase()) ||
+                        g.household.toLowerCase().includes(eventGuestSearch.toLowerCase()) ||
+                        (g.category || '').toLowerCase().includes(eventGuestSearch.toLowerCase())
+                      )
+                      .map((g) => {
+                        const isInvited = (g.invitedEventIds || []).includes(managingEventGuests.id);
+                        const rsvp = g.eventRsvps?.[managingEventGuests.id];
+                        const statusLabel = rsvp ? rsvp.status : isInvited ? 'invited' : 'not invited';
+
+                        return (
+                          <label
+                            key={g.id}
+                            className="flex items-center justify-between py-2 px-1 hover:bg-[#f5ede2] rounded-lg cursor-pointer transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="checkbox"
+                                checked={isInvited}
+                                onChange={() => handleToggleGuestEventInvitation(g.id, managingEventGuests.id)}
+                                className="w-4 h-4 accent-[#bd9661] rounded cursor-pointer"
+                              />
+                              <div>
+                                <span className="font-semibold text-xs text-[#15110e] block">
+                                  {g.name}
+                                </span>
+                                <span className="text-[10.5px] text-[#8b7b6b]">
+                                  {g.household} &bull; {g.category || 'General Guest'}
+                                </span>
+                              </div>
+                            </div>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              statusLabel === 'confirmed'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : isInvited
+                                ? 'bg-[#faf4ec] text-[#bd9661] border border-[#ebd3a8]'
+                                : 'bg-gray-100 text-gray-500'
+                            }`}>
+                              {statusLabel}
+                            </span>
+                          </label>
+                        );
+                      })}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-[#e8ded0]">
+                    <div className="text-xs text-[#8b7b6b]">
+                      Invited: <strong className="text-[#15110e]">{weddingGuests.filter(g => (g.invitedEventIds || []).includes(managingEventGuests.id)).length}</strong> of {weddingGuests.length} guests
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setManagingEventGuests(null)}
+                      className="px-5 py-2 bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
         {activeTab === 'guests' && !isMcOrPlanner && (
           <section className="space-y-6">
             <div className="flex items-center justify-between flex-wrap gap-4">
@@ -1688,7 +3108,22 @@ export default function CoupleView({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowAddGuestModal(true)}
+                  onClick={() => {
+                    setImportStep('upload');
+                    setImportRows([]);
+                    setImportFileName('');
+                    setShowImportModal(true);
+                  }}
+                  className="bg-[#faf6ee] hover:bg-[#f5ede2] border border-[#bd9661] text-[#8c6d3b] hover:text-[#15110e] font-bold px-3 py-1.5 rounded-md text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+                >
+                  <svg className="w-3.5 h-3.5 text-[#bd9661]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  Import Guests
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setNewGuestEventIds((wedding.events || []).map(e => e.id)); setShowAddGuestModal(true); }}
                   className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-3 py-1.5 rounded-md text-xs cursor-pointer shadow-xs"
                 >
                   + Add Guest
@@ -1759,6 +3194,19 @@ export default function CoupleView({
                     <option value="confirmed">Confirmed</option>
                     <option value="awaiting">Awaiting</option>
                     <option value="declined">Declined</option>
+                  </select>
+
+                  <select
+                    value={guestEventFilter}
+                    onChange={(e) => setGuestEventFilter(e.target.value)}
+                    className="bg-white border border-[#e8ded0] rounded-lg px-3 py-1.5 text-xs text-[#15110e] outline-none cursor-pointer font-medium"
+                  >
+                    <option value="all">All Events ({(wedding.events || []).length})</option>
+                    {(wedding.events || []).map((evt) => (
+                      <option key={evt.id} value={evt.id}>
+                        {evt.name}
+                      </option>
+                    ))}
                   </select>
 
                   {/* View Mode Toggle: Individuals vs Family / Household */}
@@ -1903,7 +3351,17 @@ export default function CoupleView({
                             <tr key={g.id} className="hover:bg-[#faf8f5] transition-colors">
                               <td className="py-3 px-3">
                                 <strong className="text-sm text-[#15110e] block">{g.name}</strong>
-                                <span className="text-[11px] text-[#8b7b6b]">{g.household}</span>
+                                <span className="text-[11px] text-[#8b7b6b] block">{g.household}</span>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {(wedding.events || []).filter(e => (g.invitedEventIds || []).includes(e.id)).map(e => (
+                                    <span
+                                      key={e.id}
+                                      className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#f4ece1] text-[#7a5933] border border-[#e4d6c4]"
+                                    >
+                                      {e.category === 'ceremony' ? '💍 ' : e.category === 'reception' ? '🥂 ' : e.category === 'sangeet' ? '✨ ' : ''}{e.name}
+                                    </span>
+                                  ))}
+                                </div>
                               </td>
                               <td className="py-3 px-3">
                                 {!g.category || g.category === 'Uncategorised' ? (
@@ -2236,11 +3694,567 @@ export default function CoupleView({
                         className="w-full bg-white border border-[#e8ded0] rounded-lg p-2 outline-none focus:border-[#bd9661]"
                       />
                     </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase">Invite to Events</label>
+                        <span className="text-[10px] text-[#bd9661] font-semibold">{newGuestEventIds.length} events selected</span>
+                      </div>
+                      <div className="space-y-1 bg-[#faf8f5] p-2.5 rounded-xl border border-[#e8ded0] max-h-36 overflow-y-auto">
+                        {(wedding.events || []).map((evt) => (
+                          <label key={evt.id} className="flex items-center gap-2 cursor-pointer py-0.5">
+                            <input
+                              type="checkbox"
+                              checked={newGuestEventIds.includes(evt.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setNewGuestEventIds(prev => [...prev, evt.id]);
+                                } else {
+                                  setNewGuestEventIds(prev => prev.filter(id => id !== evt.id));
+                                }
+                              }}
+                              className="accent-[#bd9661] rounded cursor-pointer"
+                            />
+                            <span className="text-xs text-[#15110e] font-medium">{evt.name}</span>
+                            <span className="text-[10px] text-[#8b7b6b] ml-auto">({evt.time})</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                     <div className="flex justify-end gap-2 pt-2 border-t border-[#e8ded0]">
                       <button type="button" onClick={() => setShowAddGuestModal(false)} className="px-3 py-1.5 rounded-lg border text-[#8b7b6b] hover:bg-gray-50">Cancel</button>
                       <button type="submit" className="bg-[#bd9661] text-[#15110e] font-bold px-4 py-1.5 rounded-lg">Save Guest</button>
                     </div>
                   </form>
+                </div>
+              </div>
+            )}
+
+            {/* Modal: Guest List Import - Step 1: Upload & Download Template */}
+            {showImportModal && importStep === 'upload' && (
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl max-w-xl w-full p-6 md:p-8 shadow-2xl border border-[#e8decb] space-y-5">
+                  {/* Header */}
+                  <div className="flex items-center justify-between pb-3 border-b border-[#e8decb]">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#faf6ee] border border-[#e8decb] flex items-center justify-center text-[#bd9661] shadow-2xs font-serif font-bold text-sm">
+                        T&T
+                      </div>
+                      <div>
+                        <h3 className="font-serif text-xl font-bold text-[#15110e]">Import Guest List</h3>
+                        <p className="text-xs text-[#8b7b6b]">Upload guest spreadsheet or start from our wedding template</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowImportModal(false)}
+                      className="text-gray-400 hover:text-black font-bold text-xl cursor-pointer w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition"
+                    >
+                      &times;
+                    </button>
+                  </div>
+
+                  {/* Download Template Section */}
+                  <div className="bg-[#faf8f5] border border-[#e8decb] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <div className="text-xs font-bold text-[#15110e] flex items-center gap-1.5">
+                        <svg className="w-4 h-4 text-[#bd9661]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Download Guest Template
+                      </div>
+                      <p className="text-[11px] text-[#8b7b6b]">
+                        Includes pre-formatted columns for names, households, contact info, and celebrations.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadTemplate('xlsx')}
+                        className="bg-white hover:bg-[#faf6ee] border border-[#d5c7b5] text-[#15110e] font-semibold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+                      >
+                        <span className="text-emerald-700 font-bold text-[11px]">XLSX</span> Template
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadTemplate('csv')}
+                        className="bg-white hover:bg-[#faf6ee] border border-[#d5c7b5] text-[#15110e] font-semibold text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-xs transition"
+                      >
+                        <span className="text-[#bd9661] font-bold text-[11px]">CSV</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* File Upload / Dropzone */}
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setIsDraggingFile(true); }}
+                    onDragLeave={() => setIsDraggingFile(false)}
+                    onDrop={handleImportDropFile}
+                    onClick={() => importFileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-2xl p-7 text-center cursor-pointer transition-all ${
+                      isDraggingFile
+                        ? 'border-[#bd9661] bg-[#faf6ee]'
+                        : 'border-[#d5c7b5] bg-[#fdfbf7] hover:border-[#bd9661] hover:bg-[#faf6ee]/50'
+                    }`}
+                  >
+                    <input
+                      ref={importFileInputRef}
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      className="hidden"
+                      onChange={handleImportFileInputChange}
+                    />
+                    <div className="w-12 h-12 rounded-full bg-white border border-[#e8decb] shadow-2xs mx-auto flex items-center justify-center text-[#bd9661] mb-2.5">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                    </div>
+                    <div className="text-sm font-semibold text-[#15110e]">
+                      Click to browse or drag & drop spreadsheet
+                    </div>
+                    <div className="text-xs text-[#8b7b6b] mt-1">
+                      Supports Microsoft Excel (<span className="font-mono text-[11px]">.xlsx</span>, <span className="font-mono text-[11px]">.xls</span>) and Comma-Separated (<span className="font-mono text-[11px]">.csv</span>)
+                    </div>
+                  </div>
+
+                  {/* AI Assistance Callout & Sample Loader */}
+                  <div className="border border-[#e8decb] rounded-xl p-3.5 bg-white shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-start gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-[#bd9661]/10 text-[#bd9661] flex items-center justify-center shrink-0 mt-0.5">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-[#15110e]">Cheers AI Column Detection</div>
+                        <p className="text-[11px] text-[#8b7b6b] leading-relaxed">
+                          Spreadsheet doesn't match our template? Cheers AI automatically detects informal headers like <em>"Who's Coming"</em>, <em>"Food Restrictions"</em>, or <em>"Side"</em>.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleLoadSampleSpreadsheet}
+                      className="shrink-0 bg-[#faf6ee] hover:bg-[#f5ede2] border border-[#d5c7b5] text-[#8c6d3b] hover:text-[#15110e] font-bold text-xs px-3 py-2 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer transition shadow-2xs"
+                    >
+                      <span>⚡</span> Load Sample File
+                    </button>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex justify-end pt-2 border-t border-[#e8decb]">
+                    <button
+                      type="button"
+                      onClick={() => setShowImportModal(false)}
+                      className="px-4 py-1.5 rounded-lg border border-[#d5c7b5] text-[#8b7b6b] hover:bg-gray-50 text-xs font-semibold cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal: Guest List Import - Step 2: Review Screen */}
+            {showImportModal && importStep === 'review' && (
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-2 md:p-4 overflow-y-auto">
+                <div className="bg-white rounded-2xl max-w-6xl w-full p-4 md:p-5 shadow-2xl border border-[#e8decb] flex flex-col max-h-[92vh] my-auto space-y-3">
+                  {/* Header */}
+                  <div className="flex items-center justify-between pb-2.5 border-b border-[#e8decb] shrink-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-[#faf6ee] border border-[#e8decb] flex items-center justify-center text-[#bd9661] shadow-2xs font-serif font-bold text-sm">
+                        T&T
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-serif text-lg font-bold text-[#15110e]">Review & Edit Imported Guests</h3>
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#faf6ee] border border-[#d5c7b5] text-[#8c6d3b]">
+                            Step 2 of 2
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#8b7b6b]">
+                          Check and edit guest details, household groups, dietary notes, and event invitations before saving.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowImportModal(false)}
+                      className="text-gray-400 hover:text-black font-bold text-xl cursor-pointer w-7 h-7 rounded-lg flex items-center justify-center hover:bg-gray-100 transition"
+                    >
+                      &times;
+                    </button>
+                  </div>
+
+                  {/* AI Mapping Banner */}
+                  <div className="bg-[#faf8f5] border border-[#e8decb] rounded-xl p-3 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
+                    <div className="flex items-center gap-2 flex-wrap text-xs">
+                      <span className="inline-flex items-center gap-1 font-bold text-[#15110e]">
+                        <span className="text-[#bd9661]">✨</span> Cheers AI Auto-Mapping:
+                      </span>
+                      <span className="text-[#8b7b6b]">
+                        Detected from <strong className="text-[#15110e]">{importFileName || 'spreadsheet'}</strong>:
+                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {importDetectedMappings.map((m, idx) => (
+                          <span key={idx} className="text-[10px] font-medium bg-white border border-[#e8decb] text-[#6b5a4a] px-2 py-0.5 rounded-md shadow-2xs">
+                            {m}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-semibold">
+                        ✓ {importRows.filter(r => r.status === 'ready').length} Ready
+                      </span>
+                      {importRows.filter(r => r.status === 'review').length > 0 && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-semibold">
+                          ⚠ {importRows.filter(r => r.status === 'review').length} Needs Review
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Table Controls Bar */}
+                  <div className="flex items-center justify-between flex-wrap gap-2 text-xs shrink-0">
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-1.5 font-semibold text-[#15110e] cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={importRows.length > 0 && importRows.every(r => r.selected)}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setImportRows(prev => prev.map(r => ({ ...r, selected: checked })));
+                          }}
+                          className="accent-[#bd9661] rounded cursor-pointer"
+                        />
+                        <span>Select All ({importRows.filter(r => r.selected).length} of {importRows.length} selected)</span>
+                      </label>
+                      <div className="h-4 w-px bg-[#e8decb]" />
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setImportFilterStatus('all')}
+                          className={`px-2 py-0.5 rounded text-[11px] font-semibold cursor-pointer ${
+                            importFilterStatus === 'all' ? 'bg-[#15110e] text-white' : 'text-[#8b7b6b] hover:text-[#15110e]'
+                          }`}
+                        >
+                          All ({importRows.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setImportFilterStatus('ready')}
+                          className={`px-2 py-0.5 rounded text-[11px] font-semibold cursor-pointer ${
+                            importFilterStatus === 'ready' ? 'bg-[#15110e] text-white' : 'text-[#8b7b6b] hover:text-[#15110e]'
+                          }`}
+                        >
+                          Ready ({importRows.filter(r => r.status === 'ready').length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setImportFilterStatus('review')}
+                          className={`px-2 py-0.5 rounded text-[11px] font-semibold cursor-pointer ${
+                            importFilterStatus === 'review' ? 'bg-[#15110e] text-white' : 'text-[#8b7b6b] hover:text-[#15110e]'
+                          }`}
+                        >
+                          Needs Review ({importRows.filter(r => r.status === 'review').length})
+                        </button>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddBlankImportRow}
+                      className="bg-white border border-[#d5c7b5] hover:bg-[#faf6ee] text-[#15110e] font-semibold px-2.5 py-1 rounded-md text-xs flex items-center gap-1 cursor-pointer transition shadow-2xs"
+                    >
+                      <span>+</span> Add Guest Row
+                    </button>
+                  </div>
+
+                  {/* The Editable Spreadsheet Table */}
+                  <div className="flex-1 overflow-auto border border-[#e8decb] rounded-xl bg-white shadow-2xs min-h-[160px] max-h-[30vh]">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-[#faf8f5] text-[#8b7b6b] uppercase text-[10px] font-bold tracking-wider sticky top-0 z-10 border-b border-[#e8decb]">
+                        <tr>
+                          <th className="py-2.5 px-2.5 w-8 text-center">#</th>
+                          <th className="py-2.5 px-2 w-20">Status</th>
+                          <th className="py-2.5 px-2 min-w-[140px]">Guest Full Name *</th>
+                          <th className="py-2.5 px-2 min-w-[130px]">Household / Group</th>
+                          <th className="py-2.5 px-2 min-w-[160px]">Email Address</th>
+                          <th className="py-2.5 px-2 min-w-[125px]">Mobile Phone</th>
+                          <th className="py-2.5 px-2 min-w-[125px]">Category</th>
+                          <th className="py-2.5 px-1.5 w-14 text-center">Adults</th>
+                          <th className="py-2.5 px-1.5 w-14 text-center">Kids</th>
+                          <th className="py-2.5 px-2 min-w-[130px]">Dietary</th>
+                          <th className="py-2.5 px-2 min-w-[180px]">Invited Celebrations</th>
+                          <th className="py-2.5 px-2 w-8 text-center"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#f0e8dc]">
+                        {importRows
+                          .filter(r => {
+                            if (importFilterStatus === 'ready') return r.status === 'ready';
+                            if (importFilterStatus === 'review') return r.status === 'review';
+                            return true;
+                          })
+                          .map((row) => (
+                            <tr key={row.id} className={`hover:bg-[#fdfbf7] ${!row.selected ? 'opacity-50 bg-gray-50/50' : ''}`}>
+                              {/* Checkbox */}
+                              <td className="py-2 px-2.5 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={row.selected}
+                                  onChange={(e) => updateImportRow(row.id, 'selected', e.target.checked)}
+                                  className="accent-[#bd9661] rounded cursor-pointer"
+                                />
+                              </td>
+
+                              {/* Status Badge */}
+                              <td className="py-2 px-2">
+                                {row.status === 'ready' ? (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                    Ready
+                                  </span>
+                                ) : (
+                                  <span
+                                    title={row.warning || 'Needs review'}
+                                    className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 cursor-help"
+                                  >
+                                    Review
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Name */}
+                              <td className="py-2 px-2">
+                                <input
+                                  type="text"
+                                  value={row.name}
+                                  onChange={(e) => updateImportRow(row.id, 'name', e.target.value)}
+                                  placeholder="Guest Name *"
+                                  className="w-full bg-white border border-[#e8ded0] rounded px-2 py-1 text-xs outline-none focus:border-[#bd9661] font-medium text-[#15110e]"
+                                />
+                              </td>
+
+                              {/* Household */}
+                              <td className="py-2 px-2">
+                                <input
+                                  type="text"
+                                  value={row.household}
+                                  onChange={(e) => updateImportRow(row.id, 'household', e.target.value)}
+                                  placeholder="Family / Household"
+                                  className="w-full bg-white border border-[#e8ded0] rounded px-2 py-1 text-xs outline-none focus:border-[#bd9661] text-[#6b5a4a]"
+                                />
+                              </td>
+
+                              {/* Email */}
+                              <td className="py-2 px-2">
+                                <input
+                                  type="email"
+                                  value={row.email}
+                                  onChange={(e) => updateImportRow(row.id, 'email', e.target.value)}
+                                  placeholder="guest@example.com"
+                                  className="w-full bg-white border border-[#e8ded0] rounded px-2 py-1 text-xs outline-none focus:border-[#bd9661] text-[#6b5a4a]"
+                                />
+                              </td>
+
+                              {/* Phone */}
+                              <td className="py-2 px-2">
+                                <input
+                                  type="text"
+                                  value={row.phone}
+                                  onChange={(e) => updateImportRow(row.id, 'phone', e.target.value)}
+                                  placeholder="+61 4..."
+                                  className="w-full bg-white border border-[#e8ded0] rounded px-2 py-1 text-xs outline-none focus:border-[#bd9661] text-[#6b5a4a]"
+                                />
+                              </td>
+
+                              {/* Category */}
+                              <td className="py-2 px-2">
+                                <select
+                                  value={row.category}
+                                  onChange={(e) => updateImportRow(row.id, 'category', e.target.value)}
+                                  className="w-full bg-white border border-[#e8ded0] rounded px-1.5 py-1 text-xs outline-none focus:border-[#bd9661] text-[#15110e]"
+                                >
+                                  {GUEST_CATEGORIES.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                  ))}
+                                </select>
+                              </td>
+
+                              {/* Adults */}
+                              <td className="py-2 px-1.5 text-center">
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="20"
+                                  value={row.adults}
+                                  onChange={(e) => updateImportRow(row.id, 'adults', Math.max(1, parseInt(e.target.value) || 1))}
+                                  className="w-12 text-center bg-white border border-[#e8ded0] rounded px-1 py-1 text-xs outline-none focus:border-[#bd9661] font-semibold text-[#15110e]"
+                                />
+                              </td>
+
+                              {/* Kids */}
+                              <td className="py-2 px-1.5 text-center">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="20"
+                                  value={row.kids}
+                                  onChange={(e) => updateImportRow(row.id, 'kids', Math.max(0, parseInt(e.target.value) || 0))}
+                                  className="w-12 text-center bg-white border border-[#e8ded0] rounded px-1 py-1 text-xs outline-none focus:border-[#bd9661] text-[#15110e]"
+                                />
+                              </td>
+
+                              {/* Dietary */}
+                              <td className="py-2 px-2">
+                                <input
+                                  type="text"
+                                  value={row.dietary}
+                                  onChange={(e) => updateImportRow(row.id, 'dietary', e.target.value)}
+                                  placeholder="None / Veg..."
+                                  className="w-full bg-white border border-[#e8ded0] rounded px-2 py-1 text-xs outline-none focus:border-[#bd9661] text-[#6b5a4a]"
+                                />
+                              </td>
+
+                              {/* Invited Events */}
+                              <td className="py-2 px-2">
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  {(wedding.events || []).map(evt => {
+                                    const isInvited = row.invitedEventIds.includes(evt.id);
+                                    return (
+                                      <button
+                                        key={evt.id}
+                                        type="button"
+                                        onClick={() => toggleImportRowEvent(row.id, evt.id)}
+                                        className={`px-1.5 py-0.5 rounded text-[10px] font-semibold cursor-pointer border transition ${
+                                          isInvited
+                                            ? 'bg-[#15110e] text-[#dfc194] border-[#15110e]'
+                                            : 'bg-white text-[#8b7b6b] border-[#d5c7b5] hover:border-[#bd9661]'
+                                        }`}
+                                        title={isInvited ? `Invited to ${evt.name} (click to remove)` : `Click to invite to ${evt.name}`}
+                                      >
+                                        {evt.name.split(' ')[0]}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </td>
+
+                              {/* Delete Action */}
+                              <td className="py-2 px-2 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteImportRow(row.id)}
+                                  className="text-gray-400 hover:text-red-600 font-bold text-sm cursor-pointer p-1"
+                                  title="Delete row"
+                                >
+                                  &times;
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Dispatch Preference Card: Drafts vs Immediate */}
+                  <div className="bg-[#faf8f5] border border-[#e8decb] rounded-xl p-3.5 space-y-2.5 shrink-0">
+                    <div className="text-[10px] font-bold tracking-[1.5px] uppercase text-[#bd9661]">
+                      DISPATCH PREFERENCE
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                      <label
+                        onClick={() => setImportSendMode('drafts')}
+                        className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition ${
+                          importSendMode === 'drafts'
+                            ? 'border-[#bd9661] bg-[#faf6ee] ring-1 ring-[#bd9661]'
+                            : 'border-[#e8decb] bg-white hover:border-[#bd9661]/50'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="importSendMode"
+                          checked={importSendMode === 'drafts'}
+                          onChange={() => setImportSendMode('drafts')}
+                          className="mt-0.5 accent-[#bd9661]"
+                        />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-xs text-[#15110e]">Save as Drafts</span>
+                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-[#bd9661]/15 text-[#8c6d3b]">
+                              Recommended
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-[#8b7b6b] mt-0.5 leading-snug">
+                            Import guests into your list without notifying them yet. You can review RSVPs, assign seating tables, and send invitations in batches when ready.
+                          </p>
+                        </div>
+                      </label>
+
+                      <label
+                        onClick={() => setImportSendMode('immediate')}
+                        className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition ${
+                          importSendMode === 'immediate'
+                            ? 'border-[#bd9661] bg-[#faf6ee] ring-1 ring-[#bd9661]'
+                            : 'border-[#e8decb] bg-white hover:border-[#bd9661]/50'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="importSendMode"
+                          checked={importSendMode === 'immediate'}
+                          onChange={() => setImportSendMode('immediate')}
+                          className="mt-0.5 accent-[#bd9661]"
+                        />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-xs text-[#15110e]">Send Invitations Straight Away</span>
+                          </div>
+                          <p className="text-[11px] text-[#8b7b6b] mt-0.5 leading-snug">
+                            Immediately deliver digital invitations & SMS/email alerts to all selected guests with valid contact details.
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div className="text-[11px] text-[#8b7b6b] flex items-center gap-2 pt-1 border-t border-[#e8decb]/60">
+                      <svg className="w-4 h-4 text-[#bd9661] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>
+                        <strong>Anti-spam delivery note:</strong> Saving as drafts is recommended. For bulk sends over 50 guests, email sending limits should be verified with our email provider before go-live to guarantee 100% deliverability.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Footer Buttons */}
+                  <div className="flex items-center justify-between pt-2 border-t border-[#e8decb] shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setImportStep('upload')}
+                      className="text-xs font-semibold text-[#8b7b6b] hover:text-[#15110e] flex items-center gap-1.5 cursor-pointer"
+                    >
+                      ← Back to Upload
+                    </button>
+                    <div className="flex items-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setShowImportModal(false)}
+                        className="px-4 py-2 rounded-lg border border-[#d5c7b5] text-[#8b7b6b] hover:bg-gray-50 text-xs font-semibold cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCommitImport}
+                        className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-5 py-2 rounded-lg text-xs cursor-pointer shadow-xs transition"
+                      >
+                        {importSendMode === 'drafts'
+                          ? `Import ${importRows.filter(r => r.selected).length} Guests as Drafts`
+                          : `Import & Send Invitations to ${importRows.filter(r => r.selected).length} Guests`}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -2447,6 +4461,46 @@ export default function CoupleView({
                     />
                   </div>
 
+                  {contentSubTab === 'ourStory' && (
+                    <div className="bg-[#faf7f2] border border-[#ebdcc9] rounded-xl p-3.5 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-full bg-[#bd9661] text-[#15110e] flex items-center justify-center text-xs font-bold shadow-2xs">✨</span>
+                          <div>
+                            <h4 className="font-serif font-bold text-xs text-[#15110e]">Guided Story &amp; Cheers AI Assistant</h4>
+                            <p className="text-[10px] text-[#8b7b6b]">Answer 3 short prompts and let Cheers draft your couple story</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!cheersDraftOutput) handleDraftWithCheers();
+                            setShowCheersAiModal(true);
+                          }}
+                          className="px-3 py-1.5 bg-[#15110e] hover:bg-[#231c17] text-[#dfc194] font-bold rounded-lg text-xs flex items-center gap-1.5 shadow-2xs cursor-pointer transition-colors"
+                        >
+                          <span>✨</span>
+                          <span>Draft with Cheers AI</span>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                        <div className="bg-white p-2 rounded-lg border border-[#e8ded0]">
+                          <span className="text-[9.5px] font-bold uppercase tracking-wider text-[#bd9661] block mb-0.5">1. How We Met</span>
+                          <p className="text-[#594939] text-xs line-clamp-2 italic">"{storyPromptHowWeMet}"</p>
+                        </div>
+                        <div className="bg-white p-2 rounded-lg border border-[#e8ded0]">
+                          <span className="text-[9.5px] font-bold uppercase tracking-wider text-[#bd9661] block mb-0.5">2. The Proposal</span>
+                          <p className="text-[#594939] text-xs line-clamp-2 italic">"{storyPromptProposal}"</p>
+                        </div>
+                        <div className="bg-white p-2 rounded-lg border border-[#e8ded0]">
+                          <span className="text-[9.5px] font-bold uppercase tracking-wider text-[#bd9661] block mb-0.5">3. What We Cherish</span>
+                          <p className="text-[#594939] text-xs line-clamp-2 italic">"{storyPromptCherish}"</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-[10px] font-bold text-[#8b7b6b] uppercase mb-1">PAGE STORY &amp; CONTENT</label>
                     <textarea
@@ -2645,7 +4699,155 @@ export default function CoupleView({
                 </div>
               </div>
 
-              {/* Right: Guest View Live Preview */}
+              {/* 🥂 CHEERS AI INTERACTIVE STORY CHATBOT CONCIERGE */}
+            {showCheersAiModal && (
+              <div className="fixed bottom-6 right-6 z-[2000] w-[94vw] sm:w-[430px] md:w-[450px] h-[580px] max-h-[85vh] bg-white rounded-3xl border-2 border-[#bd9661] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                  {/* Modal Header */}
+                  <div className="p-4 border-b border-[#e8ded0] flex items-center justify-between bg-[#15110e] text-white shrink-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#291f17] border border-[#bd9661]/40 flex items-center justify-center text-lg shadow-inner">
+                        🥂
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-[#dfc194]">
+                          CHEERS AI STORYTELLER
+                        </div>
+                        <h3 className="font-serif text-lg font-bold text-white">
+                          Couple Story &amp; Content Chatbot
+                        </h3>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowCheersAiModal(false)}
+                      className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-[#dfc194] flex items-center justify-center transition-colors cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Quick Style Suggestions Bar */}
+                  <div className="px-4 py-2 bg-[#faf8f5] border-b border-[#e8ded0] flex items-center gap-2 overflow-x-auto text-xs shrink-0">
+                    <span className="text-[10px] font-bold uppercase text-[#8b7b6b] shrink-0">Refine Style:</span>
+                    {[
+                      { label: '✨ Romantic & Poetic', query: 'Make it romantic and poetic' },
+                      { label: '🎉 Playful & Joyful', query: 'Make it playful with light humor' },
+                      { label: '📖 Warm & Concise', query: 'Make it brief and concise' },
+                      { label: '🌟 Highlight Cherished Moments', query: 'Emphasize what we cherish together' },
+                    ].map((pill, pidx) => (
+                      <button
+                        key={pidx}
+                        type="button"
+                        onClick={() => handleSendStoryChatMessage(pill.query)}
+                        className="px-2.5 py-1 rounded-full bg-white hover:bg-[#ede5d8] border border-[#d5c7b5] text-[#15110e] font-semibold text-[11px] whitespace-nowrap cursor-pointer transition-colors shadow-2xs"
+                      >
+                        {pill.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Chat Messages Body */}
+                  <div className="flex-1 p-4 overflow-y-auto space-y-3.5 bg-[#fbf9f6] text-xs">
+                    {storyChatMessages.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
+                      >
+                        <div
+                          className={`max-w-[88%] rounded-2xl p-3.5 shadow-2xs whitespace-pre-wrap leading-relaxed ${
+                            msg.sender === 'user'
+                              ? 'bg-[#15110e] text-[#dfc194] rounded-br-xs'
+                              : 'bg-white text-[#15110e] border border-[#e8ded0] rounded-bl-xs'
+                          }`}
+                        >
+                          <p>{msg.text}</p>
+
+                          {/* Story Draft Card with 1-Click Apply */}
+                          {msg.draft && (
+                            <div className="mt-3 p-3.5 bg-[#faf8f5] border border-[#bd9661]/40 rounded-xl space-y-2.5 text-xs">
+                              <div className="flex items-center justify-between border-b border-[#ebdcc9] pb-1.5">
+                                <span className="font-serif font-bold text-[#15110e]">Story Proposal</span>
+                                <span className="text-[10px] text-[#bd9661] font-bold">✨ Cheers AI</span>
+                              </div>
+                              <p className="italic text-[#594939] leading-relaxed font-serif bg-white p-2.5 rounded-lg border border-[#e8ded0]">
+                                "{msg.draft}"
+                              </p>
+                              <div className="flex items-center justify-end gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setContentPages((prev) => ({
+                                      ...prev,
+                                      ourStory: {
+                                        ...prev.ourStory,
+                                        content: msg.draft!,
+                                        status: 'Published',
+                                      },
+                                    }));
+                                    setShowCheersAiModal(false);
+                                    showToast('✓ Story applied to wedding website!', 'success');
+                                  }}
+                                  className="px-4 py-1.5 bg-[#15110e] hover:bg-[#251e18] text-[#dfc194] font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+                                >
+                                  <span>✓</span>
+                                  <span>Apply to Our Story</span>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-[9.5px] text-[#8b7b6b] mt-0.5 px-1 font-mono">
+                          {msg.timestamp}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Chat Input Bar with File Upload: text box, file upload icon, send button */}
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSendStoryChatMessage();
+                    }}
+                    className="p-3 bg-white border-t border-[#e8ded0] flex items-center gap-2 shrink-0"
+                  >
+                    <input
+                      ref={storyFileInputRef}
+                      type="file"
+                      accept=".txt,.docx,.pdf,.md"
+                      className="hidden"
+                      onChange={handleStoryFileUpload}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Ask Cheers AI to refine story, adjust tone, or upload notes..."
+                      value={storyChatInput}
+                      onChange={(e) => setStoryChatInput(e.target.value)}
+                      className="flex-1 bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3.5 py-2 text-xs text-[#15110e] outline-none focus:border-[#bd9661] font-medium"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => storyFileInputRef.current?.click()}
+                      className="p-2 text-[#8b7b6b] hover:text-[#15110e] hover:bg-[#faf8f5] rounded-xl transition-colors cursor-pointer shrink-0 border border-[#e8ded0] flex items-center justify-center"
+                      title="Upload notes, diaries, or vows (.txt, .docx, .pdf)"
+                    >
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                      </svg>
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={!storyChatInput.trim()}
+                      className="bg-[#15110e] hover:bg-[#251b14] disabled:opacity-40 text-[#dfc194] px-4 py-2 rounded-xl text-xs font-bold cursor-pointer transition-colors shrink-0 flex items-center gap-1"
+                    >
+                      <span>Send</span>
+                      <span>&rarr;</span>
+                    </button>
+                  </form>
+                </div>
+              )}
+
+            {/* Right: Guest View Live Preview */}
               <div className="bg-[#faf8f5] border border-[#e8ded0] rounded-2xl p-6 shadow-sm space-y-4">
                 <div className="flex justify-between items-center pb-2 border-b border-[#e8ded0]">
                   <span className="text-[10px] font-bold tracking-wider uppercase text-[#bd9661]">
@@ -4409,6 +6611,11 @@ export default function CoupleView({
                     key: 'enableSongRequests' as const,
                   },
                   {
+                    title: 'Guest Tablemate Visibility',
+                    desc: 'Allow guests to view their tablemates in their mobile guest hub. When disabled, guests only see their assigned table name & seat number while tablemates remain private.',
+                    key: 'allowGuestsSeeTablemates' as const,
+                  },
+                  {
                     title: 'Secret Seating Plan Reveal',
                     desc: 'Keep table numbers hidden until the morning of the wedding (8:00 AM) to maintain seating excitement.',
                     key: 'hideSeatingUntilMorning' as const,
@@ -4497,7 +6704,25 @@ export default function CoupleView({
                 </p>
               </div>
 
-              <div className="flex items-center gap-2.5 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setShowMcShareModal(true)}
+                  className="bg-white border border-[#d5c7b5] hover:bg-[#f5ede0] text-[#15110e] font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                  title="Share or print read-only run sheet for vendors"
+                >
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>
+                  <span>Share Vendor Copy</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenMcTemplateModal}
+                  className="bg-white border border-[#d5c7b5] hover:bg-[#f5ede0] text-[#15110e] font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                  title="Import activities from standard wedding run sheet templates"
+                >
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>
+                  <span>Import Template</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => window.print()}
@@ -4670,6 +6895,69 @@ export default function CoupleView({
                               placeholder="Private cues, technical sound directions, mic handoffs..."
                             />
                           </div>
+
+                          {/* Planner Change Request Alert & Actions for MC */}
+                          {cue.changeRequest && cue.changeRequest.status === 'pending' && (
+                            <div className="bg-[#fff9ed] border-2 border-[#e6a840] rounded-xl p-3.5 space-y-2 mt-2 shadow-xs">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-[#936319] flex items-center gap-1.5">
+                                  <span>💬</span>
+                                  <span>Schedule Change Requested by Wedding Planner</span>
+                                </span>
+                                <span className="text-[10px] font-semibold text-[#8b7b6b]">
+                                  Requested at {cue.changeRequest.requestedAt}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-3 text-xs flex-wrap">
+                                <div>
+                                  <span className="text-[#8b7b6b] text-[10.5px]">Proposed Time: </span>
+                                  <strong className="font-mono bg-[#15110e] text-[#dfc194] px-2 py-0.5 rounded text-xs">
+                                    {cue.changeRequest.proposedTime}
+                                  </strong>
+                                  <span className="text-[10.5px] text-[#8b7b6b] line-through ml-1.5">{cue.time}</span>
+                                </div>
+                                {cue.changeRequest.proposedActivity && cue.changeRequest.proposedActivity !== cue.activity && (
+                                  <div>
+                                    <span className="text-[#8b7b6b] text-[10.5px]">Proposed Title: </span>
+                                    <strong className="text-[#15110e]">{cue.changeRequest.proposedActivity}</strong>
+                                  </div>
+                                )}
+                              </div>
+                              {cue.changeRequest.notes && (
+                                <p className="text-xs text-[#523d24] bg-white/80 p-2 rounded-lg border border-[#ebd8bc] italic">
+                                  "{cue.changeRequest.notes}"
+                                </p>
+                              )}
+                              <div className="flex items-center justify-end gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeclineChangeRequest(cue.id)}
+                                  className="px-3 py-1.5 bg-white border border-[#d5c7b5] hover:bg-[#faf7f2] text-rose-700 font-bold rounded-lg text-xs cursor-pointer transition-colors"
+                                >
+                                  ✕ Decline
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleAcceptChangeRequest(cue.id)}
+                                  className="px-3.5 py-1.5 bg-[#15110e] hover:bg-[#251e18] text-[#dfc194] font-bold rounded-lg text-xs cursor-pointer transition-colors shadow-xs"
+                                >
+                                  ✓ Accept Change
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          {cue.changeRequest && cue.changeRequest.status === 'accepted' && (
+                            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#1e6f47] bg-[#eefaf3] border border-[#a2dfbe] px-2.5 py-1 rounded-lg mt-1 w-fit">
+                              <span>✓</span>
+                              <span>Planner change accepted ({cue.changeRequest.proposedTime})</span>
+                            </div>
+                          )}
+                          {cue.changeRequest && cue.changeRequest.status === 'declined' && (
+                            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-stone-600 bg-stone-100 border border-stone-200 px-2.5 py-1 rounded-lg mt-1 w-fit">
+                              <span>✕</span>
+                              <span>Planner change declined (Original time kept)</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -4761,6 +7049,258 @@ export default function CoupleView({
                       </button>
                     </div>
                   </form>
+                </div>
+              </div>
+            )}
+
+            {/* MC Standard Template Import Modal */}
+            {showMcTemplateModal && (
+              <div className="fixed inset-0 z-[2000] bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+                <div className="bg-white border border-[#bd9661] rounded-2xl max-w-3xl w-full max-h-[90vh] my-auto flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                  <div className="p-5 border-b border-[#e8ded0] flex items-center justify-between bg-[#faf8f5] shrink-0">
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661]">
+                        STANDARD RUN SHEET TEMPLATES
+                      </div>
+                      <h3 className="font-serif text-xl font-bold text-[#15110e]">
+                        Import Run Sheet Template
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowMcTemplateModal(false)}
+                      className="w-8 h-8 rounded-full hover:bg-[#ede5d8] text-[#8b7b6b] hover:text-[#15110e] flex items-center justify-center transition-colors cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="p-5 overflow-y-auto space-y-4 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {STANDARD_RUN_SHEET_TEMPLATES.map((tmpl) => (
+                        <button
+                          key={tmpl.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedMcTemplateId(tmpl.id);
+                            setMcTemplateRows(tmpl.items.map(i => ({ ...i, selected: true })));
+                          }}
+                          className={`p-3 text-left rounded-xl border transition-all cursor-pointer ${
+                            selectedMcTemplateId === tmpl.id
+                              ? 'bg-[#faf6ee] border-[#bd9661] ring-2 ring-[#bd9661]/30 shadow-xs'
+                              : 'bg-white border-[#e0d4c3] hover:border-[#bd9661]'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-serif font-bold text-xs text-[#15110e] truncate">{tmpl.name}</span>
+                            <span className="text-[9.5px] uppercase font-bold px-1.5 py-0.5 rounded bg-[#ebdcc9] text-[#715433]">{tmpl.badge}</span>
+                          </div>
+                          <p className="text-[10.5px] text-[#7a6a59] line-clamp-2 leading-tight">{tmpl.subtitle}</p>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-[#faf7f2] border border-[#e8ded0] rounded-xl flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold text-[#15110e]">Mode:</span>
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs">
+                          <input
+                            type="radio"
+                            name="mcTemplateImportMode"
+                            checked={mcTemplateImportMode === 'replace'}
+                            onChange={() => setMcTemplateImportMode('replace')}
+                            className="accent-[#bd9661]"
+                          />
+                          <span>Replace existing cues</span>
+                        </label>
+                        <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs ml-2">
+                          <input
+                            type="radio"
+                            name="mcTemplateImportMode"
+                            checked={mcTemplateImportMode === 'append'}
+                            onChange={() => setMcTemplateImportMode('append')}
+                            className="accent-[#bd9661]"
+                          />
+                          <span>Append to current run sheet</span>
+                        </label>
+                      </div>
+                      <span className="text-[11px] text-[#8b7b6b]">{mcTemplateRows.filter(r => r.selected).length} selected</span>
+                    </div>
+
+                    <div className="border border-[#e8ded0] rounded-xl overflow-hidden max-h-60 overflow-y-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead className="bg-[#faf8f5] border-b border-[#e8ded0] text-[#7d6c5b] sticky top-0">
+                          <tr>
+                            <th className="p-2 w-8 text-center">
+                              <input
+                                type="checkbox"
+                                checked={mcTemplateRows.length > 0 && mcTemplateRows.every(r => r.selected)}
+                                onChange={(e) => {
+                                  const c = e.target.checked;
+                                  setMcTemplateRows(prev => prev.map(r => ({ ...r, selected: c })));
+                                }}
+                                className="accent-[#bd9661]"
+                              />
+                            </th>
+                            <th className="p-2 w-20">Time</th>
+                            <th className="p-2">Activity</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#ebdcc9]/60">
+                          {mcTemplateRows.map((row, idx) => (
+                            <tr key={idx} className={row.selected ? 'bg-white' : 'bg-[#f7f4ee]/70 opacity-60'}>
+                              <td className="p-2 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={row.selected}
+                                  onChange={(e) => {
+                                    const c = e.target.checked;
+                                    setMcTemplateRows(prev => prev.map((r, i) => i === idx ? { ...r, selected: c } : r));
+                                  }}
+                                  className="accent-[#bd9661]"
+                                />
+                              </td>
+                              <td className="p-2 font-mono font-bold">{row.time}</td>
+                              <td className="p-2 font-semibold text-[#15110e]">{row.activity}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="p-5 border-t border-[#e8ded0] bg-[#faf8f5] flex items-center justify-end gap-2.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setShowMcTemplateModal(false)}
+                      className="px-4 py-2 border border-[#d5c7b5] text-[#15110e] hover:bg-white rounded-xl font-bold transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleApplyMcTemplate}
+                      className="px-5 py-2 bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold rounded-xl transition-all shadow-sm cursor-pointer"
+                    >
+                      Apply &amp; Save ({mcTemplateRows.filter(r => r.selected).length}) &rarr;
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MC Cheers AI Chatbot with Natural Chat & File Upload */}
+            <CheersAiRunSheetChatbot
+              isOpen={showMcAiModal}
+              onClose={() => setShowMcAiModal(false)}
+              onApply={handleApplyMcAiChatbotItems}
+              title="Cheers AI • MC Run Sheet & Cues Assistant"
+              context="mc"
+            />
+
+            {!showMcAiModal && (
+              <button
+                type="button"
+                onClick={() => setShowMcAiModal(true)}
+                className="fixed bottom-6 right-6 z-40 bg-[#15110e] text-[#dfc194] hover:text-white border-2 border-[#bd9661] hover:border-[#dfc194] px-5 py-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center gap-2.5 cursor-pointer font-serif font-bold text-sm tracking-wide"
+                title="Open interactive Cheers AI Run Sheet Chatbot"
+              >
+                <span className="text-lg">🥂</span>
+                <span>Cheers AI</span>
+              </button>
+            )}
+
+            {/* MC Share Vendor Copy Modal */}
+            {showMcShareModal && (
+              <div className="fixed inset-0 z-[2000] bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+                <div className="bg-white border border-[#bd9661] rounded-2xl max-w-2xl w-full max-h-[90vh] my-auto flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                  <div className="p-5 border-b border-[#e8ded0] flex items-center justify-between bg-[#faf8f5] shrink-0">
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661]">
+                        EXTERNAL VENDOR ACCESS
+                      </div>
+                      <h3 className="font-serif text-xl font-bold text-[#15110e]">
+                        Share Vendor Master Schedule
+                      </h3>
+                      <p className="text-xs text-[#8b7b6b] mt-0.5">
+                        Clean read-only copy for suppliers. Private MC stage directions are excluded.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowMcShareModal(false)}
+                      className="w-8 h-8 rounded-full hover:bg-[#ede5d8] text-[#8b7b6b] hover:text-[#15110e] flex items-center justify-center transition-colors cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="p-5 overflow-y-auto space-y-4 text-xs">
+                    <div className="p-3.5 bg-[#faf7f2] border border-[#e8dfd1] rounded-xl space-y-2">
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b]">
+                        Shareable Read-Only Link
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={`https://taptoast.app/schedule/${wedding.id || 'w1'}/vendor-access?token=vlive_2026`}
+                          className="flex-1 bg-white border border-[#d5c7b5] rounded-xl px-3 py-2 text-xs font-mono text-[#15110e] outline-none select-all"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`https://taptoast.app/schedule/${wedding.id || 'w1'}/vendor-access?token=vlive_2026`);
+                            setMcShareCopied(true);
+                            showToast('Link copied to clipboard', 'success');
+                            setTimeout(() => setMcShareCopied(false), 2000);
+                          }}
+                          className="px-4 py-2 bg-[#15110e] hover:bg-[#28201a] text-[#dfc194] rounded-xl font-bold cursor-pointer transition-colors shrink-0"
+                        >
+                          {mcShareCopied ? '✓ Copied' : 'Copy Link'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="border border-[#e8ded0] rounded-xl overflow-hidden max-h-60 overflow-y-auto">
+                      <div className="bg-[#faf8f5] p-2.5 font-bold text-[11px] text-[#7d6c5b] border-b border-[#e8ded0]">
+                        Schedule Preview ({runSheet.length} entries)
+                      </div>
+                      <div className="divide-y divide-[#ebdcc9]/50">
+                        {runSheet.map((item) => (
+                          <div key={item.id} className="p-3 bg-white flex items-start gap-3">
+                            <span className="font-mono text-xs font-bold bg-[#15110e] text-[#dfc194] px-2 py-0.5 rounded shrink-0">
+                              {item.time}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-bold text-xs text-[#15110e]">{item.activity}</div>
+                              {item.notes && <p className="text-[11px] text-[#6b5847] mt-0.5">{item.notes}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-5 border-t border-[#e8ded0] bg-[#faf8f5] flex items-center justify-between gap-2.5 shrink-0">
+                    <span className="text-[11px] text-[#8b7b6b]">Clean printable format excluding stage directions.</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowMcShareModal(false)}
+                        className="px-4 py-2 border border-[#d5c7b5] text-[#15110e] hover:bg-white rounded-xl font-bold cursor-pointer"
+                      >
+                        Close
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => window.print()}
+                        className="px-4 py-2 bg-[#15110e] text-[#dfc194] rounded-xl font-bold cursor-pointer"
+                      >
+                        Print Schedule
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -5046,8 +7586,6 @@ export default function CoupleView({
       </div>
       </main>
 
-      {/* Floating Joey AI Assistant */}
-      {activeTab !== 'seating' && <JoeyChatbot context="couple" />}
       {/* Modal: Add Custom Dress Code & Theme with Image 5 Color Picker */}
       {isDressCodeModalOpen && (
         <div className="fixed inset-0 z-50 bg-[#15110e]/60 backdrop-blur-xs flex items-center justify-center p-4">

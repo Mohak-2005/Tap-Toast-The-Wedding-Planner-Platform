@@ -316,6 +316,7 @@ export const SEED_DATA: DemoState = {
     ],
       },
       danceFloorPos: { x: 50, y: 50 },
+      allowGuestsSeeTablemates: true,
       savedSeatingArrangements: [
         {
           id: 'arr_1',
@@ -334,7 +335,7 @@ export const SEED_DATA: DemoState = {
             { id: 'table_4', weddingId: 'w1', name: 'Table 4', capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'Right Garden', x: 75, y: 35 },
             { id: 'table_5', weddingId: 'w1', name: 'Table 5', capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Left Terrace', x: 25, y: 65 },
             { id: 'table_6', weddingId: 'w1', name: 'Table 6', capacity: 8, isHead: false, shape: 'rectangular', category: 'Family', zone: 'Center Ballroom', x: 40, y: 65 },
-            { id: 'table_7', weddingId: 'w1', name: 'Table 7', capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Center Ballroom', x: 60, y: 65 }
+            { id: 'table_7', weddingId: 'w1', name: 'Table 7 (Oval)', capacity: 8, isHead: false, shape: 'oval', category: 'Friends', zone: 'Center Ballroom', x: 60, y: 65 }
           ],
           guestAssignments: [
             { guestId: 'g1', tableId: 'head', seatIndex: 0 },
@@ -445,6 +446,63 @@ export const SEED_DATA: DemoState = {
         { id: "t1", text: "Send save-the-dates", completed: true, due: "" },
         { id: "t2", text: "Finalise table 9 & 10 seating", completed: false, due: "Due Fri" },
         { id: "t3", text: "Send RSVP reminder to 22 guests", completed: false, due: "Due Mon" }
+      ],
+            events: [
+        {
+          id: "evt_sangeet",
+          name: "Sangeet & Mehendi Celebration",
+          category: "sangeet",
+          date: "2026-11-13",
+          time: "6:00 PM - 10:00 PM",
+          venue: "The Heritage Pavilion, Fernwood Estate",
+          address: "124 Range Road, Mittagong NSW",
+          dressCode: "Festive Indian Attire or Vibrant Cocktail",
+          description: "An evening of acoustic music, traditional Mehendi artistry, cocktails, and family dance performances."
+        },
+        {
+          id: "evt_ceremony",
+          name: "Marriage Ceremony",
+          category: "ceremony",
+          date: "2026-11-14",
+          time: "2:00 PM - 3:15 PM",
+          venue: "The Garden Arch, Fernwood Estate",
+          address: "124 Range Road, Mittagong NSW",
+          dressCode: "Formal / Black Tie Optional",
+          description: "Exchange of wedding vows amidst the private rose gardens and historic stone archway."
+        },
+        {
+          id: "evt_reception",
+          name: "Grand Reception & Dinner",
+          category: "reception",
+          date: "2026-11-14",
+          time: "5:00 PM - 10:30 PM",
+          venue: "Grand Ballroom & Terrace, Fernwood Estate",
+          address: "124 Range Road, Mittagong NSW",
+          dressCode: "Formal / Black Tie Optional",
+          description: "Chef-curated 3-course seasonal dining, heartfelt family speeches, champagne toasts, and live dance band."
+        },
+        {
+          id: "evt_afterparty",
+          name: "Late Night After-Party",
+          category: "after-party",
+          date: "2026-11-14",
+          time: "10:30 PM - 1:30 AM",
+          venue: "The Cellar Lounge, Fernwood Estate",
+          address: "124 Range Road, Mittagong NSW",
+          dressCode: "Party Chic / Relaxed",
+          description: "Midnight sliders, craft cocktails, vinyl DJ sets, and after-hours dancing for night owls."
+        },
+        {
+          id: "evt_breakfast",
+          name: "Next-Day Farewell Breakfast",
+          category: "breakfast",
+          date: "2026-11-15",
+          time: "9:30 AM - 12:00 PM",
+          venue: "The Orchard Verandah, Fernwood Estate",
+          address: "124 Range Road, Mittagong NSW",
+          dressCode: "Garden Casual",
+          description: "A relaxed morning recovery brunch with artisan espresso, pastries, and goodbyes before departing."
+        }
       ],
       vendors: [
         {
@@ -903,7 +961,7 @@ export const SEED_DATA: DemoState = {
     { id: "table_4", weddingId: "w1", name: "Table 4", capacity: 8, isHead: false, shape: 'round', category: 'Family', zone: 'Right Garden', x: 75, y: 35 },
     { id: "table_5", weddingId: "w1", name: "Table 5", capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Left Terrace', x: 25, y: 65 },
     { id: "table_6", weddingId: "w1", name: "Table 6", capacity: 8, isHead: false, shape: 'rectangular', category: 'Family', zone: 'Center Ballroom', x: 40, y: 65 },
-    { id: "table_7", weddingId: "w1", name: "Table 7", capacity: 8, isHead: false, shape: 'round', category: 'Friends', zone: 'Center Ballroom', x: 60, y: 65 },
+    { id: "table_7", weddingId: "w1", name: "Table 7 (Oval)", capacity: 8, isHead: false, shape: 'oval', category: 'Friends', zone: "Center Ballroom", x: 60, y: 65 },
 
     // Wedding 2: Aisha & Marcus (w2)
     { id: "w2_head", weddingId: "w2", name: "HEAD TABLE", capacity: 8, isHead: true, shape: 'rectangular', category: 'Bridal Party', zone: 'Harbour Stage', x: 50, y: 15 },
@@ -918,14 +976,14 @@ export const SEED_DATA: DemoState = {
   ],
   guests: [
     // Mark Johnson (The Johnson Family, Table 4 Seat 1)
-    { id: "mark_johnson", name: "Mark Johnson", initials: "MJ", household: "The Johnson Family", email: "mark.johnson@example.com", phone: "0412 884 991", rsvpStatus: "confirmed", guestCount: 1, adults: 1, kids: 0, dietary: "Vegetarian", song: "Signed, Sealed, Delivered - Stevie Wonder", reminderSent: false, tableId: "table_4", seatIndex: 1, category: "Bride's Family" },
+    { id: "mark_johnson", name: "Mark Johnson", initials: "MJ", household: "The Johnson Family", email: "mark.johnson@example.com", phone: "0412 884 991", rsvpStatus: "confirmed", guestCount: 1, adults: 1, kids: 0, dietary: "Vegetarian", song: "Signed, Sealed, Delivered - Stevie Wonder", reminderSent: false, tableId: "table_4", seatIndex: 1, category: "Bride's Family", invitedEventIds: ["evt_ceremony", "evt_reception", "evt_breakfast"], eventRsvps: { evt_ceremony: { status: "confirmed", attending: true }, evt_reception: { status: "confirmed", attending: true }, evt_breakfast: { status: "confirmed", attending: true } } },
     // Sarah Johnson (The Johnson Family, Table 4 Seat 2)
-    { id: "sarah_johnson", name: "Sarah Johnson", initials: "SJ", household: "The Johnson Family", email: "sarah.johnson@example.com", phone: "0412 884 991", rsvpStatus: "confirmed", guestCount: 1, adults: 1, kids: 0, dietary: "Gluten-Free", song: "Signed, Sealed, Delivered - Stevie Wonder", reminderSent: false, tableId: "table_4", seatIndex: 2, category: "Bride's Family" },
+    { id: "sarah_johnson", name: "Sarah Johnson", initials: "SJ", household: "The Johnson Family", email: "sarah.johnson@example.com", phone: "0412 884 991", rsvpStatus: "confirmed", guestCount: 1, adults: 1, kids: 0, dietary: "Gluten-Free", song: "Signed, Sealed, Delivered - Stevie Wonder", reminderSent: false, tableId: "table_4", seatIndex: 2, category: "Bride's Family", invitedEventIds: ["evt_ceremony", "evt_reception", "evt_breakfast"], eventRsvps: { evt_ceremony: { status: "confirmed", attending: true }, evt_reception: { status: "confirmed", attending: true }, evt_breakfast: { status: "confirmed", attending: true } } },
     // Priya Sharma (Table 4, Seat 3)
-    { id: "priya", name: "Priya Sharma", initials: "PS", household: "The Sharma Family", email: "priya.sharma@example.com.au", phone: "0412 884 992", rsvpStatus: "confirmed", guestCount: 2, adults: 2, kids: 0, dietary: "Vegetarian", song: "September - Earth, Wind & Fire", reminderSent: false, tableId: "table_4", seatIndex: 3 },
+    { id: "priya", name: "Priya Sharma", initials: "PS", household: "The Sharma Family", email: "priya.sharma@example.com.au", phone: "0412 884 992", rsvpStatus: "confirmed", guestCount: 2, adults: 2, kids: 0, dietary: "Vegetarian", song: "September - Earth, Wind & Fire", reminderSent: false, tableId: "table_4", seatIndex: 3, invitedEventIds: ["evt_sangeet", "evt_ceremony", "evt_reception", "evt_afterparty"], eventRsvps: { evt_sangeet: { status: "confirmed", attending: true }, evt_ceremony: { status: "confirmed", attending: true }, evt_reception: { status: "confirmed", attending: true }, evt_afterparty: { status: "confirmed", attending: true } } },
     
     // Head Table (8 seats)
-    { id: "g_ht1", name: "Sophie Bell", initials: "SB", household: "Sophie Bell", email: "sophie.bell@example.com", phone: "0400 111 222", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "At Last - Etta James", reminderSent: false, tableId: "head", seatIndex: 0, category: "Bridal Party" },
+    { id: "g_ht1", name: "Sophie Bell", initials: "SB", household: "Sophie Bell", email: "sophie.bell@example.com", phone: "0400 111 222", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "At Last - Etta James", reminderSent: false, tableId: "head", seatIndex: 0, category: "Bridal Party", invitedEventIds: ["evt_sangeet", "evt_ceremony", "evt_reception", "evt_afterparty", "evt_breakfast"], eventRsvps: { evt_sangeet: { status: "confirmed", attending: true }, evt_ceremony: { status: "confirmed", attending: true }, evt_reception: { status: "confirmed", attending: true }, evt_afterparty: { status: "confirmed", attending: true }, evt_breakfast: { status: "confirmed", attending: true } } },
     { id: "g_ht2", name: "James Gordon", initials: "JG", household: "James Gordon", email: "james.gordon@example.com", phone: "0400 222 333", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "You Are The Best Thing", reminderSent: false, tableId: "head", seatIndex: 1, category: "Bridal Party" },
     { id: "g_ht3", name: "Hannah Martin", initials: "HM", household: "Hannah Martin", email: "hannah.m@example.com", phone: "0400 333 444", rsvpStatus: "confirmed", guestCount: 1, dietary: "Vegetarian", song: "Dancing Queen", reminderSent: false, tableId: "head", seatIndex: 2 },
     { id: "g_ht4", name: "Oliver Vance", initials: "OV", household: "Oliver Vance", email: "oliver.v@example.com", phone: "0400 444 555", rsvpStatus: "confirmed", guestCount: 1, dietary: "None", song: "Mr. Brightside", reminderSent: false, tableId: "head", seatIndex: 3 },

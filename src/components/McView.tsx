@@ -2857,7 +2857,7 @@ export default function McView({ onSelectView }: McViewProps) {
       )}
 
       {/* Floating Joey AI Assistant for Desktop MC */}
-      {!(selectedWeddingId && detailSubTab === 'seating') && <JoeyChatbot context="mc" />}
+      
 
 {selectedClient && (
         <div
