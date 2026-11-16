@@ -1,13 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Wedding, PrivateRunSheetItem } from '../lib/types';
 import { showToast, logAudit, useAppState } from '../lib/state';
 import { STANDARD_RUN_SHEET_TEMPLATES, generateAiRunSheetDraft, parseRawRunSheetText } from '../lib/runSheetTemplates';
 import { CheersAiRunSheetChatbot } from './CheersAiRunSheetChatbot';
+import * as XLSX from 'xlsx';
 
 interface PlannerDaySheetSectionProps {
   wedding: Wedding;
   onUpdateWedding: (updatedWedding: Wedding) => void;
   onSelectView?: (view: string) => void;
+  roleMode?: 'planner' | 'couple';
 }
 
 type SectionKey = 'morning' | 'afternoon' | 'evening';
@@ -25,6 +27,24 @@ const IconPrinter = () => (
   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
     <path d="M6 14h12v8H6z" />
+  </svg>
+);
+
+const IconDownload = () => (
+  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
+const IconFileSpreadsheet = () => (
+  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="8" y1="13" x2="16" y2="13" />
+    <line x1="8" y1="17" x2="16" y2="17" />
+    <polyline points="10 9 9 9 8 9" />
   </svg>
 );
 
@@ -194,8 +214,27 @@ export default function PlannerDaySheetSection({
   wedding,
   onUpdateWedding,
   onSelectView,
+  roleMode = 'planner',
 }: PlannerDaySheetSectionProps) {
   const { state, setState } = useAppState();
+
+  // Export dropdown state
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setShowExportMenu(false);
+      }
+    };
+    if (showExportMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExportMenu]);
 
   // Filters (no parentheses)
   const [timeSectionFilter, setTimeSectionFilter] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
@@ -477,6 +516,83 @@ export default function PlannerDaySheetSection({
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareVendorFilter, setShareVendorFilter] = useState('all');
   const [shareCopied, setShareCopied] = useState(false);
+
+  // --- 5. Export Run Sheet to Excel & CSV ---
+  const handleExportExcel = () => {
+    setShowExportMenu(false);
+    try {
+      const exportData = combinedItems.map((item, idx) => ({
+        '#': idx + 1,
+        'Time': item.time,
+        'Activity / Milestone': item.activity,
+        'Category': item.category ? item.category.toUpperCase() : 'GENERAL',
+        'Responsible / Vendor': item.vendorRole || (item.isMcCue ? 'Master of Ceremonies' : 'Coordinator'),
+        'Time of Day': (item.computedSection || 'morning').toUpperCase(),
+        'Logistics & Supplier Notes': item.notes || '',
+        'Status': item.done ? 'Completed' : 'Pending',
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      worksheet['!cols'] = [
+        { wch: 5 },
+        { wch: 10 },
+        { wch: 35 },
+        { wch: 15 },
+        { wch: 25 },
+        { wch: 14 },
+        { wch: 45 },
+        { wch: 12 },
+      ];
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Wedding Run Sheet');
+      
+      const fileName = `${wedding.couple.replace(/[^a-zA-Z0-9]/g, '_')}_Wedding_Day_Sheet.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+      showToast('Wedding Day Sheet exported to Excel (.xlsx)', 'success');
+      logAudit(
+        state,
+        setState,
+        'Run Sheet Exported',
+        roleMode === 'couple' ? wedding.couple : 'Wedding Planner',
+        roleMode === 'couple' ? 'couple' : 'planner',
+        `Exported run sheet to Excel (${combinedItems.length} activities)`,
+        'Run Sheet'
+      );
+    } catch (err) {
+      console.error('Export error:', err);
+      showToast('Failed to export Excel file', 'error');
+    }
+  };
+
+  const handleExportCsv = () => {
+    setShowExportMenu(false);
+    try {
+      const exportData = combinedItems.map((item, idx) => ({
+        'Order': idx + 1,
+        'Time': item.time,
+        'Activity': item.activity,
+        'Category': item.category ? item.category.toUpperCase() : 'GENERAL',
+        'Responsible Party / Vendor': item.vendorRole || (item.isMcCue ? 'Master of Ceremonies' : 'Coordinator'),
+        'Section': (item.computedSection || 'morning').toUpperCase(),
+        'Logistics Details': (item.notes || '').replace(/"/g, '""'),
+        'Status': item.done ? 'Completed' : 'Pending',
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
+      const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${wedding.couple.replace(/[^a-zA-Z0-9]/g, '_')}_Wedding_Day_Sheet.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Wedding Day Sheet exported to CSV (.csv)', 'success');
+    } catch (err) {
+      console.error('Export error:', err);
+      showToast('Failed to export CSV file', 'error');
+    }
+  };
 
 
   // Helper: Determine time section automatically
@@ -1011,22 +1127,107 @@ export default function PlannerDaySheetSection({
           <div className="text-[11px] tracking-[2px] uppercase text-[#bd9661] font-bold mb-1 flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5">
               <IconClipboard />
-              <span>PLANNER MASTER COORDINATION SUITE</span>
+              <span>{roleMode === 'couple' ? 'COUPLE • WEDDING DAY SHEET' : 'PLANNER MASTER COORDINATION SUITE'}</span>
             </span>
             <span className="text-[#8b7b6b]">&bull;</span>
             <span className="text-[#15110e] font-semibold">{wedding.couple}</span>
           </div>
           <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#15110e]">
-            Wedding Planner Day Sheet
+            {roleMode === 'couple' ? 'Wedding Day Sheet' : 'Wedding Planner Day Sheet'}
           </h1>
           <p className="text-xs text-[#8b7b6b] mt-1">
             Saturday, {wedding.dateDisplay || wedding.date} &bull; {wedding.venue} &bull;{' '}
-            <strong className="text-[#15110e]">{totalCount} Master Schedule Entries</strong>
+            <strong className="text-[#15110e]">
+              {roleMode === 'couple'
+                ? `Build & manage preparations, vendor arrivals, ceremony and reception (${totalCount} entries)`
+                : `${totalCount} Master Schedule Entries`}
+            </strong>
           </p>
         </div>
 
-        {/* Header Action Buttons: Share Vendor Copy, Import Template, Cheers AI, Print, Add Activity */}
+        {/* Header Action Buttons: Export / Download, Share Vendor Copy, Import Template, Print, Add Activity */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Export / Download Dropdown Menu */}
+          <div className="relative" ref={exportMenuRef}>
+            <button
+              type="button"
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              className="bg-white border border-[#d5c7b5] hover:bg-[#f5ede0] text-[#15110e] font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+              title="Download or export run sheet in Excel, CSV, or Print format"
+            >
+              <IconDownload />
+              <span>Export / Download</span>
+              <IconChevronDown />
+            </button>
+
+            {showExportMenu && (
+              <div className="absolute right-0 mt-1.5 w-60 bg-white border border-[#bd9661] rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#8b7b6b] border-b border-[#f0e7dc]">
+                  Export Formats
+                </div>
+                <button
+                  type="button"
+                  onClick={handleExportExcel}
+                  className="w-full text-left px-3 py-2 text-xs font-semibold text-[#15110e] hover:bg-[#faf7f2] flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <span className="p-1 rounded-md bg-[#eef8f2] text-emerald-700">
+                    <IconFileSpreadsheet />
+                  </span>
+                  <div>
+                    <div>Export to Excel (.xlsx)</div>
+                    <div className="text-[10px] font-normal text-[#8b7b6b]">Standard spreadsheet for suppliers</div>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportCsv}
+                  className="w-full text-left px-3 py-2 text-xs font-semibold text-[#15110e] hover:bg-[#faf7f2] flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <span className="p-1 rounded-md bg-[#f4f2ee] text-[#15110e]">
+                    <IconFileSpreadsheet />
+                  </span>
+                  <div>
+                    <div>Export to CSV (.csv)</div>
+                    <div className="text-[10px] font-normal text-[#8b7b6b]">Universal table data format</div>
+                  </div>
+                </button>
+                <div className="border-t border-[#f0e7dc] my-1" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowExportMenu(false);
+                    window.print();
+                  }}
+                  className="w-full text-left px-3 py-2 text-xs font-semibold text-[#15110e] hover:bg-[#faf7f2] flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <span className="p-1 rounded-md bg-[#faf4ec] text-[#bd9661]">
+                    <IconPrinter />
+                  </span>
+                  <div>
+                    <div>Download PDF / Print</div>
+                    <div className="text-[10px] font-normal text-[#8b7b6b]">Print clean run sheet or save to PDF</div>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowExportMenu(false);
+                    setShowShareModal(true);
+                  }}
+                  className="w-full text-left px-3 py-2 text-xs font-semibold text-[#15110e] hover:bg-[#faf7f2] flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <span className="p-1 rounded-md bg-[#f4effa] text-[#8b4cb8]">
+                    <IconShare />
+                  </span>
+                  <div>
+                    <div>Share Vendor Copy Link</div>
+                    <div className="text-[10px] font-normal text-[#8b7b6b]">Read-only link (no login needed)</div>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={() => setShowShareModal(true)}
@@ -1693,7 +1894,7 @@ export default function PlannerDaySheetSection({
         onClose={() => setShowAiModal(false)}
         onApply={handleApplyAiChatbotItems}
         title="Cheers AI • Wedding Day Sheet Assistant"
-        context="planner"
+        context={roleMode === 'couple' ? "couple" : "planner"}
       />
 
       {/* Floating Cheers AI Launcher Button */}

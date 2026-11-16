@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppState, useSession, getWeddingCountdown, formatAUD, showToast } from '../lib/state';
 import JoeyChatbot from './JoeyChatbot';
-import { Guest, PrivateRunSheetItem, WeddingVendor, WeddingEvent, GuestEventRsvp } from '../lib/types';
+import { Guest, PrivateRunSheetItem, WeddingVendor, WeddingEvent, GuestEventRsvp, VendorDocument } from '../lib/types';
 import { VendorDirectorySection } from './VendorDirectorySection';
 import { WeddingCountdownCard } from './WeddingCountdownCard';
 import { logAudit } from '../lib/state';
@@ -2237,32 +2237,16 @@ export default function CoupleView({
                   </svg>
                 ),
               },
-              ...(isMcView ? [
-                {
-                  id: 'mc_runsheet' as const,
-                  label: 'Private Run Sheet',
-                  icon: (
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-                      <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-                      <path d="M9 12h6M9 16h4" />
-                    </svg>
-                  ),
-                },
-                {
-                  id: 'mc_catering' as const,
-                  label: 'Guest & Catering Summary',
-                  icon: (
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-                      <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
-                      <line x1="6" y1="1" x2="6" y2="4" />
-                      <line x1="10" y1="1" x2="10" y2="4" />
-                      <line x1="14" y1="1" x2="14" y2="4" />
-                    </svg>
-                  ),
-                },
-              ] : []),
+              {
+                id: 'mc_runsheet' as const,
+                label: 'Wedding Day Sheet',
+                icon: (
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                ),
+              },
               {
                 id: 'pages',
                 label: 'Content & Stories',
@@ -2641,38 +2625,6 @@ export default function CoupleView({
                   <span>+</span>
                   <span>Create Wedding Event</span>
                 </button>
-              </div>
-            </div>
-
-            {/* Quick KPI Overview */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-white border border-[#e8ded0] rounded-xl p-3.5 shadow-2xs">
-                <div className="text-[10px] font-bold uppercase text-[#8b7b6b]">TOTAL EVENTS</div>
-                <div className="font-serif text-2xl font-bold text-[#15110e] mt-0.5">
-                  {(wedding.events || []).length}
-                </div>
-                <div className="text-[10px] text-[#8b7b6b]">Across wedding schedule</div>
-              </div>
-              <div className="bg-white border border-[#e8ded0] rounded-xl p-3.5 shadow-2xs">
-                <div className="text-[10px] font-bold uppercase text-[#8b7b6b]">TOTAL GUESTS</div>
-                <div className="font-serif text-2xl font-bold text-[#15110e] mt-0.5">
-                  {weddingGuests.length}
-                </div>
-                <div className="text-[10px] text-[#8b7b6b]">On your master guest list</div>
-              </div>
-              <div className="bg-white border border-[#e8ded0] rounded-xl p-3.5 shadow-2xs">
-                <div className="text-[10px] font-bold uppercase text-[#8b7b6b]">CEREMONY ATTENDEES</div>
-                <div className="font-serif text-2xl font-bold text-emerald-700 mt-0.5">
-                  {weddingGuests.filter(g => (g.invitedEventIds || []).includes('evt_ceremony')).length}
-                </div>
-                <div className="text-[10px] text-emerald-800 font-semibold">Invited to exchange of vows</div>
-              </div>
-              <div className="bg-white border border-[#e8ded0] rounded-xl p-3.5 shadow-2xs">
-                <div className="text-[10px] font-bold uppercase text-[#8b7b6b]">RECEPTION BANQUET</div>
-                <div className="font-serif text-2xl font-bold text-[#bd9661] mt-0.5">
-                  {weddingGuests.filter(g => (g.invitedEventIds || []).includes('evt_reception')).length}
-                </div>
-                <div className="text-[10px] text-[#8b7b6b]">Invited to dinner &amp; dancing</div>
               </div>
             </div>
 
@@ -4416,6 +4368,10 @@ export default function CoupleView({
               <VendorDirectorySection
                 wedding={wedding}
                 onUpdateWeddingVendors={handleUpdateWeddingVendors}
+                onUpdateWedding={(updated) => {
+                  const updatedWeddings = (state.weddings || []).map(w => w.id === updated.id ? updated : w);
+                  setState({ ...state, weddings: updatedWeddings });
+                }}
               />
             ) : (
               /* Split: Editor Card vs Live Preview Card */
@@ -6674,7 +6630,7 @@ export default function CoupleView({
         )}
 
         {/* ================================================================ */}
-        {/* TAB MC 1: PRIVATE MC RUN SHEET                                   */}
+        {/* TAB MC 1: RUN SHEET (Couples & Planner Day Sheet / MC Console)    */}
         {/* ================================================================ */}
         {activeTab === 'mc_runsheet' && (
           isPlannerView ? (
@@ -6685,8 +6641,9 @@ export default function CoupleView({
                 setState({ ...state, weddings: updatedWeddings });
               }}
               onSelectView={onSelectView}
+              roleMode="planner"
             />
-          ) : (
+          ) : isMcView || session?.role === 'mc' ? (
           <section className="space-y-6 animate-in fade-in duration-200">
             {/* Header */}
             <div className="flex items-start justify-between flex-wrap gap-4">
@@ -7305,6 +7262,16 @@ export default function CoupleView({
               </div>
             )}
           </section>
+          ) : (
+            <PlannerDaySheetSection
+              wedding={wedding}
+              onUpdateWedding={(updated) => {
+                const updatedWeddings = (state.weddings || []).map(w => w.id === updated.id ? updated : w);
+                setState({ ...state, weddings: updatedWeddings });
+              }}
+              onSelectView={onSelectView}
+              roleMode="couple"
+            />
           )
         )}
 
@@ -7579,10 +7546,15 @@ export default function CoupleView({
             <VendorDirectorySection
               wedding={wedding}
               onUpdateWeddingVendors={handleUpdateWeddingVendors}
+              onUpdateWedding={(updated) => {
+                const updatedWeddings = (state.weddings || []).map(w => w.id === updated.id ? updated : w);
+                setState({ ...state, weddings: updatedWeddings });
+              }}
               readOnly={true}
             />
           </section>
         )}
+
       </div>
       </main>
 

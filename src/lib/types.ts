@@ -37,6 +37,23 @@ export interface PrivateRunSheetItem {
   changeRequest?: RunSheetChangeRequest;
 }
 
+export interface VendorDocument {
+  id: string;
+  weddingId?: string;
+  vendorName: string;
+  vendorCategory: string;
+  docType: 'insurance' | 'contract' | 'permit' | 'invoice' | 'other';
+  title: string;
+  fileName: string;
+  fileSize?: string;
+  uploadedAt: string;
+  expiryDate?: string;
+  policyNumber?: string;
+  notes?: string;
+  fileDataUrl?: string;
+  status?: 'active' | 'expiring_soon' | 'expired';
+}
+
 export interface WeddingVendor {
   id: string;
   category: string;
@@ -95,6 +112,7 @@ export interface Wedding {
   tasks: Task[];
   events?: WeddingEvent[];
   vendors?: WeddingVendor[];
+  vendorDocuments?: VendorDocument[];
   runSheet?: RunSheetItem[];
   privateRunSheet?: PrivateRunSheetItem[];
   plannerDaySheet?: PrivateRunSheetItem[];
