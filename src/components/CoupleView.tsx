@@ -64,15 +64,31 @@ export default function CoupleView({
 
   const isMcOrPlanner = Boolean(isMcView || isPlannerView || session?.role === 'mc' || session?.role === 'planner');
 
-  const [activeTab, setActiveTab] = useState<CoupleTab>(
-    initialTab || (isMcOrPlanner ? 'mc_runsheet' : 'overview')
-  );
+  const [activeTab, setActiveTab] = useState<CoupleTab>(() => {
+    if (initialTab) return initialTab;
+    try {
+      const hash = window.location.hash.toLowerCase();
+      const match = hash.match(/tab=([a-z0-9_]+)/);
+      if (match && match[1]) return match[1] as CoupleTab;
+    } catch {}
+    return isMcOrPlanner ? 'mc_runsheet' : 'overview';
+  });
 
   useEffect(() => {
     if (initialTab) {
       setActiveTab(initialTab);
-    } else if (isMcOrPlanner && activeTab !== 'mc_runsheet' && activeTab !== 'seating' && activeTab !== 'venue' && activeTab !== 'vendors') {
-      setActiveTab('mc_runsheet');
+    } else {
+      try {
+        const hash = window.location.hash.toLowerCase();
+        const match = hash.match(/tab=([a-z0-9_]+)/);
+        if (match && match[1]) {
+          setActiveTab(match[1] as CoupleTab);
+          return;
+        }
+      } catch {}
+      if (isMcOrPlanner && activeTab !== 'mc_runsheet' && activeTab !== 'seating' && activeTab !== 'venue' && activeTab !== 'vendors') {
+        setActiveTab('mc_runsheet');
+      }
     }
   }, [initialTab, isMcOrPlanner]);
 
@@ -1847,6 +1863,8 @@ export default function CoupleView({
   // Feature 1: Private MC Run Sheet State & Handlers
   // -------------------------------------------------------------
   const [runSheetFilter, setRunSheetFilter] = useState<'all' | 'pending' | 'done'>('all');
+  const [selectedRunSheetEventId, setSelectedRunSheetEventId] = useState<string>('all');
+  const [cueEventId, setCueEventId] = useState<string>('');
   const [runSheetSearch, setRunSheetSearch] = useState('');
   const [showAddCueModal, setShowAddCueModal] = useState(false);
   const [cueTime, setCueTime] = useState('17:00');
@@ -2047,8 +2065,13 @@ export default function CoupleView({
   const handleAddCue = (e: React.FormEvent) => {
     e.preventDefault();
     if (!cueTime || !cueActivity) return;
+    const targetEvtId = cueEventId || (selectedRunSheetEventId !== 'all' ? selectedRunSheetEventId : undefined);
+    const targetEvt = (wedding.events || []).find((e) => e.id === targetEvtId);
+
     const newItem: PrivateRunSheetItem = {
       id: 'pmc_' + Date.now(),
+      eventId: targetEvtId,
+      eventName: targetEvt?.name,
       time: cueTime,
       activity: cueActivity,
       notes: cueNotes,
@@ -2063,10 +2086,17 @@ export default function CoupleView({
     setCueNotes('');
     setCuePrivateNotes('');
     setShowAddCueModal(false);
-    showToast(`Added "${newItem.activity}" to schedule`, 'success');
+    showToast(`Added "${newItem.activity}"${targetEvt ? ` to ${targetEvt.name}` : ''}`, 'success');
   };
 
-  const filteredCues = runSheet.filter(cue => {
+  const filteredCues = runSheet.filter((cue) => {
+    if (selectedRunSheetEventId !== 'all') {
+      if (cue.eventId) {
+        if (cue.eventId !== selectedRunSheetEventId) return false;
+      } else {
+        if (selectedRunSheetEventId !== 'evt_ceremony' && selectedRunSheetEventId !== 'evt_reception') return false;
+      }
+    }
     const matchesSearch = cue.activity.toLowerCase().includes(runSheetSearch.toLowerCase()) ||
       (cue.notes || '').toLowerCase().includes(runSheetSearch.toLowerCase()) ||
       (cue.privateNotes || '').toLowerCase().includes(runSheetSearch.toLowerCase()) ||
@@ -2560,10 +2590,10 @@ export default function CoupleView({
                   <div className="flex items-center gap-1 bg-[#faf8f5] p-1 rounded-xl border border-[#e8ded0] text-xs">
                     {(
                       [
-                        { id: 'all', label: 'All', count: wedding.tasks.length },
+                        { id: 'all', label: 'All', count: wedding.tasks.length, color: 'text-[#dfc194]' },
                         { id: 'urgent', label: 'Urgent', count: wedding.tasks.filter(t => !t.completed && t.priority === 'urgent').length, color: 'text-rose-600' },
-                        { id: 'pending', label: 'Pending', count: wedding.tasks.filter(t => !t.completed && t.priority !== 'urgent').length, color: 'text-amber-600' },
-                        { id: 'completed', label: 'Done', count: wedding.tasks.filter(t => t.completed).length, color: 'text-emerald-600' },
+                        { id: 'pending', label: 'Pending', count: wedding.tasks.filter(t => !t.completed && t.priority !== 'urgent').length, color: 'text-amber-700' },
+                        { id: 'completed', label: 'Done', count: wedding.tasks.filter(t => t.completed).length, color: 'text-[#8b7b6b]' },
                       ] as const
                     ).map((f) => (
                       <button
@@ -2577,13 +2607,13 @@ export default function CoupleView({
                         }`}
                       >
                         <span>{f.label}</span>
-                        <span className={`ml-1 text-[10px] ${taskFilter === f.id ? 'text-[#dfc194]' : ((f as any).color || 'text-[#8b7b6b]')}`}>({f.count})</span>
+                        <span className={`ml-1 text-[10px] ${taskFilter === f.id ? 'text-[#dfc194]' : f.color}`}>({f.count})</span>
                       </button>
                     ))}
                   </div>
                 </div>
 
-                <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+                <div className="space-y-2.5 max-h-[360px] overflow-y-auto pr-1">
                   {wedding.tasks
                     .filter((t) => {
                       if (taskFilter === 'urgent') return !t.completed && t.priority === 'urgent';
@@ -2596,59 +2626,66 @@ export default function CoupleView({
                       return (
                         <div
                           key={t.id}
-                          className={`flex items-start gap-2.5 text-xs p-2.5 rounded-xl transition-all duration-200 border ${
+                          className={`flex items-center gap-3 text-xs p-3 rounded-xl transition-all duration-200 border ${
                             t.completed
-                              ? 'bg-emerald-50/50 text-[#8b7b6b] border-emerald-200/50'
+                              ? 'bg-[#faf8f5]/80 text-[#8b7b6b] border-[#ebdcc9]'
                               : isUrgent
-                              ? 'bg-rose-50/60 text-[#15110e] border-rose-200 hover:border-rose-300'
-                              : 'bg-white hover:bg-[#faf8f5] text-[#15110e] border-[#ebd8c3]/80'
+                              ? 'bg-rose-50/60 text-[#15110e] border-rose-200 hover:border-rose-300 shadow-2xs'
+                              : 'bg-white hover:bg-[#faf8f5] text-[#15110e] border-[#ebd8c3]/80 shadow-2xs'
                           }`}
                         >
                           <input
                             type="checkbox"
                             checked={t.completed}
                             onChange={() => handleToggleTask(t.id)}
-                            className="accent-[#bd9661] w-4 h-4 cursor-pointer mt-0.5 shrink-0"
+                            className="accent-[#bd9661] w-4 h-4 cursor-pointer shrink-0"
+                            title={t.completed ? 'Mark task as pending' : 'Mark task as completed'}
                           />
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className={`leading-snug transition-all ${t.completed ? 'line-through text-[#8b7b6b]' : 'font-medium text-[#15110e]'}`}>
-                                {t.text}
-                              </span>
-                              {/* Priority / Status Badge */}
-                              {t.completed ? (
-                                <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
-                                  Done ✓
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                <span className={`leading-snug transition-all ${t.completed ? 'line-through text-[#8b7b6b]' : 'font-semibold text-[#15110e]'}`}>
+                                  {t.text}
                                 </span>
-                              ) : isUrgent ? (
-                                <span className="text-[9.5px] font-bold text-rose-700 bg-rose-100/90 border border-rose-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
-                                  Urgent
-                                </span>
-                              ) : (
-                                <span className="text-[9.5px] font-bold text-amber-700 bg-amber-100/80 border border-amber-200 px-2 py-0.5 rounded-full">
-                                  Pending
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 mt-1 text-[10px] text-[#8b7b6b]">
-                              <span>Due: {t.due || 'This week'}</span>
-                              {!t.completed && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleSetTaskPriority(t.id, t.priority === 'urgent' ? 'pending' : 'urgent')}
-                                  className="text-[10px] font-semibold text-[#bd9661] hover:underline cursor-pointer"
-                                >
-                                  Mark as {t.priority === 'urgent' ? 'Pending' : 'Urgent'}
-                                </button>
-                              )}
+                                {/* Priority / Status Badge */}
+                                {t.completed ? (
+                                  <span className="text-[9.5px] font-semibold text-[#6e5d4f] bg-[#f0ede6] border border-[#dcd2c4] px-2 py-0.5 rounded-full shrink-0">
+                                    Done ✓
+                                  </span>
+                                ) : isUrgent ? (
+                                  <span className="text-[9.5px] font-bold text-rose-700 bg-rose-100/90 border border-rose-200 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
+                                    Urgent
+                                  </span>
+                                ) : (
+                                  <span className="text-[9.5px] font-bold text-amber-700 bg-amber-100/80 border border-amber-200 px-2 py-0.5 rounded-full shrink-0">
+                                    Pending
+                                  </span>
+                                )}
+                              </div>
                               <button
                                 type="button"
                                 onClick={() => handleDeleteTask(t.id)}
-                                className="text-[10px] text-[#8b7b6b] hover:text-rose-600 cursor-pointer ml-auto"
+                                className="text-[11px] font-medium text-[#9c8979] hover:text-rose-600 hover:bg-rose-50 px-2 py-0.5 rounded-lg transition-colors cursor-pointer shrink-0"
+                                title="Delete task"
                               >
                                 Delete
                               </button>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1.5 text-[10.5px] text-[#8b7b6b]">
+                              <span>🗓️ Due: {t.due || 'This week'}</span>
+                              {!t.completed && (
+                                <>
+                                  <span>&bull;</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSetTaskPriority(t.id, t.priority === 'urgent' ? 'pending' : 'urgent')}
+                                    className="font-semibold text-[#bd9661] hover:text-[#997441] hover:underline cursor-pointer"
+                                  >
+                                    Mark as {t.priority === 'urgent' ? 'Pending' : 'Urgent'}
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -2656,45 +2693,48 @@ export default function CoupleView({
                     })}
                 </div>
 
-                {/* Add Task Form with Priority Selector */}
-                <form onSubmit={handleAddTask} className="space-y-2 pt-2 border-t border-[#f0ede4]">
-                  <div className="flex gap-2">
+                {/* Add Task Form with Segemented Priority Selector */}
+                <form onSubmit={handleAddTask} className="pt-3 border-t border-[#f0ede4] space-y-2.5">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <input
                       type="text"
                       value={newTaskInput}
                       onChange={(e) => setNewTaskInput(e.target.value)}
                       placeholder="Add a new planning task or guest request..."
-                      className="flex-1 bg-white border border-[#e8ded0] rounded-xl px-3 py-2 text-xs outline-none focus:border-[#bd9661]"
+                      className="flex-1 bg-[#faf8f5] border border-[#e8ded0] rounded-xl px-3.5 py-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661] focus:bg-white shadow-2xs transition-all"
                     />
-                    <button
-                      type="submit"
-                      className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-4 py-2 rounded-xl text-xs cursor-pointer shadow-xs transition-colors shrink-0"
-                    >
-                      + Add Task
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2 text-[11px] text-[#8b7b6b] px-0.5">
-                    <span className="font-semibold text-[#15110e]">Priority:</span>
-                    <label className="flex items-center gap-1 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="taskPriority"
-                        checked={newTaskPriority === 'pending'}
-                        onChange={() => setNewTaskPriority('pending')}
-                        className="accent-[#bd9661]"
-                      />
-                      <span className="text-amber-800 font-medium">Pending</span>
-                    </label>
-                    <label className="flex items-center gap-1 cursor-pointer ml-2">
-                      <input
-                        type="radio"
-                        name="taskPriority"
-                        checked={newTaskPriority === 'urgent'}
-                        onChange={() => setNewTaskPriority('urgent')}
-                        className="accent-rose-600"
-                      />
-                      <span className="text-rose-700 font-medium">Urgent</span>
-                    </label>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center bg-[#faf8f5] p-1 rounded-xl border border-[#e8ded0] text-xs">
+                        <button
+                          type="button"
+                          onClick={() => setNewTaskPriority('pending')}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                            newTaskPriority === 'pending'
+                              ? 'bg-[#15110e] text-[#dfc194] shadow-2xs'
+                              : 'text-[#8b7b6b] hover:text-[#15110e]'
+                          }`}
+                        >
+                          Pending
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewTaskPriority('urgent')}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                            newTaskPriority === 'urgent'
+                              ? 'bg-rose-700 text-white shadow-2xs'
+                              : 'text-[#8b7b6b] hover:text-rose-700'
+                          }`}
+                        >
+                          Urgent
+                        </button>
+                      </div>
+                      <button
+                        type="submit"
+                        className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-4 py-2.5 rounded-xl text-xs cursor-pointer shadow-xs transition-colors shrink-0"
+                      >
+                        + Add Task
+                      </button>
+                    </div>
                   </div>
                 </form>
               </div>
@@ -2744,6 +2784,21 @@ export default function CoupleView({
                 </p>
               </div>
               <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.dispatchEvent(
+                      new CustomEvent('open_joey_chatbot', {
+                        detail: { prompt: 'Show me our celebration events schedule and confirmed guest breakdown' }
+                      })
+                    );
+                  }}
+                  className="bg-white border border-[#d5c7b5] hover:border-[#bd9661] hover:bg-[#faf6f0] text-[#15110e] font-bold px-3 py-2 rounded-lg text-xs flex items-center gap-2 cursor-pointer shadow-2xs transition-colors"
+                  title="Ask Joey AI Assistant about celebration events & schedule"
+                >
+                  <img src="./chatbot-avatar.png" alt="Joey AI" style={{ width: '20px', height: '20px', borderRadius: '9999px', objectFit: 'cover' }} />
+                  <span>Ask Joey AI</span>
+                </button>
                 <button
                   type="button"
                   onClick={handleOpenAddEventModal}
@@ -6819,12 +6874,39 @@ export default function CoupleView({
                   <span className="text-[#8b7b6b]">•</span>
                   <span className="text-[#15110e] font-semibold">{wedding.couple}</span>
                 </div>
-                <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#15110e]">
-                  {isPlannerView || session?.role === 'planner' ? 'Wedding Day Run Sheet' : 'Private Run Sheet'}
-                </h1>
-                <p className="text-xs text-[#8b7b6b] mt-1">
-                  Saturday, {wedding.dateDisplay || wedding.date} &bull; {wedding.venue} &bull; {runSheet.length} Cue Entries
-                </p>
+                {(() => {
+                  const activeEvt = (wedding.events || []).find((e) => e.id === selectedRunSheetEventId);
+                  if (!activeEvt) {
+                    return (
+                      <>
+                        <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#15110e]">
+                          {isPlannerView || session?.role === 'planner' ? 'Wedding Day Run Sheet' : 'Private Run Sheet'}
+                        </h1>
+                        <p className="text-xs text-[#8b7b6b] mt-1">
+                          Saturday, {wedding.dateDisplay || wedding.date} &bull; {wedding.venue} &bull; {runSheet.length} Cue Entries
+                        </p>
+                      </>
+                    );
+                  }
+                  return (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#15110e]">
+                          {activeEvt.name} Run Sheet
+                        </h1>
+                        <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#f4ece1] text-[#7a5933] border border-[#e4d6c4]">
+                          {activeEvt.category || 'Celebration'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#8b7b6b] mt-1">
+                        {activeEvt.date} &bull; {activeEvt.time} &bull; {activeEvt.venue} &bull;{' '}
+                        <strong className="text-[#15110e]">
+                          {filteredCues.length} Cue Entries
+                        </strong>
+                      </p>
+                    </>
+                  );
+                })()}
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
@@ -6855,12 +6937,54 @@ export default function CoupleView({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowAddCueModal(true)}
+                  onClick={() => {
+                    setCueEventId(selectedRunSheetEventId !== 'all' ? selectedRunSheetEventId : (wedding.events?.[0]?.id || ''));
+                    setShowAddCueModal(true);
+                  }}
                   className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
                 >
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add Cue Entry</span>
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Create Event Run Sheet</span>
                 </button>
               </div>
+            </div>
+
+            {/* Event-Specific Run Sheet Tabs (Multi-Day Celebration Run Sheets) */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar border-b border-[#e8ded0]">
+              <button
+                type="button"
+                onClick={() => setSelectedRunSheetEventId('all')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
+                  selectedRunSheetEventId === 'all'
+                    ? 'bg-[#15110e] text-[#dfc194] shadow-xs ring-1 ring-[#bd9661]'
+                    : 'bg-white hover:bg-[#faf6f0] text-[#6b5847] border border-[#e8ded0]'
+                }`}
+              >
+                <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <span>Master Wedding Day (All Events)</span>
+              </button>
+              {(wedding.events || []).map((evt) => (
+                <button
+                  key={evt.id}
+                  type="button"
+                  onClick={() => setSelectedRunSheetEventId(evt.id)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
+                    selectedRunSheetEventId === evt.id
+                      ? 'bg-[#15110e] text-[#dfc194] shadow-xs ring-1 ring-[#bd9661]'
+                      : 'bg-white hover:bg-[#faf6f0] text-[#6b5847] border border-[#e8ded0]'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5 text-current opacity-70 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="9" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  <span>{evt.name}</span>
+                </button>
+              ))}
             </div>
 
             {/* Run Sheet KPI & Filter Bar */}
@@ -6907,11 +7031,21 @@ export default function CoupleView({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 text-xs">
-                  <div className="bg-[#faf6f0] border border-[#ebd3a8] px-3 py-1.5 rounded-xl font-medium text-[#15110e]">
+                <div className="flex items-center gap-2.5 text-xs">
+                  <div className="bg-[#faf6f0] border border-[#ebd3a8] px-3.5 py-1.5 rounded-xl font-medium text-[#15110e]">
                     <span className="font-bold text-[#bd9661]">{runSheet.filter(c => c.done).length}</span> / {runSheet.length} Completed
                   </div>
-                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCueEventId(selectedRunSheetEventId !== 'all' ? selectedRunSheetEventId : (wedding.events?.[0]?.id || ''));
+                      setShowAddCueModal(true);
+                    }}
+                    className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+                  >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>Add Activity</span>
+                  </button>
                 </div>
               </div>
 
@@ -7107,6 +7241,23 @@ export default function CoupleView({
                   </div>
 
                   <form onSubmit={handleAddCue} className="space-y-4">
+                    {/* Celebration Event Selector */}
+                    <div>
+                      <label className="block text-xs font-bold text-[#15110e] mb-1">Celebration Event *</label>
+                      <select
+                        value={cueEventId}
+                        onChange={(e) => setCueEventId(e.target.value)}
+                        className="w-full text-xs font-semibold bg-[#faf8f5] border border-[#d5c7b5] focus:border-[#bd9661] rounded-xl px-3 py-2 text-[#15110e] outline-none"
+                      >
+                        <option value="">Master Wedding Day (All Events)</option>
+                        {(wedding.events || []).map((e) => (
+                          <option key={e.id} value={e.id}>
+                            {e.name} ({e.date} • {e.time})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
                     <div className="grid grid-cols-3 gap-3">
                       <div>
                         <label className="block text-xs font-bold text-[#15110e] mb-1">Time (24h)</label>
@@ -7320,18 +7471,6 @@ export default function CoupleView({
               title="Cheers AI • MC Run Sheet & Cues Assistant"
               context="mc"
             />
-
-            {!showMcAiModal && (
-              <button
-                type="button"
-                onClick={() => setShowMcAiModal(true)}
-                className="fixed bottom-6 right-6 z-40 bg-[#15110e] text-[#dfc194] hover:text-white border-2 border-[#bd9661] hover:border-[#dfc194] px-5 py-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center gap-2.5 cursor-pointer font-serif font-bold text-sm tracking-wide"
-                title="Open interactive Cheers AI Run Sheet Chatbot"
-              >
-                <span className="text-lg">🥂</span>
-                <span>Cheers AI</span>
-              </button>
-            )}
 
             {/* MC Share Vendor Copy Modal */}
             {showMcShareModal && (
@@ -7835,6 +7974,8 @@ export default function CoupleView({
         </div>
       )}
 
+      {/* Joey AI Chatbot Concierge for Couple Dashboard (All tabs EXCEPT seating) */}
+      {activeTab !== 'seating' && <JoeyChatbot context="couple" />}
     </div>
   );
 }

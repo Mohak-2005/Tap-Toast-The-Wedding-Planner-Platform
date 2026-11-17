@@ -49,6 +49,17 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
     showToast(`Attached: ${file.name}`, 'info');
   };
 
+  useEffect(() => {
+    const handleOpenChatbot = (e: any) => {
+      setIsOpen(true);
+      if (e?.detail?.prompt) {
+        setInputValue(e.detail.prompt);
+      }
+    };
+    window.addEventListener('open_joey_chatbot', handleOpenChatbot);
+    return () => window.removeEventListener('open_joey_chatbot', handleOpenChatbot);
+  }, []);
+
   const [messages, setMessages] = useState<MessageItem[]>(() => {
     if (context === 'couple') {
       return [
@@ -312,6 +323,21 @@ export default function JoeyChatbot({ embeddedInPhone = false, context = 'guest'
           id: 'bot_' + Date.now(),
           sender: 'bot',
           text: `🎁 **Wishing Well Presets Updated**: The quick-gift chips on your digital wishing well are now set to:\n• ${newPresets.map(p => `$${p}`).join(' · ')}\n\nGuests accessing your wishing well from their QaRd invitations will see these instant gift denominations.`,
+          time: 'Just now'
+        };
+        setMessages(prev => [...prev, botMsg]);
+        return;
+      }
+
+      // 5. Celebration Events & Schedule Intelligence
+      if (q.includes('event') || q.includes('schedule') || q.includes('timeline') || q.includes('itinerary') || q.includes('sangeet') || q.includes('reception') || q.includes('ceremony') || q.includes('breakfast')) {
+        const events = wedding?.events || [];
+        const eventListText = events.map(e => `• **${e.name}** (${e.date} • ${e.time})\n  📍 *${e.venue}* • Dress: *${e.dressCode || 'N/A'}*`).join('\n\n');
+
+        const botMsg: MessageItem = {
+          id: 'bot_' + Date.now(),
+          sender: 'bot',
+          text: `🗓️ **Celebration Events & Schedule**:\nHere is your multi-day celebration itinerary across **${events.length} events**:\n\n${eventListText}\n\n💡 *Tip: You can now create event-specific run sheets for any celebration day in the Run Sheet tab!*`,
           time: 'Just now'
         };
         setMessages(prev => [...prev, botMsg]);

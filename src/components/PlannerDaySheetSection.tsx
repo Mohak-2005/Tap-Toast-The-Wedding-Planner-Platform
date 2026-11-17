@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Wedding, PrivateRunSheetItem } from '../lib/types';
+import { Wedding, PrivateRunSheetItem, RunSheetChangeRequest } from '../lib/types';
 import { showToast, logAudit, useAppState } from '../lib/state';
 import { STANDARD_RUN_SHEET_TEMPLATES, generateAiRunSheetDraft, parseRawRunSheetText } from '../lib/runSheetTemplates';
 import { CheersAiRunSheetChatbot } from './CheersAiRunSheetChatbot';
@@ -237,6 +237,7 @@ export default function PlannerDaySheetSection({
   }, [showExportMenu]);
 
   // Filters (no parentheses)
+  const [selectedEventId, setSelectedEventId] = useState<string>('all');
   const [timeSectionFilter, setTimeSectionFilter] = useState<'all' | 'morning' | 'afternoon' | 'evening'>('all');
   const [streamFilter, setStreamFilter] = useState<'all' | 'mc_only' | 'planner_only'>('all');
   const [daySheetFilter, setDaySheetFilter] = useState<'all' | 'pending' | 'done'>('all');
@@ -254,6 +255,7 @@ export default function PlannerDaySheetSection({
 
   // Modal State for Adding Activity
   const [showAddModal, setShowAddModal] = useState(false);
+  const [newActivityEventId, setNewActivityEventId] = useState<string>('');
   const [newTime, setNewTime] = useState('09:00');
   const [newActivity, setNewActivity] = useState('');
   const [newNotes, setNewNotes] = useState('');
@@ -738,8 +740,13 @@ export default function PlannerDaySheetSection({
       return;
     }
 
+    const targetEvtId = newActivityEventId || (selectedEventId !== 'all' ? selectedEventId : undefined);
+    const targetEvt = (wedding.events || []).find((e) => e.id === targetEvtId);
+
     const newItem: PrivateRunSheetItem = {
       id: (isNewMcCue ? 'pmc_' : 'pds_') + Date.now(),
+      eventId: targetEvtId,
+      eventName: targetEvt?.name,
       time: newTime.trim(),
       activity: newActivity.trim(),
       notes: newNotes.trim(),
@@ -749,7 +756,6 @@ export default function PlannerDaySheetSection({
       section: newSection,
       category: isNewMcCue ? 'mc' : newCategory,
       vendorRole: isNewMcCue ? 'Master of Ceremonies' : newVendorRole,
-      isMcCue: isNewMcCue,
     };
 
     if (isNewMcCue) {
@@ -790,6 +796,16 @@ export default function PlannerDaySheetSection({
   // Filter combined items
   const filteredItems = useMemo(() => {
     return combinedItems.filter((item) => {
+      // 0. Event Filter (Multi-Day Celebration Specific Run Sheets)
+      if (selectedEventId !== 'all') {
+        if (item.eventId) {
+          if (item.eventId !== selectedEventId) return false;
+        } else {
+          // If no eventId attached, associate with ceremony / reception (main wedding day)
+          if (selectedEventId !== 'evt_ceremony' && selectedEventId !== 'evt_reception') return false;
+        }
+      }
+
       // 1. Status Filter
       if (daySheetFilter === 'pending' && item.done) return false;
       if (daySheetFilter === 'done' && !item.done) return false;
@@ -816,7 +832,7 @@ export default function PlannerDaySheetSection({
 
       return true;
     });
-  }, [combinedItems, daySheetFilter, streamFilter, timeSectionFilter, daySheetSearch]);
+  }, [combinedItems, selectedEventId, daySheetFilter, streamFilter, timeSectionFilter, daySheetSearch]);
 
   // Group by sections
   const morningItems = useMemo(
@@ -980,7 +996,13 @@ export default function PlannerDaySheetSection({
                             </div>
                           )}
 
-                          {/* Badges: Just Category and Vendor Role */}
+                          {/* Badges: Event, Category and Vendor Role */}
+                          {item.eventName && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-[#faf4ec] border border-[#ebd3a8] text-[#8b6534]">
+                              🗓️ {item.eventName}
+                            </span>
+                          )}
+
                           {item.category && item.category !== 'mc' && (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10.5px] font-semibold bg-white border border-[#dfd4c4] text-[#6b5843]">
                               <CategoryIcon category={item.category} />
@@ -1132,17 +1154,44 @@ export default function PlannerDaySheetSection({
             <span className="text-[#8b7b6b]">&bull;</span>
             <span className="text-[#15110e] font-semibold">{wedding.couple}</span>
           </div>
-          <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#15110e]">
-            {roleMode === 'couple' ? 'Wedding Day Sheet' : 'Wedding Planner Day Sheet'}
-          </h1>
-          <p className="text-xs text-[#8b7b6b] mt-1">
-            Saturday, {wedding.dateDisplay || wedding.date} &bull; {wedding.venue} &bull;{' '}
-            <strong className="text-[#15110e]">
-              {roleMode === 'couple'
-                ? `Build & manage preparations, vendor arrivals, ceremony and reception (${totalCount} entries)`
-                : `${totalCount} Master Schedule Entries`}
-            </strong>
-          </p>
+          {(() => {
+            const activeEvt = (wedding.events || []).find((e) => e.id === selectedEventId);
+            if (!activeEvt) {
+              return (
+                <>
+                  <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#15110e]">
+                    {roleMode === 'couple' ? 'Wedding Day Sheet' : 'Wedding Planner Day Sheet'}
+                  </h1>
+                  <p className="text-xs text-[#8b7b6b] mt-1">
+                    Saturday, {wedding.dateDisplay || wedding.date} &bull; {wedding.venue} &bull;{' '}
+                    <strong className="text-[#15110e]">
+                      {roleMode === 'couple'
+                        ? `Build & manage preparations, vendor arrivals, ceremony and reception (${totalCount} entries)`
+                        : `${totalCount} Master Schedule Entries`}
+                    </strong>
+                  </p>
+                </>
+              );
+            }
+            return (
+              <>
+                <div className="flex items-center gap-2">
+                  <h1 className="font-serif text-3xl md:text-4xl font-bold text-[#15110e]">
+                    {activeEvt.name} Run Sheet
+                  </h1>
+                  <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#f4ece1] text-[#7a5933] border border-[#e4d6c4]">
+                    {activeEvt.category || 'Celebration'}
+                  </span>
+                </div>
+                <p className="text-xs text-[#8b7b6b] mt-1">
+                  {activeEvt.date} &bull; {activeEvt.time} &bull; {activeEvt.venue} &bull;{' '}
+                  <strong className="text-[#15110e]">
+                    {filteredItems.length} Event Specific Entries
+                  </strong>
+                </p>
+              </>
+            );
+          })()}
         </div>
 
         {/* Header Action Buttons: Export / Download, Share Vendor Copy, Import Template, Print, Add Activity */}
@@ -1259,13 +1308,55 @@ export default function PlannerDaySheetSection({
 
           <button
             type="button"
-            onClick={() => setShowAddModal(true)}
+            onClick={() => {
+              setNewActivityEventId(selectedEventId !== 'all' ? selectedEventId : (wedding.events?.[0]?.id || ''));
+              setShowAddModal(true);
+            }}
             className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
           >
             <IconPlus />
-            <span>Add Activity</span>
+            <span>Create Event Run Sheet</span>
           </button>
         </div>
+      </div>
+
+      {/* Event-Specific Run Sheet Tabs (Multi-Day Celebration Run Sheets) */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar border-b border-[#e8ded0]">
+        <button
+          type="button"
+          onClick={() => setSelectedEventId('all')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
+            selectedEventId === 'all'
+              ? 'bg-[#15110e] text-[#dfc194] shadow-xs ring-1 ring-[#bd9661]'
+              : 'bg-white hover:bg-[#faf6f0] text-[#6b5847] border border-[#e8ded0]'
+          }`}
+        >
+          <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          <span>Master Wedding Day (All Events)</span>
+        </button>
+        {(wedding.events || []).map((evt) => (
+          <button
+            key={evt.id}
+            type="button"
+            onClick={() => setSelectedEventId(evt.id)}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
+              selectedEventId === evt.id
+                ? 'bg-[#15110e] text-[#dfc194] shadow-xs ring-1 ring-[#bd9661]'
+                : 'bg-white hover:bg-[#faf6f0] text-[#6b5847] border border-[#e8ded0]'
+            }`}
+          >
+            <svg className="w-3.5 h-3.5 text-current opacity-70 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="9" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <span>{evt.name}</span>
+          </button>
+        ))}
       </div>
 
       {/* 2. KPI Banner & Dropdown Filters (No text in parentheses) */}
@@ -1346,9 +1437,22 @@ export default function PlannerDaySheetSection({
             </div>
           </div>
 
-          {/* Completed Text Box Only (Clean, no text beside it, no progress bar) */}
-          <div className="bg-[#faf6f0] border border-[#ebd3a8] px-3.5 py-1.5 rounded-xl font-medium text-[#15110e] text-xs">
-            <span className="font-bold text-[#bd9661]">{doneCount}</span> / {totalCount} Completed
+          {/* Completed Text Box & Add Activity button beside it */}
+          <div className="flex items-center gap-2.5">
+            <div className="bg-[#faf6f0] border border-[#ebd3a8] px-3.5 py-1.5 rounded-xl font-medium text-[#15110e] text-xs">
+              <span className="font-bold text-[#bd9661]">{doneCount}</span> / {totalCount} Completed
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setNewActivityEventId(selectedEventId !== 'all' ? selectedEventId : (wedding.events?.[0]?.id || ''));
+                setShowAddModal(true);
+              }}
+              className="bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e] font-bold px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+            >
+              <IconPlus />
+              <span>Add Activity</span>
+            </button>
           </div>
         </div>
       </div>
@@ -1452,6 +1556,25 @@ export default function PlannerDaySheetSection({
                     MC Run Sheet cues are managed by the Master of Ceremonies and synchronized to your Day Sheet. Cue creation is currently locked.
                   </span>
                 </div>
+              </div>
+
+              {/* Event Selector for Event-Specific Run Sheets */}
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
+                  Celebration Event *
+                </label>
+                <select
+                  value={newActivityEventId}
+                  onChange={(e) => setNewActivityEventId(e.target.value)}
+                  className="w-full bg-[#faf8f5] border border-[#d5c7b5] focus:border-[#bd9661] rounded-xl px-3 py-2 text-xs text-[#15110e] outline-none font-semibold"
+                >
+                  <option value="">Master Wedding Day (All Events)</option>
+                  {(wedding.events || []).map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.name} ({e.date} • {e.time})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Time & Section Grid */}
@@ -1896,19 +2019,6 @@ export default function PlannerDaySheetSection({
         title="Cheers AI • Wedding Day Sheet Assistant"
         context={roleMode === 'couple' ? "couple" : "planner"}
       />
-
-      {/* Floating Cheers AI Launcher Button */}
-      {!showAiModal && (
-        <button
-          type="button"
-          onClick={() => setShowAiModal(true)}
-          className="fixed bottom-6 right-6 z-40 bg-[#15110e] text-[#dfc194] hover:text-white border-2 border-[#bd9661] hover:border-[#dfc194] px-5 py-3 rounded-full shadow-2xl hover:scale-105 transition-all flex items-center gap-2.5 cursor-pointer font-serif font-bold text-sm tracking-wide"
-          title="Open Cheers AI Chatbot"
-        >
-          <span className="text-lg">🥂</span>
-          <span>Cheers AI</span>
-        </button>
-      )}
 
       {/* 8. Share Vendor Copy Modal (Clean read-only schedule for external vendors) */}
       {showShareModal && (

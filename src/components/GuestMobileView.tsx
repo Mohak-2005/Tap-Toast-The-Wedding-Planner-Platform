@@ -366,6 +366,57 @@ export default function GuestMobileView() {
   const [latestPostId, setLatestPostId] = useState<string | null>(null);
   const [showCelebrationBurst, setShowCelebrationBurst] = useState<boolean>(false);
 
+  // Per-Event RSVP Customization State (Guests Attending, Dietary, Song per event)
+  const [eventPreferences, setEventPreferences] = useState<Record<string, { guestCount: number; dietary: string; song: string }>>(() => {
+    return {
+      evt_sangeet: { guestCount: 2, dietary: 'Vegetarian', song: 'Gallan Goodiyaan — Dil Dhadakne Do' },
+      evt_ceremony: { guestCount: 2, dietary: 'Vegetarian', song: 'A Thousand Years — Christina Perri' },
+      evt_reception: { guestCount: 2, dietary: 'Vegetarian', song: 'September — Earth, Wind & Fire' },
+      evt_afterparty: { guestCount: 2, dietary: 'Vegetarian', song: "Don't Stop Believin' — Journey" },
+      evt_breakfast: { guestCount: 2, dietary: 'Vegetarian / Oat Milk', song: 'Sunday Morning — Maroon 5' },
+    };
+  });
+
+  const handleUpdateEventPref = (eventId: string, field: 'guestCount' | 'dietary' | 'song', value: any) => {
+    setEventPreferences(prev => {
+      const current = prev[eventId] || { guestCount: 2, dietary: 'Vegetarian', song: '' };
+      return {
+        ...prev,
+        [eventId]: {
+          ...current,
+          [field]: value
+        }
+      };
+    });
+
+    const targetName = (guestLeadName || 'Priya Sharma').toLowerCase().trim();
+    const updatedGuests = (state.guests || []).map((g) => {
+      const gName = g.name.toLowerCase().trim();
+      if (
+        gName === targetName ||
+        gName.includes(targetName) ||
+        targetName.includes(gName) ||
+        (targetName.includes('priya') && g.id === 'priya')
+      ) {
+        const currentRsvps = g.eventRsvps || {};
+        const cur = currentRsvps[eventId] || { status: 'confirmed', attending: true };
+        return {
+          ...g,
+          eventRsvps: {
+            ...currentRsvps,
+            [eventId]: {
+              ...cur,
+              [field]: value,
+              updatedAt: new Date().toISOString(),
+            }
+          }
+        };
+      }
+      return g;
+    });
+    setState({ ...state, guests: updatedGuests });
+  };
+
   // Additional guests state (triggered when count hits 4+)
   const [showAdditionalGuestsModal, setShowAdditionalGuestsModal] = useState<boolean>(false);
   const [additionalGuests, setAdditionalGuests] = useState<Array<{
@@ -376,7 +427,17 @@ export default function GuestMobileView() {
     type: 'adult' | 'child';
     dietary: string;
     open: boolean;
-  }>>([]);
+  }>>([
+    {
+      id: 'g_extra_init',
+      name: '',
+      household: '',
+      phone: '',
+      type: 'adult',
+      dietary: '',
+      open: true,
+    }
+  ]);
 
   useEffect(() => {
     if (activeTab !== 'rsvp') {
@@ -1255,14 +1316,122 @@ export default function GuestMobileView() {
                             </span>
                           </div>
                         ) : isConfirmed ? (
-                          <button
-                            type="button"
-                            onClick={() => handleToggleEventRsvp(evt.id, false)}
-                            className="w-full py-2.5 px-3 rounded-xl font-semibold text-xs text-[#8b7b6b] hover:text-[#15110e] bg-[#faf8f5] hover:bg-[#f4efe8] border border-[#e8ded0] hover:border-[#bd9661] transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-98 shadow-2xs"
-                          >
-                            <span>💌</span>
-                            <span>Decline</span>
-                          </button>
+                          <div className="space-y-3 pt-2">
+                            {/* Guests Attending Counter (Image 1 & 2) */}
+                            <div>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b]">
+                                  Guests Attending
+                                </label>
+                                <span className="text-[10px] text-[#bd9661] font-bold">
+                                  {evt.category || 'Celebration'}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 bg-white border border-[#e8ded0] rounded-xl p-2.5 flex items-center justify-between shadow-2xs">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateEventPref(evt.id, 'guestCount', Math.max(1, (eventPreferences[evt.id]?.guestCount || 2) - 1))}
+                                    className="w-9 h-9 rounded-full bg-[#f8f6f2] hover:bg-[#e8ded0] active:scale-90 text-[#15110e] font-bold text-lg flex items-center justify-center transition-all cursor-pointer"
+                                    aria-label="Decrease guest count"
+                                  >
+                                    &minus;
+                                  </button>
+                                  <span className="font-bold text-sm text-[#15110e]">
+                                    {eventPreferences[evt.id]?.guestCount || 2} {(eventPreferences[evt.id]?.guestCount || 2) === 1 ? 'guest' : 'guests'}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const cur = eventPreferences[evt.id]?.guestCount || 2;
+                                      if (cur < 4) {
+                                        handleUpdateEventPref(evt.id, 'guestCount', cur + 1);
+                                      } else {
+                                        if (additionalGuests.length === 0) {
+                                          setAdditionalGuests([{ id: Date.now().toString(), name: '', household: '', phone: '', type: 'adult', dietary: '', open: true }]);
+                                        }
+                                        setShowAdditionalGuestsModal(true);
+                                      }
+                                    }}
+                                    className={`w-9 h-9 rounded-full bg-[#f8f6f2] active:scale-90 text-lg flex items-center justify-center transition-all cursor-pointer font-bold ${
+                                      (eventPreferences[evt.id]?.guestCount || 2) >= 4
+                                        ? 'text-[#c5b5a4] opacity-50 cursor-not-allowed'
+                                        : 'hover:bg-[#e8ded0] text-[#15110e]'
+                                    }`}
+                                    aria-label="Increase guest count"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+
+                                {/* Link Button outside the box when count >= 4 (Image 2) */}
+                                {(eventPreferences[evt.id]?.guestCount || 2) >= 4 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (additionalGuests.length === 0) {
+                                        setAdditionalGuests([{ id: Date.now().toString(), name: '', household: '', phone: '', type: 'adult', dietary: '', open: true }]);
+                                      }
+                                      setShowAdditionalGuestsModal(true);
+                                    }}
+                                    className="w-[52px] h-[52px] rounded-2xl bg-white border border-[#ebdcc9] hover:border-[#bd9661] text-[#bd9661] hover:text-[#15110e] flex items-center justify-center shadow-2xs transition-all cursor-pointer hover:scale-105 active:scale-95 shrink-0"
+                                    title="Tap to register additional guests beyond 4"
+                                    aria-label="Register additional guests beyond 4"
+                                  >
+                                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Helper text matching Image 2 */}
+                              {(eventPreferences[evt.id]?.guestCount || 2) >= 4 && (
+                                <p className="text-[11px] text-[#8b7b6b] mt-1.5 leading-snug">
+                                  Maximum of 4 reached. Tap the <span className="text-[#bd9661] font-semibold">🔗</span> button outside the box to register additional guests.
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Dietary Requirements (Image 1) */}
+                            <div>
+                              <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
+                                Dietary Requirements
+                              </label>
+                              <input
+                                type="text"
+                                value={eventPreferences[evt.id]?.dietary || ''}
+                                onChange={(e) => handleUpdateEventPref(evt.id, 'dietary', e.target.value)}
+                                placeholder="e.g. Vegetarian, Gluten-Free, Nut allergy"
+                                className="w-full bg-white border border-[#e8ded0] rounded-xl p-3 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-2xs transition-colors"
+                              />
+                            </div>
+
+                            {/* Song Request (Image 1) */}
+                            <div>
+                              <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
+                                Song That'll Get You on the Dance Floor
+                              </label>
+                              <input
+                                type="text"
+                                value={eventPreferences[evt.id]?.song || ''}
+                                onChange={(e) => handleUpdateEventPref(evt.id, 'song', e.target.value)}
+                                placeholder="e.g. September — Earth, Wind & Fire"
+                                className="w-full bg-white border border-[#e8ded0] rounded-xl p-3 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-2xs transition-colors"
+                              />
+                            </div>
+
+                            {/* Single Decline button (Image 2) */}
+                            <button
+                              type="button"
+                              onClick={() => handleToggleEventRsvp(evt.id, false)}
+                              className="w-full py-2.5 px-3 rounded-xl font-semibold text-xs text-[#8b7b6b] hover:text-[#15110e] bg-[#faf8f5] hover:bg-[#f4efe8] border border-[#e8ded0] hover:border-[#bd9661] transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-98 shadow-2xs"
+                            >
+                              <span>💌</span>
+                              <span>Decline</span>
+                            </button>
+                          </div>
                         ) : (
                           <div className="grid grid-cols-2 gap-2">
                             <button
@@ -1289,235 +1458,18 @@ export default function GuestMobileView() {
                 })}
               </div>
 
-              {/* Decision Buttons with Interactive Micro-Transitions */}
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRsvpAttending(true);
-                    setShowAcceptAnimation(true);
-                    showToast('RSVP: Joyfully Accepted selected', 'success');
-                    setTimeout(() => {
-                      setShowAcceptAnimation(false);
-                    }, 3500);
-                  }}
-                  className={`py-3 px-2 rounded-xl font-bold text-xs transition-all duration-200 cursor-pointer active:scale-95 ${
-                    rsvpAttending
-                      ? 'bg-[#15110e] text-white shadow-sm ring-2 ring-[#bd9661]/40'
-                      : 'bg-white text-[#15110e] border border-[#e8ded0] hover:bg-[#faf8f5]'
-                  }`}
-                >
-                  <span className="flex items-center justify-center gap-1.5">
-                    <span>🥂</span>
-                    <span>Joyfully Accepts</span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRsvpAttending(false);
-                    showToast('RSVP: Regretfully Declines selected', 'info');
-                  }}
-                  className={`py-3 px-2 rounded-xl font-bold text-xs transition-all duration-200 cursor-pointer active:scale-95 ${
-                    !rsvpAttending
-                      ? 'bg-[#15110e] text-white shadow-sm ring-2 ring-[#bd9661]/40'
-                      : 'bg-white text-[#15110e] border border-[#e8ded0] hover:bg-[#faf8f5]'
-                  }`}
-                >
-                  <span className="flex items-center justify-center gap-1.5">
-                    <span>💌</span>
-                    <span>Regretfully Declines</span>
-                  </span>
-                </button>
+              {/* Event RSVP Status Summary Card */}
+              <div className="bg-[#faf8f5] border border-[#ebdcc9] rounded-2xl p-4 text-center space-y-1.5 shadow-2xs">
+                <div className="w-8 h-8 mx-auto rounded-full bg-[#15110e] text-[#dfc194] flex items-center justify-center text-sm font-bold">
+                  ✓
+                </div>
+                <div className="font-serif font-bold text-sm text-[#15110e]">
+                  Event Preferences Saved Automatically
+                </div>
+                <p className="text-xs text-[#7a6a5b] leading-relaxed max-w-xs mx-auto">
+                  Your attendance, party size, dietary requirements, and dance floor songs are customized and synced in real time to Sophie &amp; James!
+                </p>
               </div>
-
-              {/* Meaningful Contextual Transitions Based on RSVP Selection */}
-              {rsvpAttending ? (
-                <div key="rsvp-attending-box" className="space-y-4 anim-guest-slide">
-                  {/* Celebratory Acceptance Confirmation Banner (Appears for 3.5s upon accepting then vanishes) */}
-                  {showAcceptAnimation && (
-                    <div className="bg-[#15110e] border border-[#bd9661] rounded-2xl p-3.5 flex items-center gap-3 shadow-md anim-guest-pop">
-                      <div className="w-8 h-8 rounded-full bg-[#bd9661] text-[#15110e] flex items-center justify-center font-bold text-sm shadow-xs shrink-0 anim-check">
-                        ✓
-                      </div>
-                      <div className="text-left">
-                        <div className="text-xs font-bold text-[#dfc194]">You're Attending! 🥂</div>
-                        <div className="text-[10.5px] text-[#e8ded0] leading-tight">We can't wait to celebrate together at Fernwood Estate.</div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Guests Attending Counter — capped at 4; link icon OUTSIDE the box */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b]">
-                        Guests Attending
-                      </label>
-                      {additionalGuests.length > 0 && (
-                        <span className="text-[10px] text-[#bd9661] font-bold bg-[#faf4ec] border border-[#ebd3a8] px-2 py-0.5 rounded-full">
-                          +{additionalGuests.length} extra
-                        </span>
-                      )}
-                    </div>
-
-                    {guestCount < 4 ? (
-                      <div className="bg-white border border-[#e8ded0] rounded-xl p-2.5 flex items-center justify-between shadow-xs">
-                        <button
-                          type="button"
-                          onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
-                          className="w-9 h-9 rounded-full bg-[#f8f6f2] hover:bg-[#e8ded0] active:scale-90 text-[#15110e] font-bold text-lg flex items-center justify-center transition-all cursor-pointer"
-                        >
-                          &minus;
-                        </button>
-                        <span className="font-bold text-sm text-[#15110e]">
-                          {guestCount} {guestCount === 1 ? 'guest' : 'guests'}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setGuestCount(Math.min(4, guestCount + 1))}
-                          className="w-9 h-9 rounded-full bg-[#f8f6f2] hover:bg-[#e8ded0] active:scale-90 text-[#15110e] font-bold text-lg flex items-center justify-center transition-all cursor-pointer"
-                        >
-                          +
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-stretch gap-2.5">
-                        {/* Reduced width box holding - 4 + */}
-                        <div className="flex-1 bg-white border border-[#e8ded0] rounded-xl p-2.5 flex items-center justify-between shadow-xs">
-                          <button
-                            type="button"
-                            onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
-                            className="w-9 h-9 rounded-full bg-[#f8f6f2] hover:bg-[#e8ded0] active:scale-90 text-[#15110e] font-bold text-lg flex items-center justify-center transition-all cursor-pointer"
-                          >
-                            &minus;
-                          </button>
-                          <span className="font-bold text-sm text-[#15110e]">
-                            4 guests
-                          </span>
-                          <button
-                            type="button"
-                            className="w-9 h-9 rounded-full bg-[#f8f6f2] text-[#c5b8a6] font-bold text-lg flex items-center justify-center cursor-not-allowed opacity-40"
-                            disabled
-                            title="Maximum 4 guests on primary RSVP"
-                          >
-                            +
-                          </button>
-                        </div>
-
-                        {/* OUTSIDE THE BOX: Link Button (same height as box, only link icon) */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (additionalGuests.length === 0) {
-                              setAdditionalGuests([{ id: Date.now().toString(), name: '', household: '', phone: '', type: 'adult', dietary: '', open: true }]);
-                            }
-                            setShowAdditionalGuestsModal(true);
-                          }}
-                          className="w-[54px] rounded-xl bg-white hover:bg-[#faf4ec] border border-[#dfc194] active:scale-95 text-[#bd9661] shadow-xs flex items-center justify-center transition-all cursor-pointer shrink-0 self-stretch"
-                          title="Register additional guests"
-                          aria-label="Register additional guests"
-                        >
-                          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                          </svg>
-                        </button>
-                      </div>
-                    )}
-
-                    {guestCount === 4 && (
-                      <p className="text-[10px] text-[#8b7b6b] mt-1.5 leading-tight">
-                        Maximum of 4 reached. Tap the 🔗 button outside the box to register additional guests.
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Dietary Requirements */}
-                  <div>
-                    <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
-                      Dietary Requirements
-                    </label>
-                    <input
-                      type="text"
-                      value={dietaryInput}
-                      onChange={(e) => setDietaryInput(e.target.value)}
-                      placeholder="e.g. Vegetarian, Gluten-Free, Nut allergy"
-                      className="w-full bg-white border border-[#e8ded0] rounded-xl p-3 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs transition-colors"
-                    />
-                  </div>
-
-                  {/* Song Request */}
-                  <div>
-                    <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
-                      Song That'll Get You on the Dance Floor
-                    </label>
-                    <input
-                      type="text"
-                      value={songInput}
-                      onChange={(e) => setSongInput(e.target.value)}
-                      placeholder="e.g. September by Earth Wind & Fire"
-                      className="w-full bg-white border border-[#e8ded0] rounded-xl p-3 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs transition-colors"
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div key="rsvp-declined-box" className="bg-[#faf7f2] border border-[#ebd8c3] rounded-2xl p-4 text-center space-y-3 anim-guest-pop shadow-xs">
-                  <div className="w-10 h-10 mx-auto rounded-full bg-[#f3ecdf] flex items-center justify-center text-xl anim-check">
-                    💌
-                  </div>
-                  <div className="font-serif font-bold text-sm text-[#15110e]">
-                    You Will Be Dearly Missed
-                  </div>
-                  <p className="text-xs text-[#7a6a5b] leading-relaxed max-w-xs mx-auto">
-                    Thank you for letting Sophie &amp; James know. We will raise a glass to you from afar and share photos &amp; highlights in this celebration portal!
-                  </p>
-                  <div className="pt-1 text-left">
-                    <label className="block text-[10px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1.5">
-                      Leave a Warm Note for Sophie &amp; James (Optional)
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={declineNote}
-                      onChange={(e) => setDeclineNote(e.target.value)}
-                      placeholder="Wishing you both a wonderful wedding day and endless love..."
-                      className="w-full bg-white border border-[#e8ded0] rounded-xl p-2.5 text-xs text-[#15110e] outline-none focus:border-[#bd9661] shadow-xs resize-none"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Save RSVP Button with Success Confirmation Transition */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsRsvpSaved(true);
-                  if (rsvpAttending) {
-                    setShowAcceptAnimation(true);
-                    setTimeout(() => setShowAcceptAnimation(false), 4000);
-                  }
-                  showToast(
-                    rsvpAttending
-                      ? 'RSVP confirmed! See you at Fernwood Estate.'
-                      : 'RSVP recorded. Sophie & James have received your warm wishes.',
-                    'success'
-                  );
-                  setTimeout(() => setIsRsvpSaved(false), 3000);
-                }}
-                className={`w-full py-3 rounded-xl text-xs font-bold shadow-sm transition-all duration-300 cursor-pointer active:scale-98 flex items-center justify-center gap-2 ${
-                  isRsvpSaved
-                    ? 'bg-[#15110e] text-[#dfc194] border border-[#bd9661]'
-                    : 'bg-[#bd9661] hover:bg-[#a8824f] text-[#15110e]'
-                }`}
-              >
-                {isRsvpSaved ? (
-                  <div className="flex items-center gap-2 anim-guest-pop">
-                    <span className="font-bold anim-check">✓</span>
-                    <span>RSVP Response Recorded &amp; Saved</span>
-                  </div>
-                ) : (
-                  <span>{rsvpAttending ? 'Accept & Confirm RSVP' : 'Confirm RSVP (Decline)'}</span>
-                )}
-              </button>
             </div>
           )}
 
@@ -3161,7 +3113,7 @@ export default function GuestMobileView() {
                             />
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="grid grid-cols-[1fr_1.35fr] gap-2 items-end">
                           <div>
                             <label className="block text-[9.5px] font-bold tracking-wider uppercase text-[#8b7b6b] mb-1">Guest Type</label>
                             <select

@@ -8,6 +8,8 @@ export interface Task {
 
 export interface RunSheetItem {
   id: string;
+  eventId?: string;
+  eventName?: string;
   time: string;
   note: string;
   done: boolean;
@@ -26,6 +28,8 @@ export interface RunSheetChangeRequest {
 
 export interface PrivateRunSheetItem {
   id: string;
+  eventId?: string;
+  eventName?: string;
   time: string;
   activity: string;
   notes: string;
@@ -213,8 +217,10 @@ export interface Table {
 export interface GuestEventRsvp {
   status: 'confirmed' | 'declined' | 'awaiting';
   attending?: boolean;
-  mealPreference?: string;
+  guestCount?: number;
   dietary?: string;
+  song?: string;
+  mealPreference?: string;
   notes?: string;
   updatedAt?: string;
 }

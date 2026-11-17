@@ -123,6 +123,12 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
   const [mcShowPwd, setMcShowPwd] = useState(false);
   const [mcShowConfirm, setMcShowConfirm] = useState(false);
 
+  // Guided Onboarding State (Section-wise Spotlight Focus)
+  const [coupleSubFocus, setCoupleSubFocus] = useState<'groom' | 'bride'>('groom');
+  const [focusTourActive, setFocusTourActive] = useState<boolean>(true);
+  const [mcSubFocus, setMcSubFocus] = useState<'profile' | 'contact'>('profile');
+  const [showAiModal, setShowAiModal] = useState<boolean>(false);
+
   // Couple Onboarding Multi-Step: registration -> payment -> choose_mc -> dashboard
   // Guided Onboarding Step (1: Couple, 2: Date & Venue, 3: Guests & Style)
   const [guidedOnboardingStep, setGuidedOnboardingStep] = useState<1 | 2 | 3>(() => {
@@ -205,7 +211,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
     } catch {}
   };
 
-  const [coupleStep, setCoupleStep] = useState<'registration' | 'verify_email' | 'payment'>(() => {
+  const [coupleStep, setCoupleStep] = useState<'registration' | 'verify_email' | 'payment' | 'choose_mc'>(() => {
     const savedStep = localStorage.getItem('tt_register_step');
     if (savedStep === 'choose_mc') {
       localStorage.removeItem('tt_register_step');
@@ -477,6 +483,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
     localStorage.setItem('tt_verify_role', 'mc');
     localStorage.setItem('tt_pending_reg_flow', 'mc_plan');
     showToast('Registration submitted! Please verify your email.', 'success');
+    setFocusTourActive(false);
     setMcStep('verify_email');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -571,6 +578,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
     localStorage.setItem('tt_verify_role', 'couple');
     localStorage.setItem('tt_pending_reg_flow', 'couple_payment');
     showToast('Registration submitted! Please verify your email.', 'success');
+    setFocusTourActive(false);
     setCoupleStep('verify_email');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -986,8 +994,106 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
   const discountAmount = Math.round((basePrice * discountPercent) / 100);
   const finalPrice = Math.max(0, basePrice - discountAmount);
 
+  const getAiHelperTip = () => {
+    if (accountType === 'couple') {
+      if (guidedOnboardingStep === 1) {
+        if (coupleSubFocus === 'groom') {
+          return {
+            title: 'Joey AI • Partner 1 (Groom) Guidance',
+            badge: 'STEP 1: THE COUPLE',
+            text: 'Partner 1 will have primary co-host access to the wedding portal. Enter their active email and mobile so they can manage seating, run sheets, and RSVPs together with you.',
+          };
+        } else {
+          return {
+            title: 'Joey AI • Partner 2 (Bride) Guidance',
+            badge: 'STEP 1: THE COUPLE',
+            text: 'Partner 2 receives equal co-host permissions in Tap & Toast. Once registered, both partners have full collaborative access to the complete wedding suite.',
+          };
+        }
+      } else if (guidedOnboardingStep === 2) {
+        return {
+          title: 'Joey AI • Date & Venue Guidance',
+          badge: 'STEP 2: DATE & VENUE',
+          text: 'If your wedding date or venue is tentative, enter your best estimate! You can update venue details and schedules anytime from your couple dashboard.',
+        };
+      } else {
+        return {
+          title: 'Joey AI • Celebration Details Guidance',
+          badge: 'STEP 3: CELEBRATION STYLE',
+          text: 'Choose your wedding style and estimated guests. Note: No MC or planner selection is required now — you can invite your MC or coordinator directly from your dashboard anytime!',
+        };
+      }
+    } else {
+      if (mcSubFocus === 'profile') {
+        return {
+          title: 'Joey AI • MC Host Profile Guidance',
+          badge: 'MC REGISTRATION • STEP 1',
+          text: 'Enter your professional name and business identity. Couples searching the certified directory will see your verified profile and experience.',
+        };
+      } else {
+        return {
+          title: 'Joey AI • Contact & Credentials Guidance',
+          badge: 'MC REGISTRATION • STEP 2',
+          text: 'This email and phone will receive booking requests and couple run sheet alerts. Set a secure password to access your MC run sheet portal.',
+        };
+      }
+    }
+  };
+  const aiTip = getAiHelperTip();
+
   return (
     <div className="flex-1 grid grid-cols-1 md:grid-cols-[40%_60%] min-h-[calc(100vh-45px)] bg-[#f8f6f2] font-sans">
+            {/* BLACK TINTED FULL-PAGE SPOTLIGHT OVERLAY (Only on initial card registration steps, never on verification or payment) */}
+      {focusTourActive && (accountType === 'couple' ? coupleStep === 'registration' : mcStep === 'details') && (
+        <div
+          className="fixed inset-0 bg-[#0c0a08]/80 backdrop-blur-[1.5px] z-30 transition-opacity duration-300 pointer-events-none"
+          aria-hidden="true"
+        />
+      )}
+
+      {/* JOEY AI GUIDED ONBOARDING CONCIERGE MODAL */}
+      {showAiModal && (
+        <div className="fixed inset-0 z-[3000] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border-2 border-[#bd9661] rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-[#ebdcc9]">
+              <div className="flex items-center gap-2.5">
+                <img src="./chatbot-avatar.png" alt="Joey AI" className="w-9 h-9 rounded-full object-cover border border-[#bd9661] shadow-xs" />
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661]">
+                    {aiTip.badge}
+                  </div>
+                  <h3 className="font-serif text-base font-bold text-[#15110e]">
+                    {aiTip.title}
+                  </h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAiModal(false)}
+                className="text-[#8b7b6b] hover:text-[#15110e] text-lg font-bold p-1 cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="py-4">
+              <p className="text-xs text-[#4a3b2c] leading-relaxed bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8ded0]">
+                {aiTip.text}
+              </p>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setShowAiModal(false)}
+                className="px-4 py-2 bg-[#15110e] hover:bg-[#2b2118] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm"
+              >
+                Got it, thank you!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Left Hero Panel */}
       <div className="hidden md:flex bg-[#15110e] text-[#f8f6f2] p-10 lg:p-14 flex-col justify-between border-r border-[#29211a] relative">
         <div>
@@ -1053,7 +1159,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
         <div className="bg-white border border-[#e8ded0] border-t-[3px] border-t-[#bd9661] rounded-2xl w-full max-w-[680px] p-5 sm:p-7 md:p-8 shadow-sm relative my-1 sm:my-2 transition-all duration-200">
           {/* Account Mode Selector (Only shown if user explicitly opened #register-mc) */}
           {accountType === 'mc' && coupleStep === 'registration' && (
-            <div className="grid grid-cols-2 gap-2 bg-[#f0ebe3] p-1.5 rounded-xl mb-6 border border-[#e2d8cb]">
+            <div className="relative z-40 grid grid-cols-2 gap-2 bg-[#f0ebe3] p-1.5 rounded-xl mb-6 border border-[#e2d8cb]">
               <button
                 type="button"
                 onClick={() => {
@@ -1061,7 +1167,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                   window.location.hash = 'register';
                 }}
                 className={`py-2 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                  accountType === 'couple'
+                  (accountType as string) === 'couple'
                     ? 'bg-[#15110e] text-[#dfc194] shadow-sm ring-1 ring-[#bd9661]'
                     : 'text-[#6b5847] hover:text-[#15110e] hover:bg-[#e8ded0]/50'
                 }`}
@@ -1080,7 +1186,7 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                   window.location.hash = 'register-mc';
                 }}
                 className={`py-2 px-3 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 ${
-                  accountType === 'mc'
+                  (accountType as string) === 'mc'
                     ? 'bg-[#15110e] text-[#dfc194] shadow-sm ring-1 ring-[#bd9661]'
                     : 'text-[#6b5847] hover:text-[#15110e] hover:bg-[#e8ded0]/50'
                 }`}
@@ -1100,26 +1206,17 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
               <div className="flex items-center justify-center gap-3 text-xs max-w-sm mx-auto">
                 {/* Step 1 */}
                 <div className="flex items-center gap-2 shrink-0">
-                  <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs ${
-                      mcStep === 'details'
-                        ? 'bg-[#15110e] text-[#dfc194] ring-2 ring-[#bd9661]'
-                        : 'bg-[#bd9661] text-[#15110e]'
-                    }`}
-                  >
-                    {mcStep !== 'details' ? '✓' : '1'}
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs bg-[#bd9661] text-[#15110e]">
+                    ✓
                   </div>
-                  <span className={`text-xs font-semibold ${mcStep === 'details' ? 'text-[#15110e]' : 'text-[#8b7b6b]'}`}>
+                  <span className="text-xs font-semibold text-[#8b7b6b]">
                     Host Profile
                   </span>
                 </div>
 
                 {/* Connector bar */}
                 <div className="w-16 sm:w-20 h-0.5 bg-[#ebdcc9] overflow-hidden rounded-full shrink-0">
-                  <div
-                    className="h-full bg-[#bd9661] transition-all duration-300"
-                    style={{ width: mcStep === 'details' ? '0%' : '100%' }}
-                  />
+                  <div className="h-full bg-[#bd9661] transition-all duration-300 w-full" />
                 </div>
 
                 {/* Step 2 */}
@@ -1190,13 +1287,51 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                   </p>
                 </div>
 
-                {/* Business & Personal Details Card */}
-                <div className="bg-[#faf8f5] p-4 rounded-xl border border-[#e8ded0] space-y-3.5">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center gap-1.5">
-                    <svg className="w-3.5 h-3.5 text-[#bd9661]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <span>Host Profile &amp; Business Information</span>
+                {/* MC Card 1: Host Profile & Business Details */}
+                <div
+                  onClick={() => {
+                    if (mcSubFocus !== 'profile') setMcSubFocus('profile');
+                  }}
+                  className={`p-4 rounded-xl transition-all duration-300 space-y-3.5 ${
+                    focusTourActive && mcSubFocus === 'profile'
+                      ? 'relative z-40 bg-white ring-4 ring-[#bd9661] border-2 border-[#bd9661] shadow-2xl opacity-100'
+                      : 'bg-white border border-[#e8ded0] opacity-100'
+                  }`}
+                >
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-[#bd9661]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <span>Host Profile &amp; Business Information</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAiModal(true);
+                        }}
+                        className="flex items-center gap-1 text-[10px] font-bold text-[#8b6b3e] hover:text-[#15110e] bg-[#fbf6ee] hover:bg-[#f3e7d3] px-2.5 py-0.5 rounded-full border border-[#ebdcc9] transition-all cursor-pointer shadow-2xs"
+                      >
+                        <img src="./chatbot-avatar.png" alt="Joey AI" className="w-3.5 h-3.5 rounded-full object-cover shrink-0" />
+                        <span>Ask Joey AI</span>
+                      </button>
+                      {focusTourActive && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFocusTourActive(false);
+                          }}
+                          className="w-5 h-5 flex items-center justify-center rounded-full text-[#8b7b6b] hover:text-[#15110e] bg-[#faf6ee] hover:bg-[#ebdcc9] border border-[#ebdcc9] transition-all cursor-pointer text-xs font-bold shrink-0"
+                          title="Close focus view and continue with normal form"
+                          aria-label="Close focus view"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1243,6 +1378,93 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                     </div>
                   </div>
 
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c]">
+                        Australian Business Number (ABN)
+                      </label>
+                      <span className="text-[10px] text-[#8b7b6b] font-medium">(Optional for Tax Invoicing)</span>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="12 345 678 901"
+                      value={mcAbn}
+                      onChange={(e) => setMcAbn(e.target.value)}
+                      className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
+                    />
+                  </div>
+
+                  {focusTourActive && mcSubFocus === 'profile' && (
+                    <div className="flex items-center justify-between pt-3 border-t border-[#ebdcc9]/70 mt-2">
+                      <button
+                        type="button"
+                        disabled
+                        className="px-5 py-2.5 border border-[#d5c7b5] text-[#6b5847] disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-xs font-bold transition-all bg-white"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMcSubFocus('contact');
+                        }}
+                        className="py-2.5 px-6 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-md flex items-center gap-1.5"
+                      >
+                        <span>Next</span>
+                        <span>&rarr;</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* MC Card 2: Contact Details & Login */}
+                <div
+                  onClick={() => {
+                    if (mcSubFocus !== 'contact') setMcSubFocus('contact');
+                  }}
+                  className={`p-4 rounded-xl transition-all duration-300 space-y-3.5 ${
+                    focusTourActive && mcSubFocus === 'contact'
+                      ? 'relative z-40 bg-white ring-4 ring-[#bd9661] border-2 border-[#bd9661] shadow-2xl opacity-100'
+                      : 'bg-white border border-[#e8ded0] opacity-100'
+                  }`}
+                >
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-[#bd9661]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <span>Contact Details &amp; Account Credentials</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAiModal(true);
+                        }}
+                        className="flex items-center gap-1 text-[10px] font-bold text-[#8b6b3e] hover:text-[#15110e] bg-[#fbf6ee] hover:bg-[#f3e7d3] px-2.5 py-0.5 rounded-full border border-[#ebdcc9] transition-all cursor-pointer shadow-2xs"
+                      >
+                        <img src="./chatbot-avatar.png" alt="Joey AI" className="w-3.5 h-3.5 rounded-full object-cover shrink-0" />
+                        <span>Ask Joey AI</span>
+                      </button>
+                      {focusTourActive && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFocusTourActive(false);
+                          }}
+                          className="w-5 h-5 flex items-center justify-center rounded-full text-[#8b7b6b] hover:text-[#15110e] bg-[#faf6ee] hover:bg-[#ebdcc9] border border-[#ebdcc9] transition-all cursor-pointer text-xs font-bold shrink-0"
+                          title="Close focus view and continue with normal form"
+                          aria-label="Close focus view"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
@@ -1285,45 +1507,53 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                     </div>
                   </div>
 
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c]">
-                        Australian Business Number (ABN)
-                      </label>
-                      <span className="text-[10px] text-[#8b7b6b] font-medium">(Optional for Tax Invoicing)</span>
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="12 345 678 901"
-                      value={mcAbn}
-                      onChange={(e) => setMcAbn(e.target.value)}
-                      className="w-full bg-white border border-[#d5c7b5] focus:border-[#bd9661] focus:ring-1 focus:ring-[#bd9661] rounded-lg px-3 py-2 text-xs text-[#15110e] outline-none shadow-2xs"
-                    />
+                  {/* Terms Checkbox inside Card 2 */}
+                  <div className="pt-2 border-t border-[#ebdcc9]/70">
+                    <label className="flex items-start gap-2.5 text-xs text-[#6b5847] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={agreeTerms}
+                        onChange={(e) => setAgreeTerms(e.target.checked)}
+                        className="mt-0.5 rounded text-[#bd9661] focus:ring-[#bd9661]"
+                      />
+                      <span>
+                        I agree to the <a href="#terms" className="text-[#bd9661] underline font-semibold">Terms of Service</a> and <a href="#privacy" className="text-[#bd9661] underline font-semibold">Privacy Policy</a>
+                      </span>
+                    </label>
                   </div>
+
+                  {focusTourActive && mcSubFocus === 'contact' && (
+                    <div className="flex items-center justify-between pt-3 border-t border-[#ebdcc9]/70 mt-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMcSubFocus('profile');
+                        }}
+                        className="px-5 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer bg-white"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        type="submit"
+                        className="py-2.5 px-6 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-md flex items-center gap-1.5"
+                      >
+                        <span>Next</span>
+                        <span>&rarr;</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                {/* Terms Checkbox */}
-                <div className="pt-0.5">
-                  <label className="flex items-start gap-2.5 text-xs text-[#6b5847] cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={agreeTerms}
-                      onChange={(e) => setAgreeTerms(e.target.checked)}
-                      className="mt-0.5 rounded text-[#bd9661] focus:ring-[#bd9661]"
-                    />
-                    <span>
-                      I agree to the <a href="#terms" className="text-[#bd9661] underline font-semibold">Terms of Service</a> and <a href="#privacy" className="text-[#bd9661] underline font-semibold">Privacy Policy</a>
-                    </span>
-                  </label>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
-                >
-                  <span>Register MC Account</span>
-                  <span>→</span>
-                </button>
+                {!focusTourActive && (
+                  <button
+                    type="submit"
+                    className="w-full py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
+                  >
+                    <span>Register MC Account</span>
+                    <span>→</span>
+                  </button>
+                )}
               </form>
             ) : mcStep === 'verify_email' ? (
               /* MC STEP: VERIFY EMAIL NOTICE SCREEN */
@@ -1729,23 +1959,69 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
               {/* SUB-STEP 1: THE COUPLE */}
               {guidedOnboardingStep === 1 && (
                 <div className="space-y-4 animate-in fade-in duration-200">
-                  <div>
-                    <h2 className="font-serif text-[22px] font-bold text-[#15110e] leading-tight">
-                      Who is celebrating?
-                    </h2>
-                    <p className="text-xs text-[#8b7b6b] mt-0.5">
-                      Let's begin with the two of you. Enter details for both partners to enable shared dashboard access.
-                    </p>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h2 className="font-serif text-[22px] font-bold text-[#15110e] leading-tight">
+                        Who is celebrating?
+                      </h2>
+                      <p className="text-xs text-[#8b7b6b] mt-0.5">
+                        Let's begin with the two of you. Enter details for both partners to enable shared dashboard access.
+                      </p>
+                    </div>
+                    {!focusTourActive && (
+                      <button
+                        type="button"
+                        onClick={() => setFocusTourActive(true)}
+                        className="shrink-0 text-[10.5px] font-bold text-[#bd9661] hover:text-[#9c753f] bg-[#faf6ee] px-2.5 py-1 rounded-full border border-[#ebdcc9] transition-all cursor-pointer flex items-center gap-1"
+                      >
+                        <span>✨ Focus Mode</span>
+                      </button>
+                    )}
                   </div>
 
                   {/* Partner 1 Card */}
-                  <div className="bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8ded0] space-y-3">
+                  <div
+                    onClick={() => {
+                      if (coupleSubFocus !== 'groom') setCoupleSubFocus('groom');
+                    }}
+                    className={`p-4 rounded-xl transition-all duration-300 space-y-3 ${
+                      focusTourActive && coupleSubFocus === 'groom'
+                        ? 'relative z-40 bg-white ring-4 ring-[#bd9661] border-2 border-[#bd9661] shadow-2xl opacity-100'
+                        : 'bg-white border border-[#e8ded0] opacity-100'
+                    }`}
+                  >
                     <div className="text-[10.5px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-[#bd9661]" />
                         <span>Groom / Partner 1</span>
                       </div>
-                      <span className="text-[9.5px] text-[#8b7b6b] font-medium">Co-Host Access</span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowAiModal(true);
+                          }}
+                          className="flex items-center gap-1 text-[10px] font-bold text-[#8b6b3e] hover:text-[#15110e] bg-[#fbf6ee] hover:bg-[#f3e7d3] px-2.5 py-0.5 rounded-full border border-[#ebdcc9] transition-all cursor-pointer shadow-2xs"
+                        >
+                          <img src="./chatbot-avatar.png" alt="Joey AI" className="w-3.5 h-3.5 rounded-full object-cover shrink-0" />
+                          <span>Ask Joey AI</span>
+                        </button>
+                        {focusTourActive && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFocusTourActive(false);
+                            }}
+                            className="w-5 h-5 flex items-center justify-center rounded-full text-[#8b7b6b] hover:text-[#15110e] bg-[#faf6ee] hover:bg-[#ebdcc9] border border-[#ebdcc9] transition-all cursor-pointer text-xs font-bold shrink-0"
+                            title="Close focus view and continue with normal form"
+                            aria-label="Close focus view"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <div>
@@ -1806,16 +2082,74 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                         </div>
                       </div>
                     </div>
+
+                    {focusTourActive && coupleSubFocus === 'groom' && (
+                      <div className="flex items-center justify-between pt-3 border-t border-[#ebdcc9]/70 mt-2">
+                        <button
+                          type="button"
+                          disabled
+                          className="px-5 py-2.5 border border-[#d5c7b5] text-[#6b5847] disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-xs font-bold transition-all bg-white"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCoupleSubFocus('bride');
+                          }}
+                          className="py-2.5 px-6 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-md flex items-center gap-1.5"
+                        >
+                          <span>Next</span>
+                          <span>&rarr;</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Partner 2 Card */}
-                  <div className="bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8ded0] space-y-3">
+                  <div
+                    onClick={() => {
+                      if (coupleSubFocus !== 'bride') setCoupleSubFocus('bride');
+                    }}
+                    className={`p-4 rounded-xl transition-all duration-300 space-y-3 ${
+                      focusTourActive && coupleSubFocus === 'bride'
+                        ? 'relative z-40 bg-white ring-4 ring-[#bd9661] border-2 border-[#bd9661] shadow-2xl opacity-100'
+                        : 'bg-white border border-[#e8ded0] opacity-100'
+                    }`}
+                  >
                     <div className="text-[10.5px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-[#bd9661]" />
                         <span>Bride / Partner 2</span>
                       </div>
-                      <span className="text-[9.5px] text-[#8b7b6b] font-medium">Co-Host Access</span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowAiModal(true);
+                          }}
+                          className="flex items-center gap-1 text-[10px] font-bold text-[#8b6b3e] hover:text-[#15110e] bg-[#fbf6ee] hover:bg-[#f3e7d3] px-2.5 py-0.5 rounded-full border border-[#ebdcc9] transition-all cursor-pointer shadow-2xs"
+                        >
+                          <img src="./chatbot-avatar.png" alt="Joey AI" className="w-3.5 h-3.5 rounded-full object-cover shrink-0" />
+                          <span>Ask Joey AI</span>
+                        </button>
+                        {focusTourActive && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFocusTourActive(false);
+                            }}
+                            className="w-5 h-5 flex items-center justify-center rounded-full text-[#8b7b6b] hover:text-[#15110e] bg-[#faf6ee] hover:bg-[#ebdcc9] border border-[#ebdcc9] transition-all cursor-pointer text-xs font-bold shrink-0"
+                            title="Close focus view and continue with normal form"
+                            aria-label="Close focus view"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <div>
@@ -1876,32 +2210,65 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                         </div>
                       </div>
                     </div>
+
+                    {focusTourActive && coupleSubFocus === 'bride' && (
+                      <div className="flex items-center justify-between pt-3 border-t border-[#ebdcc9]/70 mt-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCoupleSubFocus('groom');
+                          }}
+                          className="px-5 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer bg-white"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!groomName.trim() || !groomEmail.trim() || !brideName.trim() || !brideEmail.trim()) {
+                              showToast('Please provide names and emails for both partners', 'error');
+                              return;
+                            }
+                            setGuidedOnboardingStep(2);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="py-2.5 px-6 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-md flex items-center gap-1.5"
+                        >
+                          <span>Next</span>
+                          <span>&rarr;</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={handleSaveAndExit}
-                      className="px-4 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer"
-                    >
-                      Save &amp; Exit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!groomName.trim() || !groomEmail.trim() || !brideName.trim() || !brideEmail.trim()) {
-                          showToast('Please provide names and emails for both partners', 'error');
-                          return;
-                        }
-                        setGuidedOnboardingStep(2);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      className="flex-1 py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
-                    >
-                      <span>Continue to Date &amp; Venue</span>
-                      <span>→</span>
-                    </button>
-                  </div>
+                  {!focusTourActive && (
+                    <div className="flex items-center justify-between gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={handleSaveAndExit}
+                        className="px-4 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                      >
+                        Save &amp; Exit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!groomName.trim() || !groomEmail.trim() || !brideName.trim() || !brideEmail.trim()) {
+                            showToast('Please provide names and emails for both partners', 'error');
+                            return;
+                          }
+                          setGuidedOnboardingStep(2);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="flex-1 py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
+                      >
+                        <span>Continue to Date &amp; Venue</span>
+                        <span>&rarr;</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1917,7 +2284,42 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                     </p>
                   </div>
 
-                  <div className="bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8ded0] space-y-3.5">
+                  <div className={`p-4 rounded-xl transition-all duration-300 space-y-3.5 ${
+                    focusTourActive && guidedOnboardingStep === 2
+                      ? 'relative z-40 bg-white ring-4 ring-[#bd9661] border-2 border-[#bd9661] shadow-2xl opacity-100'
+                      : 'bg-white border border-[#e8ded0] opacity-100'
+                  }`}>
+                    <div className="text-[10.5px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#bd9661]" />
+                        <span>Wedding Information &bull; Date &amp; Venue</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setShowAiModal(true)}
+                          className="flex items-center gap-1 text-[10px] font-bold text-[#8b6b3e] hover:text-[#15110e] bg-[#fbf6ee] hover:bg-[#f3e7d3] px-2.5 py-0.5 rounded-full border border-[#ebdcc9] transition-all cursor-pointer shadow-2xs"
+                        >
+                          <img src="./chatbot-avatar.png" alt="Joey AI" className="w-3.5 h-3.5 rounded-full object-cover shrink-0" />
+                          <span>Ask Joey AI</span>
+                        </button>
+                        {focusTourActive && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFocusTourActive(false);
+                            }}
+                            className="w-5 h-5 flex items-center justify-center rounded-full text-[#8b7b6b] hover:text-[#15110e] bg-[#faf6ee] hover:bg-[#ebdcc9] border border-[#ebdcc9] transition-all cursor-pointer text-xs font-bold shrink-0"
+                            title="Close focus view and continue with normal form"
+                            aria-label="Close focus view"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c]">
@@ -1964,39 +2366,72 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                         Used to provide Google Maps links and travel directions for your wedding guests.
                       </p>
                     </div>
+
+                    {focusTourActive && (
+                      <div className="flex items-center justify-between pt-3 border-t border-[#ebdcc9]/70 mt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setGuidedOnboardingStep(1);
+                            setCoupleSubFocus('bride');
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="px-5 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer bg-white"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!venue.trim()) {
+                              showToast('Please enter your venue or city', 'error');
+                              return;
+                            }
+                            setGuidedOnboardingStep(3);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="py-2.5 px-6 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-md flex items-center gap-1.5"
+                        >
+                          <span>Next</span>
+                          <span>&rarr;</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setGuidedOnboardingStep(1)}
-                      className="px-4 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer"
-                    >
-                      ← Back
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleSaveAndExit}
-                      className="px-3 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer"
-                    >
-                      Save &amp; Exit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!venue.trim()) {
-                          showToast('Please enter your venue or city', 'error');
-                          return;
-                        }
-                        setGuidedOnboardingStep(3);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      className="flex-1 py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
-                    >
-                      <span>Continue to Celebration Vibe</span>
-                      <span>→</span>
-                    </button>
-                  </div>
+                  {!focusTourActive && (
+                    <div className="flex items-center justify-between gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setGuidedOnboardingStep(1)}
+                        className="px-4 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                      >
+                        ← Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveAndExit}
+                        className="px-3 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                      >
+                        Save &amp; Exit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!venue.trim()) {
+                            showToast('Please enter your venue or city', 'error');
+                            return;
+                          }
+                          setGuidedOnboardingStep(3);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="flex-1 py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
+                      >
+                        <span>Continue to Celebration Vibe</span>
+                        <span>→</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -2012,7 +2447,42 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                     </p>
                   </div>
 
-                  <div className="bg-[#faf8f5] p-3.5 rounded-xl border border-[#e8ded0] space-y-3.5">
+                  <div className={`p-4 rounded-xl transition-all duration-300 space-y-3.5 ${
+                    focusTourActive && guidedOnboardingStep === 3
+                      ? 'relative z-40 bg-white ring-4 ring-[#bd9661] border-2 border-[#bd9661] shadow-2xl opacity-100'
+                      : 'bg-white border border-[#e8ded0] opacity-100'
+                  }`}>
+                    <div className="text-[10.5px] font-bold uppercase tracking-wider text-[#bd9661] pb-1 border-b border-[#ebdcc9] flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#bd9661]" />
+                        <span>Celebration Vibe &bull; Size &amp; Style</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setShowAiModal(true)}
+                          className="flex items-center gap-1 text-[10px] font-bold text-[#8b6b3e] hover:text-[#15110e] bg-[#fbf6ee] hover:bg-[#f3e7d3] px-2.5 py-0.5 rounded-full border border-[#ebdcc9] transition-all cursor-pointer shadow-2xs"
+                        >
+                          <img src="./chatbot-avatar.png" alt="Joey AI" className="w-3.5 h-3.5 rounded-full object-cover shrink-0" />
+                          <span>Ask Joey AI</span>
+                        </button>
+                        {focusTourActive && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFocusTourActive(false);
+                            }}
+                            className="w-5 h-5 flex items-center justify-center rounded-full text-[#8b7b6b] hover:text-[#15110e] bg-[#faf6ee] hover:bg-[#ebdcc9] border border-[#ebdcc9] transition-all cursor-pointer text-xs font-bold shrink-0"
+                            title="Close focus view and continue with normal form"
+                            aria-label="Close focus view"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="block text-[11px] font-bold uppercase tracking-wider text-[#4a3b2c] mb-1">
@@ -2076,31 +2546,55 @@ export default function RegisterView({ onSelectView }: RegisterViewProps) {
                         </span>
                       </label>
                     </div>
+
+                    {focusTourActive && (
+                      <div className="flex items-center justify-between pt-3 border-t border-[#ebdcc9]/70 mt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setGuidedOnboardingStep(2);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="px-5 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer bg-white"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          type="submit"
+                          className="py-2.5 px-6 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-md flex items-center gap-1.5"
+                        >
+                          <span>Next</span>
+                          <span>&rarr;</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setGuidedOnboardingStep(2)}
-                      className="px-4 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer"
-                    >
-                      ← Back
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleSaveAndExit}
-                      className="px-3 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer"
-                    >
-                      Save &amp; Exit
-                    </button>
-                    <button
-                      type="submit"
-                      className="flex-1 py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
-                    >
-                      <span>Complete Registration</span>
-                      <span>→</span>
-                    </button>
-                  </div>
+                  {!focusTourActive && (
+                    <div className="flex items-center justify-between gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setGuidedOnboardingStep(2)}
+                        className="px-4 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                      >
+                        ← Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveAndExit}
+                        className="px-3 py-2.5 border border-[#d5c7b5] text-[#6b5847] hover:text-[#15110e] hover:bg-[#faf7f2] rounded-lg text-xs font-bold transition-all cursor-pointer"
+                      >
+                        Save &amp; Exit
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 py-3 px-5 bg-[#15110e] hover:bg-[#241c16] text-[#dfc194] hover:text-white rounded-lg text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
+                      >
+                        <span>Complete Registration</span>
+                        <span>→</span>
+                      </button>
+                    </div>
+                  )}
                 </form>
               )}
             </div>

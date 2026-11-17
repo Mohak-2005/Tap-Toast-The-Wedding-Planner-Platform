@@ -63,6 +63,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
   }, [currentWeddingId]);
 
   // Filter & Search states
+  const [selectedRunSheetEventId, setSelectedRunSheetEventId] = useState<string>('all');
   const [runSheetFilter, setRunSheetFilter] = useState<'all' | 'upcoming' | 'done'>('all');
   const [cueSearch, setCueSearch] = useState('');
   const [guestSearch, setGuestSearch] = useState('');
@@ -72,6 +73,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
 
   // Add cue modal states
   const [showAddCueModal, setShowAddCueModal] = useState(false);
+  const [newCueEventId, setNewCueEventId] = useState<string>('');
   const [newCueTime, setNewCueTime] = useState('17:00');
   const [newCueActivity, setNewCueActivity] = useState('');
   const [newCueNotes, setNewCueNotes] = useState('');
@@ -944,8 +946,13 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
       showToast('Please enter an activity title', 'error');
       return;
     }
+    const targetEvtId = newCueEventId || (selectedRunSheetEventId !== 'all' ? selectedRunSheetEventId : undefined);
+    const targetEvt = (activeWedding.events || []).find((e) => e.id === targetEvtId);
+
     const newCue: PrivateRunSheetItem = {
       id: 'c_' + Date.now(),
+      eventId: targetEvtId,
+      eventName: targetEvt?.name,
       time: newCueTime.trim() || '17:00',
       activity: newCueActivity.trim(),
       notes: newCueNotes.trim(),
@@ -958,7 +965,7 @@ export default function McMobileView({ onSelectView }: McMobileViewProps) {
     setNewCueActivity('');
     setNewCueNotes('');
     setNewCuePrivateNotes('');
-    showToast(`Added cue: ${newCue.activity}`, 'success');
+    showToast(`Added cue: ${newCue.activity}${targetEvt ? ` (${targetEvt.name})` : ''}`, 'success');
   };
 
   // -------------------------------------------------------------
@@ -2327,6 +2334,45 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                 </button>
               </div>
 
+              {/* Event Selection Pills (Multi-Day Celebration Run Sheets) */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+                <button
+                  type="button"
+                  onClick={() => setSelectedRunSheetEventId('all')}
+                  className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                    selectedRunSheetEventId === 'all'
+                      ? 'bg-[#15110e] text-[#dfc194] shadow-2xs ring-1 ring-[#bd9661]'
+                      : 'bg-white text-[#6b5847] border border-[#e8ded0]'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5 text-[#bd9661] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                  <span>Master Day</span>
+                </button>
+                {(activeWedding.events || []).map((evt) => (
+                  <button
+                    key={evt.id}
+                    type="button"
+                    onClick={() => setSelectedRunSheetEventId(evt.id)}
+                    className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                      selectedRunSheetEventId === evt.id
+                        ? 'bg-[#15110e] text-[#dfc194] shadow-2xs ring-1 ring-[#bd9661]'
+                        : 'bg-white text-[#6b5847] border border-[#e8ded0]'
+                    }`}
+                  >
+                    <svg className="w-3.5 h-3.5 text-current opacity-70 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="9" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    <span>{evt.name}</span>
+                  </button>
+                ))}
+              </div>
+
               {/* Filters & Add Cue */}
               <div className="flex items-center justify-between gap-1">
                 <div className="flex gap-1 bg-[#f0ede4] p-0.5 rounded-lg text-xs">
@@ -2345,7 +2391,10 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowAddCueModal(true)}
+                  onClick={() => {
+                    setNewCueEventId(selectedRunSheetEventId !== 'all' ? selectedRunSheetEventId : (activeWedding.events?.[0]?.id || ''));
+                    setShowAddCueModal(true);
+                  }}
                   className="bg-[#bd9661] text-[#15110e] font-bold text-[11px] px-2.5 py-1.5 rounded-lg cursor-pointer hover:bg-[#a8824f]"
                 >
                   + Add Cue
@@ -2366,7 +2415,14 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
               {/* Cues List */}
               <div className="space-y-2.5">
                 {weddingRunSheet
-                  .filter(c => {
+                  .filter((c) => {
+                    if (selectedRunSheetEventId !== 'all') {
+                      if (c.eventId) {
+                        if (c.eventId !== selectedRunSheetEventId) return false;
+                      } else {
+                        if (selectedRunSheetEventId !== 'evt_ceremony' && selectedRunSheetEventId !== 'evt_reception') return false;
+                      }
+                    }
                     if (runSheetFilter === 'upcoming') return !c.done;
                     if (runSheetFilter === 'done') return c.done;
                     return true;
@@ -3546,6 +3602,23 @@ Here is the proposed auto-seating allocation for ${proposedChanges.length} guest
               </div>
 
               <form onSubmit={handleAddCueSubmit} className="space-y-3 text-xs">
+                {/* Event Selector */}
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-[#8b7b6b] mb-1">Celebration Event *</label>
+                  <select
+                    value={newCueEventId}
+                    onChange={(e) => setNewCueEventId(e.target.value)}
+                    className="w-full bg-[#faf8f5] border border-[#e8ded0] rounded-xl p-2 text-xs font-semibold text-[#15110e] outline-none focus:border-[#bd9661]"
+                  >
+                    <option value="">Master Wedding Day (All Events)</option>
+                    {(activeWedding.events || []).map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {e.name} ({e.date} • {e.time})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div>
                   <label className="block text-[10px] uppercase font-bold text-[#8b7b6b] mb-1">Time (24h)</label>
                   <input

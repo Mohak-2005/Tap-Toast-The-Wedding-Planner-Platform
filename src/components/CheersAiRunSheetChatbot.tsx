@@ -8,7 +8,7 @@ interface CheersAiRunSheetChatbotProps {
   onClose: () => void;
   onApply: (items: Array<Omit<PrivateRunSheetItem, 'id' | 'order' | 'done'>>, mode: 'replace' | 'append') => void;
   title?: string;
-  context?: 'planner' | 'mc';
+  context?: 'planner' | 'mc' | 'couple';
 }
 
 interface ChatMessage {
@@ -108,10 +108,10 @@ export const CheersAiRunSheetChatbot: React.FC<CheersAiRunSheetChatbotProps> = (
             title: 'Shifted Evening Timeline (+15m buffer)',
             mode: 'append',
             items: [
-              { time: '18:45', activity: 'Bridal Party Entrance & Welcome Toast', section: 'evening', vendorRole: 'MC' },
-              { time: '19:15', activity: 'Main Course Plated Service', section: 'evening', vendorRole: 'Catering' },
-              { time: '20:00', activity: 'Speeches & Family Toasts', section: 'evening', vendorRole: 'MC' },
-              { time: '20:45', activity: 'First Dance & Dance Floor Opens', section: 'evening', vendorRole: 'DJ / Band' },
+              { time: '18:45', activity: 'Bridal Party Entrance & Welcome Toast', section: 'evening', vendorRole: 'MC', notes: '', privateNotes: '' },
+              { time: '19:15', activity: 'Main Course Plated Service', section: 'evening', vendorRole: 'Catering', notes: '', privateNotes: '' },
+              { time: '20:00', activity: 'Speeches & Family Toasts', section: 'evening', vendorRole: 'MC', notes: '', privateNotes: '' },
+              { time: '20:45', activity: 'First Dance & Dance Floor Opens', section: 'evening', vendorRole: 'DJ / Band', notes: '', privateNotes: '' },
             ],
           },
         };
@@ -126,10 +126,10 @@ export const CheersAiRunSheetChatbot: React.FC<CheersAiRunSheetChatbotProps> = (
             title: 'Speeches & Toasts Schedule',
             mode: 'append',
             items: [
-              { time: '19:45', activity: 'MC Housekeeping & Intro to Speeches', section: 'evening', vendorRole: 'MC' },
-              { time: '19:50', activity: 'Father of the Bride Toast', section: 'evening', vendorRole: 'MC' },
-              { time: '20:00', activity: 'Maid of Honour & Best Man Speeches', section: 'evening', vendorRole: 'MC' },
-              { time: '20:15', activity: 'Couple Thank You & Champagne Toast', section: 'evening', vendorRole: 'MC' },
+              { time: '19:45', activity: 'MC Housekeeping & Intro to Speeches', section: 'evening', vendorRole: 'MC', notes: '', privateNotes: '' },
+              { time: '19:50', activity: 'Father of the Bride Toast', section: 'evening', vendorRole: 'MC', notes: '', privateNotes: '' },
+              { time: '20:00', activity: 'Maid of Honour & Best Man Speeches', section: 'evening', vendorRole: 'MC', notes: '', privateNotes: '' },
+              { time: '20:15', activity: 'Couple Thank You & Champagne Toast', section: 'evening', vendorRole: 'MC', notes: '', privateNotes: '' },
             ],
           },
         };
@@ -141,6 +141,15 @@ export const CheersAiRunSheetChatbot: React.FC<CheersAiRunSheetChatbotProps> = (
           sender: 'cheers',
           text: `I've analyzed your schedule request: "${text}".\n\nYou can ask me to generate a full timeline draft (e.g. *"Create a 2pm timeline"*), adjust specific activities, or click the 📎 button below to upload your Excel or PDF run sheet for instant auto-extraction.`,
           timestamp: 'Just now',
+          proposal: {
+            title: 'Recommended Timeline Flow',
+            mode: 'append',
+            items: [
+              { time: '17:30', activity: 'Guest Room Transition & Seating Call', section: 'evening', vendorRole: 'MC', notes: '', privateNotes: '' },
+              { time: '18:00', activity: 'Grand Entrance of Newlyweds', section: 'evening', vendorRole: 'MC', notes: '', privateNotes: '' },
+              { time: '18:15', activity: 'Welcome & Bread/Entree Service', section: 'evening', vendorRole: 'Catering', notes: '', privateNotes: '' },
+            ],
+          },
         };
         setMessages((prev) => [...prev, replyMsg]);
       }
@@ -174,18 +183,18 @@ export const CheersAiRunSheetChatbot: React.FC<CheersAiRunSheetChatbotProps> = (
         setIsTyping(false);
 
         // Fallback default parsed milestones if uploaded binary or empty text
-        const itemsToUse = parsed.length > 0 ? parsed : [
-          { time: '10:00', activity: 'Bridal Hair & Makeup Bump-in', section: 'morning' as const, vendorRole: 'Hair & Makeup' },
-          { time: '12:30', activity: 'Photographer & Videographer Arrival', section: 'afternoon' as const, vendorRole: 'Photographer' },
-          { time: '14:30', activity: 'Guest Arrival & Acoustic Prelude Music', section: 'afternoon' as const, vendorRole: 'Musicians' },
-          { time: '15:00', activity: 'Wedding Ceremony & Processional', section: 'afternoon' as const, vendorRole: 'Celebrant' },
-          { time: '15:45', activity: 'Confetti Toss & Family Portraits', section: 'afternoon' as const, vendorRole: 'Photographer' },
-          { time: '16:30', activity: 'Canapes & Cocktail Hour on Terrace', section: 'afternoon' as const, vendorRole: 'Catering' },
-          { time: '18:00', activity: 'Reception Grand Entrance', section: 'evening' as const, vendorRole: 'MC' },
-          { time: '18:30', activity: 'First Course Dinner Service', section: 'evening' as const, vendorRole: 'Catering' },
-          { time: '19:45', activity: 'Speeches & Champagne Toast', section: 'evening' as const, vendorRole: 'MC' },
-          { time: '20:30', activity: 'Cake Cutting & First Dance', section: 'evening' as const, vendorRole: 'MC / DJ' },
-          { time: '23:00', activity: 'Farewell Circle & Sparkler Send-Off', section: 'evening' as const, vendorRole: 'Coordinator' },
+        const itemsToUse: Array<Omit<PrivateRunSheetItem, 'id' | 'order' | 'done'>> = parsed.length > 0 ? parsed : [
+          { time: '10:00', activity: 'Bridal Hair & Makeup Bump-in', section: 'morning' as const, vendorRole: 'Hair & Makeup', notes: '', privateNotes: '' },
+          { time: '12:30', activity: 'Photographer & Videographer Arrival', section: 'afternoon' as const, vendorRole: 'Photographer', notes: '', privateNotes: '' },
+          { time: '14:30', activity: 'Guest Arrival & Acoustic Prelude Music', section: 'afternoon' as const, vendorRole: 'Musicians', notes: '', privateNotes: '' },
+          { time: '15:00', activity: 'Wedding Ceremony & Processional', section: 'afternoon' as const, vendorRole: 'Celebrant', notes: '', privateNotes: '' },
+          { time: '15:45', activity: 'Confetti Toss & Family Portraits', section: 'afternoon' as const, vendorRole: 'Photographer', notes: '', privateNotes: '' },
+          { time: '16:30', activity: 'Canapes & Cocktail Hour on Terrace', section: 'afternoon' as const, vendorRole: 'Catering', notes: '', privateNotes: '' },
+          { time: '18:00', activity: 'Reception Grand Entrance', section: 'evening' as const, vendorRole: 'MC', notes: '', privateNotes: '' },
+          { time: '18:30', activity: 'First Course Dinner Service', section: 'evening' as const, vendorRole: 'Catering', notes: '', privateNotes: '' },
+          { time: '19:45', activity: 'Speeches & Champagne Toast', section: 'evening' as const, vendorRole: 'MC', notes: '', privateNotes: '' },
+          { time: '20:30', activity: 'Cake Cutting & First Dance', section: 'evening' as const, vendorRole: 'MC / DJ', notes: '', privateNotes: '' },
+          { time: '23:00', activity: 'Farewell Circle & Sparkler Send-Off', section: 'evening' as const, vendorRole: 'Coordinator', notes: '', privateNotes: '' },
         ];
 
         const replyMsg: ChatMessage = {

@@ -212,14 +212,16 @@ export function getStoredState(): DemoState {
   return inMemoryState!;
 }
 
-export function saveStoredState(state: DemoState) {
-  inMemoryState = state;
+export function saveStoredState(nextState: DemoState | ((prev: DemoState) => DemoState)) {
+  const currentState = inMemoryState || getStoredState();
+  const resolved = typeof nextState === 'function' ? nextState(currentState) : nextState;
+  inMemoryState = resolved;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(resolved));
   } catch (err) {
     console.warn('localStorage state save error', err);
   }
-  window.dispatchEvent(new CustomEvent('tt_state_updated', { detail: state }));
+  window.dispatchEvent(new CustomEvent('tt_state_updated', { detail: resolved }));
 }
 
 export function resetStoredState(): DemoState {
@@ -461,13 +463,13 @@ export function generateQrSvg(dataStr: string, size = 180): string {
 }
 
 export function logAudit(
-  state: DemoState,
-  setState: (s: DemoState) => void,
-  action: string,
-  user: string,
-  role: string,
-  details: string,
-  category: string,
+  stateOrAction: DemoState | string,
+  setStateOrDetails?: ((s: DemoState) => void) | string,
+  actionOrRole?: string,
+  user?: string,
+  role?: string,
+  details?: string,
+  category?: string,
   wedding?: string,
   ipAddress?: string,
   channel?: string,
@@ -475,22 +477,53 @@ export function logAudit(
 ) {
   const now = new Date();
   const dateStr = now.toISOString().replace('T', ' ').substring(0, 16);
+
+  if (typeof stateOrAction === 'string') {
+    const action = stateOrAction;
+    const detailsText = typeof setStateOrDetails === 'string' ? setStateOrDetails : '';
+    const userRole = actionOrRole || 'guest';
+    const newEntry: AuditLogEntry = {
+      id: 'aud_' + Date.now(),
+      timestamp: dateStr,
+      action,
+      user: user || (userRole === 'guest' ? 'Guest Lead' : 'User'),
+      role: userRole,
+      details: detailsText,
+      category: category || 'RSVP',
+      wedding: wedding || 'Carter & Wilson Wedding',
+      ipAddress: ipAddress || '101.188.67.21 (Sydney, AU)',
+      channel: channel || 'Mobile Guest Web',
+      status: status || 'Success',
+    };
+    const latestState = getStoredState();
+    saveStoredState({
+      ...latestState,
+      auditLog: [newEntry, ...(latestState.auditLog || [])],
+    });
+    return;
+  }
+
+  const state = stateOrAction;
+  const setState = setStateOrDetails as (s: DemoState) => void;
+  const action = actionOrRole || '';
   const newEntry: AuditLogEntry = {
     id: 'aud_' + Date.now(),
     timestamp: dateStr,
     action,
-    user,
-    role,
-    details,
-    category,
+    user: user || '',
+    role: role || '',
+    details: details || '',
+    category: category || '',
     wedding: wedding || (role === 'couple' ? 'Carter & Wilson Wedding' : 'Platform Global'),
     ipAddress: ipAddress || '101.188.67.21 (Sydney, AU)',
     channel: channel || 'Web Portal',
     status: status || 'Success'
   };
   const latestState = getStoredState();
-  setState({
-    ...latestState,
-    auditLog: [newEntry, ...(latestState.auditLog || state.auditLog || [])]
-  });
+  if (typeof setState === 'function') {
+    setState({
+      ...latestState,
+      auditLog: [newEntry, ...(latestState.auditLog || state?.auditLog || [])]
+    });
+  }
 }
